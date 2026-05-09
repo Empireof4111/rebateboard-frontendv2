@@ -1,0 +1,523 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Plus, Trash2, Save, Eye, MousePointerClick, Power, X, Megaphone, Sparkles, Flame,
+} from "lucide-react";
+import { PageHeader, Panel, StatCard } from "@/components/superadmin/AdminUI";
+import { toast } from "@/components/superadmin/AdminActions";
+import {
+  type DashboardAd, type AdFormat, type AdSlide, type AdPlacement, type SponsorLogo,
+  readAds, writeAds, upsertAd, deleteAd,
+} from "@/lib/dashboard-ads";
+import { TBI_BRANDS } from "@/lib/tbi-data";
+import { useAdminCollection } from "@/lib/admin-store";
+import { blogPosts as blogSeed, type BlogPost } from "@/lib/admin-data";
+
+export const Route = createFileRoute("/superadmin/ads")({
+  head: () => ({ meta: [{ title: "Dashboard Ads — Superadmin" }, { name: "robots", content: "noindex,nofollow" }] }),
+  component: AdsPage,
+});
+
+const FORMATS: { value: AdFormat; label: string; icon: typeof Megaphone; hint: string }[] = [
+  { value: "marquee", label: "Sliding text", icon: Megaphone, hint: "One-line scrolling promo" },
+  { value: "single", label: "Single banner", icon: Sparkles, hint: "Headline + CTA" },
+  { value: "carousel", label: "Multi-brand", icon: Flame, hint: "2–5 brand strip" },
+  { value: "trending", label: "Auto trending", icon: Flame, hint: "Top TBI brands" },
+];
+
+const PLACEMENTS: { value: AdPlacement; label: string; hint: string }[] = [
+  { value: "dashboard", label: "User dashboard", hint: "Top of every dashboard page" },
+  { value: "landing-hero", label: "Landing · Hero card", hint: "4-slide rotating card on landing hero" },
+  { value: "landing-sponsors", label: "Landing · Sponsors strip", hint: "Logo row under the hero headline" },
+  { value: "landing-advertise", label: "Landing · Advertise box", hint: "Promo box near the cashback calculator" },
+];
+
+function emptyAd(): DashboardAd {
+  return {
+    id: `ad-${Math.random().toString(36).slice(2, 9)}`,
+    name: "Untitled banner",
+    format: "single",
+    placement: "dashboard",
+    active: true,
+    priority: 1,
+    headline: "",
+    sub: "",
+    cta: "Learn more",
+    href: "/dashboard/wallet",
+    accent: "from-fuchsia-500 to-violet-600",
+    slides: [],
+    sponsors: [],
+    trendingLimit: 5,
+    impressions: 0,
+    clicks: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+
+function AdsPage() {
+  const [ads, setAds] = useState<DashboardAd[]>(() => readAds());
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const refresh = () => setAds(readAds());
+    window.addEventListener("rb:dashboard-ads", refresh);
+    return () => window.removeEventListener("rb:dashboard-ads", refresh);
+  }, []);
+
+  const editing = useMemo(() => ads.find((a) => a.id === editingId) ?? null, [ads, editingId]);
+
+  const totalImpressions = ads.reduce((s, a) => s + a.impressions, 0);
+  const totalClicks = ads.reduce((s, a) => s + a.clicks, 0);
+  const ctr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
+  const activeCount = ads.filter((a) => a.active).length;
+
+  const create = () => {
+    const ad = emptyAd();
+    upsertAd(ad);
+    setEditingId(ad.id);
+  };
+
+  const save = (ad: DashboardAd) => {
+    upsertAd(ad);
+    toast.success("Ad saved — live on user dashboards");
+  };
+
+  const remove = (id: string) => {
+    deleteAd(id);
+    if (editingId === id) setEditingId(null);
+    toast.info("Ad deleted");
+  };
+
+  const toggle = (ad: DashboardAd) => {
+    upsertAd({ ...ad, active: !ad.active });
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard Ads"
+        subtitle="Banners shown on top of every user dashboard page. Schedule, prioritize, and track performance."
+        actions={
+          <button
+            onClick={create}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.45)]"
+          >
+            <Plus className="h-3.5 w-3.5" /> New banner
+          </button>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total banners" value={ads.length.toString()} delta="created" />
+        <StatCard label="Active now" value={activeCount.toString()} delta="visible to users" />
+        <StatCard label="Impressions" value={totalImpressions.toLocaleString()} delta="all-time" />
+        <StatCard label="CTR" value={`${ctr}%`} delta={`${totalClicks.toLocaleString()} clicks`} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+        <Panel title="All banners">
+          <div className="space-y-2">
+            {ads.length === 0 && (
+              <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-xs text-muted-foreground">
+                No banners yet. Click "New banner" to create one.
+              </div>
+            )}
+            {ads
+              .slice()
+              .sort((a, b) => b.priority - a.priority)
+              .map((ad) => {
+                const ctrAd = ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : "0.0";
+                return (
+                  <button
+                    key={ad.id}
+                    onClick={() => setEditingId(ad.id)}
+                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+                      editingId === ad.id
+                        ? "border-fuchsia-400/40 bg-white/[0.07]"
+                        : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <div
+                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${ad.accent ?? "from-fuchsia-500 to-violet-600"}`}
+                    >
+                      <FormatIcon format={ad.format} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="truncate text-sm font-semibold text-white">{ad.name}</div>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                            ad.active ? "bg-emerald-500/20 text-emerald-300" : "bg-white/10 text-muted-foreground"
+                          }`}
+                        >
+                          {ad.active ? "Live" : "Off"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <span>{ad.format}</span>
+                        <span>P{ad.priority}</span>
+                        <span className="inline-flex items-center gap-1"><Eye className="h-2.5 w-2.5" /> {ad.impressions}</span>
+                        <span className="inline-flex items-center gap-1"><MousePointerClick className="h-2.5 w-2.5" /> {ad.clicks}</span>
+                        <span>CTR {ctrAd}%</span>
+                      </div>
+                    </div>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); toggle(ad); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); toggle(ad); } }}
+                      className={`grid h-7 w-7 place-items-center rounded-full ${ad.active ? "bg-emerald-500/20 text-emerald-300" : "bg-white/10 text-muted-foreground"} hover:opacity-80`}
+                      aria-label="Toggle active"
+                    >
+                      <Power className="h-3 w-3" />
+                    </div>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); remove(ad.id); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); remove(ad.id); } }}
+                      className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-muted-foreground hover:bg-rose-500/20 hover:text-rose-300"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+        </Panel>
+
+        <Panel title={editing ? `Edit · ${editing.name}` : "Editor"}>
+          {editing ? (
+            <Editor key={editing.id} ad={editing} onSave={save} onClose={() => setEditingId(null)} />
+          ) : (
+            <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-xs text-muted-foreground">
+              Select a banner on the left or create a new one to start editing.
+            </div>
+          )}
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
+function FormatIcon({ format }: { format: AdFormat }) {
+  const f = FORMATS.find((x) => x.value === format);
+  const Icon = f?.icon ?? Megaphone;
+  return <Icon className="h-4 w-4 text-white" />;
+}
+
+function Editor({ ad, onSave, onClose }: { ad: DashboardAd; onSave: (ad: DashboardAd) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState<DashboardAd>(ad);
+  useEffect(() => setDraft(ad), [ad]);
+  const { items: blogPosts } = useAdminCollection<BlogPost>("blog", blogSeed as BlogPost[]);
+
+  const set = <K extends keyof DashboardAd>(k: K, v: DashboardAd[K]) => setDraft((d) => ({ ...d, [k]: v }));
+
+  const addSlide = () =>
+    set("slides", [
+      ...(draft.slides ?? []),
+      { source: "template", label: "New slide", sub: "", href: "/payouts/ftmo", accent: "from-fuchsia-500 to-violet-600" },
+    ]);
+  const updateSlide = (i: number, patch: Partial<AdSlide>) => {
+    const next = (draft.slides ?? []).map((s, idx) => (idx === i ? { ...s, ...patch } : s));
+    set("slides", next);
+  };
+  const removeSlide = (i: number) => set("slides", (draft.slides ?? []).filter((_, idx) => idx !== i));
+
+  const addSponsor = () =>
+    set("sponsors", [
+      ...(draft.sponsors ?? []),
+      { id: `sp-${Math.random().toString(36).slice(2, 8)}`, name: "Brand", initial: "B", color: "from-fuchsia-500 to-violet-600", href: "/", tag: "sponsor" },
+    ]);
+  const updateSponsor = (i: number, patch: Partial<SponsorLogo>) => {
+    const next = (draft.sponsors ?? []).map((s, idx) => (idx === i ? { ...s, ...patch } : s));
+    set("sponsors", next);
+  };
+  const removeSponsor = (i: number) => set("sponsors", (draft.sponsors ?? []).filter((_, idx) => idx !== i));
+
+  const showSlides = draft.format === "carousel" && draft.placement !== "landing-sponsors";
+  const showSponsors = draft.placement === "landing-sponsors";
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Internal name">
+          <input className={inputCls} value={draft.name} onChange={(e) => set("name", e.target.value)} />
+        </Field>
+        <Field label="Priority (higher wins)">
+          <input
+            type="number"
+            className={inputCls}
+            value={draft.priority}
+            onChange={(e) => set("priority", Number(e.target.value) || 0)}
+          />
+        </Field>
+      </div>
+
+      <Field label="Placement">
+        <div className="grid grid-cols-2 gap-2">
+          {PLACEMENTS.map((p) => {
+            const active = (draft.placement ?? "dashboard") === p.value;
+            return (
+              <button
+                key={p.value}
+                onClick={() => {
+                  set("placement", p.value);
+                  if (p.value === "landing-sponsors") set("format", "carousel");
+                  if (p.value === "landing-advertise") set("format", "single");
+                  if (p.value === "landing-hero" && draft.format !== "carousel") set("format", "carousel");
+                }}
+                className={`rounded-xl border p-2.5 text-left transition ${
+                  active ? "border-fuchsia-400/40 bg-fuchsia-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
+                }`}
+              >
+                <div className="text-xs font-semibold text-white">{p.label}</div>
+                <div className="mt-0.5 text-[10px] text-muted-foreground">{p.hint}</div>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      <Field label="Format">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {FORMATS.map((f) => {
+            const Icon = f.icon;
+            const active = draft.format === f.value;
+            return (
+              <button
+                key={f.value}
+                onClick={() => set("format", f.value)}
+                className={`rounded-xl border p-2.5 text-left transition ${
+                  active
+                    ? "border-fuchsia-400/40 bg-fuchsia-500/10"
+                    : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                  <Icon className="h-3.5 w-3.5" /> {f.label}
+                </div>
+                <div className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</div>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      {(draft.format === "marquee" || draft.format === "single") && (
+        <>
+          <Field label="Headline">
+            <input className={inputCls} value={draft.headline ?? ""} onChange={(e) => set("headline", e.target.value)} />
+          </Field>
+          {draft.format === "single" && (
+            <Field label="Subtitle">
+              <input className={inputCls} value={draft.sub ?? ""} onChange={(e) => set("sub", e.target.value)} />
+            </Field>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {draft.format === "single" && (
+              <Field label="CTA label">
+                <input className={inputCls} value={draft.cta ?? ""} onChange={(e) => set("cta", e.target.value)} />
+              </Field>
+            )}
+            <Field label="Link target">
+              <input className={inputCls} value={draft.href ?? ""} onChange={(e) => set("href", e.target.value)} />
+            </Field>
+          </div>
+          <Field label="Accent gradient (Tailwind from-x to-y)">
+            <input className={inputCls} value={draft.accent ?? ""} onChange={(e) => set("accent", e.target.value)} />
+          </Field>
+        </>
+      )}
+
+      {showSlides && (
+        <Field label="Slides (brand template or sourced from blog)">
+          <div className="space-y-2">
+            {(draft.slides ?? []).map((s, i) => (
+              <div key={i} className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <div className="mb-2 flex items-center gap-2 text-[10px]">
+                  <span className="text-muted-foreground">Source:</span>
+                  {(["template", "blog"] as const).map((src) => (
+                    <button
+                      key={src}
+                      onClick={() => updateSlide(i, { source: src, blogId: src === "blog" ? s.blogId : undefined })}
+                      className={`rounded-full px-2 py-0.5 ${
+                        (s.source ?? "template") === src ? "bg-fuchsia-500/30 text-white ring-1 ring-fuchsia-300/40" : "bg-white/5 text-muted-foreground"
+                      }`}
+                    >
+                      {src}
+                    </button>
+                  ))}
+                </div>
+
+                {(s.source ?? "template") === "blog" ? (
+                  <select
+                    className={inputCls}
+                    value={s.blogId ?? ""}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      const post = blogPosts.find((b) => b.id === id);
+                      updateSlide(i, post
+                        ? { blogId: id, label: post.title, sub: post.excerpt || post.tag, href: `/articles/${post.id}`, image: post.cover }
+                        : { blogId: undefined });
+                    }}
+                  >
+                    <option value="">— Pick a blog post —</option>
+                    {blogPosts.map((b) => (
+                      <option key={b.id} value={b.id}>{b.title} {b.status === "draft" ? "(draft)" : ""}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input className={inputCls} placeholder="Label" value={s.label} onChange={(e) => updateSlide(i, { label: e.target.value })} />
+                    <input className={inputCls} placeholder="Sub" value={s.sub ?? ""} onChange={(e) => updateSlide(i, { sub: e.target.value })} />
+                    <input className={inputCls} placeholder="Link (e.g. /payouts/ftmo)" value={s.href} onChange={(e) => updateSlide(i, { href: e.target.value })} />
+                    <select
+                      className={inputCls}
+                      value={s.brandSlug ?? ""}
+                      onChange={(e) => {
+                        const slug = e.target.value;
+                        const brand = TBI_BRANDS.find((b) => b.slug === slug);
+                        updateSlide(i, brand
+                          ? { brandSlug: slug, label: brand.name, href: `/payouts/${slug}`, accent: `from-${brand.logoColor.split(" ")[0].replace("from-", "")}` }
+                          : { brandSlug: undefined });
+                      }}
+                    >
+                      <option value="">— Pick TBI brand (optional) —</option>
+                      {TBI_BRANDS.map((b) => (
+                        <option key={b.slug} value={b.slug}>{b.name}</option>
+                      ))}
+                    </select>
+                    <input className={inputCls} placeholder="Accent (from-x to-y)" value={s.accent ?? ""} onChange={(e) => updateSlide(i, { accent: e.target.value })} />
+                    <input className={inputCls} placeholder="Image URL (optional)" value={s.image ?? ""} onChange={(e) => updateSlide(i, { image: e.target.value })} />
+                  </div>
+                )}
+                <button
+                  onClick={() => removeSlide(i)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-rose-300 hover:text-rose-200"
+                >
+                  <X className="h-3 w-3" /> Remove
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addSlide}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15"
+            >
+              <Plus className="h-3 w-3" /> Add slide
+            </button>
+          </div>
+        </Field>
+      )}
+
+      {showSponsors && (
+        <Field label="Sponsor logos (Featured / Ad / Sponsor tag)">
+          <div className="space-y-2">
+            {(draft.sponsors ?? []).map((s, i) => (
+              <div key={s.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input className={inputCls} placeholder="Brand name" value={s.name} onChange={(e) => updateSponsor(i, { name: e.target.value })} />
+                  <input className={inputCls} placeholder="Initial (e.g. FX)" value={s.initial ?? ""} onChange={(e) => updateSponsor(i, { initial: e.target.value })} />
+                  <input className={inputCls} placeholder="Color gradient (from-x to-y)" value={s.color ?? ""} onChange={(e) => updateSponsor(i, { color: e.target.value })} />
+                  <input className={inputCls} placeholder="Link (e.g. /payouts/ftmo)" value={s.href ?? ""} onChange={(e) => updateSponsor(i, { href: e.target.value })} />
+                  <select
+                    className={inputCls}
+                    value={s.tag ?? "sponsor"}
+                    onChange={(e) => updateSponsor(i, { tag: e.target.value as SponsorLogo["tag"] })}
+                  >
+                    <option value="sponsor">Sponsor</option>
+                    <option value="featured">Featured</option>
+                    <option value="ad">Ad</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => removeSponsor(i)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-rose-300 hover:text-rose-200"
+                >
+                  <X className="h-3 w-3" /> Remove
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addSponsor}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15"
+            >
+              <Plus className="h-3 w-3" /> Add sponsor
+            </button>
+          </div>
+        </Field>
+      )}
+
+      {draft.format === "trending" && (
+        <Field label="How many trending brands to show">
+          <input
+            type="number"
+            min={2}
+            max={8}
+            className={inputCls}
+            value={draft.trendingLimit ?? 5}
+            onChange={(e) => set("trendingLimit", Math.max(2, Math.min(8, Number(e.target.value) || 5)))}
+          />
+        </Field>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Start date (optional)">
+          <input
+            type="date"
+            className={inputCls}
+            value={draft.startAt ? draft.startAt.slice(0, 10) : ""}
+            onChange={(e) => set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+          />
+        </Field>
+        <Field label="End date (optional)">
+          <input
+            type="date"
+            className={inputCls}
+            value={draft.endAt ? draft.endAt.slice(0, 10) : ""}
+            onChange={(e) => set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+          />
+        </Field>
+      </div>
+
+      <label className="flex items-center gap-2 text-xs text-white">
+        <input
+          type="checkbox"
+          checked={draft.active}
+          onChange={(e) => set("active", e.target.checked)}
+          className="h-4 w-4 rounded border-white/20 bg-white/10"
+        />
+        Active (visible to all users)
+      </label>
+
+      <div className="flex items-center gap-2 pt-2">
+        <button
+          onClick={() => onSave(draft)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(16,185,129,0.45)]"
+        >
+          <Save className="h-3.5 w-3.5" /> Save changes
+        </button>
+        <button
+          onClick={onClose}
+          className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const inputCls =
+  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:outline-none";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}

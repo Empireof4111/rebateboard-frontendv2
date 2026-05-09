@@ -1,0 +1,1018 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FlaskConical, Upload, Sparkles, Calendar, FileText,
+  BookOpen, Zap, GitCompare, Wallet, AlertTriangle,
+  CheckCircle2, Info, Plus, Play, Save, Pencil, Brain, ShieldAlert,
+  FileUp, X,
+} from "lucide-react";
+import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
+import { mockTrades, aiInsights, importSources, type BacktestReport } from "@/lib/backtest-data";
+import {
+  useReports, useTemplates,
+  addReport, addTemplate, addImport, deleteReport,
+  setPreset, consumePreset,
+} from "@/lib/backtest-store";
+import {
+  parseCsv, autoMap, aggregate, TRADE_FIELDS,
+  type ParsedCsv, type TradeField,
+} from "@/lib/csv-parser";
+import { buildEquityCurve, pathFromCurve, buildCalendar } from "@/lib/chart-utils";
+import { generateInsights, interpretStrategy } from "@/lib/backtest-ai";
+
+export const Route = createFileRoute("/dashboard/backtest")({
+  head: () => ({
+    meta: [
+      { title: "AI Backtest Lab — RebateBoard" },
+      { name: "description", content: "Backtest strategies and analyze real trades with AI-powered insights." },
+    ],
+  }),
+  component: BacktestLab,
+});
+
+type Tab =
+  | "overview" | "new" | "real" | "reports" | "calendar"
+  | "templates" | "insights" | "compare" | "saved";
+
+const tabs: { id: Tab; label: string; icon: typeof FlaskConical }[] = [
+  { id: "overview", label: "Overview", icon: FlaskConical },
+  { id: "new", label: "New Strategy", icon: Plus },
+  { id: "real", label: "Real Trades", icon: Upload },
+  { id: "reports", label: "Reports", icon: FileText },
+  { id: "calendar", label: "Calendar", icon: Calendar },
+  { id: "templates", label: "Templates", icon: BookOpen },
+  { id: "insights", label: "AI Insights", icon: Sparkles },
+  { id: "compare", label: "Compare", icon: GitCompare },
+  { id: "saved", label: "Saved", icon: Save },
+];
+
+function BacktestLab() {
+  const [tab, setTab] = useState<Tab>("overview");
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="AI Backtest Lab"
+        subtitle="Trade Intelligence • Stop guessing. Backtest your strategy and your real trades in minutes."
+       actions={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500/20 to-violet-600/20 px-3 py-1.5 text-[11px] font-semibold text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+            <Sparkles className="h-3.5 w-3.5" /> NEW
+          </span>
+        }
+      />
+
+      <div className="glass flex flex-wrap gap-1 rounded-2xl p-1.5">
+        {tabs.map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+                active
+                  ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_20px_rgba(192,132,252,0.4)]"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "overview" && <Overview onNav={setTab} />}
+      {tab === "new" && <NewStrategy onRun={() => setTab("reports")} onSavedTemplate={() => setTab("templates")} />}
+      {tab === "real" && <RealTrades onAnalyze={() => setTab("reports")} />}
+      {tab === "reports" && <Reports />}
+      {tab === "calendar" && <CalendarView />}
+      {tab === "templates" && <Templates onUse={() => setTab("new")} />}
+      {tab === "insights" && <Insights />}
+      {tab === "compare" && <Compare />}
+      {tab === "saved" && <Saved />}
+
+      <Disclaimer />
+    </div>
+  );
+}
+
+function Overview({ onNav }: { onNav: (t: Tab) => void }) {
+  const reports = useReports();
+  const templates = useTemplates();
+  const best = reports.reduce((b, r) => (r.profitFactor > (b?.profitFactor ?? 0) ? r : b), reports[0]);
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Total Backtests" value={String(reports.length)} hint="+3 this week" trend="up" accent="primary" />
+        <StatCard label="Saved Strategies" value={String(templates.length)} hint={`${templates.length} templates`} accent="primary" />
+        <StatCard label="Best Strategy" value={best?.name.slice(0, 16) ?? "—"} hint={`PF ${best?.profitFactor.toFixed(2) ?? "—"}`} trend="up" accent="success" />
+        <StatCard label="Real Trading Score" value="62/100" hint="Discipline 71%" accent="warning" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Fees Analyzed" value="$1,840" accent="primary" />
+        <StatCard label="Cashback Earned" value="$612" trend="up" accent="success" />
+        <StatCard label="Cashback Missed" value="$284" trend="down" accent="destructive" />
+        <StatCard label="Last Report" value={reports[0]?.createdAt ?? "—"} accent="primary" />
+      </div>
+
+      <Panel title="Quick actions">
+        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
+          {[
+            { label: "Run New Backtest", icon: Play, t: "new" as Tab, color: "from-emerald-500 to-teal-600" },
+            { label: "Upload Trade History", icon: Upload, t: "real" as Tab, color: "from-fuchsia-500 to-violet-600" },
+            { label: "Connect Wallet", icon: Wallet, t: "real" as Tab, color: "from-amber-500 to-orange-600" },
+            { label: "Compare Strategy vs Real", icon: GitCompare, t: "compare" as Tab, color: "from-cyan-500 to-blue-600" },
+            { label: "View AI Insights", icon: Brain, t: "insights" as Tab, color: "from-pink-500 to-rose-600" },
+          ].map((a) => {
+            const Icon = a.icon;
+            return (
+              <button
+                key={a.label}
+                onClick={() => onNav(a.t)}
+                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${a.color} p-4 text-left text-white transition hover:scale-[1.02]`}
+              >
+                <Icon className="mb-2 h-5 w-5" />
+                <div className="text-sm font-semibold">{a.label}</div>
+              </button>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <Panel title="Recent reports">
+        <ReportsTable rows={reports} compact />
+      </Panel>
+    </div>
+  );
+}
+
+function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTemplate: () => void }) {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [form, setForm] = useState({
+    name: "London Range Break", market: "Forex", symbol: "EURUSD", timeframe: "15m",
+    session: "London", range: "6 months", startBalance: "10000", riskPerTrade: "1", maxTrades: "3",
+    description: "",
+  });
+  const [interpretation, setInterpretation] = useState<{ entry: string; exit: string; risk: string; filters: string; invalidation: string; fees: string } | null>(null);
+  const [interpretLoading, setInterpretLoading] = useState(false);
+  const [interpretErr, setInterpretErr] = useState<string>("");
+
+  // Consume preset from Templates tab once on mount.
+  useEffect(() => {
+    const p = consumePreset();
+    if (p) {
+      setForm((s) => ({
+        ...s,
+        name: p.name, market: p.market, symbol: p.symbol, timeframe: p.timeframe,
+        session: p.session, range: p.range,
+        startBalance: String(p.startBalance), riskPerTrade: String(p.riskPerTrade),
+        description: p.description || "",
+      }));
+      setInterpretation({
+        entry: p.rules.entry, exit: p.rules.exit, risk: p.rules.risk,
+        filters: p.rules.filters, invalidation: p.rules.invalidation, fees: p.rules.fees,
+      });
+      setStep(2);
+    }
+  }, []);
+
+  const upd = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((s) => ({ ...s, [k]: e.target.value }));
+
+  const fields: { l: string; k: keyof typeof form }[] = [
+    { l: "Strategy name", k: "name" },
+    { l: "Market", k: "market" },
+    { l: "Symbol", k: "symbol" },
+    { l: "Timeframe", k: "timeframe" },
+    { l: "Session", k: "session" },
+    { l: "Date range", k: "range" },
+    { l: "Starting balance", k: "startBalance" },
+    { l: "Risk per trade %", k: "riskPerTrade" },
+    { l: "Max trades / day", k: "maxTrades" },
+  ];
+
+  const interpret = async () => {
+    setInterpretErr(""); setInterpretLoading(true);
+    try {
+      const res = await interpretStrategy({
+        data: {
+          description: form.description, symbol: form.symbol, timeframe: form.timeframe,
+          session: form.session, riskPerTrade: form.riskPerTrade, maxTrades: form.maxTrades,
+        },
+      });
+      setInterpretation(res.interpretation);
+      setStep(2);
+    } catch (e: any) {
+      setInterpretErr(e?.message ?? "Interpretation failed");
+    } finally { setInterpretLoading(false); }
+  };
+
+  const rules = interpretation ?? {
+    entry: `Break of ${form.session} session range, retest of structure.`,
+    exit: "TP at 2R, SL below/above range. Trailing after 1R.",
+    risk: `${form.riskPerTrade}% per trade, max ${form.maxTrades}/day, daily loss cap 3%.`,
+    filters: `${form.session} session on ${form.symbol} (${form.timeframe}). No news within 30min.`,
+    invalidation: "Skip if range > 60 pips or volatility ATR < 12.",
+    fees: "Spread 0.8 pip, commission $7/lot. Cashback +$2.3/lot.",
+  };
+
+  const saveTemplate = () => {
+    addTemplate({
+      name: form.name, market: form.market, symbol: form.symbol, timeframe: form.timeframe,
+      session: form.session, range: form.range,
+      startBalance: Number(form.startBalance) || 10000,
+      riskPerTrade: Number(form.riskPerTrade) || 1,
+      description: form.description,
+      rules,
+    });
+    onSavedTemplate();
+  };
+
+  const runBacktest = () => {
+    setStep(3);
+    setTimeout(() => {
+      addReport({
+        name: form.name, market: form.market, symbol: form.symbol, timeframe: form.timeframe,
+        session: form.session, range: form.range,
+        netPnl: Math.round(2000 + Math.random() * 4000),
+        winRate: 52 + Math.round(Math.random() * 15),
+        profitFactor: +(1.3 + Math.random() * 0.9).toFixed(2),
+        avgRR: +(1.6 + Math.random() * 0.8).toFixed(2),
+        trades: 80 + Math.round(Math.random() * 120),
+        wins: 50, losses: 35, breakeven: 5,
+        maxDD: -Math.round(400 + Math.random() * 800),
+        bestDay: "Tue", worstDay: "Mon",
+        bestMonth: "Mar 2025", worstMonth: "Jan 2025",
+        longestWin: 7, longestLoss: 4, avgDuration: "2h 12m",
+        riskOfRuin: "Low",
+        source: "ai-strategy",
+      });
+      onRun();
+    }, 900);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {[1, 2, 3].map((s) => (
+          <span
+            key={s}
+            className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
+              step >= s ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "bg-white/10 text-muted-foreground"
+            }`}
+          >
+            {s}
+          </span>
+        ))}
+        <span>Step {step} of 3 — {step === 1 ? "Describe Strategy" : step === 2 ? "AI Interpretation" : "Run Backtest"}</span>
+      </div>
+
+      {step === 1 && (
+        <Panel title="Describe your strategy in natural language">
+          <textarea
+            value={form.description}
+            onChange={upd("description")}
+            placeholder="I trade EURUSD during London on the 15m timeframe. I enter on Asian range break, SL below range, TP at 2R, risk 1% per trade, avoid news, only Tue–Thu…"
+            className="min-h-[120px] w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none placeholder:text-muted-foreground focus:border-fuchsia-400/40"
+          />
+          <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {fields.map((f) => (
+              <div key={f.k}>
+                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">{f.l}</label>
+                <input
+                  value={form[f.k]}
+                  onChange={upd(f.k)}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {["News filter", "Cashback impact", "Trailing stop", "Break-even rule"].map((t) => (
+              <label key={t} className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-white">
+                <input type="checkbox" defaultChecked className="accent-fuchsia-500" /> {t}
+              </label>
+            ))}
+          </div>
+          {interpretErr && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-300 ring-1 ring-rose-400/30">
+              <AlertTriangle className="h-3.5 w-3.5" /> {interpretErr}
+            </div>
+          )}
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              onClick={() => { setInterpretation(null); setStep(2); }}
+              className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white"
+            >
+              Skip — use defaults
+            </button>
+            <button
+              onClick={interpret}
+              disabled={interpretLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {interpretLoading
+                ? <span className="h-3.5 w-3.5 animate-spin rounded-full border border-white border-t-transparent" />
+                : <Sparkles className="h-3.5 w-3.5" />}
+              {interpretLoading ? "Interpreting…" : "Interpret with AI →"}
+            </button>
+          </div>
+        </Panel>
+      )}
+
+      {step === 2 && (
+        <Panel title={interpretation ? "AI interpretation of your strategy" : "Default rule preview"}>
+          <div className="grid gap-3 md:grid-cols-2">
+            {[
+              { t: "Entry rules", v: rules.entry },
+              { t: "Exit rules", v: rules.exit },
+              { t: "Risk rules", v: rules.risk },
+              { t: "Filters", v: rules.filters },
+              { t: "Invalidation", v: rules.invalidation },
+              { t: "Fees & cashback", v: rules.fees },
+            ].map((c) => (
+              <div key={c.t} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-[11px] uppercase tracking-wider text-fuchsia-300">{c.t}</div>
+                <div className="mt-1 text-sm text-white/90">{c.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-sm text-white">
+              <Pencil className="h-3.5 w-3.5" /> Edit Rules
+            </button>
+            <button onClick={saveTemplate} className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-sm text-white">
+              <Save className="h-3.5 w-3.5" /> Save as Template
+            </button>
+            <button onClick={runBacktest} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-sm font-semibold text-white">
+              <Play className="h-3.5 w-3.5" /> Confirm & Run Backtest
+            </button>
+          </div>
+        </Panel>
+      )}
+
+      {step === 3 && (
+        <Panel title="Running backtest…">
+          <div className="grid place-items-center py-12">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" />
+            <p className="mt-3 text-sm text-muted-foreground">Crunching 6 months of EURUSD 15m data…</p>
+          </div>
+        </Panel>
+      )}
+    </div>
+  );
+}
+
+function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [parsed, setParsed] = useState<ParsedCsv | null>(null);
+  const [fileName, setFileName] = useState<string>("");
+  const [mapping, setMapping] = useState<Record<TradeField, string | null>>(
+    {} as Record<TradeField, string | null>,
+  );
+  const [meta, setMeta] = useState({
+    source: "MT5 Statement", account: "IC Markets",
+    range: "Q1 2026", startBalance: "5000", currency: "USD",
+  });
+  const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string>("");
+
+  const stats = useMemo(
+    () => (parsed ? aggregate(parsed.rows, mapping) : null),
+    [parsed, mapping],
+  );
+
+  const handleFiles = async (files: FileList | null) => {
+    setError("");
+    const file = files?.[0];
+    if (!file) return;
+    if (!/\.(csv|txt)$/i.test(file.name)) {
+      setError("Please upload a .csv or .txt file. (Excel/HTML statements coming soon.)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File too large (max 5MB).");
+      return;
+    }
+    const text = await file.text();
+    const p = parseCsv(text);
+    if (!p.headers.length) { setError("Could not detect any columns in this file."); return; }
+    setParsed(p);
+    setFileName(file.name);
+    setMapping(autoMap(p.headers));
+  };
+
+  const reset = () => { setParsed(null); setFileName(""); setMapping({} as any); setError(""); };
+
+  const analyze = () => {
+    if (!parsed || !stats) return;
+    addImport({
+      source: meta.source, account: meta.account, range: meta.range,
+      startBalance: Number(meta.startBalance) || 0,
+      currency: meta.currency, trades: stats.trades,
+    });
+    addReport({
+      name: `Live Trading — ${meta.account}`,
+      market: "Mixed", symbol: "Multi", timeframe: "Mixed",
+      session: "Mixed", range: meta.range,
+      netPnl: stats.netPnl,
+      winRate: stats.winRate,
+      profitFactor: stats.profitFactor,
+      avgRR: stats.avgRR,
+      trades: stats.trades, wins: stats.wins, losses: stats.losses, breakeven: stats.breakeven,
+      maxDD: stats.maxDD,
+      bestDay: stats.bestDay, worstDay: stats.worstDay,
+      bestMonth: "—", worstMonth: "—",
+      longestWin: 0, longestLoss: 0, avgDuration: "—",
+      riskOfRuin: stats.profitFactor < 1 ? "High" : stats.profitFactor < 1.3 ? "Medium" : "Low",
+      source: "real-trades",
+    });
+    onAnalyze();
+  };
+
+  return (
+    <div className="space-y-4">
+      {!parsed && (
+        <Panel title="Connect or upload trading data">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <button
+              onClick={() => fileRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+              className={`group rounded-2xl border border-dashed p-5 text-left transition ${
+                dragOver ? "border-fuchsia-400 bg-fuchsia-500/10" : "border-white/15 bg-white/5 hover:border-fuchsia-400/40 hover:bg-fuchsia-500/5"
+              }`}
+            >
+              <Upload className="mb-2 h-5 w-5 text-fuchsia-300" />
+              <div className="text-sm font-semibold text-white">Upload CSV / Statement</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">Drag, drop or click. Max 5MB.</div>
+            </button>
+            {[
+              { l: "Connect Exchange API", icon: Zap, hint: "Read-only — coming soon" },
+              { l: "Paste Wallet Address", icon: Wallet, hint: "On-chain trades — coming soon" },
+              { l: "Manual Trade Import", icon: Pencil, hint: "Use journal Add Trade" },
+            ].map((c) => {
+              const Icon = c.icon;
+              return (
+                <div key={c.l} className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-5 opacity-60">
+                  <Icon className="mb-2 h-5 w-5 text-fuchsia-300" />
+                  <div className="text-sm font-semibold text-white">{c.l}</div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">{c.hint}</div>
+                </div>
+              );
+            })}
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,.txt,text/csv"
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+          {error && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-300 ring-1 ring-rose-400/30">
+              <AlertTriangle className="h-3.5 w-3.5" /> {error}
+            </div>
+          )}
+          <Panel title="Supported sources" >
+            <div className="flex flex-wrap gap-2">
+              {importSources.map((s) => (
+                <span key={s} className="rounded-full bg-white/5 px-3 py-1 text-[11px] text-white/85 ring-1 ring-white/10">{s}</span>
+              ))}
+            </div>
+          </Panel>
+        </Panel>
+      )}
+
+      {parsed && (
+        <>
+          <Panel
+            title={`Imported: ${fileName}`}
+            action={
+              <button onClick={reset} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2.5 py-1 text-[11px] text-white">
+                <X className="h-3 w-3" /> Remove
+              </button>
+            }
+          >
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <Pill tone="success"><FileUp className="mr-1 inline h-3 w-3" /> {parsed.rawCount} rows</Pill>
+              <Pill tone="default">{parsed.headers.length} columns</Pill>
+              <span className="text-muted-foreground">Review the column mapping below, then analyze.</span>
+            </div>
+          </Panel>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Panel title="Account details">
+              <div className="space-y-3">
+                {([
+                  { l: "Platform / Provider", k: "source" as const },
+                  { l: "Account name", k: "account" as const },
+                  { l: "Date range", k: "range" as const },
+                  { l: "Starting balance", k: "startBalance" as const },
+                  { l: "Currency", k: "currency" as const },
+                ]).map((f) => (
+                  <div key={f.k}>
+                    <label className="text-[10px] uppercase tracking-wider text-muted-foreground">{f.l}</label>
+                    <input
+                      value={meta[f.k]}
+                      onChange={(e) => setMeta((s) => ({ ...s, [f.k]: e.target.value }))}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="Column mapping">
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                {TRADE_FIELDS.map((f) => (
+                  <div key={f} className="flex items-center justify-between gap-2 rounded-lg bg-white/5 px-3 py-2">
+                    <span className="capitalize text-white">{f}</span>
+                    <select
+                      value={mapping[f] ?? ""}
+                      onChange={(e) =>
+                        setMapping((m) => ({ ...m, [f]: e.target.value || null }))
+                      }
+                      className="max-w-[60%] rounded-md border border-white/10 bg-background px-2 py-1 text-xs text-white"
+                    >
+                      <option value="">— skip —</option>
+                      {parsed.headers.map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </div>
+
+          {stats && (
+            <Panel title="Live preview (computed from mapping)">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <StatCard label="Trades" value={String(stats.trades)} accent="primary" />
+                <StatCard label="Net P&L" value={`${stats.netPnl >= 0 ? "+" : ""}$${stats.netPnl.toLocaleString()}`} trend={stats.netPnl >= 0 ? "up" : "down"} accent={stats.netPnl >= 0 ? "success" : "destructive"} />
+                <StatCard label="Win Rate" value={`${stats.winRate}%`} accent="primary" />
+                <StatCard label="Profit Factor" value={stats.profitFactor.toFixed(2)} accent={stats.profitFactor >= 1.3 ? "success" : "warning"} />
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <StatCard label="Wins / Losses" value={`${stats.wins} / ${stats.losses}`} accent="primary" />
+                <StatCard label="Fees" value={`$${stats.fees.toLocaleString()}`} accent="warning" />
+                <StatCard label="Max Drawdown" value={`$${stats.maxDD.toLocaleString()}`} trend="down" accent="destructive" />
+                <StatCard label="Best / Worst Day" value={`${stats.bestDay} / ${stats.worstDay}`} accent="primary" />
+              </div>
+            </Panel>
+          )}
+
+          <Panel title="Preview rows (first 8)">
+            <div className="-mx-5 overflow-x-auto px-5">
+              <table className="w-full text-left text-xs">
+                <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <tr>{parsed.headers.map((h) => <th key={h} className="px-2 py-2 whitespace-nowrap">{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {parsed.rows.slice(0, 8).map((r, i) => (
+                    <tr key={i} className="border-t border-white/5 text-white/90">
+                      {parsed.headers.map((h) => (
+                        <td key={h} className="px-2 py-2 whitespace-nowrap">{r[h]}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <button onClick={reset} className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white">Cancel</button>
+            <button
+              onClick={analyze}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              <Brain className="h-4 w-4" /> Analyze with AI
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Reports() {
+  const reports = useReports();
+  const r = reports[0];
+  if (!r) return <Panel title="No reports yet"><p className="text-sm text-muted-foreground">Run a backtest or import trades to see results here.</p></Panel>;
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Net P&L" value={`$${r.netPnl.toLocaleString()}`} hint="after fees + cashback" trend="up" accent="success" />
+        <StatCard label="Win Rate" value={`${r.winRate}%`} accent="primary" />
+        <StatCard label="Profit Factor" value={r.profitFactor.toFixed(2)} accent="primary" />
+        <StatCard label="Avg RR" value={r.avgRR.toFixed(2)} accent="primary" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Trades" value={String(r.trades)} accent="primary" />
+        <StatCard label="Max Drawdown" value={`$${r.maxDD}`} trend="down" accent="destructive" />
+        <StatCard label="Best / Worst Day" value={`${r.bestDay} / ${r.worstDay}`} accent="primary" />
+        <StatCard label="Risk of Ruin" value={r.riskOfRuin} accent="warning" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Equity curve">
+          <ReportChart report={r} kind="equity" />
+        </Panel>
+        <Panel title="Drawdown curve">
+          <ReportChart report={r} kind="drawdown" />
+        </Panel>
+      </div>
+
+      <Panel title="Trade-by-trade">
+        <div className="-mx-5 overflow-x-auto px-5">
+          <table className="w-full text-left text-xs">
+            <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <tr>
+                {["Date", "Symbol", "Side", "Entry", "SL", "TP", "Exit", "Result", "RR", "P&L", "Fees", "Cashback"].map((h) => (
+                  <th key={h} className="px-2 py-2">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {mockTrades.map((t) => (
+                <tr key={t.id} className="border-t border-white/5 text-white/90">
+                  <td className="px-2 py-2">{t.date}</td>
+                  <td className="px-2 py-2">{t.symbol}</td>
+                  <td className="px-2 py-2">{t.side}</td>
+                  <td className="px-2 py-2">{t.entry.toFixed(4)}</td>
+                  <td className="px-2 py-2">{t.sl.toFixed(4)}</td>
+                  <td className="px-2 py-2">{t.tp.toFixed(4)}</td>
+                  <td className="px-2 py-2">{t.exit.toFixed(4)}</td>
+                  <td className="px-2 py-2">
+                    <Pill tone={t.result === "Win" ? "success" : t.result === "Loss" ? "destructive" : "default"}>{t.result}</Pill>
+                  </td>
+                  <td className="px-2 py-2">{t.rr}</td>
+                  <td className={`px-2 py-2 font-semibold ${t.pnl >= 0 ? "text-emerald-300" : "text-rose-300"}`}>${t.pnl}</td>
+                  <td className="px-2 py-2 text-muted-foreground">${t.fees}</td>
+                  <td className="px-2 py-2 text-emerald-300">+${t.cashback}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Insights />
+    </div>
+  );
+}
+
+function CalendarView() {
+  const reports = useReports();
+  const [reportId, setReportId] = useState<string>(reports[0]?.id ?? "");
+  const r = reports.find((x) => x.id === reportId) ?? reports[0];
+
+  if (!r) return <Panel title="Trade Calendar"><p className="text-sm text-muted-foreground">No reports yet — run a backtest or import trades.</p></Panel>;
+
+  const cells = buildCalendar({ reportId: r.id, netPnl: r.netPnl, trades: r.trades, bestDay: r.bestDay });
+  const tone = (t: typeof cells[number]["tone"]) =>
+    t === "up" ? "bg-emerald-500/30 ring-emerald-400/40"
+    : t === "down" ? "bg-rose-500/30 ring-rose-400/40"
+    : t === "warn" ? "bg-amber-500/30 ring-amber-400/40"
+    : "bg-white/5 ring-white/10";
+
+  return (
+    <Panel
+      title="Trade Calendar"
+      action={
+        <select value={r.id} onChange={(e) => setReportId(e.target.value)} className="rounded-lg border border-white/10 bg-background px-2 py-1 text-xs text-white">
+          {reports.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
+      }
+    >
+      <div className="mb-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+        <Legend color="bg-emerald-500/40" label="Profitable" />
+        <Legend color="bg-rose-500/40" label="Losing" />
+        <Legend color="bg-amber-500/40" label="Big loss" />
+        <Legend color="bg-white/10" label="No trades" />
+      </div>
+      <div className="grid grid-cols-7 gap-2">
+        {cells.map((c) => (
+          <div key={c.day} className={`aspect-square rounded-lg ring-1 ${tone(c.tone)} p-2 text-[10px] text-white/80`}>
+            <div>{c.day}</div>
+            {c.pnl !== 0 && (
+              <div className={`mt-1 font-semibold ${c.pnl > 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                {c.pnl > 0 ? "+" : ""}${Math.round(c.pnl)}
+              </div>
+            )}
+            {c.trades > 0 && <div className="text-[9px] text-muted-foreground">{c.trades}t</div>}
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function Templates({ onUse }: { onUse: () => void }) {
+  const tmpl = useTemplates();
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {tmpl.length === 0 && <p className="text-sm text-muted-foreground">No saved templates yet.</p>}
+      {tmpl.map((t) => (
+        <div key={t.id} className="glass rounded-2xl p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-white">{t.name}</div>
+              <div className="text-[11px] text-muted-foreground">{t.market} • {t.symbol} • {t.timeframe} • saved {t.createdAt}</div>
+              {t.description && <div className="mt-2 line-clamp-2 text-[11px] text-white/70">{t.description}</div>}
+            </div>
+            <button
+              onClick={() => { setPreset(t); onUse(); }}
+              className="shrink-0 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white"
+            >
+              Use Template
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Insights() {
+  const reports = useReports();
+  const report = reports[0];
+  const [items, setItems] = useState<{ title: string; text: string; tone: "success" | "warn" | "info" | "danger" }[]>(
+    aiInsights as any,
+  );
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string>("");
+
+  const map = {
+    success: { ring: "ring-emerald-400/40", icon: CheckCircle2, color: "text-emerald-300" },
+    warn: { ring: "ring-amber-400/40", icon: AlertTriangle, color: "text-amber-300" },
+    info: { ring: "ring-cyan-400/40", icon: Info, color: "text-cyan-300" },
+    danger: { ring: "ring-rose-400/40", icon: ShieldAlert, color: "text-rose-300" },
+  } as const;
+
+  const run = async () => {
+    if (!report) { setErr("Run a backtest or import trades first."); return; }
+    setLoading(true); setErr("");
+    try {
+      const res = await generateInsights({
+        data: {
+          report: {
+            name: report.name, market: report.market, symbol: report.symbol,
+            timeframe: report.timeframe, range: report.range,
+            netPnl: report.netPnl, winRate: report.winRate,
+            profitFactor: report.profitFactor, avgRR: report.avgRR,
+            trades: report.trades, wins: report.wins, losses: report.losses,
+            maxDD: report.maxDD, bestDay: report.bestDay, worstDay: report.worstDay,
+            source: report.source,
+          },
+        },
+      });
+      setItems(res.insights);
+    } catch (e: any) {
+      setErr(e?.message ?? "Failed to generate insights");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <Panel
+      title="AI Trade Intelligence"
+      action={
+        <button
+          onClick={run}
+          disabled={loading || !report}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+        >
+          {loading ? <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" /> : <Sparkles className="h-3 w-3" />}
+          {loading ? "Analyzing…" : "Generate AI Insights"}
+        </button>
+      }
+    >
+      {err && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-300 ring-1 ring-rose-400/30">
+          <AlertTriangle className="h-3.5 w-3.5" /> {err}
+        </div>
+      )}
+      <div className="grid gap-3 md:grid-cols-2">
+        {items.map((i) => {
+          const cfg = map[i.tone];
+          const Icon = cfg.icon;
+          return (
+            <div key={i.title} className={`rounded-xl bg-white/5 p-4 ring-1 ${cfg.ring}`}>
+              <div className={`flex items-center gap-2 text-sm font-semibold ${cfg.color}`}>
+                <Icon className="h-4 w-4" /> {i.title}
+              </div>
+              <p className="mt-2 text-xs text-white/85">{i.text}</p>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+}
+
+function Compare() {
+  const reports = useReports();
+  const backtests = reports.filter((r) => r.source === "ai-strategy");
+  const liveTrades = reports.filter((r) => r.source === "real-trades");
+
+  const [aId, setAId] = useState<string>(backtests[0]?.id ?? "");
+  const [bId, setBId] = useState<string>(liveTrades[0]?.id ?? "");
+
+  const a = backtests.find((r) => r.id === aId) ?? backtests[0];
+  const b = liveTrades.find((r) => r.id === bId) ?? liveTrades[0];
+
+  if (!a || !b) {
+    return (
+      <Panel title="Backtest vs Real Execution">
+        <div className="flex flex-col items-start gap-2 py-6 text-sm text-muted-foreground">
+          <p>You need at least <strong className="text-white">one backtest</strong> and <strong className="text-white">one imported trade history</strong> to compare.</p>
+          <div className="flex gap-2 text-[11px]">
+            <Pill tone={a ? "success" : "warning"}>{a ? "✓" : "—"} Backtest</Pill>
+            <Pill tone={b ? "success" : "warning"}>{b ? "✓" : "—"} Real trades</Pill>
+          </div>
+        </div>
+      </Panel>
+    );
+  }
+
+  const fmtPnl = (n: number) => `${n >= 0 ? "+" : ""}$${n.toLocaleString()}`;
+  const rows = [
+    { l: "Win Rate", a: `${a.winRate}%`, b: `${b.winRate}%`, gap: a.winRate - b.winRate, unit: "%" },
+    { l: "Profit Factor", a: a.profitFactor.toFixed(2), b: b.profitFactor.toFixed(2), gap: a.profitFactor - b.profitFactor, unit: "" },
+    { l: "Avg RR", a: a.avgRR.toFixed(2), b: b.avgRR.toFixed(2), gap: a.avgRR - b.avgRR, unit: "" },
+    { l: "Max Drawdown", a: `$${a.maxDD.toLocaleString()}`, b: `$${b.maxDD.toLocaleString()}`, gap: b.maxDD - a.maxDD, unit: "" },
+    { l: "Net P&L", a: fmtPnl(a.netPnl), b: fmtPnl(b.netPnl), gap: a.netPnl - b.netPnl, unit: "" },
+    { l: "Trades", a: String(a.trades), b: String(b.trades), gap: a.trades - b.trades, unit: "" },
+  ];
+
+  const norm = (x: number, ref: number) => (ref ? Math.max(0, Math.min(1, x / ref)) : 0);
+  const discipline = Math.round(
+    ((norm(b.winRate, a.winRate) + norm(b.profitFactor, a.profitFactor) + norm(b.avgRR, a.avgRR)) / 3) * 100,
+  );
+  const executionGap = 100 - discipline;
+
+  return (
+    <div className="space-y-4">
+      <Panel title="Select reports to compare">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-emerald-300">Backtest (A)</label>
+            <select value={a.id} onChange={(e) => setAId(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-background px-3 py-2 text-sm text-white">
+              {backtests.map((r) => <option key={r.id} value={r.id}>{r.name} • {r.symbol}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-fuchsia-300">Real Trading (B)</label>
+            <select value={b.id} onChange={(e) => setBId(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-background px-3 py-2 text-sm text-white">
+              {liveTrades.map((r) => <option key={r.id} value={r.id}>{r.name} • {r.symbol}</option>)}
+            </select>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel title="Backtest vs Real Execution">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="py-2">Metric</th>
+                <th className="py-2 text-emerald-300">Backtest</th>
+                <th className="py-2 text-fuchsia-300">Real Trading</th>
+                <th className="py-2">Gap</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const better = r.gap > 0;
+                return (
+                  <tr key={r.l} className="border-t border-white/5 text-white/90">
+                    <td className="py-2">{r.l}</td>
+                    <td className="py-2">{r.a}</td>
+                    <td className="py-2">{r.b}</td>
+                    <td className={`py-2 ${better ? "text-rose-300" : "text-emerald-300"}`}>
+                      {better ? "−" : "+"}{Math.abs(r.gap).toFixed(r.unit === "%" ? 0 : 2)}{r.unit}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel title="Execution analysis">
+        <div className="grid gap-3 md:grid-cols-3">
+          <StatCard label="Discipline Score" value={`${discipline}/100`} accent={discipline >= 75 ? "success" : discipline >= 50 ? "warning" : "destructive"} />
+          <StatCard label="Execution Gap" value={`${executionGap}%`} trend={executionGap > 25 ? "down" : "up"} accent={executionGap > 25 ? "destructive" : "success"} />
+          <StatCard label="Net Δ (A − B)" value={fmtPnl(a.netPnl - b.netPnl)} accent={a.netPnl - b.netPnl > 0 ? "warning" : "success"} />
+        </div>
+        <p className="mt-3 text-sm text-white/85">
+          {discipline >= 75
+            ? "Strong execution — your real trading closely mirrors the backtest edge."
+            : discipline >= 50
+            ? "Moderate execution drift. Review entries, exits, and risk management for inconsistencies vs your plan."
+            : "Significant execution gap. Your real trading deviates heavily from the tested strategy. Run AI Insights for specifics."}
+        </p>
+      </Panel>
+    </div>
+  );
+}
+
+function Saved() {
+  const reports = useReports();
+  return (
+    <Panel title="Saved reports" action={
+      <span className="text-[11px] text-muted-foreground">{reports.length} total</span>
+    }>
+      {reports.length === 0
+        ? <p className="text-sm text-muted-foreground">No reports saved yet.</p>
+        : <ReportsTable rows={reports} onDelete={deleteReport} />}
+    </Panel>
+  );
+}
+
+function ReportsTable({ rows, compact, onDelete }: { rows: BacktestReport[]; compact?: boolean; onDelete?: (id: string) => void }) {
+  return (
+    <div className="-mx-5 overflow-x-auto px-5">
+      <table className="w-full text-left text-xs">
+        <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="px-2 py-2">Name</th>
+            <th className="px-2 py-2">Source</th>
+            <th className="px-2 py-2">Symbol</th>
+            <th className="px-2 py-2">TF</th>
+            <th className="px-2 py-2">Net P&L</th>
+            <th className="px-2 py-2">Win %</th>
+            <th className="px-2 py-2">PF</th>
+            {!compact && <th className="px-2 py-2">Trades</th>}
+            <th className="px-2 py-2">Created</th>
+            {onDelete && <th className="px-2 py-2"></th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="border-t border-white/5 text-white/90">
+              <td className="px-2 py-2 font-medium">{r.name}</td>
+              <td className="px-2 py-2">
+                <Pill tone={r.source === "ai-strategy" ? "primary" : "warning"}>{r.source}</Pill>
+              </td>
+              <td className="px-2 py-2">{r.symbol}</td>
+              <td className="px-2 py-2">{r.timeframe}</td>
+              <td className={`px-2 py-2 font-semibold ${r.netPnl >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                ${r.netPnl.toLocaleString()}
+              </td>
+              <td className="px-2 py-2">{r.winRate}%</td>
+              <td className="px-2 py-2">{r.profitFactor}</td>
+              {!compact && <td className="px-2 py-2">{r.trades}</td>}
+              <td className="px-2 py-2 text-muted-foreground">{r.createdAt}</td>
+              {onDelete && (
+                <td className="px-2 py-2">
+                  <button onClick={() => onDelete(r.id)} className="rounded-md bg-rose-500/20 px-2 py-1 text-[10px] text-rose-300">Delete</button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ReportChart({ report, kind }: { report: BacktestReport; kind: "equity" | "drawdown" }) {
+  const curve = buildEquityCurve({
+    reportId: report.id, trades: report.trades,
+    netPnl: report.netPnl, winRate: report.winRate, avgRR: report.avgRR,
+  });
+  const series = kind === "equity" ? curve.map((p) => p.equity) : curve.map((p) => p.drawdown);
+  const positive = kind === "equity" ? report.netPnl >= 0 : false;
+  const { line, area } = pathFromCurve(series, 300, 100, 4);
+  const color = positive ? "stroke-emerald-400" : "stroke-rose-400";
+  const fill = positive ? "fill-emerald-400/10" : "fill-rose-400/10";
+  return (
+    <svg viewBox="0 0 300 100" className="h-44 w-full" preserveAspectRatio="none">
+      <path d={area} className={fill} />
+      <path d={line} fill="none" strokeWidth="1.6" className={color} />
+    </svg>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-3 w-3 rounded ${color}`} /> {label}
+    </span>
+  );
+}
+
+function Disclaimer() {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[11px] leading-relaxed text-muted-foreground">
+      <strong className="text-white/85">Disclaimer:</strong> Backtesting results are based on historical data and do not guarantee
+      future performance. AI insights are educational and should not be treated as financial advice. For wallet/exchange
+      connections: never share private keys, seed phrases, passwords, or withdrawal access. RebateBoard only supports read-only data analysis.
+    </div>
+  );
+}
