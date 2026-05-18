@@ -26,6 +26,8 @@ export type AdminBrandCategory =
   | "Crypto Exchange"
   | "Futures Prop Firm"
   | "Crypto Prop Firm"
+  | "Stock Prop Firm"
+  | "DEX Prop Firm"
   | "Trading Software"
   | "Trading Tool"
   | "Education Provider"

@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, Toolbar } from "@/components/superadmin/AdminUI";
 import { Modal, ConfirmDialog, Field, fieldCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
-import { adminBrands } from "@/lib/admin-data";
 import {
   deleteAdminBrand,
   fetchAdminBrands,
@@ -21,6 +20,8 @@ const TABS = [
   { id: "Prop Firm", label: "Prop Firms" },
   { id: "Futures Prop Firm", label: "Futures Prop" },
   { id: "Crypto Prop Firm", label: "Crypto Prop" },
+  { id: "Stock Prop Firm", label: "Stock Prop" },
+  { id: "DEX Prop Firm", label: "DEX Prop" },
   { id: "Forex Broker", label: "Brokers" },
   { id: "Crypto Exchange", label: "Crypto Exchanges" },
   { id: "Trading Software", label: "Software" },
@@ -214,7 +215,8 @@ function normalizeBrandForEdit(brand: AdminBrand): AdminBrand {
 }
 
 function BrandsPage() {
-  const [items, setItems] = useState<AdminBrand[]>(adminBrands as unknown as AdminBrand[]);
+  const navigate = useNavigate();
+  const [items, setItems] = useState<AdminBrand[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<string>("all");
   const [q, setQ] = useState("");
@@ -418,7 +420,20 @@ function BrandsPage() {
                 <td className={b.complaints > 15 ? "font-bold text-rose-300" : ""}>{b.complaints}</td>
                 <td className="text-right">
                   <div className="flex justify-end gap-1">
-                    <button onClick={() => setEditing(b)} className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white hover:bg-white/15" title="Edit">
+                    <button
+                      onClick={() => {
+                        if (b.visibility === "draft" || b.status === "draft") {
+                          navigate({
+                            to: "/superadmin/brands/new",
+                            search: { brandId: b.id } as never,
+                          });
+                          return;
+                        }
+                        setEditing(b);
+                      }}
+                      className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white hover:bg-white/15"
+                      title={b.visibility === "draft" || b.status === "draft" ? "Continue draft" : "Edit"}
+                    >
                       <Edit3 className="h-3 w-3" />
                     </button>
                     <button onClick={() => setDeleting(b)} className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30" title="Delete">
@@ -844,7 +859,9 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <div className="mb-3 text-sm font-semibold text-white">Trust & SEO</div>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Trust license #"><input className={fieldCls} value={String(trust.licenseNo ?? "")} onChange={(e) => patchObject("trust", "licenseNo", e.target.value)} /></Field>
+            {form.category !== "Forex Broker" && (
+              <Field label="Trust license #"><input className={fieldCls} value={String(trust.licenseNo ?? "")} onChange={(e) => patchObject("trust", "licenseNo", e.target.value)} /></Field>
+            )}
             <Field label="KYB document">
               <label className="block">
                 <input

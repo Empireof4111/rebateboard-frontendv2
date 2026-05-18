@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
-import { createAdminBrand } from "@/lib/admin-brands-api";
+import { createAdminBrand, fetchAdminBrands, updateAdminBrand, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import { uploadMediaFile, uploadMediaFiles } from "@/lib/media-api";
 import {
   ArrowLeft, Save, Upload, Plus, Trash2, Copy, X,
@@ -21,11 +21,11 @@ type ChallengeRow = {
   dailyLoss: string;
   maxLoss: string;
   ptdd: string;
-  profitSplit: number;
+  profitSplit: number | "";
   payoutFreq: string;
-  rrPoints: number;
-  price: number;
-  originalPrice: number;
+  rrPoints: number | "";
+  price: number | "";
+  originalPrice: number | "";
   badge?: "" | "Top" | "New" | "Best Value";
   discountCode?: string;
   active: boolean;
@@ -36,9 +36,9 @@ type AccountStep = { id: string; title: string; body: string };
 const newChallenge = (): ChallengeRow => ({
   id: `ch_${Math.random().toString(36).slice(2, 8)}`,
   program: "2-Step", size: "100K", asset: "FX",
-  profitTarget: "8% / 5%", dailyLoss: "5%", maxLoss: "10%",
-  ptdd: "1:0.77", profitSplit: 80, payoutFreq: "Bi-Weekly",
-  rrPoints: 200, price: 539, originalPrice: 539, badge: "", discountCode: "", active: true,
+  profitTarget: "", dailyLoss: "", maxLoss: "",
+  ptdd: "", profitSplit: "", payoutFreq: "",
+  rrPoints: "", price: "", originalPrice: "", badge: "", discountCode: "", active: true,
 });
 
 const newStep = (title = ""): AccountStep => ({
@@ -47,17 +47,26 @@ const newStep = (title = ""): AccountStep => ({
   body: "",
 });
 
+type BrandEditorSearch = {
+  brandId?: string;
+  section?: SectionId;
+};
+
 export const Route = createFileRoute("/superadmin/brands_/new")({
+  validateSearch: (search: Record<string, unknown>): BrandEditorSearch => ({
+    brandId: typeof search.brandId === "string" && search.brandId ? search.brandId : undefined,
+    section: typeof search.section === "string" ? search.section as SectionId : undefined,
+  }),
   component: NewBrandPage,
 });
 
 type Category =
-  | "Forex Broker" | "Prop Firm" | "Futures Prop Firm" | "Crypto Prop Firm"
-  | "Crypto Exchange" | "Trading Software" | "Trading Tool" | "Education Provider" | "Other";
+  | "Forex Broker" | "Prop Firm" | "Futures Prop Firm" | "Crypto Prop Firm" | "Stock Prop Firm" | "DEX Prop Firm"
+  | "Crypto Exchange" | "Trading Software" | "Education Provider" | "Other";
 
 const CATEGORIES: Category[] = [
-  "Forex Broker", "Prop Firm", "Futures Prop Firm", "Crypto Prop Firm",
-  "Crypto Exchange", "Trading Software", "Trading Tool", "Education Provider", "Other",
+  "Forex Broker", "Prop Firm", "Futures Prop Firm", "Crypto Prop Firm", "Stock Prop Firm", "DEX Prop Firm",
+  "Crypto Exchange", "Trading Software", "Education Provider", "Other",
 ];
 
 function Field({ label, children, span = 1, hint }: { label: string; children: React.ReactNode; span?: 1 | 2; hint?: string }) {
@@ -80,9 +89,25 @@ type SectionId =
   | "category" | "identity" | "founder" | "specifics" | "editorial" | "profile"
   | "cashback" | "challenges" | "assets" | "trust" | "seo" | "visibility";
 
+type WizardState = {
+  lastSection?: SectionId;
+  savedSections?: SectionId[];
+};
+
+type BrandFlags = {
+  inTbi: boolean;
+  cashbackEligible: boolean;
+  featured: boolean;
+  __wizard?: WizardState;
+};
+
 function NewBrandPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/superadmin/brands_/new" }) as BrandEditorSearch;
+  const editingBrandId = search.brandId;
   const [saving, setSaving] = useState(false);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [savedSections, setSavedSections] = useState<SectionId[]>([]);
   const [assetUploading, setAssetUploading] = useState<null | "logo" | "cover" | "screenshots" | "kyb">(null);
 
   /* ---- form state (everything wired) ---- */
@@ -142,7 +167,7 @@ function NewBrandPage() {
     keyFeatures: "", tradingConditions: "", pros: "", cons: "", bestFor: "", verdict: "",
   });
 
-  // Cashback / rebate (now also holds account instructions + payout-mode config + partner-contact)
+  // Cashback / rebate
   const [cb, setCb] = useState({
     eligible: "Yes",
     type: "Broker trading rebate",
@@ -162,16 +187,9 @@ function NewBrandPage() {
       accountId: true,
       orderId: false,
     },
-    // === partner contact (for the attach-account email flow) ===
-    partnerCode: "",                   // our affiliate / IB code with this brand
-    partnerEmail: "",                  // partners@brand.com — recipient of attach emails
-    affiliateLink: "",                 // official IB signup link (for new-account flow)
-    emailSubjectTpl: "Account attach request — RebateBoard",
-    emailBodyTpl:
-      "Dear Partner team,\n\nKindly attach my trading account {{accountId}} to RebateBoard's IB structure (partner code: {{partnerCode}}).\n\nRegistered email: {{registeredEmail}}\nTrader name: {{traderName}}\n\nThank you for your assistance.\n\nBest regards,\n{{traderName}}",
   });
-  const [linkSteps, setLinkSteps] = useState<AccountStep[]>([newStep("Sign in with your existing broker account")]);
-  const [createSteps, setCreateSteps] = useState<AccountStep[]>([newStep("Open a new account using our link")]);
+  const [linkSteps, setLinkSteps] = useState<AccountStep[]>([]);
+  const [createSteps, setCreateSteps] = useState<AccountStep[]>([]);
 
   // Challenges
   const [challenges, setChallenges] = useState<ChallengeRow[]>([newChallenge()]);
@@ -197,8 +215,6 @@ function NewBrandPage() {
     leverageByAsset: "",            // "Forex 1:30, Indices 1:20, Metals 1:20"
     timeLimit: "",
     overnightHolding: "Allowed",
-    // Community & Education (4 cards: title|body per line)
-    community: "VIP Trading | Community-driven trading challenges\nAcademy | Weekly webinars & courses\nDiscord | Active Discord with mentors\nTrader Dashboard | Free tools for funded traders",
     // Customer support
     supportChannels: "Email, Helpdesk, Discord",
     supportResponse: "Fast (typically <24h)",
@@ -212,11 +228,16 @@ function NewBrandPage() {
   });
 
   // Visibility flags
-  const [flags, setFlags] = useState({ inTbi: true, cashbackEligible: true, featured: false });
+  const [flags, setFlags] = useState<BrandFlags>({ inTbi: true, cashbackEligible: true, featured: false });
 
   /* ---- derived ---- */
   const isBroker = category === "Forex Broker";
-  const isProp = category === "Prop Firm" || category === "Futures Prop Firm" || category === "Crypto Prop Firm";
+  const isProp =
+    category === "Prop Firm" ||
+    category === "Futures Prop Firm" ||
+    category === "Crypto Prop Firm" ||
+    category === "Stock Prop Firm" ||
+    category === "DEX Prop Firm";
   const isExchange = category === "Crypto Exchange";
   const isTool = category === "Trading Software" || category === "Trading Tool";
 
@@ -239,7 +260,7 @@ function NewBrandPage() {
   }, [isBroker, isProp, isExchange, isTool, challenges.length]);
 
   // Track completed sections (simple heuristic per section)
-  const completed = useMemo<Record<SectionId, boolean>>(() => ({
+  const sectionReady = useMemo<Record<SectionId, boolean>>(() => ({
     category: !!category,
     identity: !!name.trim(),
     founder: !!(ceo || founderLi || tags),
@@ -249,8 +270,8 @@ function NewBrandPage() {
       (isExchange && !!exch.supportedAssets) ||
       (isTool && !!tool.type) || (!isBroker && !isProp && !isExchange && !isTool),
     editorial: !!(edStruct.keyFeatures || edStruct.verdict),
-    profile: !!(profile.supportChannels || profile.community || profile.legalEntity),
-    cashback: !!cb.howTraderEarns || linkSteps.some(s => s.title) || createSteps.some(s => s.title),
+    profile: !!(profile.supportChannels || profile.legalEntity),
+    cashback: !!cb.howTraderEarns || (isBroker && (linkSteps.some((s) => s.title || s.body) || createSteps.some((s) => s.title || s.body))),
     challenges: challenges.length > 0,
     assets: !!logo,
     trust: tbi > 0,
@@ -258,8 +279,201 @@ function NewBrandPage() {
     visibility: true,
   }), [category, name, ceo, founderLi, tags, isBroker, broker, isProp, prop, isExchange, exch, isTool, tool, edStruct, profile, cb, linkSteps, createSteps, challenges.length, logo, tbi, seo.title]);
 
+  const activeSections = useMemo(() => sections.map((item) => item.id), [sections]);
+
+  function getNextSection(from: SectionId) {
+    const index = activeSections.indexOf(from);
+    return index >= 0 && index < activeSections.length - 1 ? activeSections[index + 1] : from;
+  }
+
+  function getFirstIncompleteSection() {
+    return activeSections.find((id) => !sectionReady[id]) ?? activeSections[0] ?? "category";
+  }
+
+  function normalizeSavedSections(value: unknown) {
+    if (!Array.isArray(value)) return [];
+    return value.filter((item): item is SectionId => typeof item === "string" && activeSections.includes(item as SectionId));
+  }
+
+  function isSectionId(value: unknown): value is SectionId {
+    return typeof value === "string" && activeSections.includes(value as SectionId);
+  }
+
+  function hydrateFromBrand(brand: AdminBrandRecord) {
+    setCategory(brand.category as Category);
+    setVisibility(brand.visibility);
+    setName(brand.name ?? "");
+    setSlug(brand.slug ?? "");
+    setWebsite(brand.website ?? "");
+    setPrimaryColor(brand.primaryColor ?? "#7c3aed");
+    setLogo(brand.thumbnail ?? "");
+    setCover(brand.cover ?? "");
+    setScreenshots(Array.isArray(brand.screenshots) ? brand.screenshots : []);
+    setTbi(typeof brand.tbi === "number" ? brand.tbi : 80);
+
+    const identity = (brand.identity ?? {}) as Record<string, string>;
+    setFounded(String(identity.founded ?? ""));
+    setHq(String(identity.hq ?? ""));
+    setSupportEmail(String(identity.supportEmail ?? ""));
+    setTagline(String(identity.tagline ?? ""));
+    setDescription(String(identity.description ?? ""));
+    setEditorial(String(identity.editorial ?? ""));
+
+    const founder = (brand.founder ?? {}) as Record<string, string>;
+    setCeo(String(founder.ceo ?? ""));
+    setFounderLi(String(founder.founderLi ?? ""));
+    setFounderX(String(founder.founderX ?? ""));
+    setYt(String(founder.yt ?? ""));
+    setTags(String(founder.tags ?? ""));
+
+    setBroker({
+      regulations: "", minDeposit: "", maxLeverage: "", platforms: "", assets: "",
+      spreads: "", commission: "", accountTypes: "", deposits: "", withdrawals: "",
+      withdrawalSpeed: "", execution: "", scalping: "Yes", hedging: "Yes",
+      copyTrading: "Supported", islamic: "Available", restrictedCountries: "",
+      ...((brand.broker ?? {}) as Record<string, string>),
+    });
+    setProp({
+      evalType: "2-step", sizes: "", pricing: "", discountCode: "", profitSplit: "",
+      profitTarget: "", dailyDD: "", maxDD: "", minDays: "", payoutSchedule: "",
+      payoutMethods: "", scaling: "", maxAlloc: "", platform: "", instruments: "",
+      news: "Allowed", weekend: "Allowed", ea: "Allowed", copyTrading: "Allowed",
+      consistency: "", prohibited: "",
+      ...((brand.prop ?? {}) as Record<string, string>),
+    });
+    setExch({
+      supportedAssets: "", fees: "", spot: "Yes", futures: "Yes", copyTrading: "Yes",
+      kyc: "", deposits: "", withdrawals: "", security: "", licenses: "", referral: "",
+      ...((brand.exchange ?? {}) as Record<string, string>),
+    });
+    setTool({
+      type: "", pricing: "", trial: "Yes", platforms: "", integrations: "",
+      discountCode: "", features: "", bestFor: "",
+      ...((brand.tool ?? {}) as Record<string, string>),
+    });
+
+    setEdStruct({
+      keyFeatures: "", tradingConditions: "", pros: "", cons: "", bestFor: "", verdict: "",
+      ...((brand.editorial ?? {}) as Record<string, string>),
+    });
+    setProfile({
+      leverageOverall: "",
+      leverageByAsset: "",
+      timeLimit: "",
+      overnightHolding: "Allowed",
+      supportChannels: "Email, Helpdesk, Discord",
+      supportResponse: "Fast (typically <24h)",
+      supportCommunity: "Active Discord group with staff engagement",
+      restrictedCountries: "",
+      legalEntity: "",
+      transparencyNote: "Terms and FAQs well-documented",
+      publicFeedback: "Positive Trustpilot and Discord scores",
+      ...((brand.profile ?? {}) as Record<string, string>),
+    });
+
+    const cashback = (brand.cashback ?? {}) as Record<string, unknown>;
+    setCb({
+      eligible: String(cashback.eligible ?? "Yes"),
+      type: String(cashback.type ?? "Broker trading rebate"),
+      defaultPct: Number(cashback.defaultPct ?? 50),
+      maxPct: Number(cashback.maxPct ?? 80),
+      howRBEarns: String(cashback.howRBEarns ?? ""),
+      howTraderEarns: String(cashback.howTraderEarns ?? ""),
+      terms: String(cashback.terms ?? ""),
+      note: String(cashback.note ?? ""),
+      supportsApiAuto: Boolean(cashback.supportsApiAuto),
+      supportsRebateWallet: cashback.supportsRebateWallet == null ? true : Boolean(cashback.supportsRebateWallet),
+      requiresManualClaim: cashback.requiresManualClaim == null ? true : Boolean(cashback.requiresManualClaim),
+      proofRequired: {
+        screenshot: Boolean((cashback.proofRequired as Record<string, unknown> | undefined)?.screenshot ?? true),
+        registeredEmail: Boolean((cashback.proofRequired as Record<string, unknown> | undefined)?.registeredEmail ?? true),
+        accountId: Boolean((cashback.proofRequired as Record<string, unknown> | undefined)?.accountId ?? true),
+        orderId: Boolean((cashback.proofRequired as Record<string, unknown> | undefined)?.orderId ?? false),
+      },
+    });
+    setLinkSteps(Array.isArray(cashback.linkSteps) ? (cashback.linkSteps as AccountStep[]) : []);
+    setCreateSteps(Array.isArray(cashback.createSteps) ? (cashback.createSteps as AccountStep[]) : []);
+    setChallenges(Array.isArray(brand.challenges) && brand.challenges.length ? (brand.challenges as ChallengeRow[]) : [newChallenge()]);
+
+    const trust = (brand.trust ?? {}) as Record<string, string | number>;
+    setLicenseNo(String(trust.licenseNo ?? ""));
+    setKybDoc(String(trust.kybDoc ?? ""));
+
+    const seoValue = (brand.seo ?? {}) as Record<string, string>;
+    setSeo({
+      title: String(seoValue.title ?? ""),
+      description: String(seoValue.description ?? ""),
+    });
+
+    const flagsValue = (brand.flags ?? {}) as Record<string, unknown>;
+    const wizard = (flagsValue.__wizard ?? {}) as WizardState;
+    setFlags({
+      inTbi: flagsValue.inTbi == null ? true : Boolean(flagsValue.inTbi),
+      cashbackEligible: flagsValue.cashbackEligible == null ? true : Boolean(flagsValue.cashbackEligible),
+      featured: Boolean(flagsValue.featured),
+      __wizard: {
+        lastSection: isSectionId(wizard.lastSection) ? wizard.lastSection : undefined,
+        savedSections: normalizeSavedSections(wizard.savedSections),
+      },
+    });
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDraft() {
+      if (!editingBrandId) return;
+      setLoadingDraft(true);
+      try {
+        const brands = await fetchAdminBrands();
+        const brand = brands.find((item) => item.id === editingBrandId);
+        if (!brand) {
+          toast.error("Draft brand not found");
+          navigate({ to: "/superadmin/brands" });
+          return;
+        }
+        if (cancelled) return;
+        hydrateFromBrand(brand);
+        const wizard = ((brand.flags ?? {}) as Record<string, unknown>).__wizard as WizardState | undefined;
+        const persistedSaved = normalizeSavedSections(wizard?.savedSections);
+        const firstIncomplete = activeSections.find((id) => !sectionReady[id]);
+        const inferredSaved = firstIncomplete
+          ? activeSections.slice(0, Math.max(0, activeSections.indexOf(firstIncomplete)))
+          : activeSections;
+        setSavedSections(persistedSaved.length ? persistedSaved : inferredSaved);
+      } catch (ex) {
+        if (!cancelled) {
+          toast.error(ex instanceof Error ? ex.message : "Unable to load draft brand");
+        }
+      } finally {
+        if (!cancelled) setLoadingDraft(false);
+      }
+    }
+
+    void loadDraft();
+    return () => {
+      cancelled = true;
+    };
+  }, [editingBrandId]);
+
+  useEffect(() => {
+    if (loadingDraft) return;
+    if (search.section && activeSections.includes(search.section)) {
+      setSection(search.section);
+      return;
+    }
+    const persistedSection = flags.__wizard?.lastSection;
+    if (editingBrandId && persistedSection && activeSections.includes(persistedSection)) {
+      setSection(persistedSection);
+      return;
+    }
+    if (editingBrandId) {
+      setSection(getFirstIncompleteSection());
+    }
+  }, [loadingDraft, search.section, editingBrandId, activeSections.join("|"), flags.__wizard?.lastSection, JSON.stringify(sectionReady)]);
+
   /* ---- save / persist ---- */
-  const persistBrand = async (status: "draft" | "published" | "hidden" | "archived") => {
+  const persistBrand = async (status: "draft" | "published" | "hidden" | "archived", options?: { advance?: boolean }) => {
     if (!name.trim()) {
       toast.error("Brand name is required");
       setSection("identity");
@@ -268,6 +482,15 @@ function NewBrandPage() {
     setSaving(true);
     try {
       const adminStatus = status === "published" ? "verified" : status === "draft" ? "draft" : "review";
+      const nextSection = options?.advance ? getNextSection(section) : section;
+      const nextSavedSections = Array.from(new Set([...savedSections, section].filter((item): item is SectionId => activeSections.includes(item))));
+      const nextFlags: BrandFlags = {
+        ...flags,
+        __wizard: {
+          lastSection: nextSection,
+          savedSections: nextSavedSections,
+        },
+      };
       const newBrand = {
         name: name.trim(),
         slug: slug.trim() || name.trim().toLowerCase().replace(/\s+/g, "-"),
@@ -291,22 +514,66 @@ function NewBrandPage() {
         tool: isTool ? tool : undefined,
         editorial: edStruct,
         profile,
-        cashback: { ...cb, linkSteps, createSteps },
+        cashback: { ...cb, ...(isBroker ? { linkSteps, createSteps } : {}) },
         challenges: isProp ? challenges : undefined,
         trust: { tbi, licenseNo, kybDoc, legalEntity: profile.legalEntity, transparencyNote: profile.transparencyNote, publicFeedback: profile.publicFeedback },
         seo,
-        flags,
+        flags: nextFlags,
       };
-      const savedBrand = await createAdminBrand(newBrand);
+      const savedBrand = editingBrandId
+        ? await updateAdminBrand(editingBrandId, newBrand)
+        : await createAdminBrand(newBrand);
+      setSavedSections(nextSavedSections);
+      setFlags(nextFlags);
       setVisibility(status);
       toast.success(`Brand "${savedBrand.name}" saved as ${status}`);
-      setTimeout(() => navigate({ to: "/superadmin/brands" }), 600);
+      if (options?.advance) {
+        setSection(nextSection);
+        if (!editingBrandId) {
+          navigate({
+            to: "/superadmin/brands/new",
+            search: { brandId: savedBrand.id, section: nextSection } as never,
+            replace: true,
+          });
+        } else {
+          navigate({
+            to: "/superadmin/brands/new",
+            search: { brandId: editingBrandId, section: nextSection } as never,
+            replace: true,
+          });
+        }
+        return;
+      }
+      navigate({ to: "/superadmin/brands" });
     } catch (ex) {
       toast.error(ex instanceof Error ? ex.message : "Could not save brand");
     } finally {
       setSaving(false);
     }
   };
+
+  function SectionActions() {
+    return (
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => void persistBrand("draft")}
+          disabled={saving}
+          className="rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save draft"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void persistBrand("draft", { advance: true })}
+          disabled={saving}
+          className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save & continue"}
+        </button>
+      </div>
+    );
+  }
 
   /* ---- challenge helpers ---- */
   const addChallenge = () => setChallenges((c) => [...c, newChallenge()]);
@@ -371,7 +638,7 @@ function NewBrandPage() {
   return (
     <div>
       <PageHeader
-        title="Add a New Brand"
+        title={editingBrandId ? `Continue Draft${name ? ` — ${name}` : ""}` : "Add a New Brand"}
         subtitle="Pick a section on the left, fill it, then save. Form fields adapt to brand category."
         actions={
           <>
@@ -404,7 +671,7 @@ function NewBrandPage() {
             <nav className="flex flex-col gap-0.5">
               {sections.map((s, i) => {
                 const active = s.id === section;
-                const done = completed[s.id];
+                const done = savedSections.includes(s.id);
                 const Icon = s.icon;
                 return (
                   <button
@@ -432,6 +699,11 @@ function NewBrandPage() {
 
         {/* Right pane — section content */}
         <div className="space-y-4">
+          {loadingDraft && (
+            <Panel title="Loading draft">
+              <div className="py-6 text-sm text-muted-foreground">Loading saved brand data...</div>
+            </Panel>
+          )}
           {section === "category" && (
             <Panel title="Brand category">
               <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -451,9 +723,7 @@ function NewBrandPage() {
                 ))}
               </div>
               <p className="mt-3 text-[11px] text-muted-foreground">Selected: <span className="font-bold text-fuchsia-300">{category}</span></p>
-              <div className="mt-4 flex justify-end">
-                <button onClick={() => setSection("identity")} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-bold text-white">Continue → Identity</button>
-              </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -470,6 +740,7 @@ function NewBrandPage() {
                 <Field label="Description" span={2}><textarea rows={3} className={inputCls} placeholder="Short overview shown on the brand card…" value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
                 <Field label="Full editorial review" span={2}><textarea rows={6} className={inputCls} placeholder="RebateBoard's own long-form review…" value={editorial} onChange={(e) => setEditorial(e.target.value)} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -482,6 +753,7 @@ function NewBrandPage() {
                 <Field label="YouTube review URL"><input className={inputCls} placeholder="https://youtube.com/…" value={yt} onChange={(e) => setYt(e.target.value)} /></Field>
                 <Field label="Tags (comma-separated)" span={2}><input className={inputCls} placeholder="payouts, fast, regulated" value={tags} onChange={(e) => setTags(e.target.value)} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -521,19 +793,14 @@ function NewBrandPage() {
               <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200 ring-1 ring-amber-400/20">
                 Account-link / new-account step instructions live under <button onClick={() => setSection("cashback")} className="underline">Cashback / Rebate</button> — they're part of the redemption flow.
               </p>
+              <SectionActions />
             </Panel>
           )}
 
           {section === "specifics" && isProp && (
             <Panel title="Prop firm-specific">
               <div className="grid gap-3 md:grid-cols-2">
-                <Field label="Evaluation type">
-                  <select className={selectCls} value={prop.evalType} onChange={(e) => setProp({ ...prop, evalType: e.target.value })}>
-                    <option>1-step</option><option>2-step</option><option>Instant funding</option>
-                  </select>
-                </Field>
                 {([
-                  ["sizes","Account sizes","$5K, $10K, $25K, …"],
                   ["pricing","Pricing","$59 – $1,899"],
                   ["discountCode","Discount code","REBATE25"],
                   ["profitSplit","Profit split","80% / 90% scaling"],
@@ -565,6 +832,7 @@ function NewBrandPage() {
                 <Field label="Consistency rule" span={2}><input className={inputCls} placeholder="Best day ≤ 40% of total profit" value={prop.consistency} onChange={(e) => setProp({ ...prop, consistency: e.target.value })} /></Field>
                 <Field label="Prohibited strategies" span={2}><textarea rows={2} className={inputCls} placeholder="HFT, latency arbitrage, group trading…" value={prop.prohibited} onChange={(e) => setProp({ ...prop, prohibited: e.target.value })} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -593,6 +861,7 @@ function NewBrandPage() {
                 <Field label="Licenses / registrations" span={2}><input className={inputCls} placeholder="VARA Dubai, MAS Singapore, …" value={exch.licenses} onChange={(e) => setExch({ ...exch, licenses: e.target.value })} /></Field>
                 <Field label="Referral / affiliate commission" span={2}><input className={inputCls} placeholder="Up to 60% trading fee share" value={exch.referral} onChange={(e) => setExch({ ...exch, referral: e.target.value })} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -616,6 +885,7 @@ function NewBrandPage() {
                 <Field label="Features" span={2}><textarea rows={2} className={inputCls} placeholder="Auto journal, advanced analytics, AI risk coach…" value={tool.features} onChange={(e) => setTool({ ...tool, features: e.target.value })} /></Field>
                 <Field label="Best for" span={2}><textarea rows={2} className={inputCls} placeholder="Day traders, scalpers, prop traders…" value={tool.bestFor} onChange={(e) => setTool({ ...tool, bestFor: e.target.value })} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -629,57 +899,60 @@ function NewBrandPage() {
                 <Field label="Best for" span={2}><input className={inputCls} placeholder="Funded trader hunters, low-spread scalpers" value={edStruct.bestFor} onChange={(e) => setEdStruct({ ...edStruct, bestFor: e.target.value })} /></Field>
                 <Field label="Final verdict" span={2}><textarea rows={3} className={inputCls} placeholder="One paragraph summary." value={edStruct.verdict} onChange={(e) => setEdStruct({ ...edStruct, verdict: e.target.value })} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
           {section === "profile" && (
             <div className="space-y-4">
-              <Panel title="Account option · instruments & leverage">
-                <p className="mb-3 text-[11px] text-muted-foreground">
-                  These render on the brand profile under <span className="font-semibold text-white">Account Option</span> and <span className="font-semibold text-white">Supported Instrument &amp; Leverage</span>.
-                </p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field label="Overall leverage"><input className={inputCls} placeholder="1:30" value={profile.leverageOverall} onChange={(e) => setProfile({ ...profile, leverageOverall: e.target.value })} /></Field>
-                  <Field label="Time limit"><input className={inputCls} placeholder="None" value={profile.timeLimit} onChange={(e) => setProfile({ ...profile, timeLimit: e.target.value })} /></Field>
-                  <Field label="Leverage by asset" span={2} hint="Free text — e.g. Forex 1:30, Indices 1:20, Metals 1:20, Crypto 1:5">
-                    <input className={inputCls} value={profile.leverageByAsset} onChange={(e) => setProfile({ ...profile, leverageByAsset: e.target.value })} />
+              {!isBroker && !isExchange && category !== "Trading Software" && category !== "Education Provider" && (
+                <Panel title="Account option · instruments & leverage">
+                  <p className="mb-3 text-[11px] text-muted-foreground">
+                    These render on the brand profile under <span className="font-semibold text-white">Account Option</span> and <span className="font-semibold text-white">Supported Instrument &amp; Leverage</span>.
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field label="Overall leverage"><input className={inputCls} placeholder="1:30" value={profile.leverageOverall} onChange={(e) => setProfile({ ...profile, leverageOverall: e.target.value })} /></Field>
+                    <Field label="Time limit"><input className={inputCls} placeholder="None" value={profile.timeLimit} onChange={(e) => setProfile({ ...profile, timeLimit: e.target.value })} /></Field>
+                    <Field label="Leverage by asset" span={2} hint="Free text — e.g. Forex 1:30, Indices 1:20, Metals 1:20, Crypto 1:5">
+                      <input className={inputCls} value={profile.leverageByAsset} onChange={(e) => setProfile({ ...profile, leverageByAsset: e.target.value })} />
+                    </Field>
+                    <Field label="Overnight holding">
+                      <select className={selectCls} value={profile.overnightHolding} onChange={(e) => setProfile({ ...profile, overnightHolding: e.target.value })}>
+                        <option>Allowed</option><option>Restricted</option><option>Not allowed</option>
+                      </select>
+                    </Field>
+                  </div>
+                </Panel>
+              )}
+
+              {!isExchange && category !== "Trading Software" && (
+                <Panel title="Customer support">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field label="Channels" span={2}><input className={inputCls} placeholder="Email, Helpdesk, Discord" value={profile.supportChannels} onChange={(e) => setProfile({ ...profile, supportChannels: e.target.value })} /></Field>
+                    <Field label="Response time"><input className={inputCls} placeholder="Fast (<24h)" value={profile.supportResponse} onChange={(e) => setProfile({ ...profile, supportResponse: e.target.value })} /></Field>
+                    <Field label="Community support"><input className={inputCls} placeholder="Active Discord with staff" value={profile.supportCommunity} onChange={(e) => setProfile({ ...profile, supportCommunity: e.target.value })} /></Field>
+                  </div>
+                </Panel>
+              )}
+
+              {category !== "Education Provider" && (
+                <Panel title="Restricted countries">
+                  <Field label="Country list (comma separated)" span={2} hint="ISO codes or country names — e.g. US, IR, KP, Cuba">
+                    <textarea rows={3} className={inputCls} value={profile.restrictedCountries} onChange={(e) => setProfile({ ...profile, restrictedCountries: e.target.value })} />
                   </Field>
-                  <Field label="Overnight holding">
-                    <select className={selectCls} value={profile.overnightHolding} onChange={(e) => setProfile({ ...profile, overnightHolding: e.target.value })}>
-                      <option>Allowed</option><option>Restricted</option><option>Not allowed</option>
-                    </select>
-                  </Field>
-                </div>
-              </Panel>
+                </Panel>
+              )}
 
-              <Panel title="Community & education (4 cards on profile)">
-                <p className="mb-3 text-[11px] text-muted-foreground">
-                  One card per line. Format: <span className="font-mono text-white">Title | Body</span>. Maximum of 4 lines used.
-                </p>
-                <textarea rows={5} className={inputCls} value={profile.community} onChange={(e) => setProfile({ ...profile, community: e.target.value })} />
-              </Panel>
-
-              <Panel title="Customer support">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field label="Channels" span={2}><input className={inputCls} placeholder="Email, Helpdesk, Discord" value={profile.supportChannels} onChange={(e) => setProfile({ ...profile, supportChannels: e.target.value })} /></Field>
-                  <Field label="Response time"><input className={inputCls} placeholder="Fast (<24h)" value={profile.supportResponse} onChange={(e) => setProfile({ ...profile, supportResponse: e.target.value })} /></Field>
-                  <Field label="Community support"><input className={inputCls} placeholder="Active Discord with staff" value={profile.supportCommunity} onChange={(e) => setProfile({ ...profile, supportCommunity: e.target.value })} /></Field>
-                </div>
-              </Panel>
-
-              <Panel title="Restricted countries">
-                <Field label="Country list (comma separated)" span={2} hint="ISO codes or country names — e.g. US, IR, KP, Cuba">
-                  <textarea rows={3} className={inputCls} value={profile.restrictedCountries} onChange={(e) => setProfile({ ...profile, restrictedCountries: e.target.value })} />
-                </Field>
-              </Panel>
-
-              <Panel title="Regulation & trust narrative">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field label="Legal entity"><input className={inputCls} placeholder="CTI Group LTD" value={profile.legalEntity} onChange={(e) => setProfile({ ...profile, legalEntity: e.target.value })} /></Field>
-                  <Field label="Transparency note"><input className={inputCls} value={profile.transparencyNote} onChange={(e) => setProfile({ ...profile, transparencyNote: e.target.value })} /></Field>
-                  <Field label="Public feedback summary" span={2}><input className={inputCls} value={profile.publicFeedback} onChange={(e) => setProfile({ ...profile, publicFeedback: e.target.value })} /></Field>
-                </div>
-              </Panel>
+              {!isBroker && category !== "Education Provider" && (
+                <Panel title="Regulation & trust narrative">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field label="Legal entity"><input className={inputCls} placeholder="CTI Group LTD" value={profile.legalEntity} onChange={(e) => setProfile({ ...profile, legalEntity: e.target.value })} /></Field>
+                    <Field label="Transparency note"><input className={inputCls} value={profile.transparencyNote} onChange={(e) => setProfile({ ...profile, transparencyNote: e.target.value })} /></Field>
+                    <Field label="Public feedback summary" span={2}><input className={inputCls} value={profile.publicFeedback} onChange={(e) => setProfile({ ...profile, publicFeedback: e.target.value })} /></Field>
+                  </div>
+                </Panel>
+              )}
+              <SectionActions />
             </div>
           )}
 
@@ -764,43 +1037,22 @@ function NewBrandPage() {
                 </div>
               </Panel>
 
-              <Panel title="Partner contact (used by the attach-account email flow)">
-                <p className="mb-3 text-[11px] text-muted-foreground">
-                  When a trader links an existing account, we generate an email to the partner. These fields are auto-injected into the message.
-                  Use <span className="rounded bg-white/10 px-1 font-mono">{"{{accountId}}"}</span>, <span className="rounded bg-white/10 px-1 font-mono">{"{{partnerCode}}"}</span>,
-                  <span className="rounded bg-white/10 px-1 font-mono">{"{{registeredEmail}}"}</span>, <span className="rounded bg-white/10 px-1 font-mono">{"{{traderName}}"}</span> and
-                  <span className="rounded bg-white/10 px-1 font-mono">{"{{affiliateLink}}"}</span> as placeholders.
-                </p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field label="Our partner code / Affiliate ID" hint="e.g. RB-EX-2245 — included in the email body.">
-                    <input className={inputCls} placeholder="RB-EX-2245" value={cb.partnerCode} onChange={(e) => setCb({ ...cb, partnerCode: e.target.value })} />
-                  </Field>
-                  <Field label="Partner support email (To:)" hint="Where the attach-account email is delivered.">
-                    <input className={inputCls} placeholder="partners@brand.com" value={cb.partnerEmail} onChange={(e) => setCb({ ...cb, partnerEmail: e.target.value })} />
-                  </Field>
-                  <Field label="Official affiliate signup link" span={2} hint="Used in the 'Create new account' flow — pre-tagged with our IB ref.">
-                    <input className={inputCls} placeholder="https://brand.com/?ref=RB-XX" value={cb.affiliateLink} onChange={(e) => setCb({ ...cb, affiliateLink: e.target.value })} />
-                  </Field>
-                  <Field label="Email subject template" span={2}>
-                    <input className={inputCls} value={cb.emailSubjectTpl} onChange={(e) => setCb({ ...cb, emailSubjectTpl: e.target.value })} />
-                  </Field>
-                  <Field label="Email body template" span={2} hint="Plain text. Placeholders are substituted at send time.">
-                    <textarea rows={8} className={inputCls} value={cb.emailBodyTpl} onChange={(e) => setCb({ ...cb, emailBodyTpl: e.target.value })} />
-                  </Field>
-                </div>
-              </Panel>
+              {isBroker && (
+                <>
+                  <StepListPanel
+                    title="Link an EXISTING account — step-by-step"
+                    hint="Shown to traders who already have an account with this broker and want to attach it to their RebateBoard wallet."
+                    ctl={stepCtl("link")}
+                  />
 
-              <StepListPanel
-                title="Link an EXISTING account — step-by-step"
-                hint="Shown to traders who already have an account with this brand and want to attach it to their RebateBoard wallet."
-                ctl={stepCtl("link")}
-              />
-
-              <StepListPanel
-                title="Create a NEW account — step-by-step"
-                hint="Shown to traders signing up for the first time via our affiliate / IB link."
-                ctl={stepCtl("create")}
-              />
+                  <StepListPanel
+                    title="Create a NEW account — step-by-step"
+                    hint="Shown to traders signing up with this broker for the first time through your flow."
+                    ctl={stepCtl("create")}
+                  />
+                </>
+              )}
+              <SectionActions />
             </div>
           )}
 
@@ -857,11 +1109,11 @@ function NewBrandPage() {
                       <Field label="Daily loss"><input className={inputCls} value={c.dailyLoss} onChange={(e) => patchChallenge(c.id, { dailyLoss: e.target.value })} /></Field>
                       <Field label="Max loss"><input className={inputCls} value={c.maxLoss} onChange={(e) => patchChallenge(c.id, { maxLoss: e.target.value })} /></Field>
                       <Field label="PT : DD ratio"><input className={inputCls} value={c.ptdd} onChange={(e) => patchChallenge(c.id, { ptdd: e.target.value })} /></Field>
-                      <Field label="Profit split %"><input type="number" className={inputCls} value={c.profitSplit} onChange={(e) => patchChallenge(c.id, { profitSplit: Number(e.target.value) })} /></Field>
-                      <Field label="Payout frequency"><input className={inputCls} value={c.payoutFreq} onChange={(e) => patchChallenge(c.id, { payoutFreq: e.target.value })} /></Field>
-                      <Field label="RR Points"><input type="number" className={inputCls} value={c.rrPoints} onChange={(e) => patchChallenge(c.id, { rrPoints: Number(e.target.value) })} /></Field>
-                      <Field label="Original price ($)"><input type="number" className={inputCls} value={c.originalPrice} onChange={(e) => patchChallenge(c.id, { originalPrice: Number(e.target.value) })} /></Field>
-                      <Field label="Sale price ($)"><input type="number" className={inputCls} value={c.price} onChange={(e) => patchChallenge(c.id, { price: Number(e.target.value) })} /></Field>
+                      <Field label="Profit split %"><input type="number" className={inputCls} placeholder="80" value={c.profitSplit} onChange={(e) => patchChallenge(c.id, { profitSplit: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
+                      <Field label="Payout frequency"><input className={inputCls} placeholder="Bi-weekly" value={c.payoutFreq} onChange={(e) => patchChallenge(c.id, { payoutFreq: e.target.value })} /></Field>
+                      <Field label="RR Points"><input type="number" className={inputCls} placeholder="200" value={c.rrPoints} onChange={(e) => patchChallenge(c.id, { rrPoints: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
+                      <Field label="Original price ($)"><input type="number" className={inputCls} placeholder="539" value={c.originalPrice} onChange={(e) => patchChallenge(c.id, { originalPrice: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
+                      <Field label="Sale price ($)"><input type="number" className={inputCls} placeholder="539" value={c.price} onChange={(e) => patchChallenge(c.id, { price: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
                       <Field label="Discount code"><input className={inputCls} value={c.discountCode ?? ""} onChange={(e) => patchChallenge(c.id, { discountCode: e.target.value })} /></Field>
                       <Field label="Badge">
                         <select className={selectCls} value={c.badge ?? ""} onChange={(e) => patchChallenge(c.id, { badge: e.target.value as ChallengeRow["badge"] })}>
@@ -875,6 +1127,7 @@ function NewBrandPage() {
               <button type="button" onClick={addChallenge} className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:border-fuchsia-400/30 hover:text-white">
                 <Plus className="h-3.5 w-3.5" /> Add another challenge / account
               </button>
+              <SectionActions />
             </Panel>
           )}
 
@@ -964,6 +1217,7 @@ function NewBrandPage() {
                   </div>
                 </Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -973,7 +1227,7 @@ function NewBrandPage() {
                 <Field label="Initial TBI score (0–100)">
                   <input type="number" min={0} max={100} className={inputCls} value={tbi} onChange={(e) => setTbi(Number(e.target.value))} />
                 </Field>
-                <Field label="License #"><input className={inputCls} placeholder="DFSA / ASIC / —" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} /></Field>
+                {!isBroker && category !== "Trading Software" && category !== "Education Provider" && <Field label="License #"><input className={inputCls} placeholder="DFSA / ASIC / —" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} /></Field>}
                 <Field label="KYB / license document" span={2}>
                   <label className="block">
                     <input
@@ -995,6 +1249,7 @@ function NewBrandPage() {
                   </label>
                 </Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -1004,6 +1259,7 @@ function NewBrandPage() {
                 <Field label="Meta title"><input className={inputCls} placeholder="Brand Review — RebateBoard" value={seo.title} onChange={(e) => setSeo({ ...seo, title: e.target.value })} /></Field>
                 <Field label="Meta description"><textarea rows={3} className={inputCls} placeholder="160 chars…" value={seo.description} onChange={(e) => setSeo({ ...seo, description: e.target.value })} /></Field>
               </div>
+              <SectionActions />
             </Panel>
           )}
 
@@ -1109,7 +1365,7 @@ function StepListPanel({
               <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[10px] font-bold text-white">{i + 1}</span>
               <input
                 className={inputCls}
-                placeholder={`Step ${i + 1} title — e.g. "Open the verification email"`}
+                placeholder={`Step ${i + 1} title — e.g. "Log in to your broker portal"`}
                 value={s.title}
                 onChange={(e) => ctl.patch(s.id, { title: e.target.value })}
               />
@@ -1122,7 +1378,7 @@ function StepListPanel({
             <textarea
               rows={2}
               className={inputCls}
-              placeholder="Detailed instructions for this step (supports plain text)…"
+              placeholder="Detailed instructions for this step…"
               value={s.body}
               onChange={(e) => ctl.patch(s.id, { body: e.target.value })}
             />

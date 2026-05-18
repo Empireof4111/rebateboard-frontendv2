@@ -41,7 +41,17 @@ export const adminUsers = [
 export type AdminBrand = {
   id: string;
   name: string;
-  category: "Prop Firm" | "Forex Broker" | "Crypto Exchange" | "Futures Prop Firm" | "Crypto Prop Firm" | "Trading Software" | "Trading Tool" | "Education Provider";
+  category:
+    | "Prop Firm"
+    | "Forex Broker"
+    | "Crypto Exchange"
+    | "Futures Prop Firm"
+    | "Crypto Prop Firm"
+    | "Stock Prop Firm"
+    | "DEX Prop Firm"
+    | "Trading Software"
+    | "Trading Tool"
+    | "Education Provider";
   tbi: number;
   status: "verified" | "review" | "flagged" | "draft";
   payouts: string;
