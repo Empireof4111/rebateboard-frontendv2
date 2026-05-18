@@ -638,8 +638,10 @@ function NewBrandPage() {
   return (
     <div>
       <PageHeader
-        title={editingBrandId ? `Continue Draft${name ? ` — ${name}` : ""}` : "Add a New Brand"}
-        subtitle="Pick a section on the left, fill it, then save. Form fields adapt to brand category."
+        title={editingBrandId ? `Edit Brand${name ? ` — ${name}` : ""}` : "Add a New Brand"}
+        subtitle={editingBrandId
+          ? "Open any section, update what you need, then save as draft or publish again."
+          : "Pick a section on the left, fill it, then save. Form fields adapt to brand category."}
         actions={
           <>
             <Link to="/superadmin/brands" className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white">

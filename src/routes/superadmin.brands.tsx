@@ -221,7 +221,6 @@ function BrandsPage() {
   const [tab, setTab] = useState<string>("all");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
-  const [editing, setEditing] = useState<AdminBrand | null>(null);
   const [deleting, setDeleting] = useState<AdminBrand | null>(null);
 
   useEffect(() => {
@@ -422,17 +421,13 @@ function BrandsPage() {
                   <div className="flex justify-end gap-1">
                     <button
                       onClick={() => {
-                        if (b.visibility === "draft" || b.status === "draft") {
-                          navigate({
-                            to: "/superadmin/brands/new",
-                            search: { brandId: b.id } as never,
-                          });
-                          return;
-                        }
-                        setEditing(b);
+                        navigate({
+                          to: "/superadmin/brands/new",
+                          search: { brandId: b.id } as never,
+                        });
                       }}
                       className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white hover:bg-white/15"
-                      title={b.visibility === "draft" || b.status === "draft" ? "Continue draft" : "Edit"}
+                      title={b.visibility === "draft" || b.status === "draft" ? "Continue draft" : "Edit in steps"}
                     >
                       <Edit3 className="h-3 w-3" />
                     </button>
@@ -452,22 +447,6 @@ function BrandsPage() {
           )}
         </DataTable>
       </Panel>
-
-      {editing && (
-        <BrandEditModal
-          brand={editing}
-          onClose={() => setEditing(null)}
-          onSave={async (patch) => {
-            try {
-              await patchBrand(editing.id, patch);
-              setEditing(null);
-              toast.success(`Brand "${patch.name ?? editing.name}" updated`);
-            } catch (ex) {
-              toast.error(ex instanceof Error ? ex.message : "Unable to update brand");
-            }
-          }}
-        />
-      )}
 
       <ConfirmDialog
         open={!!deleting}
