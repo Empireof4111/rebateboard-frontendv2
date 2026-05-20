@@ -218,6 +218,7 @@ function BrandsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<AdminBrand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reorderingCategory, setReorderingCategory] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("all");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
@@ -246,13 +247,34 @@ function BrandsPage() {
   }, []);
 
   const ranked = useMemo(() => {
-    const sorted = [...items].sort((a, b) => b.tbi - a.tbi);
-    const categoryRanks = new Map<string, number>();
-    return sorted.map((b) => {
-      const nextRank = (categoryRanks.get(b.category) ?? 0) + 1;
-      categoryRanks.set(b.category, nextRank);
-      return { ...b, autoRank: nextRank };
+    const sortedByTbi = [...items].sort((a, b) => b.tbi - a.tbi);
+    const categoryAutoRanks = new Map<string, number>();
+    const withAutoRank = sortedByTbi.map((brand) => {
+      const nextRank = (categoryAutoRanks.get(brand.category) ?? 0) + 1;
+      categoryAutoRanks.set(brand.category, nextRank);
+      return { ...brand, autoRank: nextRank };
     });
+
+    const grouped = new Map<string, Array<AdminBrand & { autoRank: number }>>();
+    withAutoRank.forEach((brand) => {
+      const current = grouped.get(brand.category) ?? [];
+      current.push(brand);
+      grouped.set(brand.category, current);
+    });
+
+    return Array.from(grouped.values()).flatMap((brandsInCategory) =>
+      [...brandsInCategory]
+        .sort((a, b) => {
+          const leftRank = a.rankOverride ?? a.autoRank;
+          const rightRank = b.rankOverride ?? b.autoRank;
+          if (leftRank !== rightRank) return leftRank - rightRank;
+          return a.autoRank - b.autoRank;
+        })
+        .map((brand, index) => ({
+          ...brand,
+          effectiveRank: index + 1,
+        })),
+    );
   }, [items]);
 
   const counts = useMemo(() => {
@@ -276,6 +298,45 @@ function BrandsPage() {
     return next;
   }
 
+  async function handleMoveRank(brandId: string, category: string, direction: -1 | 1) {
+    if (reorderingCategory === category) return;
+
+    const categoryBrands = ranked
+      .filter((brand) => brand.category === category)
+      .sort((a, b) => a.effectiveRank - b.effectiveRank);
+
+    const currentIndex = categoryBrands.findIndex((brand) => brand.id === brandId);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= categoryBrands.length) return;
+
+    const reordered = [...categoryBrands];
+    [reordered[currentIndex], reordered[nextIndex]] = [reordered[nextIndex], reordered[currentIndex]];
+
+    const updates = reordered
+      .map((brand, index) => {
+        const nextRankOverride = index + 1;
+        if ((brand.rankOverride ?? null) === nextRankOverride) return null;
+        return { id: brand.id, rankOverride: nextRankOverride };
+      })
+      .filter((update): update is { id: string; rankOverride: number } => update != null);
+
+    if (!updates.length) return;
+
+    setReorderingCategory(category);
+    try {
+      const changed = await Promise.all(
+        updates.map((update) => updateAdminBrand(update.id, { rankOverride: update.rankOverride })),
+      );
+      const changedMap = new Map(changed.map((brand) => [brand.id, brand]));
+      setItems((current) => current.map((brand) => changedMap.get(brand.id) ?? brand));
+      toast.success(`${category} ranking updated`);
+    } catch (ex) {
+      toast.error(ex instanceof Error ? ex.message : "Unable to update rank");
+    } finally {
+      setReorderingCategory(null);
+    }
+  }
+
   async function handleResync() {
     try {
       const next = await Promise.all(items.map((b) => updateAdminBrand(b.id, { rankOverride: null })));
@@ -290,7 +351,7 @@ function BrandsPage() {
     <div>
       <PageHeader
         title="Brands & Firms"
-        subtitle={`${items.length} brands · auto-ranked by TBI · admin can override per row`}
+        subtitle={`${items.length} brands · TBI seeds the order · arrows reshuffle ranks inside each category`}
         actions={
           <>
             <button onClick={handleResync} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
@@ -350,9 +411,10 @@ function BrandsPage() {
 
         <DataTable head={<><th>Rank</th><th>Brand</th><th>Category</th><th>TBI</th><th>Status</th><th>30d Payouts</th><th>Complaints</th><th></th></>}>
           {filtered.map((b) => {
-            const effectiveRank = b.rankOverride ?? b.autoRank;
+            const effectiveRank = b.effectiveRank;
             const isOverridden = b.rankOverride != null && b.rankOverride !== b.autoRank;
             const categoryCount = counts[b.category] ?? items.length;
+            const isReordering = reorderingCategory === b.category;
             return (
               <tr key={b.id}>
                 <td>
@@ -363,26 +425,20 @@ function BrandsPage() {
                     <div className="flex flex-col">
                       <button
                         onClick={async () => {
-                          try {
-                            await patchBrand(b.id, { rankOverride: Math.max(1, effectiveRank - 1) });
-                          } catch (ex) {
-                            toast.error(ex instanceof Error ? ex.message : "Unable to update rank");
-                          }
+                          await handleMoveRank(b.id, b.category, -1);
                         }}
-                        className="text-muted-foreground hover:text-emerald-300"
+                        disabled={isReordering || effectiveRank <= 1}
+                        className="text-muted-foreground hover:text-emerald-300 disabled:opacity-30"
                         title="Move up"
                       >
                         <ArrowUp className="h-3 w-3" />
                       </button>
                       <button
                         onClick={async () => {
-                          try {
-                            await patchBrand(b.id, { rankOverride: Math.min(categoryCount, effectiveRank + 1) });
-                          } catch (ex) {
-                            toast.error(ex instanceof Error ? ex.message : "Unable to update rank");
-                          }
+                          await handleMoveRank(b.id, b.category, 1);
                         }}
-                        className="text-muted-foreground hover:text-rose-300"
+                        disabled={isReordering || effectiveRank >= categoryCount}
+                        className="text-muted-foreground hover:text-rose-300 disabled:opacity-30"
                         title="Move down"
                       >
                         <ArrowDown className="h-3 w-3" />
