@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { OfferCard, OfferDetailModal } from "@/components/offers/OfferCard";
-import { useAdminCollection } from "@/lib/admin-store";
-import { offers as seed, type AdminOffer, type OfferCategory } from "@/lib/admin-data";
+import { type AdminOffer, type OfferCategory } from "@/lib/admin-data";
+import { fetchPublicOffers } from "@/lib/offers-api";
 import { Flame, Sparkles, Clock, LayoutGrid, Search } from "lucide-react";
 
 export const Route = createFileRoute("/offers")({
@@ -36,10 +36,28 @@ function SectionHeader({ icon: Icon, title, subtitle, accent }: { icon: typeof F
 }
 
 function PublicOffers() {
-  const { items } = useAdminCollection<AdminOffer>("offers", seed);
+  const [items, setItems] = useState<AdminOffer[]>([]);
   const [active, setActive] = useState<AdminOffer | null>(null);
   const [filter, setFilter] = useState<typeof CATEGORIES[number]>("All");
   const [q, setQ] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const offers = await fetchPublicOffers();
+        if (!cancelled) setItems(offers);
+      } catch {
+        if (!cancelled) setItems([]);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const live = useMemo(() => items.filter((o) => o.status === "active"), [items]);
 

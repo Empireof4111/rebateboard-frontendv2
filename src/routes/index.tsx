@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search, Bell, ChevronDown, ArrowUpRight, Star, Play,
   ChevronRight, Plus, Minus, Youtube, Twitter, Linkedin, Send, MessageCircle,
@@ -17,7 +17,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { RebateCalculatorModal } from "@/components/RebateCalculatorModal";
 import { OfferCard, OfferDetailModal } from "@/components/offers/OfferCard";
 import { useAdminCollection } from "@/lib/admin-store";
-import { offers as offersSeed, type AdminOffer } from "@/lib/admin-data";
+import { type AdminOffer } from "@/lib/admin-data";
+import { fetchPublicOffers } from "@/lib/offers-api";
 import { LandingHeroAdCard, LandingSponsorsStrip, LandingAdvertiseBox } from "@/components/landing/LandingAdSlots";
 import type { SponsorLogo } from "@/lib/dashboard-ads";
 import { Flame } from "lucide-react";
@@ -236,7 +237,24 @@ function Index() {
   const [compareOpen, setCompareOpen] = useState<null | { a: string; b: string }>(null);
   const [calcOpen, setCalcOpen] = useState(false);
   const [activeOffer, setActiveOffer] = useState<AdminOffer | null>(null);
-  const { items: liveOffers } = useAdminCollection<AdminOffer>("offers", offersSeed);
+  const [liveOffers, setLiveOffers] = useState<AdminOffer[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOffers() {
+      try {
+        const offers = await fetchPublicOffers();
+        if (!cancelled) setLiveOffers(offers);
+      } catch {
+        if (!cancelled) setLiveOffers([]);
+      }
+    }
+
+    void loadOffers();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const topOffers = liveOffers.filter((o) => o.status === "active").sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned)).slice(0, 6);
 
   const brokerTabData = {

@@ -130,8 +130,13 @@ export function ThumbnailUploader({
       try {
         const nextValue = await onSelectFile(file);
         if (typeof nextValue === "string" && nextValue) onChange(nextValue);
+        else toast.error("Upload completed without a usable image URL");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unable to upload image";
+        toast.error(message);
       } finally {
         setUploading(false);
+        if (ref.current) ref.current.value = "";
       }
       return;
     }
@@ -139,6 +144,7 @@ export function ThumbnailUploader({
     const reader = new FileReader();
     reader.onload = () => onChange(String(reader.result));
     reader.readAsDataURL(file);
+    if (ref.current) ref.current.value = "";
   };
   return (
     <div>
