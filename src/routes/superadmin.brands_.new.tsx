@@ -32,6 +32,7 @@ type ChallengeRow = {
 };
 
 type AccountStep = { id: string; title: string; body: string };
+type RuleItem = { id: string; question: string; answer: string };
 
 const newChallenge = (): ChallengeRow => ({
   id: `ch_${Math.random().toString(36).slice(2, 8)}`,
@@ -45,6 +46,12 @@ const newStep = (title = ""): AccountStep => ({
   id: `st_${Math.random().toString(36).slice(2, 8)}`,
   title,
   body: "",
+});
+
+const newRule = (): RuleItem => ({
+  id: `rl_${Math.random().toString(36).slice(2, 8)}`,
+  question: "",
+  answer: "",
 });
 
 type BrandEditorSearch = {
@@ -87,7 +94,7 @@ const selectCls = `${inputCls} bg-slate-950 [color-scheme:dark] [&>option]:bg-sl
  * ===================================================================== */
 type SectionId =
   | "category" | "identity" | "founder" | "specifics" | "editorial" | "profile"
-  | "cashback" | "challenges" | "assets" | "trust" | "seo" | "visibility";
+  | "cashback" | "rules" | "challenges" | "assets" | "trust" | "seo" | "visibility";
 
 type WizardState = {
   lastSection?: SectionId;
@@ -143,7 +150,7 @@ function NewBrandPage() {
 
   // Specifics — prop
   const [prop, setProp] = useState({
-    evalType: "2-step", sizes: "", pricing: "", discountCode: "", profitSplit: "",
+    evalType: "2-step", sizes: "", pricing: "", discountCode: "", discountPercentage: "", profitSplit: "",
     profitTarget: "", dailyDD: "", maxDD: "", minDays: "", payoutSchedule: "",
     payoutMethods: "", scaling: "", maxAlloc: "", platform: "", instruments: "",
     news: "Allowed", weekend: "Allowed", ea: "Allowed", copyTrading: "Allowed",
@@ -153,12 +160,14 @@ function NewBrandPage() {
   // Specifics — exchange
   const [exch, setExch] = useState({
     supportedAssets: "", fees: "", spot: "Yes", futures: "Yes", copyTrading: "Yes",
-    kyc: "", deposits: "", withdrawals: "", security: "", licenses: "", referral: "",
+    kyc: "", deposits: "", withdrawals: "", security: "", licenses: "",
+    institutionalServices: "No", web3Integration: "No", apiTrading: "No", nativeToken: "", maxLeverage: "",
   });
 
   // Specifics — tool
   const [tool, setTool] = useState({
     type: "", pricing: "", trial: "Yes", platforms: "", integrations: "",
+    discountPercentage: "",
     discountCode: "", features: "", bestFor: "",
   });
 
@@ -190,6 +199,7 @@ function NewBrandPage() {
   });
   const [linkSteps, setLinkSteps] = useState<AccountStep[]>([]);
   const [createSteps, setCreateSteps] = useState<AccountStep[]>([]);
+  const [rules, setRules] = useState<RuleItem[]>([]);
 
   // Challenges
   const [challenges, setChallenges] = useState<ChallengeRow[]>([newChallenge()]);
@@ -250,6 +260,7 @@ function NewBrandPage() {
       { id: "editorial",  label: "Editorial review", icon: BookOpen, show: true },
       { id: "profile",    label: "Profile content", icon: BookOpen, show: true },
       { id: "cashback",   label: "Cashback / Rebate", icon: Wallet, show: true },
+      { id: "rules",      label: `Rules (${rules.length})`, icon: BookOpen, show: isProp },
       { id: "challenges", label: `Challenges (${challenges.length})`, icon: ListChecks, show: isProp },
       { id: "assets",     label: "Brand assets",   icon: ImageIcon,  show: true },
       { id: "trust",      label: "Trust & TBI",    icon: Shield,     show: true },
@@ -257,7 +268,7 @@ function NewBrandPage() {
       { id: "visibility", label: "Visibility",     icon: Eye,        show: true },
     ];
     return base.filter((s) => s.show);
-  }, [isBroker, isProp, isExchange, isTool, challenges.length]);
+  }, [isBroker, isProp, isExchange, isTool, challenges.length, rules.length]);
 
   // Track completed sections (simple heuristic per section)
   const sectionReady = useMemo<Record<SectionId, boolean>>(() => ({
@@ -272,12 +283,13 @@ function NewBrandPage() {
     editorial: !!(edStruct.keyFeatures || edStruct.verdict),
     profile: !!(profile.supportChannels || profile.legalEntity),
     cashback: !!cb.howTraderEarns || (isBroker && (linkSteps.some((s) => s.title || s.body) || createSteps.some((s) => s.title || s.body))),
+    rules: !isProp || rules.some((rule) => rule.question.trim() || rule.answer.trim()),
     challenges: challenges.length > 0,
     assets: !!logo,
     trust: tbi > 0,
     seo: !!seo.title,
     visibility: true,
-  }), [category, name, ceo, founderLi, tags, isBroker, broker, isProp, prop, isExchange, exch, isTool, tool, edStruct, profile, cb, linkSteps, createSteps, challenges.length, logo, tbi, seo.title]);
+  }), [category, name, ceo, founderLi, tags, isBroker, broker, isProp, prop, isExchange, exch, isTool, tool, edStruct, profile, cb, linkSteps, createSteps, rules, challenges.length, logo, tbi, seo.title]);
 
   const activeSections = useMemo(() => sections.map((item) => item.id), [sections]);
 
@@ -333,21 +345,36 @@ function NewBrandPage() {
       copyTrading: "Supported", islamic: "Available", restrictedCountries: "",
       ...((brand.broker ?? {}) as Record<string, string>),
     });
+    const propValue = ((brand.prop ?? {}) as Record<string, unknown>);
+    const { rules: rawRules, ...propFields } = propValue;
     setProp({
-      evalType: "2-step", sizes: "", pricing: "", discountCode: "", profitSplit: "",
+      evalType: "2-step", sizes: "", pricing: "", discountCode: "", discountPercentage: "", profitSplit: "",
       profitTarget: "", dailyDD: "", maxDD: "", minDays: "", payoutSchedule: "",
       payoutMethods: "", scaling: "", maxAlloc: "", platform: "", instruments: "",
       news: "Allowed", weekend: "Allowed", ea: "Allowed", copyTrading: "Allowed",
       consistency: "", prohibited: "",
-      ...((brand.prop ?? {}) as Record<string, string>),
+      ...(propFields as Record<string, string>),
     });
+    setRules(Array.isArray(rawRules)
+      ? rawRules.map((item, index) => {
+        const value = item as Partial<RuleItem> | null;
+        return {
+          id: typeof value?.id === "string" && value.id ? value.id : `rl_${index}_${Math.random().toString(36).slice(2, 6)}`,
+          question: String(value?.question ?? ""),
+          answer: String(value?.answer ?? ""),
+        };
+      })
+      : [],
+    );
     setExch({
       supportedAssets: "", fees: "", spot: "Yes", futures: "Yes", copyTrading: "Yes",
-      kyc: "", deposits: "", withdrawals: "", security: "", licenses: "", referral: "",
+      kyc: "", deposits: "", withdrawals: "", security: "", licenses: "",
+      institutionalServices: "No", web3Integration: "No", apiTrading: "No", nativeToken: "", maxLeverage: "",
       ...((brand.exchange ?? {}) as Record<string, string>),
     });
     setTool({
       type: "", pricing: "", trial: "Yes", platforms: "", integrations: "",
+      discountPercentage: "",
       discountCode: "", features: "", bestFor: "",
       ...((brand.tool ?? {}) as Record<string, string>),
     });
@@ -509,7 +536,7 @@ function NewBrandPage() {
         identity: { founded, hq, supportEmail, tagline, description, editorial },
         founder: { ceo, founderLi, founderX, yt, tags },
         broker: isBroker ? broker : undefined,
-        prop: isProp ? prop : undefined,
+        prop: isProp ? { ...prop, rules } : undefined,
         exchange: isExchange ? exch : undefined,
         tool: isTool ? tool : undefined,
         editorial: edStruct,
@@ -605,6 +632,21 @@ function NewBrandPage() {
         set(copy);
       },
     };
+  };
+
+  const ruleCtl = {
+    list: rules,
+    add: () => setRules((current) => [...current, newRule()]),
+    remove: (id: string) => setRules((current) => current.filter((rule) => rule.id !== id)),
+    patch: (id: string, patch: Partial<RuleItem>) => setRules((current) => current.map((rule) => (rule.id === id ? { ...rule, ...patch } : rule))),
+    move: (id: string, dir: -1 | 1) => {
+      const index = rules.findIndex((rule) => rule.id === id);
+      const nextIndex = index + dir;
+      if (index < 0 || nextIndex < 0 || nextIndex >= rules.length) return;
+      const next = [...rules];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      setRules(next);
+    },
   };
 
   /* ---- file → data URL helper ---- */
@@ -805,6 +847,7 @@ function NewBrandPage() {
                 {([
                   ["pricing","Pricing","$59 – $1,899"],
                   ["discountCode","Discount code","REBATE25"],
+                  ["discountPercentage","Discount percentage","25%"],
                   ["profitSplit","Profit split","80% / 90% scaling"],
                   ["profitTarget","Profit target","8% / 5%"],
                   ["dailyDD","Daily drawdown","5%"],
@@ -851,7 +894,7 @@ function NewBrandPage() {
                   <Field key={k} label={l}><input className={inputCls} placeholder={p} value={(exch as any)[k]} onChange={(e) => setExch({ ...exch, [k]: e.target.value })} /></Field>
                 ))}
                 {([
-                  ["spot","Spot support"],["futures","Futures support"],["copyTrading","Copy trading"],
+                  ["spot","Spot support"],["futures","Futures support"],["copyTrading","Copy trading"],["institutionalServices","Institutional services"],["web3Integration","Web3 integration"],["apiTrading","API trading"],
                 ] as const).map(([k, l]) => (
                   <Field key={k} label={l}>
                     <select className={selectCls} value={(exch as any)[k]} onChange={(e) => setExch({ ...exch, [k]: e.target.value })}>
@@ -861,7 +904,8 @@ function NewBrandPage() {
                 ))}
                 <Field label="Security features" span={2}><input className={inputCls} placeholder="Cold storage, 2FA, withdrawal whitelist" value={exch.security} onChange={(e) => setExch({ ...exch, security: e.target.value })} /></Field>
                 <Field label="Licenses / registrations" span={2}><input className={inputCls} placeholder="VARA Dubai, MAS Singapore, …" value={exch.licenses} onChange={(e) => setExch({ ...exch, licenses: e.target.value })} /></Field>
-                <Field label="Referral / affiliate commission" span={2}><input className={inputCls} placeholder="Up to 60% trading fee share" value={exch.referral} onChange={(e) => setExch({ ...exch, referral: e.target.value })} /></Field>
+                <Field label="Native token (name)"><input className={inputCls} placeholder="e.g. BNB" value={exch.nativeToken} onChange={(e) => setExch({ ...exch, nativeToken: e.target.value })} /></Field>
+                <Field label="Max leverage"><input className={inputCls} placeholder="e.g. 1:125" value={exch.maxLeverage} onChange={(e) => setExch({ ...exch, maxLeverage: e.target.value })} /></Field>
               </div>
               <SectionActions />
             </Panel>
@@ -875,6 +919,7 @@ function NewBrandPage() {
                   ["pricing","Pricing","$29/mo or $299/yr"],
                   ["platforms","Supported platforms","Web, iOS, Android, MT5"],
                   ["integrations","Integrations","MT4, MT5, NinjaTrader"],
+                  ["discountPercentage","Discount percentage","15%"],
                   ["discountCode","Discount code","REBATE10"],
                 ] as const).map(([k, l, p]) => (
                   <Field key={k} label={l}><input className={inputCls} placeholder={p} value={(tool as any)[k]} onChange={(e) => setTool({ ...tool, [k]: e.target.value })} /></Field>
@@ -1054,6 +1099,19 @@ function NewBrandPage() {
                   />
                 </>
               )}
+              <SectionActions />
+            </div>
+          )}
+
+          {section === "rules" && isProp && (
+            <div className="space-y-4">
+              <FaqStyleListPanel
+                title="Rules"
+                hint="Add the core firm rules exactly how you want them to appear on the brand page, using the same question-and-answer style as FAQs."
+                emptyLabel="No rules yet. Click"
+                addLabel="Add rule"
+                ctl={ruleCtl}
+              />
               <SectionActions />
             </div>
           )}
@@ -1384,6 +1442,77 @@ function StepListPanel({
               value={s.body}
               onChange={(e) => ctl.patch(s.id, { body: e.target.value })}
             />
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function FaqStyleListPanel({
+  title, hint, emptyLabel, addLabel, ctl,
+}: {
+  title: string;
+  hint: string;
+  emptyLabel: string;
+  addLabel: string;
+  ctl: {
+    list: RuleItem[];
+    add: () => void;
+    remove: (id: string) => void;
+    patch: (id: string, p: Partial<RuleItem>) => void;
+    move: (id: string, dir: -1 | 1) => void;
+  };
+}) {
+  return (
+    <Panel
+      title={`${title} (${ctl.list.length})`}
+      action={(
+        <button onClick={ctl.add} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-bold text-white">
+          <Plus className="h-3 w-3" /> {addLabel}
+        </button>
+      )}
+    >
+      <p className="mb-3 text-[11px] text-muted-foreground">{hint}</p>
+      {ctl.list.length === 0 && (
+        <div className="rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 text-center text-xs text-muted-foreground">
+          {emptyLabel} <span className="font-bold text-white">+ {addLabel}</span> to start.
+        </div>
+      )}
+      <div className="space-y-3">
+        {ctl.list.map((rule, index) => (
+          <div key={rule.id} className="rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/10 transition hover:bg-white/[0.06]">
+            <div className="mb-3 flex items-start gap-3">
+              <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[10px] font-bold text-white">
+                {index + 1}
+              </span>
+              <div className="flex-1">
+                <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">Question</label>
+                <input
+                  className={inputCls}
+                  value={rule.question}
+                  onChange={(e) => ctl.patch(rule.id, { question: e.target.value })}
+                  placeholder="How long can traders hold positions over the weekend?"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={() => ctl.move(rule.id, -1)} disabled={index === 0} className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white disabled:opacity-30">↑</button>
+                <button onClick={() => ctl.move(rule.id, 1)} disabled={index === ctl.list.length - 1} className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white disabled:opacity-30">↓</button>
+                <button onClick={() => ctl.remove(rule.id)} className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30">
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">Answer</label>
+              <textarea
+                rows={4}
+                className={inputCls}
+                value={rule.answer}
+                onChange={(e) => ctl.patch(rule.id, { answer: e.target.value })}
+                placeholder="Write the full rule explanation exactly how it should appear on the public brand page."
+              />
+            </div>
           </div>
         ))}
       </div>

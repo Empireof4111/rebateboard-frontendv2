@@ -247,7 +247,12 @@ function BrandsPage() {
 
   const ranked = useMemo(() => {
     const sorted = [...items].sort((a, b) => b.tbi - a.tbi);
-    return sorted.map((b, i) => ({ ...b, autoRank: i + 1 }));
+    const categoryRanks = new Map<string, number>();
+    return sorted.map((b) => {
+      const nextRank = (categoryRanks.get(b.category) ?? 0) + 1;
+      categoryRanks.set(b.category, nextRank);
+      return { ...b, autoRank: nextRank };
+    });
   }, [items]);
 
   const counts = useMemo(() => {
@@ -347,6 +352,7 @@ function BrandsPage() {
           {filtered.map((b) => {
             const effectiveRank = b.rankOverride ?? b.autoRank;
             const isOverridden = b.rankOverride != null && b.rankOverride !== b.autoRank;
+            const categoryCount = counts[b.category] ?? items.length;
             return (
               <tr key={b.id}>
                 <td>
@@ -371,7 +377,7 @@ function BrandsPage() {
                       <button
                         onClick={async () => {
                           try {
-                            await patchBrand(b.id, { rankOverride: Math.min(items.length, effectiveRank + 1) });
+                            await patchBrand(b.id, { rankOverride: Math.min(categoryCount, effectiveRank + 1) });
                           } catch (ex) {
                             toast.error(ex instanceof Error ? ex.message : "Unable to update rank");
                           }
