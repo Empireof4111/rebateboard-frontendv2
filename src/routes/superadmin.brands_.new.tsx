@@ -249,7 +249,7 @@ function NewBrandPage() {
     category === "Stock Prop Firm" ||
     category === "DEX Prop Firm";
   const isExchange = category === "Crypto Exchange";
-  const isTool = category === "Trading Software" || category === "Trading Tool";
+  const isTool = category === "Trading Software";
 
   const sections = useMemo(() => {
     const base: { id: SectionId; label: string; icon: typeof IdCard; show: boolean }[] = [
@@ -508,7 +508,8 @@ function NewBrandPage() {
     }
     setSaving(true);
     try {
-      const adminStatus = status === "published" ? "verified" : status === "draft" ? "draft" : "review";
+      const adminStatus: AdminBrandRecord["status"] =
+        status === "published" ? "verified" : status === "draft" ? "draft" : "review";
       const nextSection = options?.advance ? getNextSection(section) : section;
       const nextSavedSections = Array.from(new Set([...savedSections, section].filter((item): item is SectionId => activeSections.includes(item))));
       const nextFlags: BrandFlags = {

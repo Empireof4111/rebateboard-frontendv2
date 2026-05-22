@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader, Panel } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
-import { useReviews, setReviewStatus, toggleReviewFlag, deleteReview, type ReviewRecord } from "@/lib/reviews-store";
+import { type ReviewRecord } from "@/lib/reviews-store";
+import { deleteAdminReview, fetchAdminReviews, moderateAdminReview, setAdminReviewFlag } from "@/lib/reviews-api";
 import { Check, X, Flag, Trash2, Star, Eye, ShieldCheck, FileText, ImageIcon, ChevronRight, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/reviews")({
@@ -10,9 +11,32 @@ export const Route = createFileRoute("/superadmin/reviews")({
 });
 
 function ReviewsPage() {
-  const items = useReviews();
+  const [items, setItems] = useState<ReviewRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected" | "flagged">("pending");
   const [selected, setSelected] = useState<ReviewRecord | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const next = await fetchAdminReviews();
+        if (!cancelled) setItems(next);
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : "Unable to load reviews");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered = items.filter((r) =>
     filter === "all" ? true : filter === "flagged" ? r.flagged : r.status === filter,
@@ -75,25 +99,91 @@ function ReviewsPage() {
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button onClick={() => { setReviewStatus(r.id, "approved"); toast.success("Review approved & TBI updated"); }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/30"><Check className="h-3.5 w-3.5" /> Approve</button>
-                <button onClick={() => { setReviewStatus(r.id, "rejected"); toast.success("Review rejected"); }} className="inline-flex items-center gap-1 rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-bold text-rose-300 ring-1 ring-rose-400/30"><X className="h-3.5 w-3.5" /> Reject</button>
-                <button onClick={() => { toggleReviewFlag(r.id); toast.success(r.flagged ? "Flag cleared" : "Flagged"); }} className="inline-flex items-center gap-1 rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 ring-1 ring-amber-400/30"><Flag className="h-3.5 w-3.5" /> {r.flagged ? "Unflag" : "Flag"}</button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const saved = await moderateAdminReview(r.id, { status: "approved" });
+                      setItems((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+                      if (selected?.id === saved.id) setSelected(saved);
+                      toast.success("Review approved & TBI updated");
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Unable to approve review");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/30"
+                ><Check className="h-3.5 w-3.5" /> Approve</button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const saved = await moderateAdminReview(r.id, { status: "rejected" });
+                      setItems((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+                      if (selected?.id === saved.id) setSelected(saved);
+                      toast.success("Review rejected");
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Unable to reject review");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-bold text-rose-300 ring-1 ring-rose-400/30"
+                ><X className="h-3.5 w-3.5" /> Reject</button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const saved = await setAdminReviewFlag(r.id, !r.flagged);
+                      setItems((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+                      if (selected?.id === saved.id) setSelected(saved);
+                      toast.success(r.flagged ? "Flag cleared" : "Flagged");
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Unable to update flag");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 ring-1 ring-amber-400/30"
+                ><Flag className="h-3.5 w-3.5" /> {r.flagged ? "Unflag" : "Flag"}</button>
                 <button onClick={() => setSelected(r)} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white"><Eye className="h-3.5 w-3.5" /> Details</button>
-                <button onClick={() => { deleteReview(r.id); toast.success("Deleted"); }} className="ml-auto inline-flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:text-rose-300"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await deleteAdminReview(r.id);
+                      setItems((current) => current.filter((item) => item.id !== r.id));
+                      if (selected?.id === r.id) setSelected(null);
+                      toast.success("Deleted");
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Unable to delete review");
+                    }
+                  }}
+                  className="ml-auto inline-flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-muted-foreground hover:text-rose-300"
+                ><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div className="col-span-full py-10 text-center text-sm text-muted-foreground">No reviews in this view.</div>}
+          {loading && <div className="col-span-full py-10 text-center text-sm text-muted-foreground">Loading reviews...</div>}
+          {!loading && filtered.length === 0 && <div className="col-span-full py-10 text-center text-sm text-muted-foreground">No reviews in this view.</div>}
         </div>
       </Panel>
 
       {/* Drawer */}
-      {selected && <ReviewDrawer review={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ReviewDrawer
+          review={selected}
+          onClose={() => setSelected(null)}
+          onReviewChange={(next) => {
+            setItems((current) => current.map((item) => (item.id === next.id ? next : item)));
+            setSelected(next);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function ReviewDrawer({ review, onClose }: { review: ReviewRecord; onClose: () => void }) {
+function ReviewDrawer({
+  review,
+  onClose,
+  onReviewChange,
+}: {
+  review: ReviewRecord;
+  onClose: () => void;
+  onReviewChange: (next: ReviewRecord) => void;
+}) {
   const dims: { key: keyof ReviewRecord["ratings"]; label: string }[] = [
     { key: "customerCare", label: "Customer Care" },
     { key: "tradingConditions", label: "Trading Conditions" },
@@ -165,8 +255,32 @@ function ReviewDrawer({ review, onClose }: { review: ReviewRecord; onClose: () =
         </div>
 
         <div className="mt-5 flex gap-2">
-          <button onClick={() => { setReviewStatus(review.id, "approved"); toast.success("Approved & TBI updated"); onClose(); }} className="flex-1 rounded-lg bg-emerald-500/20 py-2 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/40">Approve</button>
-          <button onClick={() => { setReviewStatus(review.id, "rejected"); toast.success("Rejected"); onClose(); }} className="flex-1 rounded-lg bg-rose-500/20 py-2 text-xs font-bold text-rose-300 ring-1 ring-rose-400/40">Reject</button>
+          <button
+            onClick={async () => {
+              try {
+                const saved = await moderateAdminReview(review.id, { status: "approved" });
+                onReviewChange(saved);
+                toast.success("Approved & TBI updated");
+                onClose();
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to approve review");
+              }
+            }}
+            className="flex-1 rounded-lg bg-emerald-500/20 py-2 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/40"
+          >Approve</button>
+          <button
+            onClick={async () => {
+              try {
+                const saved = await moderateAdminReview(review.id, { status: "rejected" });
+                onReviewChange(saved);
+                toast.success("Rejected");
+                onClose();
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to reject review");
+              }
+            }}
+            className="flex-1 rounded-lg bg-rose-500/20 py-2 text-xs font-bold text-rose-300 ring-1 ring-rose-400/40"
+          >Reject</button>
         </div>
       </aside>
     </div>

@@ -656,7 +656,7 @@ function FirmDetailsPage() {
         ) : topTab === "Challenges" ? (
           <div className="mt-4"><FirmChallenges firmName={name} /></div>
         ) : topTab === "Complaints" ? (
-          <div className="mt-4"><FirmComplaints firmName={name} /></div>
+          <div className="mt-4"><FirmComplaints firmName={name} firmSlug={firmId} /></div>
         ) : topTab === "Payouts" ? (
           <div className="mt-4"><FirmPayouts firmName={name} /></div>
         ) : topTab === "Announcement" ? (

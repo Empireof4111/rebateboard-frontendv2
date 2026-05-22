@@ -1,35 +1,24 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle, ArrowUp, BadgeCheck, Camera, ChevronDown, Clock, Filter,
   Flag, ImageIcon, MessageSquare, Paperclip, Plus, Search, Send, Shield,
   ShieldAlert, Sparkles, Trash2, TrendingUp, Upload, X, CheckCircle2, FileText,
+  ExternalLink,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import {
+  fetchPublicComplaints,
+  submitComplaint,
+  type ComplaintRecord,
+  type ComplaintSeverity,
+  type ComplaintStatus,
+} from "@/lib/complaints-api";
+import { uploadMediaFiles } from "@/lib/media-api";
+import { toast } from "sonner";
 
-type Status = "Posted" | "Under Review" | "Responded" | "Resolved";
-type Severity = "Low" | "Medium" | "High";
-
-type Complaint = {
-  id: string;
-  user: string;
-  anonymous: boolean;
-  issueType: string;
-  title: string;
-  description: string;
-  accountType: string;
-  accountSize: string;
-  platform: string;
-  tradingStyle: string;
-  country: string;
-  severity: Severity;
-  expectation: string;
-  evidenceCount: number;
-  status: Status;
-  upvotes: number;
-  comments: number;
-  createdAt: string;
-  credibility: number;
-  firmReply?: { text: string; date: string };
-};
+type StatusFilter = "All" | ComplaintStatus;
+type SeverityFilter = "All" | ComplaintSeverity;
 
 const ISSUE_TYPES = [
   "Payout Issue", "Account Ban / Breach", "Slippage / Execution",
@@ -37,104 +26,92 @@ const ISSUE_TYPES = [
   "Unfair Rules", "Other",
 ];
 
-const SEED: Complaint[] = [
-  {
-    id: "C-2041", user: "trader_marc", anonymous: false,
-    issueType: "Account Ban / Breach",
-    title: "Account banned for ‘reverse trading’ without clear proof",
-    description:
-      "After passing Phase 2, my funded account got banned citing reverse trading. I never used a second account. Support replied with a generic email and refused to share trade IDs.",
-    accountType: "Funded", accountSize: "$100,000", platform: "MT5",
-    tradingStyle: "Manual", country: "Germany",
-    severity: "High", expectation: "Account review",
-    evidenceCount: 4, status: "Under Review", upvotes: 184, comments: 23,
-    createdAt: "2 days ago", credibility: 92,
-    firmReply: { text: "We are re-investigating the case with our risk team and will update within 72h.", date: "1 day ago" },
-  },
-  {
-    id: "C-2039", user: "anon", anonymous: true,
-    issueType: "Payout Issue",
-    title: "Payout delayed 18 days — KYC ‘re-verification’ loop",
-    description:
-      "Requested payout on the 1st. Got asked to re-verify KYC three separate times. Same documents accepted previously.",
-    accountType: "Funded", accountSize: "$50,000", platform: "cTrader",
-    tradingStyle: "EA", country: "UAE",
-    severity: "High", expectation: "Payout",
-    evidenceCount: 6, status: "Responded", upvotes: 142, comments: 31,
-    createdAt: "5 days ago", credibility: 88,
-  },
-  {
-    id: "C-2032", user: "fx_lara", anonymous: false,
-    issueType: "Slippage / Execution",
-    title: "Massive slippage on NFP — 18 pips on EURUSD limit",
-    description:
-      "Placed a sell limit pre-NFP. Got filled 18 pips worse than the trigger. Same setup on my broker account: 0.4 pip slippage.",
-    accountType: "Challenge", accountSize: "$25,000", platform: "MT4",
-    tradingStyle: "Manual", country: "Brazil",
-    severity: "Medium", expectation: "Explanation",
-    evidenceCount: 2, status: "Posted", upvotes: 71, comments: 12,
-    createdAt: "1 week ago", credibility: 64,
-  },
-  {
-    id: "C-2018", user: "ph_quant", anonymous: false,
-    issueType: "Unfair Rules",
-    title: "Hidden ‘consistency rule’ enforced after payout request",
-    description:
-      "Was told my best day exceeded 30% of total profits — rule wasn’t in the contract I signed when I bought the challenge.",
-    accountType: "Funded", accountSize: "$200,000", platform: "DXtrade",
-    tradingStyle: "EA", country: "Philippines",
-    severity: "Medium", expectation: "Public awareness",
-    evidenceCount: 3, status: "Resolved", upvotes: 220, comments: 45,
-    createdAt: "3 weeks ago", credibility: 95,
-    firmReply: { text: "We have updated our rules page for clarity and refunded the trader’s last payout in full.", date: "2 weeks ago" },
-  },
-];
-
-const STATUS_STYLES: Record<Status, string> = {
-  "Posted": "bg-sky-400/15 text-sky-200 ring-sky-300/30",
-  "Under Review": "bg-amber-400/15 text-amber-200 ring-amber-300/30",
-  "Responded": "bg-violet-400/15 text-violet-200 ring-violet-300/30",
-  "Resolved": "bg-emerald-400/15 text-emerald-200 ring-emerald-300/30",
+const STATUS_STYLES: Record<ComplaintStatus, string> = {
+  pending: "bg-slate-400/15 text-slate-200 ring-slate-300/30",
+  posted: "bg-sky-400/15 text-sky-200 ring-sky-300/30",
+  reviewing: "bg-amber-400/15 text-amber-200 ring-amber-300/30",
+  responded: "bg-violet-400/15 text-violet-200 ring-violet-300/30",
+  resolved: "bg-emerald-400/15 text-emerald-200 ring-emerald-300/30",
+  rejected: "bg-rose-500/15 text-rose-200 ring-rose-300/30",
 };
 
-const SEVERITY_STYLES: Record<Severity, string> = {
-  Low: "bg-emerald-400/10 text-emerald-200 ring-emerald-300/30",
-  Medium: "bg-amber-400/10 text-amber-200 ring-amber-300/30",
-  High: "bg-rose-500/15 text-rose-200 ring-rose-300/30",
+const SEVERITY_STYLES: Record<ComplaintSeverity, string> = {
+  low: "bg-emerald-400/10 text-emerald-200 ring-emerald-300/30",
+  medium: "bg-amber-400/10 text-amber-200 ring-amber-300/30",
+  high: "bg-rose-500/15 text-rose-200 ring-rose-300/30",
 };
 
-export function FirmComplaints({ firmName }: { firmName: string }) {
-  const [items, setItems] = useState<Complaint[]>(SEED);
+function formatStatus(status: ComplaintStatus) {
+  return status === "reviewing"
+    ? "Under Review"
+    : status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function formatSeverity(severity: ComplaintSeverity) {
+  return severity.charAt(0).toUpperCase() + severity.slice(1);
+}
+
+export function FirmComplaints({ firmName, firmSlug }: { firmName: string; firmSlug?: string }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [items, setItems] = useState<ComplaintRecord[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [filterIssue, setFilterIssue] = useState<string>("All");
-  const [filterStatus, setFilterStatus] = useState<string>("All");
-  const [filterSeverity, setFilterSeverity] = useState<string>("All");
+  const [filterStatus, setFilterStatus] = useState<StatusFilter>("All");
+  const [filterSeverity, setFilterSeverity] = useState<SeverityFilter>("All");
   const [withEvidenceOnly, setWithEvidenceOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"latest" | "upvoted" | "severe">("latest");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const next = await fetchPublicComplaints(firmSlug);
+        if (!cancelled) {
+          setItems(next);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : "Unable to load complaints");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [firmSlug]);
 
   const stats = useMemo(() => {
     const total = items.length;
-    const resolved = items.filter((i) => i.status === "Resolved").length;
-    const sevScore = items.reduce((a, i) => a + (i.severity === "High" ? 3 : i.severity === "Medium" ? 2 : 1), 0) / Math.max(total, 1);
+    const resolved = items.filter((i) => i.status === "resolved").length;
+    const sevScore = items.reduce((a, i) => a + (i.severity === "high" ? 3 : i.severity === "medium" ? 2 : 1), 0) / Math.max(total, 1);
     const sevLabel = sevScore >= 2.4 ? "High" : sevScore >= 1.7 ? "Medium" : "Low";
     return { total, resolvedPct: total ? Math.round((resolved / total) * 100) : 0, sevLabel };
   }, [items]);
 
   const visible = useMemo(() => {
     let arr = items.slice();
-    if (filterIssue !== "All") arr = arr.filter((i) => i.issueType === filterIssue);
+    if (filterIssue !== "All") arr = arr.filter((i) => i.category === filterIssue);
     if (filterStatus !== "All") arr = arr.filter((i) => i.status === filterStatus);
     if (filterSeverity !== "All") arr = arr.filter((i) => i.severity === filterSeverity);
-    if (withEvidenceOnly) arr = arr.filter((i) => i.evidenceCount > 0);
+    if (withEvidenceOnly) arr = arr.filter((i) => i.evidenceFiles.length > 0);
     if (search.trim()) {
       const q = search.toLowerCase();
       arr = arr.filter((i) => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
     }
     if (sortBy === "upvoted") arr.sort((a, b) => b.upvotes - a.upvotes);
     if (sortBy === "severe") {
-      const w: Record<Severity, number> = { High: 3, Medium: 2, Low: 1 };
+      const w: Record<ComplaintSeverity, number> = { high: 3, medium: 2, low: 1 };
       arr.sort((a, b) => w[b.severity] - w[a.severity]);
     }
     return arr;
@@ -146,14 +123,21 @@ export function FirmComplaints({ firmName }: { firmName: string }) {
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, upvotes: i.upvotes + 1 } : i)));
   }
 
-  function handleAdd(c: Complaint) {
+  function handleOpenForm() {
+    if (!user) {
+      navigate({ to: "/login", search: { redirect: `/firm/${firmSlug ?? ""}` } as never });
+      return;
+    }
+    setShowForm(true);
+  }
+
+  function handleAdd(c: ComplaintRecord) {
     setItems((arr) => [c, ...arr]);
     setShowForm(false);
   }
 
   return (
     <div className="space-y-5">
-      {/* Header / KPI strip */}
       <div className="glass rounded-2xl p-4 ring-1 ring-white/10 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -165,11 +149,11 @@ export function FirmComplaints({ firmName }: { firmName: string }) {
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Structured, proof-backed reports — affects this firm’s TBI score.
+              Structured, proof-backed reports - affects this firm's TBI score.
             </p>
           </div>
           <button
-            onClick={() => setShowForm(true)}
+            onClick={handleOpenForm}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] transition hover:opacity-95"
           >
             <Plus className="h-3.5 w-3.5" /> Drop Complaint
@@ -184,7 +168,6 @@ export function FirmComplaints({ firmName }: { firmName: string }) {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="glass rounded-2xl p-3 ring-1 ring-white/10">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[180px]">
@@ -192,36 +175,36 @@ export function FirmComplaints({ firmName }: { firmName: string }) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search complaints…"
+              placeholder="Search complaints..."
               className="w-full rounded-full bg-white/5 py-2 pl-8 pr-3 text-xs text-white placeholder:text-muted-foreground ring-1 ring-white/10 focus:outline-none focus:ring-fuchsia-300/40"
             />
           </div>
           <Select label="Issue" value={filterIssue} onChange={setFilterIssue} options={["All", ...ISSUE_TYPES]} />
-          <Select label="Status" value={filterStatus} onChange={setFilterStatus} options={["All", "Posted", "Under Review", "Responded", "Resolved"]} />
-          <Select label="Severity" value={filterSeverity} onChange={setFilterSeverity} options={["All", "Low", "Medium", "High"]} />
+          <Select label="Status" value={filterStatus} onChange={(v) => setFilterStatus(v as StatusFilter)} options={["All", "pending", "posted", "reviewing", "responded", "resolved"]} />
+          <Select label="Severity" value={filterSeverity} onChange={(v) => setFilterSeverity(v as SeverityFilter)} options={["All", "low", "medium", "high"]} />
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white/5 px-3 py-2 text-[11px] text-white ring-1 ring-white/10">
             <input type="checkbox" checked={withEvidenceOnly} onChange={(e) => setWithEvidenceOnly(e.target.checked)} className="accent-fuchsia-400" />
             With evidence
           </label>
-          <Select label="Sort" value={sortBy} onChange={(v) => setSortBy(v as any)} options={[
+          <Select label="Sort" value={sortBy} onChange={(v) => setSortBy(v as "latest" | "upvoted" | "severe")} options={[
             { value: "latest", label: "Latest" }, { value: "upvoted", label: "Most upvoted" }, { value: "severe", label: "Most severe" },
           ]} />
         </div>
       </div>
 
-      {/* Cards */}
       <div className="grid gap-3">
-        {visible.map((c) => (
+        {loading ? (
+          <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">Loading complaints...</div>
+        ) : visible.map((c) => (
           <ComplaintCard key={c.id} c={c} onOpen={() => setOpenId(c.id)} onUpvote={() => handleUpvote(c.id)} />
         ))}
-        {visible.length === 0 && (
+        {!loading && visible.length === 0 && (
           <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
             No complaints match your filters.
           </div>
         )}
       </div>
 
-      {/* Detail modal */}
       {opened && (
         <ComplaintDetail
           c={opened}
@@ -231,9 +214,13 @@ export function FirmComplaints({ firmName }: { firmName: string }) {
         />
       )}
 
-      {/* Form modal */}
       {showForm && (
-        <ComplaintForm firmName={firmName} onClose={() => setShowForm(false)} onSubmit={handleAdd} />
+        <ComplaintForm
+          firmName={firmName}
+          firmSlug={firmSlug}
+          onClose={() => setShowForm(false)}
+          onSubmit={handleAdd}
+        />
       )}
     </div>
   );
@@ -272,7 +259,7 @@ function Select({
         {options.map((o) => {
           const v = typeof o === "string" ? o : o.value;
           const l = typeof o === "string" ? o : o.label;
-          return <option key={v} value={v} className="bg-[#160a25]">{l}</option>;
+          return <option key={v} value={v} className="bg-[#160a25]">{typeof o === "string" && (label === "Status" || label === "Severity") ? l.charAt(0).toUpperCase() + l.slice(1) : l}</option>;
         })}
       </select>
       <ChevronDown className="h-3 w-3 text-muted-foreground" />
@@ -280,7 +267,7 @@ function Select({
   );
 }
 
-function ComplaintCard({ c, onOpen, onUpvote }: { c: Complaint; onOpen: () => void; onUpvote: () => void }) {
+function ComplaintCard({ c, onOpen, onUpvote }: { c: ComplaintRecord; onOpen: () => void; onUpvote: () => void }) {
   return (
     <article className="group glass rounded-2xl p-4 ring-1 ring-white/10 transition hover:ring-fuchsia-300/30">
       <div className="flex items-start gap-3">
@@ -296,17 +283,17 @@ function ComplaintCard({ c, onOpen, onUpvote }: { c: Complaint; onOpen: () => vo
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-medium text-fuchsia-200 ring-1 ring-fuchsia-300/30">
-              {c.issueType}
+              {c.category}
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${STATUS_STYLES[c.status]}`}>{c.status}</span>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${SEVERITY_STYLES[c.severity]}`}>{c.severity} severity</span>
-            {c.evidenceCount > 0 && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${STATUS_STYLES[c.status]}`}>{formatStatus(c.status)}</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${SEVERITY_STYLES[c.severity]}`}>{formatSeverity(c.severity)} severity</span>
+            {c.evidenceFiles.length > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-200 ring-1 ring-emerald-300/30">
-                <Paperclip className="h-3 w-3" /> {c.evidenceCount} evidence
+                <Paperclip className="h-3 w-3" /> {c.evidenceFiles.length} evidence
               </span>
             )}
             <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Clock className="h-3 w-3" /> {c.createdAt}
+              <Clock className="h-3 w-3" /> {c.time}
             </span>
           </div>
 
@@ -342,9 +329,9 @@ function ComplaintCard({ c, onOpen, onUpvote }: { c: Complaint; onOpen: () => vo
   );
 }
 
-function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: Complaint; onClose: () => void; onUpvote: () => void; firmName: string }) {
-  const steps: Status[] = ["Posted", "Under Review", "Responded", "Resolved"];
-  const currentIdx = steps.indexOf(c.status);
+function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecord; onClose: () => void; onUpvote: () => void; firmName: string }) {
+  const steps: ComplaintStatus[] = ["posted", "reviewing", "responded", "resolved"];
+  const currentIdx = Math.max(steps.indexOf(c.status), c.status === "pending" ? 0 : -1);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
@@ -353,53 +340,59 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: Complaint; onC
           <X className="h-4 w-4" />
         </button>
 
-        {/* Header */}
         <div className="flex flex-wrap items-center gap-2 pr-10">
-          <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-medium text-fuchsia-200 ring-1 ring-fuchsia-300/30">{c.issueType}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${STATUS_STYLES[c.status]}`}>{c.status}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${SEVERITY_STYLES[c.severity]}`}>{c.severity}</span>
-          <span className="ml-auto text-[10px] text-muted-foreground">{c.createdAt} · ID {c.id}</span>
+          <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-medium text-fuchsia-200 ring-1 ring-fuchsia-300/30">{c.category}</span>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${STATUS_STYLES[c.status]}`}>{formatStatus(c.status)}</span>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${SEVERITY_STYLES[c.severity]}`}>{formatSeverity(c.severity)}</span>
+          <span className="ml-auto text-[10px] text-muted-foreground">{c.time} · ID {c.id}</span>
         </div>
         <h3 className="mt-2 text-lg font-semibold text-white">{c.title}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{firmName} · reported by {c.anonymous ? "Anonymous trader" : c.user}</p>
 
-        {/* Status tracker */}
         <div className="mt-4 grid grid-cols-4 gap-1">
           {steps.map((s, i) => {
             const done = i <= currentIdx;
             return (
               <div key={s} className="flex flex-col items-center gap-1">
                 <div className={`h-1.5 w-full rounded-full ${done ? "bg-gradient-to-r from-fuchsia-400 to-violet-400" : "bg-white/10"}`} />
-                <span className={`text-[10px] ${done ? "text-white" : "text-muted-foreground"}`}>{s}</span>
+                <span className={`text-[10px] ${done ? "text-white" : "text-muted-foreground"}`}>{formatStatus(s)}</span>
               </div>
             );
           })}
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_260px]">
-          {/* Main */}
           <div className="space-y-4">
             <section className="glass rounded-2xl p-4 ring-1 ring-white/10">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">The story</h4>
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-white/90">{c.description}</p>
             </section>
 
-            {/* Evidence */}
             <section className="glass rounded-2xl p-4 ring-1 ring-white/10">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence ({c.evidenceCount})</h4>
-                <span className="text-[10px] text-muted-foreground">Click to zoom</span>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence ({c.evidenceFiles.length})</h4>
+                <span className="text-[10px] text-muted-foreground">Open each file directly</span>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {Array.from({ length: c.evidenceCount }).map((_, i) => (
-                  <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-fuchsia-400/15 to-violet-500/15 ring-1 ring-white/10 flex items-center justify-center">
-                    {i === 0 ? <FileText className="h-5 w-5 text-white/70" /> : <ImageIcon className="h-5 w-5 text-white/70" />}
-                  </div>
-                ))}
-              </div>
+              {c.evidenceFiles.length ? (
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {c.evidenceFiles.map((file) => (
+                    <a key={`${file.name}-${file.url}`} href={file.url} target="_blank" rel="noreferrer" className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10 hover:bg-white/[0.07]">
+                      <div className="flex items-center gap-2">
+                        {file.type === "image" ? <ImageIcon className="h-4 w-4 text-fuchsia-300" /> : <FileText className="h-4 w-4 text-fuchsia-300" />}
+                        <span className="truncate text-[11px] font-semibold text-white">{file.name}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>{file.type}</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 text-xs text-muted-foreground">No evidence attached.</div>
+              )}
             </section>
 
-            {/* Firm response */}
             {c.firmReply && (
               <section className="rounded-2xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 p-4 ring-1 ring-violet-300/30">
                 <div className="flex items-center gap-2">
@@ -411,32 +404,22 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: Complaint; onC
               </section>
             )}
 
-            {/* Comments */}
             <section className="glass rounded-2xl p-4 ring-1 ring-white/10">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Community ({c.comments})</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timeline</h4>
               <div className="mt-3 space-y-3">
-                {[
-                  { u: "alpha_dz", t: "Same exact thing happened to me last month — kept all my screenshots." },
-                  { u: "vega_nl", t: "There’s a pattern around payouts > $5k. Try escalating via Trustpilot." },
-                ].map((m, i) => (
-                  <div key={i} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      <span className="font-semibold text-white">@{m.u}</span> · 1d ago
+                {c.timeline.map((t, i) => (
+                  <div key={`${t.stage}-${i}`} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
+                    <div className="flex items-center justify-between gap-2 text-[10px]">
+                      <span className="font-semibold text-white">{t.stage}</span>
+                      <span className="text-muted-foreground">{t.time}</span>
                     </div>
-                    <p className="mt-1 text-sm text-white/90">{m.t}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground"><span className="text-fuchsia-300">{t.actor}</span> · {t.note}</p>
                   </div>
                 ))}
-                <div className="flex items-center gap-2 rounded-xl bg-white/[0.03] p-2 ring-1 ring-white/10">
-                  <input placeholder="Share your experience…" className="flex-1 bg-transparent px-2 py-1.5 text-sm text-white placeholder:text-muted-foreground outline-none" />
-                  <button className="inline-flex items-center gap-1 rounded-full bg-fuchsia-300/20 px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-fuchsia-300/40">
-                    <Send className="h-3 w-3" /> Reply
-                  </button>
-                </div>
               </div>
             </section>
           </div>
 
-          {/* Side context */}
           <aside className="space-y-3">
             <div className="glass rounded-2xl p-4 ring-1 ring-white/10">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Context</h4>
@@ -464,13 +447,8 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: Complaint; onC
               <p className="mt-2 text-[10px] text-muted-foreground">Based on evidence, detail, and community signal.</p>
             </div>
 
-            <div className="glass rounded-2xl p-4 ring-1 ring-white/10">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Similar pattern</h4>
-              <p className="mt-2 text-sm text-white">12 traders reported similar payout issues this month.</p>
-            </div>
-
             <button onClick={onUpvote} className="w-full rounded-full bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/10 hover:bg-fuchsia-300/15 hover:ring-fuchsia-300/40">
-              👍 Same issue ({c.upvotes})
+              Same issue ({c.upvotes})
             </button>
           </aside>
         </div>
@@ -488,9 +466,18 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
-/* ---------------- Form ---------------- */
-
-function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onClose: () => void; onSubmit: (c: Complaint) => void }) {
+function ComplaintForm({
+  firmName,
+  firmSlug,
+  onClose,
+  onSubmit,
+}: {
+  firmName: string;
+  firmSlug?: string;
+  onClose: () => void;
+  onSubmit: (c: ComplaintRecord) => void;
+}) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [issueType, setIssueType] = useState(ISSUE_TYPES[0]);
   const [title, setTitle] = useState("");
@@ -499,11 +486,12 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
   const [accountSize, setAccountSize] = useState("$50,000");
   const [platform, setPlatform] = useState("MT5");
   const [tradingStyle, setTradingStyle] = useState("Manual");
-  const [country, setCountry] = useState("Germany");
-  const [severity, setSeverity] = useState<Severity>("Medium");
+  const [country, setCountry] = useState(user?.country ?? "Nigeria");
+  const [severity, setSeverity] = useState<ComplaintSeverity>("medium");
   const [expectation, setExpectation] = useState("Account review");
-  const [files, setFiles] = useState<{ name: string; size: number }[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [anonymous, setAnonymous] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const credibility = Math.min(
@@ -512,8 +500,8 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
       40 +
         Math.min(description.length / 8, 25) +
         Math.min(files.length * 6, 25) +
-        (severity === "High" ? 5 : severity === "Medium" ? 3 : 1)
-    )
+        (severity === "high" ? 5 : severity === "medium" ? 3 : 1),
+    ),
   );
 
   const canNext =
@@ -524,25 +512,60 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
 
   function addFiles(list: FileList | null) {
     if (!list) return;
-    const arr = Array.from(list).slice(0, 10).map((f) => ({ name: f.name, size: f.size }));
+    const arr = Array.from(list).slice(0, 10 - files.length);
     setFiles((prev) => [...prev, ...arr].slice(0, 10));
   }
 
-  function submit() {
-    const c: Complaint = {
-      id: `C-${Math.floor(2100 + Math.random() * 900)}`,
-      user: anonymous ? "anon" : "you",
-      anonymous,
-      issueType, title, description,
-      accountType, accountSize, platform, tradingStyle, country,
-      severity, expectation,
-      evidenceCount: files.length,
-      status: "Posted",
-      upvotes: 0, comments: 0,
-      createdAt: "just now",
-      credibility,
-    };
-    onSubmit(c);
+  async function submit() {
+    if (!user) {
+      toast.error("Please sign in before submitting a complaint");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const uploaded = files.length
+        ? await uploadMediaFiles(files, { folder: "complaints", prefix: firmSlug || firmName.toLowerCase().replace(/\s+/g, "-") })
+        : [];
+
+      const evidenceFiles = uploaded.map((file, index) => ({
+        name: files[index]?.name || `Evidence ${index + 1}`,
+        size: files[index]?.size || 0,
+        type: files[index]?.type || "application/octet-stream",
+        url: file.url,
+        dataUrl: file.url,
+      }));
+
+      const complaint = await submitComplaint({
+        title,
+        description,
+        attachments: uploaded.map((file) => file.url),
+        complaintCategory: issueType,
+        severity,
+        anonymous,
+        accountType,
+        platform,
+        tradingStyle,
+        country,
+        expectation,
+        evidenceFiles,
+        providerType: "Prop Firm",
+        brandSlug: firmSlug,
+        brandName: firmName,
+        name: anonymous ? "Anonymous trader" : (user.fullName || user.name || user.email),
+        emailAddress: user.email,
+        accountId: accountSize,
+      });
+
+      onSubmit(complaint);
+      toast.success("Complaint submitted", {
+        description: "It has been sent for moderation and will show publicly once reviewed.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to submit complaint");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -558,7 +581,6 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">Structured & evidence-driven. Step {step} of 6.</p>
 
-        {/* Stepper */}
         <div className="mt-3 grid grid-cols-6 gap-1">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`h-1.5 rounded-full ${i < step ? "bg-gradient-to-r from-fuchsia-400 to-violet-400" : "bg-white/10"}`} />
@@ -592,7 +614,7 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
               <Field label="Title">
                 <input
                   value={title} onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Account banned for ‘reverse trading’ without proof"
+                  placeholder="e.g. Account banned for reverse trading without proof"
                   className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
                 />
               </Field>
@@ -642,7 +664,7 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
               {files.length > 0 && (
                 <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {files.map((f, i) => (
-                    <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.04] px-2 py-1.5 ring-1 ring-white/10">
+                    <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.04] px-2 py-1.5 ring-1 ring-white/10">
                       <span className="flex items-center gap-1.5 truncate text-[11px] text-white"><Camera className="h-3 w-3" />{f.name}</span>
                       <button onClick={() => setFiles((arr) => arr.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-rose-300"><Trash2 className="h-3 w-3" /></button>
                     </li>
@@ -657,7 +679,7 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
             <Section title="Severity & expectation" hint="What outcome do you want?">
               <Field label="Severity">
                 <div className="grid grid-cols-3 gap-2">
-                  {(["Low", "Medium", "High"] as Severity[]).map((s) => (
+                  {(["low", "medium", "high"] as ComplaintSeverity[]).map((s) => (
                     <button
                       key={s} onClick={() => setSeverity(s)}
                       className={
@@ -665,7 +687,7 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
                         (severity === s ? `${SEVERITY_STYLES[s]}` : "bg-white/[0.03] text-white/80 ring-white/10 hover:bg-white/[0.06]")
                       }
                     >
-                      {s === "Low" ? "😐 Low" : s === "Medium" ? "⚠️ Medium" : "🚨 High"}
+                      {formatSeverity(s)}
                     </button>
                   ))}
                 </div>
@@ -711,7 +733,7 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/10 pt-4">
           <button
             onClick={() => setStep((s) => Math.max(1, s - 1))}
-            disabled={step === 1}
+            disabled={step === 1 || saving}
             className="rounded-full bg-white/[0.05] px-4 py-2 text-xs text-white ring-1 ring-white/10 disabled:opacity-40"
           >
             Back
@@ -719,17 +741,18 @@ function ComplaintForm({ firmName, onClose, onSubmit }: { firmName: string; onCl
           {step < 6 ? (
             <button
               onClick={() => canNext && setStep((s) => s + 1)}
-              disabled={!canNext}
+              disabled={!canNext || saving}
               className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] disabled:opacity-50"
             >
               Continue
             </button>
           ) : (
             <button
-              onClick={submit}
-              className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)]"
+              onClick={() => void submit()}
+              disabled={saving}
+              className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] disabled:opacity-50"
             >
-              Submit complaint
+              {saving ? "Submitting..." : "Submit complaint"}
             </button>
           )}
         </div>

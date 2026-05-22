@@ -1,58 +1,170 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Panel, DataTable, StatusPill, SeverityPill, StatCard, Toolbar } from "@/components/superadmin/AdminUI";
-import { openComplaints, complaintTimelines } from "@/lib/admin-data";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Paperclip, MessageSquare, Send, FileText, FileImage, FileSpreadsheet, Mail,
   Sparkles, ShieldAlert, ArrowUp, BadgeCheck, Eye, Download, ExternalLink,
 } from "lucide-react";
+import { deleteComplaint, fetchAdminComplaints, moderateComplaint, type ComplaintRecord, type ComplaintStatus } from "@/lib/complaints-api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/superadmin/complaints")({
   component: ComplaintsPage,
 });
 
 function ComplaintsPage() {
-  const [activeId, setActiveId] = useState<string>("c_88");
+  const [items, setItems] = useState<ComplaintRecord[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
   const [preview, setPreview] = useState<{ name: string; url: string; type: string } | null>(null);
-  const active = openComplaints.find((c) => c.id === activeId) ?? openComplaints[0];
-  const timeline =
-    (complaintTimelines as Record<string, ReadonlyArray<{ stage: string; actor: string; note: string; time: string }>>)[active.id] ??
-    [
-      { stage: "Submitted", actor: active.anonymous ? "Anonymous" : active.user, note: `Filed with ${active.evidence} evidence file(s).`, time: active.time },
-    ];
+  const [loading, setLoading] = useState(true);
+  const [adminNoteDraft, setAdminNoteDraft] = useState("");
+  const [brandResponseDraft, setBrandResponseDraft] = useState("");
 
-  const sevWord = useMemo(() => active.severity[0].toUpperCase() + active.severity.slice(1), [active.severity]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadComplaints() {
+      try {
+        const next = await fetchAdminComplaints();
+        if (cancelled) return;
+        setItems(next);
+        setActiveId((current) => (current && next.some((item) => item.id === current) ? current : next[0]?.id ?? ""));
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : "Unable to load complaints");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadComplaints();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const active = items.find((c) => c.id === activeId) ?? items[0] ?? null;
+
+  useEffect(() => {
+    setAdminNoteDraft(active?.adminNote ?? "");
+    setBrandResponseDraft(active?.firmReply?.text ?? "");
+  }, [active?.id, active?.adminNote, active?.firmReply?.text]);
+
+  const stats = useMemo(() => {
+    const open = items.filter((c) => c.status !== "resolved" && c.status !== "rejected").length;
+    const high = items.filter((c) => c.severity === "high").length;
+    const resolved = items.filter((c) => c.status === "resolved").length;
+    const avgCredibility = items.length
+      ? (items.reduce((sum, item) => sum + item.credibility, 0) / items.length).toFixed(0)
+      : "0";
+
+    return { open, high, resolved, avgCredibility };
+  }, [items]);
+
+  const sevWord = useMemo(
+    () => (active ? active.severity[0].toUpperCase() + active.severity.slice(1) : "Medium"),
+    [active],
+  );
+
+  async function applyModeration(input: {
+    status?: ComplaintStatus;
+    severity?: "low" | "medium" | "high";
+    adminNote?: string;
+    brandResponse?: string;
+  }) {
+    if (!active) return;
+
+    try {
+      const updated = await moderateComplaint(active.reportId, input);
+      setItems((current) => current.map((item) => (item.id === active.id ? updated : item)));
+      toast.success("Complaint updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update complaint");
+    }
+  }
+
+  async function saveAdminNote() {
+    await applyModeration({ adminNote: adminNoteDraft });
+  }
+
+  async function postBrandResponse() {
+    await applyModeration({ status: "responded", brandResponse: brandResponseDraft });
+  }
+
+  async function requestBrandResponse() {
+    await applyModeration({
+      status: "reviewing",
+      adminNote: adminNoteDraft || "Brand response requested by moderation team.",
+    });
+  }
+
+  async function removeActiveComplaint() {
+    if (!active) return;
+    try {
+      await deleteComplaint(active.reportId);
+      setItems((current) => {
+        const next = current.filter((item) => item.id !== active.id);
+        setActiveId(next[0]?.id ?? "");
+        return next;
+      });
+      toast.success("Complaint deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to delete complaint");
+    }
+  }
+
+  if (loading) {
+    return <div className="text-sm text-muted-foreground">Loading complaints...</div>;
+  }
+
+  if (!active) {
+    return (
+      <div>
+        <PageHeader title="Complaints" subtitle="Live complaint moderation for user-reported issues." />
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-sm text-muted-foreground">
+          No complaints found yet.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <PageHeader title="Complaints" subtitle="Same complaint, same proof, same story the user sees — with admin tools." />
+      <PageHeader title="Complaints" subtitle="Same complaint, same proof, same story the user sees - with admin tools." />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Open" value={String(openComplaints.filter((c) => c.status !== "resolved" && c.status !== "rejected").length)} delta="-12% WoW" tone="down" />
-        <StatCard label="High severity" value={String(openComplaints.filter((c) => c.severity === "high").length)} delta="3 unresolved >24h" tone="down" />
-        <StatCard label="Resolved 30d" value="142" delta="+18%" tone="up" />
-        <StatCard label="Avg response" value="6.4h" delta="-1.2h" tone="up" />
+        <StatCard label="Open" value={String(stats.open)} delta="Live queue" tone="down" />
+        <StatCard label="High severity" value={String(stats.high)} delta="Needs attention" tone="down" />
+        <StatCard label="Resolved" value={String(stats.resolved)} delta="All time" tone="up" />
+        <StatCard label="Avg credibility" value={stats.avgCredibility} delta="Across cases" tone="flat" />
       </div>
 
       <Toolbar>
         {(["pending", "reviewing", "responded", "resolved", "rejected"] as const).map((s) => (
-          <span key={s} className="rounded-full bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground ring-1 ring-white/10">
+          <button
+            key={s}
+            onClick={() => void applyModeration({ status: s })}
+            className="rounded-full bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground ring-1 ring-white/10 hover:bg-white/10"
+          >
             {s}
-          </span>
+          </button>
         ))}
       </Toolbar>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_460px]">
         <Panel title="All complaints">
           <DataTable head={<><th>ID</th><th>Brand</th><th>User</th><th>Category</th><th>Severity</th><th>Status</th><th>Evidence</th><th>Time</th></>}>
-            {openComplaints.map((c) => (
+            {items.map((c) => (
               <tr key={c.id} onClick={() => setActiveId(c.id)} className={`cursor-pointer ${activeId === c.id ? "bg-fuchsia-500/5" : "hover:bg-white/5"}`}>
                 <td className="font-mono text-xs text-muted-foreground">{c.id}</td>
                 <td className="font-semibold">{c.brand}</td>
                 <td className="text-muted-foreground">{c.anonymous ? "Anonymous" : c.user}</td>
                 <td>{c.category}</td>
                 <td><SeverityPill severity={c.severity} /></td>
-                <td><StatusPill status={c.status as any} /></td>
+                <td><StatusPill status={c.status} /></td>
                 <td className="font-mono">{c.evidence}</td>
                 <td className="text-xs text-muted-foreground">{c.time}</td>
               </tr>
@@ -61,9 +173,8 @@ function ComplaintsPage() {
         </Panel>
 
         <div className="space-y-4">
-          <Panel title={`Complaint ${active.id}`}>
+          <Panel title={`Complaint ${active.id}`} action={<button onClick={() => void removeActiveComplaint()} className="rounded-lg bg-rose-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-300 ring-1 ring-rose-400/30">Delete</button>}>
             <div className="space-y-4">
-              {/* Header */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold text-white">{active.brand}</span>
@@ -76,12 +187,12 @@ function ComplaintsPage() {
                 </p>
               </div>
 
-              {/* Status tracker */}
               <div className="grid grid-cols-4 gap-1">
                 {(["posted", "reviewing", "responded", "resolved"] as const).map((s, i) => {
-                  const order = ["posted", "reviewing", "responded", "resolved"];
+                  const order = ["pending", "posted", "reviewing", "responded", "resolved"];
                   const currentIdx = Math.max(order.indexOf(active.status), 0);
-                  const done = i <= currentIdx;
+                  const targetIdx = s === "posted" ? 1 : order.indexOf(s);
+                  const done = targetIdx <= currentIdx;
                   return (
                     <div key={s} className="flex flex-col items-center gap-1">
                       <div className={`h-1.5 w-full rounded-full ${done ? "bg-gradient-to-r from-fuchsia-400 to-violet-400" : "bg-white/10"}`} />
@@ -91,13 +202,11 @@ function ComplaintsPage() {
                 })}
               </div>
 
-              {/* The story */}
               <section className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
                 <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">The story</h4>
                 <p className="mt-1.5 whitespace-pre-line text-xs leading-relaxed text-white/90">{active.description}</p>
               </section>
 
-              {/* Context grid */}
               <section className="grid grid-cols-2 gap-2 text-[11px]">
                 <ContextRow k="Account" v={`${active.accountType} · ${active.accountSize}`} />
                 <ContextRow k="Platform" v={active.platform} />
@@ -107,7 +216,6 @@ function ComplaintsPage() {
                 <ContextRow k="Severity" v={sevWord} />
               </section>
 
-              {/* Evidence with proof previews */}
               <section>
                 <div className="mb-2 flex items-center justify-between">
                   <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -151,7 +259,6 @@ function ComplaintsPage() {
                 )}
               </section>
 
-              {/* Firm reply (if any) */}
               {active.firmReply && (
                 <section className="rounded-xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 p-3 ring-1 ring-violet-300/30">
                   <div className="flex items-center gap-2">
@@ -163,7 +270,6 @@ function ComplaintsPage() {
                 </section>
               )}
 
-              {/* Credibility + community */}
               <section className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl bg-gradient-to-br from-fuchsia-500/15 to-violet-500/15 p-3 ring-1 ring-fuchsia-300/30">
                   <div className="flex items-center gap-1.5">
@@ -188,11 +294,10 @@ function ComplaintsPage() {
                 </div>
               </section>
 
-              {/* Timeline */}
               <section>
                 <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Timeline</h4>
                 <ol className="relative space-y-3 border-l border-white/10 pl-4">
-                  {timeline.map((t, i) => (
+                  {active.timeline.map((t, i) => (
                     <li key={i} className="relative">
                       <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[#150829]" />
                       <div className="flex items-center justify-between text-xs">
@@ -208,19 +313,31 @@ function ComplaintsPage() {
           </Panel>
 
           <Panel title="Admin notes">
-            <textarea rows={3} className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10" placeholder="Internal note (not visible to user)…" />
+            <textarea
+              rows={3}
+              value={adminNoteDraft}
+              onChange={(e) => setAdminNoteDraft(e.target.value)}
+              className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10"
+              placeholder="Internal note (not visible to user)..."
+            />
             <div className="mt-2 flex justify-end">
-              <button className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white">
+              <button onClick={() => void saveAdminNote()} className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white">
                 <MessageSquare className="h-3 w-3" /> Save note
               </button>
             </div>
           </Panel>
 
           <Panel title="Brand response">
-            <textarea rows={3} className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10" placeholder="Public response from the brand…" />
+            <textarea
+              rows={3}
+              value={brandResponseDraft}
+              onChange={(e) => setBrandResponseDraft(e.target.value)}
+              className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10"
+              placeholder="Public response from the brand..."
+            />
             <div className="mt-2 flex justify-end gap-2">
-              <button className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Request response</button>
-              <button className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+              <button onClick={() => void requestBrandResponse()} className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Request response</button>
+              <button onClick={() => void postBrandResponse()} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
                 <Send className="h-3 w-3" /> Post response
               </button>
             </div>
@@ -228,7 +345,6 @@ function ComplaintsPage() {
         </div>
       </div>
 
-      {/* Evidence preview modal */}
       {preview && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setPreview(null)}>
           <div className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-[#10071c] ring-1 ring-white/10" onClick={(e) => e.stopPropagation()}>

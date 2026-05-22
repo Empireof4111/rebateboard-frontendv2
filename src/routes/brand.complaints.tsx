@@ -15,7 +15,7 @@ function BrandComplaints() {
         <h1 className="text-2xl font-bold text-white">Complaints inbox</h1>
         <p className="mt-1 text-sm text-muted-foreground">Resolve evidence-backed reports from traders.</p>
       </div>
-      <FirmComplaints firmName={brand.name} />
+      <FirmComplaints firmName={brand.name} firmSlug={brand.slug} />
     </div>
   );
 }
