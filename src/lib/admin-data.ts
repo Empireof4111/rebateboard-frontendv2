@@ -291,6 +291,7 @@ export type AdminOffer = {
   ctaUrl?: string;
   startDate?: string;       // ISO
   expires: string;          // human label ("May 30") or ISO
+  limitedTime?: boolean;
   status: "active" | "paused" | "expired";
   uses: number;
   views?: number;

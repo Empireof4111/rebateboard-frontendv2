@@ -1,96 +1,103 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { PageHeader, Panel, StatCard, DataTable, Pill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
-import { useAdminCollection, calculateTbi, recomputeAllTbi, addAudit } from "@/lib/admin-store";
-import { tbiQueue as seedQueue, tbiHistory as seedHistory, adminBrands, pendingReviews, openComplaints, type AdminBrand } from "@/lib/admin-data";
-import { ArrowDown, ArrowUp, Flag, Calculator, RefreshCw, Edit3 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  DataTable,
+  EmptyState,
+  PageHeader,
+  Panel,
+  Pill,
+  StatCard,
+  StatusPill,
+  Toolbar,
+} from "@/components/superadmin/AdminUI";
+import { fieldCls, toast } from "@/components/superadmin/AdminActions";
+import {
+  fetchAdminTbiProfiles,
+  type TbiAdminPatch,
+  type TbiProfile,
+  type TbiState,
+  tbiConfidenceTone,
+  tbiLabelTone,
+  tbiStateLabel,
+  tbiStateTone,
+  updateAdminTbiProfile,
+} from "@/lib/tbi-api";
+import { AlertTriangle, Gauge, Shield, SlidersHorizontal } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/tbi")({
   component: TBIPage,
 });
 
-type Weight = { id: string; label: string; value: number };
-type QueueItem = typeof seedQueue[number] & { id: string };
-type HistoryRow = typeof seedHistory[number] & { id: string };
-
-const seedWeights: Weight[] = [
-  { id: "w1", label: "Payout reliability", value: 30 },
-  { id: "w2", label: "Complaint rate", value: 25 },
-  { id: "w3", label: "Verified reviews", value: 20 },
-  { id: "w4", label: "Transparency / KYB", value: 15 },
-  { id: "w5", label: "Community signal", value: 10 },
-];
-
-function Sparkline({ data }: { data: number[] }) {
-  const min = Math.min(...data) - 2;
-  const max = Math.max(...data) + 2;
-  const w = 80, h = 24;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / (max - min)) * h;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  return (
-    <svg width={w} height={h}>
-      <polyline points={pts} fill="none" stroke="url(#g)" strokeWidth="1.5" />
-      <defs>
-        <linearGradient id="g" x1="0" x2="1">
-          <stop offset="0" stopColor="rgb(232 121 249)" />
-          <stop offset="1" stopColor="rgb(139 92 246)" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
 function TBIPage() {
-  const weights = useAdminCollection<Weight>("tbiWeights", seedWeights);
-  const queue = useAdminCollection<QueueItem>("tbiQueue", seedQueue.map((q, i) => ({ ...q, id: `q_${i}` })));
-  const history = useAdminCollection<HistoryRow>("tbiHistory", seedHistory.map((h, i) => ({ ...h, id: `h_${i}` })));
-  const brands = useAdminCollection<AdminBrand>("brands", adminBrands);
+  const [profiles, setProfiles] = useState<TbiProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [stateFilter, setStateFilter] = useState<TbiState | "all">("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const [calcOpen, setCalcOpen] = useState(false);
-  const [override, setOverride] = useState<HistoryRow | null>(null);
-  const [confirm, setConfirm] = useState<{ q: QueueItem; action: "approve" | "defer" | "override" } | null>(null);
-
-  const totalWeight = weights.items.reduce((s, w) => s + w.value, 0);
-  const industryAvg = useMemo(() => {
-    const arr = brands.items;
-    return arr.length ? (arr.reduce((s, b) => s + b.tbi, 0) / arr.length).toFixed(1) : "0";
-  }, [brands.items]);
-  const above90 = brands.items.filter((b) => b.tbi >= 90).length;
-  const below70 = brands.items.filter((b) => b.tbi < 70).length;
-
-  const handleSaveWeights = () => {
-    if (totalWeight !== 100) {
-      toast.error(`Weights must total 100% (currently ${totalWeight}%)`);
-      return;
+  const loadProfiles = async (preserveSelection = true) => {
+    setLoading(true);
+    try {
+      const payload = await fetchAdminTbiProfiles();
+      setProfiles(payload);
+      setError(null);
+      if (!preserveSelection) {
+        setSelectedId(payload[0]?.id ?? null);
+      } else if (payload.length) {
+        setSelectedId((current) => current && payload.some((item) => item.id === current) ? current : payload[0].id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load TBI engine.");
+    } finally {
+      setLoading(false);
     }
-    recomputeAllTbi(adminBrands, pendingReviews as never, openComplaints as never);
-    addAudit({ actor: "@admin", action: "TBI weights saved & recalculated", target: "system" });
-    toast.success("Weights saved · all brand scores recalculated");
   };
 
-  const handleQueueAction = (q: QueueItem, action: "approve" | "defer" | "override") => {
-    if (action === "approve") {
-      const b = brands.items.find((x) => x.name === q.brand);
-      if (b) brands.update(b.id, { tbi: q.proposed });
-      addAudit({ actor: "@admin", action: `TBI ${q.action}d ${q.current}→${q.proposed}`, target: q.brand });
-      queue.remove(q.id);
-      toast.success(`${q.brand} updated to ${q.proposed}`);
-    } else if (action === "defer") {
-      queue.remove(q.id);
-      toast.success(`Deferred ${q.brand}`);
-    } else {
-      const v = prompt(`Manual TBI override for ${q.brand} (0-100):`, String(q.current));
-      if (v == null) return;
-      const score = Math.max(0, Math.min(100, Number(v)));
-      const b = brands.items.find((x) => x.name === q.brand);
-      if (b) brands.update(b.id, { tbi: score });
-      addAudit({ actor: "@admin", action: `TBI manual override → ${score}`, target: q.brand });
-      queue.remove(q.id);
-      toast.success(`${q.brand} overridden to ${score}`);
+  useEffect(() => {
+    void loadProfiles(false);
+  }, []);
+
+  const categories = useMemo(
+    () => ["all", ...Array.from(new Set(profiles.map((profile) => profile.fullCategory))).sort()],
+    [profiles],
+  );
+
+  const filtered = useMemo(() => {
+    return profiles.filter((profile) => {
+      if (category !== "all" && profile.fullCategory !== category) return false;
+      if (stateFilter !== "all" && profile.state !== stateFilter) return false;
+      if (query) {
+        const haystack = `${profile.name} ${profile.fullCategory} ${profile.region}`.toLowerCase();
+        if (!haystack.includes(query.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [profiles, query, category, stateFilter]);
+
+  const selectedProfile = filtered.find((profile) => profile.id === selectedId) ?? profiles.find((profile) => profile.id === selectedId) ?? null;
+
+  const stats = useMemo(() => {
+    const full = profiles.filter((profile) => profile.state === "full").length;
+    const partial = profiles.filter((profile) => profile.state === "partial").length;
+    const preliminary = profiles.filter((profile) => profile.state === "preliminary").length;
+    const flagged = profiles.filter((profile) => profile.riskEvents.length > 0 || profile.riskPenalty < 0).length;
+    return { full, partial, preliminary, flagged };
+  }, [profiles]);
+
+  const savePatch = async (patch: TbiAdminPatch) => {
+    if (!selectedProfile) return;
+    setSaving(true);
+    try {
+      const updated = await updateAdminTbiProfile(selectedProfile.id, patch);
+      setProfiles((current) => current.map((profile) => (profile.id === updated.id ? updated : profile)));
+      toast.success(`${updated.name} TBI settings updated`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to update TBI settings");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -98,195 +105,289 @@ function TBIPage() {
     <div>
       <PageHeader
         title="TBI Engine"
-        subtitle="Tune Trust & Brand Index weights, calculator, queue and audit history."
+        subtitle="Moderate trust states, inspect raw calculations, control penalties, and decide when a brand is eligible for full public trust visibility."
         actions={
-          <>
-            <button onClick={() => setCalcOpen(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <Calculator className="h-3.5 w-3.5" /> Calculator
-            </button>
-            <button
-              onClick={() => { recomputeAllTbi(adminBrands, pendingReviews as never, openComplaints as never); toast.success("All brand TBI recomputed"); }}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Recompute all
-            </button>
-          </>
+          <button
+            onClick={() => void loadProfiles()}
+            className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white"
+          >
+            Refresh engine
+          </button>
         }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Industry avg" value={industryAvg} delta="live" tone="up" />
-        <StatCard label="Brands ≥90" value={String(above90)} delta="" tone="up" />
-        <StatCard label="Brands <70" value={String(below70)} delta="needs action" tone="down" />
-        <StatCard label="Pending changes" value={String(queue.items.length)} delta="in queue" tone="flat" />
+        <StatCard label="Full TBI" value={String(stats.full)} delta="rank-eligible" tone="up" />
+        <StatCard label="Partial TBI" value={String(stats.partial)} delta="limited data" tone="flat" />
+        <StatCard label="Preliminary" value={String(stats.preliminary)} delta="structural only" tone="flat" />
+        <StatCard label="Risk pressured" value={String(stats.flagged)} delta="watchlist" tone="down" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title={`Score weights · total ${totalWeight}%`}>
-          <ul className="space-y-4">
-            {weights.items.map((w) => (
-              <li key={w.id}>
-                <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="text-white">{w.label}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={w.value}
-                    onChange={(e) => weights.update(w.id, { value: Number(e.target.value) })}
-                    className="w-16 rounded bg-white/5 px-2 py-1 text-right font-mono text-xs text-white ring-1 ring-white/10"
-                  />
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-600" style={{ width: `${w.value}%` }} />
-                </div>
-              </li>
-            ))}
-          </ul>
-          {totalWeight !== 100 && (
-            <p className="mt-3 text-[10px] text-rose-300">Weights must total 100% before saving.</p>
-          )}
-          <button
-            onClick={handleSaveWeights}
-            disabled={totalWeight !== 100}
-            className="mt-5 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2 text-xs font-bold text-white disabled:opacity-40"
-          >
-            Save & recalculate
-          </button>
-        </Panel>
-
-        <Panel title={`Pending score changes — ${queue.items.length}`}>
-          <ul className="space-y-3">
-            {queue.items.map((q) => (
-              <li key={q.id} className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white">{q.brand}</span>
-                  <span className={`inline-flex items-center gap-1 text-sm font-bold ${q.action === "upgrade" ? "text-emerald-300" : "text-rose-300"}`}>
-                    {q.action === "upgrade" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
-                    {q.current} → {q.proposed}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{q.reason}</p>
-                <div className="mt-2 flex gap-2">
-                  <button onClick={() => setConfirm({ q, action: "approve" })} className="rounded-md bg-emerald-500/15 px-3 py-1 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">Approve</button>
-                  <button onClick={() => handleQueueAction(q, "defer")} className="rounded-md bg-white/10 px-3 py-1 text-[10px] font-bold text-white">Defer</button>
-                  <button onClick={() => handleQueueAction(q, "override")} className="rounded-md bg-rose-500/15 px-3 py-1 text-[10px] font-bold text-rose-300 ring-1 ring-rose-400/30">Override</button>
-                </div>
-              </li>
-            ))}
-            {queue.items.length === 0 && <li className="py-6 text-center text-xs text-muted-foreground">Queue empty.</li>}
-          </ul>
-        </Panel>
-      </div>
-
-      <div className="mt-6">
-        <Panel title="TBI history & overrides">
-          <DataTable head={<><th>Brand</th><th>Trend (6mo)</th><th>Current</th><th>Last change</th><th>Status</th><th></th></>}>
-            {history.items.map((h) => {
-              const current = h.history[h.history.length - 1];
-              return (
-                <tr key={h.id}>
-                  <td className="font-semibold">{h.brand}</td>
-                  <td><Sparkline data={h.history} /></td>
-                  <td>
-                    <span className={`font-mono font-bold ${current >= 90 ? "text-emerald-300" : current >= 80 ? "text-amber-300" : "text-rose-300"}`}>{current}</span>
-                  </td>
-                  <td className="text-xs text-muted-foreground">{h.lastChange}</td>
-                  <td>{h.flagged ? <Pill tone="bad"><span className="inline-flex items-center gap-1"><Flag className="h-3 w-3" /> flagged</span></Pill> : <Pill tone="good">healthy</Pill>}</td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => setOverride(h)} className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white"><Edit3 className="h-3 w-3" /> Override</button>
-                      <button
-                        onClick={() => { history.update(h.id, { flagged: !h.flagged }); toast.success(`${h.brand} ${h.flagged ? "un-flagged" : "flagged"}`); addAudit({ actor: "@admin", action: h.flagged ? "TBI un-flagged" : "TBI flagged", target: h.brand }); }}
-                        className="rounded-md bg-rose-500/15 px-2 py-1 text-[10px] font-bold text-rose-300 ring-1 ring-rose-400/30"
-                      >
-                        {h.flagged ? "Un-flag" : "Flag"}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </DataTable>
-        </Panel>
-      </div>
-
-      {/* Calculator modal */}
-      {calcOpen && <CalculatorModal onClose={() => setCalcOpen(false)} />}
-
-      {/* Override modal */}
-      {override && (
-        <OverrideModal
-          row={override}
-          onClose={() => setOverride(null)}
-          onSave={(score, note) => {
-            const newHist = [...override.history.slice(1), score];
-            history.update(override.id, { history: newHist, lastChange: `${score >= override.history.at(-1)! ? "+" : ""}${score - override.history.at(-1)!} (admin override)` });
-            const b = brands.items.find((x) => x.name === override.brand);
-            if (b) brands.update(b.id, { tbi: score });
-            addAudit({ actor: "@admin", action: `TBI override → ${score}${note ? ` (${note})` : ""}`, target: override.brand });
-            toast.success(`${override.brand} TBI set to ${score}`);
-            setOverride(null);
-          }}
+      <Toolbar>
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search brand or region..."
+          className={`${fieldCls} max-w-xs`}
         />
-      )}
+        <select value={category} onChange={(event) => setCategory(event.target.value)} className={fieldCls}>
+          {categories.map((entry) => (
+            <option key={entry} value={entry}>
+              {entry === "all" ? "All categories" : entry}
+            </option>
+          ))}
+        </select>
+        <select
+          value={stateFilter}
+          onChange={(event) => setStateFilter(event.target.value as TbiState | "all")}
+          className={fieldCls}
+        >
+          <option value="all">All states</option>
+          <option value="preliminary">Preliminary</option>
+          <option value="partial">Partial</option>
+          <option value="full">Full</option>
+        </select>
+      </Toolbar>
 
-      <ConfirmDialog
-        open={!!confirm}
-        onClose={() => setConfirm(null)}
-        onConfirm={() => { if (confirm) handleQueueAction(confirm.q, confirm.action); }}
-        title={confirm ? `Apply ${confirm.q.current} → ${confirm.q.proposed} for ${confirm.q.brand}?` : ""}
-        message="Brand TBI score will be updated immediately and the change logged in the audit trail."
-        confirmText="Apply change"
-        tone="primary"
-      />
+      {loading ? (
+        <Panel title="TBI profiles">
+          <div className="text-sm text-muted-foreground">Loading TBI engine...</div>
+        </Panel>
+      ) : error ? (
+        <Panel title="TBI profiles">
+          <div className="text-sm text-rose-300">{error}</div>
+        </Panel>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+          <Panel title={`Trust profile queue · ${filtered.length}`}>
+            {!filtered.length ? (
+              <EmptyState title="No TBI profiles found" description="Adjust the filters or make sure admin brands are available." icon={Shield} />
+            ) : (
+              <DataTable head={<><th>Brand</th><th>State</th><th>Score</th><th>Confidence</th><th>Penalty</th><th>Visibility</th></>}>
+                {filtered.map((profile) => (
+                  <tr
+                    key={profile.id}
+                    onClick={() => setSelectedId(profile.id)}
+                    className={selectedId === profile.id ? "bg-white/[0.04]" : ""}
+                  >
+                    <td>
+                      <div className="font-semibold">{profile.name}</div>
+                      <div className="text-xs text-muted-foreground">{profile.fullCategory}</div>
+                    </td>
+                    <td>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tbiStateTone(profile.state)}`}>
+                        {tbiStateLabel(profile.state)}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="font-mono font-bold text-white">
+                        {profile.state === "preliminary"
+                          ? `${profile.preliminaryScore.toFixed(1)} / 6.5`
+                          : `${profile.finalScore.toFixed(1)} / 10`}
+                      </div>
+                      <div className={`text-xs ${tbiLabelTone(profile.trustLabel)}`}>{profile.trustLabel}</div>
+                    </td>
+                    <td className={tbiConfidenceTone(profile.confidence)}>{profile.confidence}</td>
+                    <td className={profile.riskPenalty < 0 ? "text-rose-300" : "text-muted-foreground"}>
+                      {profile.riskPenalty.toFixed(2)}
+                    </td>
+                    <td><StatusPill status={profile.visibility} /></td>
+                  </tr>
+                ))}
+              </DataTable>
+            )}
+          </Panel>
+
+          <Panel
+            title={selectedProfile ? `${selectedProfile.name} · Trust Control` : "Trust Control"}
+            action={selectedProfile ? <Pill tone="neutral">{selectedProfile.fullCategory}</Pill> : undefined}
+          >
+            {!selectedProfile ? (
+              <div className="text-sm text-muted-foreground">Select a brand to inspect the live TBI engine.</div>
+            ) : (
+              <TbiControlPanel profile={selectedProfile} saving={saving} onSave={savePatch} />
+            )}
+          </Panel>
+        </div>
+      )}
     </div>
   );
 }
 
-function CalculatorModal({ onClose }: { onClose: () => void }) {
-  const [v, setV] = useState({ payoutReliability: 90, complaintScore: 85, reviewAvg: 88, transparency: 80, community: 75 });
-  const score = calculateTbi(v);
-  const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement>) => setV({ ...v, [k]: Number(e.target.value) });
+function TbiControlPanel({
+  profile,
+  saving,
+  onSave,
+}: {
+  profile: TbiProfile;
+  saving: boolean;
+  onSave: (patch: TbiAdminPatch) => Promise<void>;
+}) {
+  const [visibility, setVisibility] = useState(profile.visibility);
+  const [status, setStatus] = useState(profile.status);
+  const [stateOverride, setStateOverride] = useState<TbiState | "">("");
+  const [confidenceOverride, setConfidenceOverride] = useState<"" | "High" | "Medium" | "Low">("");
+  const [manualFinalScore, setManualFinalScore] = useState<string>("");
+  const [manualRiskPenalty, setManualRiskPenalty] = useState<string>(profile.riskPenalty.toFixed(2));
+  const [unlockFullTbi, setUnlockFullTbi] = useState(false);
+  const [suspendVisibility, setSuspendVisibility] = useState(profile.visibility === "hidden");
+
+  useEffect(() => {
+    setVisibility(profile.visibility);
+    setStatus(profile.status);
+    setStateOverride("");
+    setConfidenceOverride("");
+    setManualFinalScore("");
+    setManualRiskPenalty(profile.riskPenalty.toFixed(2));
+    setUnlockFullTbi(false);
+    setSuspendVisibility(profile.visibility === "hidden");
+  }, [profile]);
+
   return (
-    <Modal open onClose={onClose} title="TBI Calculator" subtitle="Pure formula — adjust inputs to preview the resulting score." size="md">
-      <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Payout reliability (30%)"><input type="number" min={0} max={100} className={fieldCls} value={v.payoutReliability} onChange={set("payoutReliability")} /></Field>
-        <Field label="Complaint score (25%)"><input type="number" min={0} max={100} className={fieldCls} value={v.complaintScore} onChange={set("complaintScore")} /></Field>
-        <Field label="Verified reviews (20%)"><input type="number" min={0} max={100} className={fieldCls} value={v.reviewAvg} onChange={set("reviewAvg")} /></Field>
-        <Field label="Transparency (15%)"><input type="number" min={0} max={100} className={fieldCls} value={v.transparency} onChange={set("transparency")} /></Field>
-        <Field label="Community (10%)"><input type="number" min={0} max={100} className={fieldCls} value={v.community} onChange={set("community")} /></Field>
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard label="Raw" value={profile.rawScore.toFixed(2)} delta={profile.trustEngine.formula} tone="flat" />
+        <StatCard label="Final" value={profile.finalScore.toFixed(2)} delta={`${profile.reviewCount} reviews`} tone="up" />
+        <StatCard label="Verified reviews" value={String(profile.verifiedReviewCount)} delta={profile.confidence} tone="flat" />
+        <StatCard label="Complaints" value={String(profile.complaints.total)} delta={`${profile.complaints.pending} pending`} tone={profile.complaints.pending ? "down" : "flat"} />
       </div>
-      <div className="mt-5 rounded-2xl bg-gradient-to-r from-fuchsia-500/20 to-violet-600/20 p-5 text-center ring-1 ring-fuchsia-400/30">
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Calculated TBI</div>
-        <div className={`mt-1 text-5xl font-black ${score >= 90 ? "text-emerald-300" : score >= 80 ? "text-amber-300" : "text-rose-300"}`}>{score}</div>
+
+      <div className="rounded-2xl bg-white/5 p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+          <Gauge className="h-4 w-4 text-fuchsia-300" /> Core engine
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MetricLine label="User Trust" value={profile.components.ut} />
+          <MetricLine label="Payout Reliability" value={profile.components.pr} />
+          <MetricLine label="Transparency" value={profile.components.ts} />
+          <MetricLine label="Regulation & Compliance" value={profile.components.rc} />
+          <MetricLine label="Trading Conditions" value={profile.components.tc} />
+          <MetricLine label="Customer Experience" value={profile.components.cx} />
+        </div>
       </div>
-    </Modal>
+
+      <div className="rounded-2xl bg-white/5 p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+          <SlidersHorizontal className="h-4 w-4 text-fuchsia-300" /> Trust state control
+        </div>
+        <div className="grid gap-3">
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Visibility
+            <select value={visibility} onChange={(event) => setVisibility(event.target.value)} className={fieldCls}>
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+              <option value="hidden">hidden</option>
+              <option value="archived">archived</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Brand status
+            <select value={status} onChange={(event) => setStatus(event.target.value)} className={fieldCls}>
+              <option value="draft">draft</option>
+              <option value="review">review</option>
+              <option value="verified">verified</option>
+              <option value="flagged">flagged</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Force trust state
+            <select value={stateOverride} onChange={(event) => setStateOverride(event.target.value as TbiState | "")} className={fieldCls}>
+              <option value="">Auto</option>
+              <option value="preliminary">Preliminary</option>
+              <option value="partial">Partial</option>
+              <option value="full">Full</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Force confidence
+            <select
+              value={confidenceOverride}
+              onChange={(event) => setConfidenceOverride(event.target.value as "" | "High" | "Medium" | "Low")}
+              className={fieldCls}
+            >
+              <option value="">Auto</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Manual final score
+            <input
+              value={manualFinalScore}
+              onChange={(event) => setManualFinalScore(event.target.value)}
+              placeholder="Leave blank for computed score"
+              className={fieldCls}
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Manual risk penalty
+            <input
+              value={manualRiskPenalty}
+              onChange={(event) => setManualRiskPenalty(event.target.value)}
+              className={fieldCls}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-white">
+            <input type="checkbox" checked={unlockFullTbi} onChange={(event) => setUnlockFullTbi(event.target.checked)} />
+            Unlock full TBI state
+          </label>
+          <label className="flex items-center gap-2 text-sm text-white">
+            <input type="checkbox" checked={suspendVisibility} onChange={(event) => setSuspendVisibility(event.target.checked)} />
+            Suspend public visibility
+          </label>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            disabled={saving}
+            onClick={() =>
+              void onSave({
+                visibility,
+                status,
+                stateOverride: stateOverride || undefined,
+                confidenceOverride: confidenceOverride || undefined,
+                manualFinalScore: manualFinalScore.trim() ? Number(manualFinalScore) : null,
+                manualRiskPenalty: Number(manualRiskPenalty),
+                unlockFullTbi,
+                suspendVisibility,
+              })
+            }
+            className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Apply TBI controls"}
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white/5 p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+          <AlertTriangle className="h-4 w-4 text-amber-300" /> Risk and change monitoring
+        </div>
+        <div className="space-y-3">
+          {profile.riskEvents.length ? (
+            profile.riskEvents.map((event) => (
+              <div key={`${event.kind}-${event.title}`} className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-semibold text-amber-100">{event.title}</div>
+                  <div className="text-xs font-semibold text-amber-300">{event.impact.toFixed(2)}</div>
+                </div>
+                <div className="mt-1 text-xs text-amber-50/90">{event.detail}</div>
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-muted-foreground">No active risk events on this profile.</div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function OverrideModal({ row, onClose, onSave }: { row: HistoryRow; onClose: () => void; onSave: (score: number, note: string) => void }) {
-  const current = row.history[row.history.length - 1];
-  const [score, setScore] = useState<number>(current);
-  const [note, setNote] = useState("");
+function MetricLine({ label, value }: { label: string; value: number }) {
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={`Override TBI · ${row.brand}`}
-      subtitle={`Current score ${current}. Manual overrides bypass auto-recompute.`}
-      size="md"
-      footer={
-        <>
-          <button onClick={onClose} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-          <button onClick={() => onSave(score, note)} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Apply override</button>
-        </>
-      }
-    >
-      <div className="grid gap-3">
-        <Field label="New score (0-100)"><input type="number" min={0} max={100} className={fieldCls} value={score} onChange={(e) => setScore(Number(e.target.value))} /></Field>
-        <Field label="Reason (audit log)"><textarea rows={3} className={fieldCls} placeholder="e.g. verified payout audit Q2 — increased trust" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-      </div>
-    </Modal>
+    <div className="rounded-2xl bg-black/10 p-3">
+      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-xl font-bold text-white">{value.toFixed(2)}</div>
+    </div>
   );
 }

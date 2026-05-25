@@ -1,51 +1,87 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { SiteHeader } from "@/components/SiteHeader";
+import { useEffect, useMemo, useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
-import { type TBICategory, type TBIStatus } from "@/lib/tbi-data";
-import { useMergedTbiBrands } from "@/lib/tbi-merge";
-import { Search, Filter, ArrowRight } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
+import {
+  fetchTbiExplore,
+  type TbiConfidence,
+  type TbiProfile,
+  type TbiState,
+  tbiConfidenceTone,
+  tbiStateLabel,
+  tbiStateTone,
+} from "@/lib/tbi-api";
+import { ArrowRight, Filter, Search } from "lucide-react";
 
 export const Route = createFileRoute("/tbi/explore")({
   head: () => ({
     meta: [
-      { title: "Explore Brand Trust Profiles — TBI" },
-      { name: "description", content: "Browse all trust profiles across prop firms, brokers and exchanges." },
+      { title: "Explore Trusted Brand Profiles - TBI" },
+      {
+        name: "description",
+        content:
+          "Explore every TBI profile across preliminary, partial, and full trust states.",
+      },
     ],
   }),
   component: ExplorePage,
 });
 
-const CATS: (TBICategory | "All")[] = ["All", "Prop Firm", "Broker", "Exchange", "Tool"];
-const STATUSES: { v: TBIStatus | "all"; label: string; color: string }[] = [
-  { v: "all", label: "All", color: "text-muted-foreground" },
-  { v: "full", label: "Fully Verified", color: "text-emerald-300" },
-  { v: "partial", label: "Emerging", color: "text-amber-300" },
-  { v: "preliminary", label: "New", color: "text-fuchsia-300" },
-];
-
-function statusBadge(s: TBIStatus) {
-  if (s === "full") return <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">✓ Verified</span>;
-  if (s === "partial") return <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300">⚠ Emerging</span>;
-  return <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-300">● New</span>;
-}
+const CATEGORIES = ["All", "Prop Firm", "Broker", "Exchange", "Tool"] as const;
+const STATES: Array<TbiState | "all"> = ["all", "preliminary", "partial", "full"];
+const CONFIDENCE: Array<TbiConfidence | "all"> = ["all", "Low", "Medium", "High"];
 
 function ExplorePage() {
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<TBICategory | "All">("All");
-  const [status, setStatus] = useState<TBIStatus | "all">("all");
+  const [profiles, setProfiles] = useState<TbiProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
+  const [state, setState] = useState<(typeof STATES)[number]>("all");
+  const [confidence, setConfidence] = useState<(typeof CONFIDENCE)[number]>("all");
   const [minScore, setMinScore] = useState(0);
-  const merged = useMergedTbiBrands();
+  const [region, setRegion] = useState("");
 
-  const list = useMemo(() => {
-    return merged.filter((b) => {
-      if (cat !== "All" && b.category !== cat) return false;
-      if (status !== "all" && b.status !== status) return false;
-      if (b.score < minScore) return false;
-      if (q && !b.name.toLowerCase().includes(q.toLowerCase())) return false;
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchTbiExplore()
+      .then((payload) => {
+        if (!active) return;
+        setProfiles(payload);
+        setError(null);
+      })
+      .catch((err: Error) => {
+        if (!active) return;
+        setError(err.message || "Unable to load trust profiles.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const regions = useMemo(
+    () => Array.from(new Set(profiles.map((profile) => profile.region).filter(Boolean))).sort(),
+    [profiles],
+  );
+
+  const filtered = useMemo(() => {
+    return profiles.filter((profile) => {
+      if (category !== "All" && profile.category !== category) return false;
+      if (state !== "all" && profile.state !== state) return false;
+      if (confidence !== "all" && profile.confidence !== confidence) return false;
+      if (profile.finalScore < minScore) return false;
+      if (region && profile.region !== region) return false;
+      if (query) {
+        const haystack = `${profile.name} ${profile.fullCategory} ${profile.region}`.toLowerCase();
+        if (!haystack.includes(query.toLowerCase())) return false;
+      }
       return true;
     });
-  }, [merged, q, cat, status, minScore]);
+  }, [profiles, query, category, state, confidence, minScore, region]);
 
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
@@ -55,64 +91,178 @@ function ExplorePage() {
           <div className="text-xs text-muted-foreground">
             <Link to="/tbi" className="hover:text-foreground">TBI</Link> · Explore
           </div>
-          <h1 className="mt-2 text-3xl font-bold">Explore Brand Trust Profiles</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Trust exploration only. No buy buttons, no rankings — just data.</p>
+          <h1 className="mt-2 text-3xl font-bold">Explore Trust Profiles</h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            This is the trust exploration layer. It includes preliminary, partial, and full profiles without turning every
+            brand into a recommendation.
+          </p>
         </div>
 
-        {/* FILTERS */}
-        <div className="glass rounded-2xl p-4">
+        <div className="glass rounded-3xl p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex flex-1 items-center gap-2 rounded-full bg-white/5 px-4 py-2">
               <Search className="h-4 w-4 text-muted-foreground" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search brands…" className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search brands, category, or region..."
+                className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {CATS.map((c) => (
-                <button key={c} onClick={() => setCat(c)} className={`rounded-full px-3 py-1.5 text-xs transition ${cat === c ? "bg-fuchsia-500/20 text-fuchsia-200 ring-1 ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground hover:text-foreground"}`}>{c}</button>
+              {CATEGORIES.map((entry) => (
+                <button
+                  key={entry}
+                  onClick={() => setCategory(entry)}
+                  className={`rounded-full px-3 py-1.5 text-xs transition ${
+                    category === entry
+                      ? "bg-fuchsia-500/20 text-fuchsia-200 ring-1 ring-fuchsia-400/40"
+                      : "bg-white/5 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {entry}
+                </button>
               ))}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-white/5 pt-3">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground"><Filter className="h-3 w-3" /> Status:</div>
-            {STATUSES.map((s) => (
-              <button key={s.v} onClick={() => setStatus(s.v)} className={`rounded-full px-3 py-1 text-xs transition ${status === s.v ? "bg-white/10 ring-1 ring-white/20 " + s.color : "text-muted-foreground hover:text-foreground"}`}>{s.label}</button>
-            ))}
-            <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-              Min Score: <span className="font-semibold text-foreground">{minScore.toFixed(1)}</span>
-              <input type="range" min={0} max={10} step={0.5} value={minScore} onChange={(e) => setMinScore(Number(e.target.value))} className="w-32 accent-fuchsia-500" />
+
+          <div className="mt-4 grid gap-3 border-t border-white/5 pt-4 md:grid-cols-4">
+            <div>
+              <div className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
+                <Filter className="h-3 w-3" /> Trust state
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {STATES.map((entry) => (
+                  <button
+                    key={entry}
+                    onClick={() => setState(entry)}
+                    className={`rounded-full px-3 py-1 text-xs transition ${
+                      state === entry ? "bg-white/10 text-white ring-1 ring-white/20" : "bg-white/5 text-muted-foreground"
+                    }`}
+                  >
+                    {entry === "all" ? "All" : tbiStateLabel(entry)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs text-muted-foreground">Confidence</div>
+              <div className="flex flex-wrap gap-2">
+                {CONFIDENCE.map((entry) => (
+                  <button
+                    key={entry}
+                    onClick={() => setConfidence(entry)}
+                    className={`rounded-full px-3 py-1 text-xs transition ${
+                      confidence === entry ? "bg-white/10 text-white ring-1 ring-white/20" : "bg-white/5 text-muted-foreground"
+                    }`}
+                  >
+                    {entry}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs text-muted-foreground">Region</div>
+              <select
+                value={region}
+                onChange={(event) => setRegion(event.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-[#160924] px-3 py-2 text-sm text-white outline-none"
+              >
+                <option value="">All regions</option>
+                {regions.map((entry) => (
+                  <option key={entry} value={entry}>
+                    {entry}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs text-muted-foreground">
+                Min score: <span className="font-semibold text-white">{minScore.toFixed(1)}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={0.1}
+                value={minScore}
+                onChange={(event) => setMinScore(Number(event.target.value))}
+                className="w-full accent-fuchsia-500"
+              />
             </div>
           </div>
         </div>
 
-        {/* GRID */}
-        <div className="mt-6 text-xs text-muted-foreground">{list.length} brand{list.length !== 1 && "s"}</div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((b) => (
-            <Link key={b.slug} to="/tbi/brand/$slug" params={{ slug: b.slug }} className="glass group rounded-2xl p-4 transition hover:border-fuchsia-400/40">
-              <div className="flex items-start gap-3">
-                <div className={`grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br ${b.logoColor} text-xs font-bold text-white`}>{b.name.slice(0, 2).toUpperCase()}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="font-semibold">{b.name}</div>
-                    {statusBadge(b.status)}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">{b.category} · {b.country}</div>
-                </div>
-              </div>
-              <div className="mt-3 flex items-end justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{b.score.toFixed(1)}<span className="text-xs text-muted-foreground">/{b.maxScore}</span></div>
-                  {b.status === "preliminary" && <div className="text-[10px] text-fuchsia-300">Preliminary · No reviews</div>}
-                  {b.status === "partial" && <div className="text-[10px] text-amber-300">Limited reviews</div>}
-                  {b.status === "full" && <div className="text-[10px] text-emerald-300">Verified trader feedback</div>}
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-fuchsia-300" />
-              </div>
-            </Link>
-          ))}
+        <div className="mt-6 text-xs text-muted-foreground">
+          {filtered.length} profile{filtered.length === 1 ? "" : "s"}
         </div>
+
+        {loading ? (
+          <div className="glass mt-4 rounded-3xl p-8 text-sm text-muted-foreground">Loading trust profiles...</div>
+        ) : error ? (
+          <div className="mt-4 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-200">{error}</div>
+        ) : (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((profile) => (
+              <Link
+                key={profile.id}
+                to="/tbi/brand/$slug"
+                params={{ slug: profile.slug }}
+                className="glass group rounded-3xl p-5 transition hover:border-fuchsia-400/40"
+              >
+                <div className="flex items-start gap-3">
+                  {profile.logo ? (
+                    <img
+                      src={profile.logo}
+                      alt={profile.name}
+                      className="h-12 w-12 rounded-2xl object-cover ring-1 ring-white/10"
+                    />
+                  ) : (
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white">
+                      {profile.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="font-semibold">{profile.name}</div>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tbiStateTone(profile.state)}`}>
+                        {tbiStateLabel(profile.state)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                      {profile.fullCategory} {profile.region ? `· ${profile.region}` : ""}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-end justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {profile.state === "preliminary"
+                        ? profile.preliminaryScore.toFixed(1)
+                        : profile.finalScore.toFixed(1)}
+                      <span className="text-xs text-muted-foreground">
+                        /{profile.state === "preliminary" ? "6.5" : "10"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">{profile.trustLabel}</div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-fuchsia-300" />
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span className={tbiConfidenceTone(profile.confidence)}>{profile.confidence} confidence</span>
+                  <span>{profile.reviewCount} reviews</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
-    <SiteFooter />
+      <SiteFooter />
     </div>
   );
 }

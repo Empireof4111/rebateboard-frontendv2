@@ -1,244 +1,377 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
-import { SiteHeader } from "@/components/SiteHeader";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
-import { getTBIBrand } from "@/lib/tbi-data";
-import { Shield, CheckCircle2, AlertTriangle, TrendingUp, Star, ArrowLeft, Info, X } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { SiteHeader } from "@/components/SiteHeader";
+import {
+  fetchTbiBrand,
+  type TbiProfile,
+  tbiConfidenceTone,
+  tbiLabelTone,
+  tbiStateLabel,
+  tbiStateTone,
+} from "@/lib/tbi-api";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  Star,
+  TrendingUp,
+} from "lucide-react";
 
 export const Route = createFileRoute("/tbi/brand/$slug")({
-  loader: ({ params }) => {
-    const brand = getTBIBrand(params.slug);
-    if (!brand) throw notFound();
-    return brand;
-  },
-  head: ({ loaderData }) => ({
+  head: () => ({
     meta: [
-      { title: `${loaderData?.name ?? "Brand"} TBI Score — RebateBoard` },
-      { name: "description", content: `Trusted Brand Index profile for ${loaderData?.name ?? "this brand"}.` },
+      { title: "TBI Brand Profile - RebateBoard" },
+      {
+        name: "description",
+        content: "Deep trust profile showing score breakdown, confidence, risks, and trader experience.",
+      },
     ],
   }),
   component: BrandPage,
-  notFoundComponent: () => (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
-      <SiteHeader />
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <h1 className="text-3xl font-bold">Brand not found</h1>
-        <Link to="/tbi/explore" className="mt-4 inline-block text-fuchsia-300">← Back to Explore</Link>
-      </div>
-    </div>
-  ),
 });
 
-function ScoreBar({ label, value, max = 10, locked }: { label: string; value: number; max?: number; locked?: boolean }) {
-  const pct = locked ? 0 : (value / max) * 100;
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className={`font-semibold ${locked ? "text-muted-foreground" : "text-foreground"}`}>{locked ? "Locked" : value.toFixed(1)}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/5">
-        <div className={`h-full rounded-full ${locked ? "bg-white/10" : "bg-gradient-to-r from-fuchsia-500 to-violet-500"}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
+const componentMeta = [
+  { key: "ut", label: "User Trust", weight: "30%" },
+  { key: "pr", label: "Payout Reliability", weight: "25%" },
+  { key: "ts", label: "Transparency", weight: "15%" },
+  { key: "rc", label: "Regulation & Compliance", weight: "10%" },
+  { key: "tc", label: "Trading Conditions", weight: "10%" },
+  { key: "cx", label: "Customer Experience", weight: "10%" },
+] as const;
 
 function BrandPage() {
-  const b = Route.useLoaderData();
-  const [showBreakdown, setShowBreakdown] = useState(false);
+  const { slug } = Route.useParams();
+  const [profile, setProfile] = useState<TbiProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    ut: true,
+    pr: true,
+  });
 
-  const structural = (b.breakdown.transparency + b.breakdown.proof + b.breakdown.conditions) / 3;
-  const experience = b.breakdown.experience ?? 0;
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchTbiBrand(slug)
+      .then((payload) => {
+        if (!active) return;
+        setProfile(payload);
+        setError(null);
+      })
+      .catch((err: Error) => {
+        if (!active) return;
+        setError(err.message || "Unable to load this trust profile.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [slug]);
+
+  const ratingBars = useMemo(() => {
+    if (!profile) return [];
+    return componentMeta.map((entry) => ({
+      ...entry,
+      value: profile.components[entry.key],
+      explanation: profile.componentExplanations[entry.key],
+    }));
+  }, [profile]);
 
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
         <Link to="/tbi/explore" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3 w-3" /> Back to Explore
         </Link>
 
-        {/* HEADER */}
-        <section className="glass mt-3 rounded-3xl p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className={`grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${b.logoColor} text-xl font-bold text-white shadow-lg`}>
-              {b.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-bold">{b.name}</h1>
-                <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-muted-foreground">{b.category}</span>
-              </div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                {b.website} · {b.country} · {b.regulation}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-5xl font-bold">{b.score.toFixed(1)}<span className="text-base text-muted-foreground">/{b.maxScore}</span></div>
-              {b.status === "full" && <div className="mt-1 text-xs text-emerald-300"><CheckCircle2 className="mr-1 inline h-3 w-3" /> Fully Verified · Confidence {b.confidence}</div>}
-              {b.status === "partial" && <div className="mt-1 text-xs text-amber-300"><AlertTriangle className="mr-1 inline h-3 w-3" /> Limited reviews</div>}
-              {b.status === "preliminary" && <div className="mt-1 text-xs text-fuchsia-300">Preliminary · No trader reviews yet</div>}
-            </div>
+        {loading ? (
+          <div className="glass mt-4 rounded-3xl p-8 text-sm text-muted-foreground">Loading trust profile...</div>
+        ) : error || !profile ? (
+          <div className="mt-4 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-200">
+            {error || "Brand profile not found."}
           </div>
-
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button onClick={() => setShowBreakdown(true)} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-xs font-semibold">View Score Breakdown</button>
-            <button className="glass-pill rounded-full px-5 py-2 text-xs">Read Reviews</button>
-            <button className="glass-pill rounded-full px-5 py-2 text-xs">Write Review</button>
-          </div>
-        </section>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          {/* LEFT */}
-          <div className="space-y-6">
-            {/* BREAKDOWN */}
-            <section className="glass rounded-2xl p-6">
-              <h2 className="flex items-center gap-2 text-lg font-bold"><Shield className="h-4 w-4 text-fuchsia-300" /> TBI Breakdown</h2>
-              <div className="mt-4 space-y-3">
-                <ScoreBar label="Transparency" value={b.breakdown.transparency} />
-                <ScoreBar label="Proof Strength" value={b.breakdown.proof} />
-                <ScoreBar label="Community Trust" value={b.breakdown.community} locked={b.breakdown.community === 0} />
-                <ScoreBar label="Trading Conditions" value={b.breakdown.conditions} />
-                <ScoreBar label="Trader Experience" value={experience} locked={experience === 0} />
-              </div>
-            </section>
-
-            {/* HOW CALCULATED */}
-            <section className="glass rounded-2xl p-6">
-              <h2 className="flex items-center gap-2 text-lg font-bold"><Info className="h-4 w-4 text-fuchsia-300" /> How TBI Is Calculated</h2>
-              <p className="mt-2 text-sm text-muted-foreground">TBI combines structural brand data with verified trader experience.</p>
-              <div className="mt-4 overflow-hidden rounded-xl bg-white/5">
-                <div className="flex h-10 text-[11px] font-semibold">
-                  <div className="grid place-items-center bg-violet-500/30 text-violet-100" style={{ width: "40%" }}>40% Brand Data</div>
-                  <div className="grid place-items-center bg-fuchsia-500/30 text-fuchsia-100" style={{ width: "60%" }}>60% Trader Experience</div>
+        ) : (
+          <>
+            <section className="glass mt-4 rounded-3xl p-6 md:p-8">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+                {profile.logo ? (
+                  <img
+                    src={profile.logo}
+                    alt={profile.name}
+                    className="h-20 w-20 rounded-3xl object-cover ring-1 ring-white/10"
+                  />
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-xl font-bold text-white">
+                    {profile.name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl font-bold">{profile.name}</h1>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tbiStateTone(profile.state)}`}>
+                      {tbiStateLabel(profile.state)}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span>{profile.fullCategory}</span>
+                    {profile.website ? <span>{profile.website}</span> : null}
+                    {profile.region ? <span>{profile.region}</span> : null}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-5xl font-bold">
+                    {profile.state === "preliminary"
+                      ? profile.preliminaryScore.toFixed(1)
+                      : profile.finalScore.toFixed(1)}
+                    <span className="text-base text-muted-foreground">
+                      /{profile.state === "preliminary" ? "6.5" : "10"}
+                    </span>
+                  </div>
+                  <div className={`mt-1 text-sm font-semibold ${tbiLabelTone(profile.trustLabel)}`}>{profile.trustLabel}</div>
+                  <div className={`mt-1 text-xs ${tbiConfidenceTone(profile.confidence)}`}>
+                    {profile.confidence} confidence · factor {profile.confidenceFactor.toFixed(2)}
+                  </div>
                 </div>
               </div>
-              {experience === 0 && <div className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">⚠ Trader experience not yet available — preliminary data only.</div>}
             </section>
 
-            {/* REVIEWS */}
-            <section className="glass rounded-2xl p-6">
-              <div className="flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-lg font-bold"><Star className="h-4 w-4 text-amber-300" /> Reviews</h2>
-                <div className="text-xs text-muted-foreground">Total: <b className="text-foreground">{b.reviewCount}</b> · Verified: <b className="text-emerald-300">{b.verifiedReviews}</b></div>
-              </div>
-              {b.reviews.length === 0 ? (
-                <div className="mt-4 rounded-lg bg-white/5 px-4 py-6 text-center text-xs text-muted-foreground">No reviews yet. Be the first to review.</div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  {b.reviews.map((r: any, i: number) => (
-                    <div key={i} className="rounded-xl bg-white/5 p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[10px] font-bold">{r.user.slice(0, 2).toUpperCase()}</div>
-                          <div className="text-sm font-semibold">{r.user}</div>
-                          {r.verified && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">✓ Verified</span>}
+            <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_0.95fr]">
+              <div className="space-y-6">
+                <section className="glass rounded-3xl p-6">
+                  <div className="flex items-center gap-2 text-lg font-bold">
+                    <Shield className="h-4 w-4 text-fuchsia-300" /> Trust Breakdown
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {ratingBars.map((entry) => {
+                      const open = openSections[entry.key];
+                      return (
+                        <div key={entry.key} className="rounded-2xl bg-white/5 p-4">
+                          <button
+                            onClick={() =>
+                              setOpenSections((current) => ({ ...current, [entry.key]: !current[entry.key] }))
+                            }
+                            className="flex w-full items-center justify-between gap-3 text-left"
+                          >
+                            <div>
+                              <div className="text-sm font-semibold text-white">
+                                {entry.label} <span className="text-xs text-muted-foreground">· {entry.weight}</span>
+                              </div>
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {entry.value.toFixed(1)} / 10
+                              </div>
+                            </div>
+                            {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                          </button>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600"
+                              style={{ width: `${Math.max(0, Math.min(100, entry.value * 10))}%` }}
+                            />
+                          </div>
+                          {open ? (
+                            <div className="mt-3 text-sm text-muted-foreground">
+                              {entry.explanation}
+                            </div>
+                          ) : null}
                         </div>
-                        <div className="flex items-center gap-1 text-xs"><Star className="h-3 w-3 fill-amber-300 text-amber-300" /> <span className="font-semibold">{r.score.toFixed(1)}</span></div>
-                      </div>
-                      <p className="mt-2 text-xs text-muted-foreground">{r.comment}</p>
-                      <div className="mt-1 text-[10px] text-muted-foreground">{r.date}</div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="glass rounded-3xl p-6">
+                  <div className="text-lg font-bold">Score Engine Visualization</div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-4">
+                    <MetricCard label="Raw Score" value={profile.rawScore.toFixed(2)} />
+                    <MetricCard label="Confidence Factor" value={profile.confidenceFactor.toFixed(2)} />
+                    <MetricCard label="Risk Penalty" value={profile.riskPenalty.toFixed(2)} tone={profile.riskPenalty < 0 ? "bad" : "neutral"} />
+                    <MetricCard
+                      label="Final TBI"
+                      value={
+                        profile.state === "preliminary"
+                          ? `${profile.preliminaryScore.toFixed(2)} / 6.5`
+                          : profile.finalScore.toFixed(2)
+                      }
+                      tone="good"
+                    />
+                  </div>
+                  <div className="mt-4 rounded-2xl bg-white/5 p-4 text-sm text-muted-foreground">
+                    <div className="font-semibold text-white">Formula</div>
+                    <div className="mt-2">{profile.trustEngine.formula}</div>
+                  </div>
+                </section>
+
+                <section className="glass rounded-3xl p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 text-lg font-bold">
+                      <Star className="h-4 w-4 text-amber-300" /> Review System
                     </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-
-          {/* RIGHT */}
-          <div className="space-y-6">
-            {/* PERFORMANCE */}
-            {b.performance && (
-              <section className="glass rounded-2xl p-6">
-                <h3 className="flex items-center gap-2 text-sm font-bold"><TrendingUp className="h-4 w-4 text-emerald-300" /> RebateBoard Edge</h3>
-                <p className="mt-1 text-[11px] text-muted-foreground">Aggregated performance of traders using {b.name}.</p>
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
-                    <span className="text-xs text-muted-foreground">Avg ROI</span>
-                    <span className="text-sm font-bold text-emerald-300">+{b.performance.avgRoi}%</span>
+                    <div className="text-xs text-muted-foreground">
+                      {profile.reviewCount} reviews · {profile.verifiedReviewCount} verified · weight {profile.weightedReviewMass.toFixed(1)}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
-                    <span className="text-xs text-muted-foreground">Avg Win Rate</span>
-                    <span className="text-sm font-bold">{b.performance.avgWinRate}%</span>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-5">
+                    {profile.reviewDistribution.map((entry) => (
+                      <div key={entry.stars} className="rounded-2xl bg-white/5 p-3 text-center">
+                        <div className="text-lg font-bold text-white">{entry.stars}</div>
+                        <div className="text-[11px] text-muted-foreground">stars</div>
+                        <div className="mt-2 text-sm font-semibold text-fuchsia-200">{entry.count}</div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rounded-lg bg-white/5 px-3 py-2">
-                    <div className="text-[10px] text-muted-foreground">Common Mistake</div>
-                    <div className="mt-1 text-xs">{b.performance.commonMistake}</div>
+                  <div className="mt-5 space-y-3">
+                    {profile.reviews.length ? (
+                      profile.reviews.map((review) => (
+                        <div key={review.id} className="rounded-2xl bg-white/5 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="font-semibold text-white">{review.user}</div>
+                              {review.verified ? (
+                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                                  <CheckCircle2 className="mr-1 inline h-3 w-3" /> Verified Trader
+                                </span>
+                              ) : null}
+                              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                {review.activityLevel}
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(review.recency).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-sm text-muted-foreground">{review.comment || "No comment provided."}</div>
+                          <div className="mt-3 text-xs text-amber-300">Weighted score: {review.score.toFixed(1)} / 10</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl bg-white/5 p-6 text-sm text-muted-foreground">
+                        No trader reviews are contributing yet.
+                      </div>
+                    )}
                   </div>
-                </div>
-              </section>
-            )}
+                </section>
+              </div>
 
-            {/* FLAG */}
-            {b.flag && (
-              <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
-                <div className="flex items-center gap-2 text-amber-200"><AlertTriangle className="h-4 w-4" /> <span className="text-sm font-bold">Risk Flag</span></div>
-                <p className="mt-2 text-xs text-amber-100">{b.flag}</p>
-              </section>
-            )}
+              <div className="space-y-6">
+                <section className="glass rounded-3xl p-6">
+                  <div className="flex items-center gap-2 text-lg font-bold">
+                    <TrendingUp className="h-4 w-4 text-emerald-300" /> Performance Insights
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <MetricCard label="Trader ROI" value={`${profile.performanceInsights.avgRoi}%`} />
+                    <MetricCard label="Average Win Rate" value={`${profile.performanceInsights.avgWinRate}%`} />
+                    <div className="rounded-2xl bg-white/5 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Payout patterns</div>
+                      <div className="mt-2 text-sm text-white">{profile.performanceInsights.payoutPatterns}</div>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 p-4">
+                      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Common complaints</div>
+                      <div className="mt-2 space-y-2 text-sm text-white">
+                        {profile.performanceInsights.commonComplaints.length ? (
+                          profile.performanceInsights.commonComplaints.map((entry) => (
+                            <div key={entry}>{entry}</div>
+                          ))
+                        ) : (
+                          <div className="text-muted-foreground">No repeated complaint pattern yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
-            {/* IMPROVE */}
-            <section className="glass rounded-2xl p-6">
-              <h3 className="text-sm font-bold">Improve Your Score (For Brands)</h3>
-              <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
-                <li>+ Get more verified trader reviews</li>
-                <li>+ Upload proof documents (payouts, regulation)</li>
-                <li>+ Improve transparency disclosures</li>
-                <li>+ Resolve open complaints</li>
-              </ul>
-            </section>
-          </div>
-        </div>
+                <section className="glass rounded-3xl p-6">
+                  <div className="flex items-center gap-2 text-lg font-bold">
+                    <AlertTriangle className="h-4 w-4 text-amber-300" /> Risk Flags
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {profile.riskEvents.length ? (
+                      profile.riskEvents.map((event) => (
+                        <div key={`${event.kind}-${event.title}`} className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-semibold text-amber-100">{event.title}</div>
+                            <div className="text-xs font-semibold text-amber-300">{event.impact.toFixed(2)}</div>
+                          </div>
+                          <div className="mt-2 text-sm text-amber-50/90">{event.detail}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl bg-white/5 p-4 text-sm text-muted-foreground">
+                        No active risk events are affecting this profile right now.
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <section className="glass rounded-3xl p-6">
+                  <div className="text-lg font-bold">Improvement Section</div>
+                  <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                    {profile.improvementActions.map((entry) => (
+                      <div key={entry} className="rounded-2xl bg-white/5 px-4 py-3">
+                        {entry}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="glass rounded-3xl p-6">
+                  <div className="text-lg font-bold">What changed recently?</div>
+                  <div className="mt-4 space-y-3">
+                    {profile.recentChanges.length ? (
+                      profile.recentChanges.map((entry) => (
+                        <div key={`${entry.title}-${entry.detail}`} className="rounded-2xl bg-white/5 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-semibold text-white">{entry.title}</div>
+                            <div className={`text-xs font-semibold ${entry.impact < 0 ? "text-rose-300" : "text-emerald-300"}`}>
+                              {entry.impact > 0 ? "+" : ""}
+                              {entry.impact.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-sm text-muted-foreground">{entry.detail}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl bg-white/5 p-4 text-sm text-muted-foreground">
+                        No recent trust-impact events recorded.
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </>
+        )}
       </main>
+      <SiteFooter />
+    </div>
+  );
+}
 
-      {/* BREAKDOWN MODAL */}
-      {showBreakdown && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur" onClick={() => setShowBreakdown(false)}>
-          <div className="glass relative w-full max-w-2xl rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowBreakdown(false)} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/5 hover:bg-white/10">
-              <X className="h-4 w-4" />
-            </button>
-            <h2 className="text-2xl font-bold">Score Breakdown</h2>
-            <div className="mt-4 text-center">
-              <div className="text-6xl font-bold">{b.score.toFixed(1)}<span className="text-xl text-muted-foreground">/{b.maxScore}</span></div>
-              <div className="mt-1 text-xs text-muted-foreground">Final TBI Score</div>
-            </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white/5 p-4">
-                <div className="text-[11px] text-muted-foreground">Structural Score (40%)</div>
-                <div className="mt-1 text-2xl font-bold text-violet-300">{structural.toFixed(1)}</div>
-                <Progress value={structural * 10} className="mt-2" />
-              </div>
-              <div className="rounded-2xl bg-white/5 p-4">
-                <div className="text-[11px] text-muted-foreground">Experience Score (60%)</div>
-                <div className="mt-1 text-2xl font-bold text-fuchsia-300">{experience ? experience.toFixed(1) : "—"}</div>
-                <Progress value={experience * 10} className="mt-2" />
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {[
-                { k: "Identity & Regulation", v: b.breakdown.transparency, e: "Verified entity, jurisdiction, licensing." },
-                { k: "Proof Strength", v: b.breakdown.proof, e: "On-chain payouts, audit trails, public disclosures." },
-                { k: "Community Trust", v: b.breakdown.community, e: "Sentiment from verified traders." },
-                { k: "Trading Conditions", v: b.breakdown.conditions, e: "Spreads, commissions, payout speed, rules." },
-                { k: "Trader Experience", v: b.breakdown.experience ?? 0, e: "Real outcomes from RebateBoard users." },
-              ].map((m) => (
-                <div key={m.k} className="rounded-xl bg-white/5 p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold">{m.k}</div>
-                    <div className="text-sm">{m.v ? m.v.toFixed(1) : "Locked"}</div>
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">{m.e}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    <SiteFooter />
+function MetricCard({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: "neutral" | "good" | "bad";
+}) {
+  const toneClass =
+    tone === "good"
+      ? "text-emerald-300"
+      : tone === "bad"
+      ? "text-rose-300"
+      : "text-white";
+  return (
+    <div className="rounded-2xl bg-white/5 p-4">
+      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className={`mt-2 text-2xl font-bold ${toneClass}`}>{value}</div>
     </div>
   );
 }

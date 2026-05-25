@@ -46,6 +46,7 @@ const empty = (): AdminOffer => ({
   ctaUrl: "",
   startDate: new Date().toISOString().slice(0, 10),
   expires: "",
+  limitedTime: false,
   status: "active",
   uses: 0,
   mode: "form",
@@ -68,6 +69,14 @@ function mapBrandCategoryToOfferCategory(category?: string): OfferCategory {
     default:
       return "Prop Firms";
   }
+}
+
+function normalizeOffer(offer: AdminOffer): AdminOffer {
+  return {
+    ...offer,
+    limitedTime:
+      typeof offer.limitedTime === "boolean" ? offer.limitedTime : Boolean(offer.expires?.trim()),
+  };
 }
 
 type LiveBrand = Pick<AdminBrandRecord, "id" | "name" | "category">;
@@ -163,7 +172,7 @@ function OffersAdmin() {
           fetchAdminBrands(),
         ]);
         if (cancelled) return;
-        setItems(offers);
+        setItems(offers.map(normalizeOffer));
         setBrands(liveBrands.map((brand) => ({
           id: brand.id,
           name: brand.name,
@@ -185,13 +194,20 @@ function OffersAdmin() {
   }, []);
 
   const filtered = filter === "all" ? items : items.filter((offer) => offer.category === filter);
+  const isLimitedOffer = Boolean(editing?.limitedTime || editing?.tags?.includes("limited"));
 
   const toggleTag = (tag: OfferTag) => {
     if (!editing) return;
     const tags = editing.tags ?? [];
+    const nextTags = tags.includes(tag) ? tags.filter((item) => item !== tag) : [...tags, tag];
     setEditing({
       ...editing,
-      tags: tags.includes(tag) ? tags.filter((item) => item !== tag) : [...tags, tag],
+      tags: nextTags,
+      limitedTime: tag === "limited" ? nextTags.includes("limited") || editing.limitedTime : editing.limitedTime,
+      expires:
+        tag === "limited" && !nextTags.includes("limited") && !editing.limitedTime
+          ? ""
+          : editing.expires,
     });
   };
 
@@ -218,6 +234,8 @@ function OffersAdmin() {
     try {
       const payload: Partial<AdminOffer> = {
         ...editing,
+        limitedTime: isLimitedOffer,
+        expires: isLimitedOffer ? editing.expires : "",
         createdAt: editing.createdAt || new Date().toISOString().slice(0, 10),
       };
       const exists = items.some((item) => item.id === editing.id);
@@ -225,9 +243,10 @@ function OffersAdmin() {
         ? await updateAdminOffer(editing.id, payload)
         : await createAdminOffer(payload);
 
+      const normalized = normalizeOffer(saved);
       setItems((current) => {
-        if (exists) return current.map((item) => (item.id === saved.id ? saved : item));
-        return [saved, ...current];
+        if (exists) return current.map((item) => (item.id === normalized.id ? normalized : item));
+        return [normalized, ...current];
       });
       toast.success(exists ? "Offer updated" : "Offer created and synced live");
       setEditing(null);
@@ -303,8 +322,8 @@ function OffersAdmin() {
               <td className="text-xs text-muted-foreground">{offer.expires || "-"}</td>
               <td className="text-right">
                 <div className="flex justify-end gap-1">
-                  <button onClick={() => setPreviewing(offer)} className="rounded-md bg-cyan-500/15 px-2 py-1 text-xs font-bold text-cyan-200">Preview</button>
-                  <button onClick={() => setEditing(offer)} className="rounded-md bg-white/10 px-2 py-1"><Edit3 className="h-3 w-3 text-white" /></button>
+                  <button onClick={() => setPreviewing(normalizeOffer(offer))} className="rounded-md bg-cyan-500/15 px-2 py-1 text-xs font-bold text-cyan-200">Preview</button>
+                  <button onClick={() => setEditing(normalizeOffer(offer))} className="rounded-md bg-white/10 px-2 py-1"><Edit3 className="h-3 w-3 text-white" /></button>
                   <button onClick={() => setDeleting(offer)} className="rounded-md bg-rose-500/15 px-2 py-1"><Trash2 className="h-3 w-3 text-rose-300" /></button>
                 </div>
               </td>
@@ -420,9 +439,32 @@ function OffersAdmin() {
               <Field label="Start date">
                 <input type="date" className={fieldCls} value={editing.startDate ?? ""} onChange={(e) => setEditing({ ...editing, startDate: e.target.value })} />
               </Field>
-              <Field label="Expires (label)">
-                <input className={fieldCls} value={editing.expires} onChange={(e) => setEditing({ ...editing, expires: e.target.value })} placeholder="May 30" />
+              <Field label="Offer duration">
+                <label className="flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white">
+                  <input
+                    type="checkbox"
+                    checked={isLimitedOffer}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        limitedTime: e.target.checked,
+                        expires: e.target.checked || editing.tags?.includes("limited") ? editing.expires : "",
+                      })
+                    }
+                  />
+                  Limited-time offer
+                </label>
               </Field>
+              {isLimitedOffer && (
+                <Field label="Expires (label)" span={2}>
+                  <input
+                    type="date"
+                    className={fieldCls}
+                    value={editing.expires}
+                    onChange={(e) => setEditing({ ...editing, expires: e.target.value })}
+                  />
+                </Field>
+              )}
 
               <Field label="Status">
                 <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as AdminOffer["status"] })}>

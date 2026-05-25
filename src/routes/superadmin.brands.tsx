@@ -124,10 +124,14 @@ const PROFILE_FIELD_LABELS: Record<string, string> = {
 
 const selectCls = `${fieldCls} bg-slate-950 text-white [color-scheme:dark] [&>option]:bg-slate-950 [&>option]:text-white`;
 const toolbarSelectCls = "rounded-full bg-slate-950 px-3 py-1.5 text-xs text-white ring-1 ring-white/10 [color-scheme:dark] [&>option]:bg-slate-950 [&>option]:text-white";
+const rrToUsd = (points: number) => points / 100;
+const formatUsd = (amount: number) =>
+  amount.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 type ChallengeRow = {
   id: string;
-  program: "1-Step" | "2-Step" | "Instant";
+  program: string;
+  accountStep: "1-Step" | "2-Step" | "3-Step" | "Instant";
   size: "5K" | "10K" | "25K" | "50K" | "100K" | "200K" | "300K";
   asset: "FX" | "Futures" | "Crypto";
   profitTarget: string;
@@ -151,7 +155,8 @@ function makeId(prefix: string) {
 function defaultChallenge(): ChallengeRow {
   return {
     id: makeId("ch"),
-    program: "2-Step",
+    program: "",
+    accountStep: "2-Step",
     size: "100K",
     asset: "FX",
     profitTarget: "8% / 5%",
@@ -172,11 +177,22 @@ function defaultChallenge(): ChallengeRow {
 function normalizeChallenge(value: unknown): ChallengeRow {
   const row = typeof value === "object" && value ? (value as Record<string, unknown>) : {};
   const base = defaultChallenge();
+  const legacyStep =
+    row.program === "1-Step" || row.program === "2-Step" || row.program === "3-Step" || row.program === "Instant"
+      ? row.program
+      : undefined;
   return {
     ...base,
     ...row,
     id: typeof row.id === "string" && row.id ? row.id : base.id,
-    program: row.program === "1-Step" || row.program === "2-Step" || row.program === "Instant" ? row.program : base.program,
+    program:
+      typeof row.program === "string" && row.program && row.program !== legacyStep
+        ? row.program
+        : base.program,
+    accountStep:
+      row.accountStep === "1-Step" || row.accountStep === "2-Step" || row.accountStep === "3-Step" || row.accountStep === "Instant"
+        ? row.accountStep
+        : legacyStep ?? base.accountStep,
     size: row.size === "5K" || row.size === "10K" || row.size === "25K" || row.size === "50K" || row.size === "100K" || row.size === "200K" || row.size === "300K" ? row.size : base.size,
     asset: row.asset === "FX" || row.asset === "Futures" || row.asset === "Crypto" ? row.asset : base.asset,
     profitTarget: typeof row.profitTarget === "string" ? row.profitTarget : base.profitTarget,
@@ -721,7 +737,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
               <label className="block">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.svg,image/svg+xml"
                   multiple
                   className="hidden"
                   onChange={async (e) => {
@@ -849,9 +865,18 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
                 </div>
                 <div className="grid gap-2 md:grid-cols-3">
                   <Field label="Program">
-                    <select className={selectCls} value={challenge.program} onChange={(e) => patchChallenge(challenge.id, { program: e.target.value as ChallengeRow["program"] })}>
+                    <input
+                      className={fieldCls}
+                      value={challenge.program}
+                      onChange={(e) => patchChallenge(challenge.id, { program: e.target.value })}
+                      placeholder="e.g. Standard, Swing, Rapid"
+                    />
+                  </Field>
+                  <Field label="Account step">
+                    <select className={selectCls} value={challenge.accountStep} onChange={(e) => patchChallenge(challenge.id, { accountStep: e.target.value as ChallengeRow["accountStep"] })}>
                       <option>1-Step</option>
                       <option>2-Step</option>
+                      <option>3-Step</option>
                       <option>Instant</option>
                     </select>
                   </Field>
@@ -879,7 +904,12 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
                   <Field label="PT : DD ratio"><input className={fieldCls} value={challenge.ptdd} onChange={(e) => patchChallenge(challenge.id, { ptdd: e.target.value })} /></Field>
                   <Field label="Profit split %"><input type="number" className={fieldCls} value={challenge.profitSplit} onChange={(e) => patchChallenge(challenge.id, { profitSplit: Number(e.target.value) })} /></Field>
                   <Field label="Payout frequency"><input className={fieldCls} value={challenge.payoutFreq} onChange={(e) => patchChallenge(challenge.id, { payoutFreq: e.target.value })} /></Field>
-                  <Field label="RR Points"><input type="number" className={fieldCls} value={challenge.rrPoints} onChange={(e) => patchChallenge(challenge.id, { rrPoints: Number(e.target.value) })} /></Field>
+                  <Field
+                    label="RR Points"
+                    hint={`${challenge.rrPoints} RR = ${formatUsd(rrToUsd(challenge.rrPoints))}`}
+                  >
+                    <input type="number" className={fieldCls} value={challenge.rrPoints} onChange={(e) => patchChallenge(challenge.id, { rrPoints: Number(e.target.value) })} />
+                  </Field>
                   <Field label="Original price ($)"><input type="number" className={fieldCls} value={challenge.originalPrice} onChange={(e) => patchChallenge(challenge.id, { originalPrice: Number(e.target.value) })} /></Field>
                   <Field label="Sale price ($)"><input type="number" className={fieldCls} value={challenge.price} onChange={(e) => patchChallenge(challenge.id, { price: Number(e.target.value) })} /></Field>
                   <Field label="Discount code"><input className={fieldCls} value={challenge.discountCode ?? ""} onChange={(e) => patchChallenge(challenge.id, { discountCode: e.target.value })} /></Field>

@@ -166,7 +166,7 @@ export function ThumbnailUploader({
         <input
           ref={ref}
           type="file"
-          accept="image/*"
+          accept="image/*,.svg,image/svg+xml"
           className="hidden"
           onChange={(e) => onPick(e.target.files?.[0])}
         />

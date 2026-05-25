@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel } from "@/components/superadmin/AdminUI";
-import { toast } from "@/components/superadmin/AdminActions";
+import { ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { createAdminBrand, fetchAdminBrands, updateAdminBrand, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import { uploadMediaFile, uploadMediaFiles } from "@/lib/media-api";
 import {
@@ -14,7 +14,8 @@ import {
  * ===================================================================== */
 type ChallengeRow = {
   id: string;
-  program: "1-Step" | "2-Step" | "Instant";
+  program: string;
+  accountStep: "1-Step" | "2-Step" | "3-Step" | "Instant";
   size: "5K" | "10K" | "25K" | "50K" | "100K" | "200K" | "300K";
   asset: "FX" | "Futures" | "Crypto";
   profitTarget: string;
@@ -33,10 +34,11 @@ type ChallengeRow = {
 
 type AccountStep = { id: string; title: string; body: string };
 type RuleItem = { id: string; question: string; answer: string };
+type NamedLogoItem = { id: string; name: string; logo: string };
 
 const newChallenge = (): ChallengeRow => ({
   id: `ch_${Math.random().toString(36).slice(2, 8)}`,
-  program: "2-Step", size: "100K", asset: "FX",
+  program: "", accountStep: "2-Step", size: "100K", asset: "FX",
   profitTarget: "", dailyLoss: "", maxLoss: "",
   ptdd: "", profitSplit: "", payoutFreq: "",
   rrPoints: "", price: "", originalPrice: "", badge: "", discountCode: "", active: true,
@@ -52,6 +54,12 @@ const newRule = (): RuleItem => ({
   id: `rl_${Math.random().toString(36).slice(2, 8)}`,
   question: "",
   answer: "",
+});
+
+const newNamedLogoItem = (): NamedLogoItem => ({
+  id: `nl_${Math.random().toString(36).slice(2, 8)}`,
+  name: "",
+  logo: "",
 });
 
 type BrandEditorSearch = {
@@ -88,6 +96,9 @@ function Field({ label, children, span = 1, hint }: { label: string; children: R
 
 const inputCls = "w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-fuchsia-400/40 focus:outline-none placeholder:text-muted-foreground";
 const selectCls = `${inputCls} bg-slate-950 [color-scheme:dark] [&>option]:bg-slate-950 [&>option]:text-white`;
+const rrToUsd = (points: number) => points / 100;
+const formatUsd = (amount: number) =>
+  amount.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /* =====================================================================
  * Section IDs — one per left-rail item
@@ -116,6 +127,70 @@ function NewBrandPage() {
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [savedSections, setSavedSections] = useState<SectionId[]>([]);
   const [assetUploading, setAssetUploading] = useState<null | "logo" | "cover" | "screenshots" | "kyb">(null);
+
+  const normalizeChallenge = (value: unknown): ChallengeRow => {
+    const row = typeof value === "object" && value ? (value as Record<string, unknown>) : {};
+    const base = newChallenge();
+    const legacyStep =
+      row.program === "1-Step" || row.program === "2-Step" || row.program === "3-Step" || row.program === "Instant"
+        ? row.program
+        : undefined;
+
+    return {
+      ...base,
+      ...row,
+      id: typeof row.id === "string" && row.id ? row.id : base.id,
+      program:
+        typeof row.program === "string" && row.program && row.program !== legacyStep
+          ? row.program
+          : base.program,
+      accountStep:
+        row.accountStep === "1-Step" || row.accountStep === "2-Step" || row.accountStep === "3-Step" || row.accountStep === "Instant"
+          ? row.accountStep
+          : legacyStep ?? base.accountStep,
+      size:
+        row.size === "5K" || row.size === "10K" || row.size === "25K" || row.size === "50K" || row.size === "100K" || row.size === "200K" || row.size === "300K"
+          ? row.size
+          : base.size,
+      asset: row.asset === "FX" || row.asset === "Futures" || row.asset === "Crypto" ? row.asset : base.asset,
+      profitTarget: typeof row.profitTarget === "string" ? row.profitTarget : base.profitTarget,
+      dailyLoss: typeof row.dailyLoss === "string" ? row.dailyLoss : base.dailyLoss,
+      maxLoss: typeof row.maxLoss === "string" ? row.maxLoss : base.maxLoss,
+      ptdd: typeof row.ptdd === "string" ? row.ptdd : base.ptdd,
+      profitSplit: typeof row.profitSplit === "number" || row.profitSplit === "" ? row.profitSplit as ChallengeRow["profitSplit"] : base.profitSplit,
+      payoutFreq: typeof row.payoutFreq === "string" ? row.payoutFreq : base.payoutFreq,
+      rrPoints: typeof row.rrPoints === "number" || row.rrPoints === "" ? row.rrPoints as ChallengeRow["rrPoints"] : base.rrPoints,
+      price: typeof row.price === "number" || row.price === "" ? row.price as ChallengeRow["price"] : base.price,
+      originalPrice: typeof row.originalPrice === "number" || row.originalPrice === "" ? row.originalPrice as ChallengeRow["originalPrice"] : base.originalPrice,
+      badge: row.badge === "" || row.badge === "Top" || row.badge === "New" || row.badge === "Best Value" ? row.badge as ChallengeRow["badge"] : base.badge,
+      discountCode: typeof row.discountCode === "string" ? row.discountCode : base.discountCode,
+      active: typeof row.active === "boolean" ? row.active : base.active,
+    };
+  };
+
+  const normalizeNamedLogoItems = (value: unknown, fallbackText = ""): NamedLogoItem[] => {
+    if (Array.isArray(value) && value.length) {
+      return value.map((item, index) => {
+        const row = typeof item === "object" && item ? (item as Record<string, unknown>) : {};
+        return {
+          id: typeof row.id === "string" && row.id ? row.id : `nl_${index}_${Math.random().toString(36).slice(2, 6)}`,
+          name: typeof row.name === "string" ? row.name : "",
+          logo: typeof row.logo === "string" ? row.logo : "",
+        };
+      });
+    }
+
+    const names = fallbackText
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (names.length) {
+      return names.map((name) => ({ id: `nl_${Math.random().toString(36).slice(2, 8)}`, name, logo: "" }));
+    }
+
+    return [newNamedLogoItem()];
+  };
 
   /* ---- form state (everything wired) ---- */
   const [category, setCategory] = useState<Category>("Prop Firm");
@@ -147,6 +222,9 @@ function NewBrandPage() {
     withdrawalSpeed: "", execution: "", scalping: "Yes", hedging: "Yes",
     copyTrading: "Supported", islamic: "Available", restrictedCountries: "",
   });
+  const [brokerDepositMethods, setBrokerDepositMethods] = useState<NamedLogoItem[]>([newNamedLogoItem()]);
+  const [brokerWithdrawalMethods, setBrokerWithdrawalMethods] = useState<NamedLogoItem[]>([newNamedLogoItem()]);
+  const [brokerTradingPlatforms, setBrokerTradingPlatforms] = useState<NamedLogoItem[]>([newNamedLogoItem()]);
 
   // Specifics — prop
   const [prop, setProp] = useState({
@@ -156,6 +234,8 @@ function NewBrandPage() {
     news: "Allowed", weekend: "Allowed", ea: "Allowed", copyTrading: "Allowed",
     consistency: "", prohibited: "",
   });
+  const [propPayoutMethods, setPropPayoutMethods] = useState<NamedLogoItem[]>([newNamedLogoItem()]);
+  const [propTradingPlatforms, setPropTradingPlatforms] = useState<NamedLogoItem[]>([newNamedLogoItem()]);
 
   // Specifics — exchange
   const [exch, setExch] = useState({
@@ -345,6 +425,10 @@ function NewBrandPage() {
       copyTrading: "Supported", islamic: "Available", restrictedCountries: "",
       ...((brand.broker ?? {}) as Record<string, string>),
     });
+    const brokerValue = ((brand.broker ?? {}) as Record<string, unknown>);
+    setBrokerDepositMethods(normalizeNamedLogoItems(brokerValue.depositMethodItems, typeof brokerValue.deposits === "string" ? brokerValue.deposits : ""));
+    setBrokerWithdrawalMethods(normalizeNamedLogoItems(brokerValue.withdrawalMethodItems, typeof brokerValue.withdrawals === "string" ? brokerValue.withdrawals : ""));
+    setBrokerTradingPlatforms(normalizeNamedLogoItems(brokerValue.tradingPlatformItems, typeof brokerValue.platforms === "string" ? brokerValue.platforms : ""));
     const propValue = ((brand.prop ?? {}) as Record<string, unknown>);
     const { rules: rawRules, ...propFields } = propValue;
     setProp({
@@ -355,6 +439,8 @@ function NewBrandPage() {
       consistency: "", prohibited: "",
       ...(propFields as Record<string, string>),
     });
+    setPropPayoutMethods(normalizeNamedLogoItems(propValue.payoutMethodItems, typeof propFields.payoutMethods === "string" ? propFields.payoutMethods : ""));
+    setPropTradingPlatforms(normalizeNamedLogoItems(propValue.tradingPlatformItems, typeof propFields.platform === "string" ? propFields.platform : ""));
     setRules(Array.isArray(rawRules)
       ? rawRules.map((item, index) => {
         const value = item as Partial<RuleItem> | null;
@@ -420,7 +506,7 @@ function NewBrandPage() {
     });
     setLinkSteps(Array.isArray(cashback.linkSteps) ? (cashback.linkSteps as AccountStep[]) : []);
     setCreateSteps(Array.isArray(cashback.createSteps) ? (cashback.createSteps as AccountStep[]) : []);
-    setChallenges(Array.isArray(brand.challenges) && brand.challenges.length ? (brand.challenges as ChallengeRow[]) : [newChallenge()]);
+    setChallenges(Array.isArray(brand.challenges) && brand.challenges.length ? brand.challenges.map(normalizeChallenge) : [newChallenge()]);
 
     const trust = (brand.trust ?? {}) as Record<string, string | number>;
     setLicenseNo(String(trust.licenseNo ?? ""));
@@ -508,6 +594,11 @@ function NewBrandPage() {
     }
     setSaving(true);
     try {
+      const cleanBrokerDepositMethods = brokerDepositMethods.filter((item) => item.name.trim() || item.logo.trim());
+      const cleanBrokerWithdrawalMethods = brokerWithdrawalMethods.filter((item) => item.name.trim() || item.logo.trim());
+      const cleanBrokerTradingPlatforms = brokerTradingPlatforms.filter((item) => item.name.trim() || item.logo.trim());
+      const cleanPayoutMethods = propPayoutMethods.filter((item) => item.name.trim() || item.logo.trim());
+      const cleanTradingPlatforms = propTradingPlatforms.filter((item) => item.name.trim() || item.logo.trim());
       const adminStatus: AdminBrandRecord["status"] =
         status === "published" ? "verified" : status === "draft" ? "draft" : "review";
       const nextSection = options?.advance ? getNextSection(section) : section;
@@ -536,8 +627,23 @@ function NewBrandPage() {
         primaryColor,
         identity: { founded, hq, supportEmail, tagline, description, editorial },
         founder: { ceo, founderLi, founderX, yt, tags },
-        broker: isBroker ? broker : undefined,
-        prop: isProp ? { ...prop, rules } : undefined,
+        broker: isBroker ? {
+          ...broker,
+          deposits: cleanBrokerDepositMethods.map((item) => item.name.trim()).filter(Boolean).join(", "),
+          withdrawals: cleanBrokerWithdrawalMethods.map((item) => item.name.trim()).filter(Boolean).join(", "),
+          platforms: cleanBrokerTradingPlatforms.map((item) => item.name.trim()).filter(Boolean).join(", "),
+          depositMethodItems: cleanBrokerDepositMethods,
+          withdrawalMethodItems: cleanBrokerWithdrawalMethods,
+          tradingPlatformItems: cleanBrokerTradingPlatforms,
+        } : undefined,
+        prop: isProp ? {
+          ...prop,
+          payoutMethods: cleanPayoutMethods.map((item) => item.name.trim()).filter(Boolean).join(", "),
+          platform: cleanTradingPlatforms.map((item) => item.name.trim()).filter(Boolean).join(", "),
+          payoutMethodItems: cleanPayoutMethods,
+          tradingPlatformItems: cleanTradingPlatforms,
+          rules,
+        } : undefined,
         exchange: isExchange ? exch : undefined,
         tool: isTool ? tool : undefined,
         editorial: edStruct,
@@ -614,6 +720,31 @@ function NewBrandPage() {
   const rmChallenge = (id: string) => setChallenges((c) => c.filter((x) => x.id !== id));
   const patchChallenge = (id: string, patch: Partial<ChallengeRow>) =>
     setChallenges((c) => c.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const addPropPayoutMethod = () => setPropPayoutMethods((current) => [...current, newNamedLogoItem()]);
+  const patchPropPayoutMethod = (id: string, patch: Partial<NamedLogoItem>) =>
+    setPropPayoutMethods((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  const removePropPayoutMethod = (id: string) =>
+    setPropPayoutMethods((current) => (current.length > 1 ? current.filter((item) => item.id !== id) : [newNamedLogoItem()]));
+  const addPropTradingPlatform = () => setPropTradingPlatforms((current) => [...current, newNamedLogoItem()]);
+  const patchPropTradingPlatform = (id: string, patch: Partial<NamedLogoItem>) =>
+    setPropTradingPlatforms((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  const removePropTradingPlatform = (id: string) =>
+    setPropTradingPlatforms((current) => (current.length > 1 ? current.filter((item) => item.id !== id) : [newNamedLogoItem()]));
+  const addBrokerDepositMethod = () => setBrokerDepositMethods((current) => [...current, newNamedLogoItem()]);
+  const patchBrokerDepositMethod = (id: string, patch: Partial<NamedLogoItem>) =>
+    setBrokerDepositMethods((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  const removeBrokerDepositMethod = (id: string) =>
+    setBrokerDepositMethods((current) => (current.length > 1 ? current.filter((item) => item.id !== id) : [newNamedLogoItem()]));
+  const addBrokerWithdrawalMethod = () => setBrokerWithdrawalMethods((current) => [...current, newNamedLogoItem()]);
+  const patchBrokerWithdrawalMethod = (id: string, patch: Partial<NamedLogoItem>) =>
+    setBrokerWithdrawalMethods((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  const removeBrokerWithdrawalMethod = (id: string) =>
+    setBrokerWithdrawalMethods((current) => (current.length > 1 ? current.filter((item) => item.id !== id) : [newNamedLogoItem()]));
+  const addBrokerTradingPlatform = () => setBrokerTradingPlatforms((current) => [...current, newNamedLogoItem()]);
+  const patchBrokerTradingPlatform = (id: string, patch: Partial<NamedLogoItem>) =>
+    setBrokerTradingPlatforms((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  const removeBrokerTradingPlatform = (id: string) =>
+    setBrokerTradingPlatforms((current) => (current.length > 1 ? current.filter((item) => item.id !== id) : [newNamedLogoItem()]));
 
   /* ---- step (account instructions) helpers ---- */
   const stepCtl = (which: "link" | "create") => {
@@ -675,6 +806,14 @@ function NewBrandPage() {
     } finally {
       setAssetUploading(null);
     }
+  }
+
+  async function uploadPropMetaLogo(file: File, group: "payout-method" | "trading-platform") {
+    const uploaded = await uploadMediaFile(file, {
+      folder: `brands/${group}s`,
+      prefix: slug.trim() || name.trim() || category.toLowerCase().replace(/\s+/g, "-"),
+    });
+    return uploaded.url;
   }
 
   /* ===================================================================== */
@@ -809,18 +948,48 @@ function NewBrandPage() {
                   ["regulations","Regulations / licenses","ASIC, FCA, CySEC"],
                   ["minDeposit","Min deposit","$100"],
                   ["maxLeverage","Max leverage","1:500"],
-                  ["platforms","Trading platforms","MT4, MT5, cTrader"],
                   ["assets","Asset classes","Forex, Indices, Metals"],
                   ["spreads","Spreads from","0.0 pips"],
                   ["commission","Commission model","$3.5/lot round-turn"],
                   ["accountTypes","Account types","Standard, Raw, ECN"],
-                  ["deposits","Deposit methods","Card, Wire, Crypto"],
-                  ["withdrawals","Withdrawal methods","Crypto, Wire"],
                   ["withdrawalSpeed","Withdrawal speed","Within 24h"],
                   ["execution","Execution model","STP / ECN"],
                 ] as const).map(([k, label, ph]) => (
                   <Field key={k} label={label}><input className={inputCls} placeholder={ph} value={(broker as any)[k]} onChange={(e) => setBroker({ ...broker, [k]: e.target.value })} /></Field>
                 ))}
+                <Field label="Deposit Methods" span={2}>
+                  <NamedLogoListEditor
+                    items={brokerDepositMethods}
+                    addLabel="Add deposit method"
+                    namePlaceholder="e.g. Card, Bank Wire, USDT"
+                    onAdd={addBrokerDepositMethod}
+                    onRemove={removeBrokerDepositMethod}
+                    onPatch={patchBrokerDepositMethod}
+                    onUploadLogo={(file) => uploadPropMetaLogo(file, "deposit-method")}
+                  />
+                </Field>
+                <Field label="Withdrawal Methods" span={2}>
+                  <NamedLogoListEditor
+                    items={brokerWithdrawalMethods}
+                    addLabel="Add withdrawal method"
+                    namePlaceholder="e.g. Bank Wire, USDT, Skrill"
+                    onAdd={addBrokerWithdrawalMethod}
+                    onRemove={removeBrokerWithdrawalMethod}
+                    onPatch={patchBrokerWithdrawalMethod}
+                    onUploadLogo={(file) => uploadPropMetaLogo(file, "withdrawal-method")}
+                  />
+                </Field>
+                <Field label="Trading Platforms" span={2}>
+                  <NamedLogoListEditor
+                    items={brokerTradingPlatforms}
+                    addLabel="Add trading platform"
+                    namePlaceholder="e.g. MT4, MT5, cTrader"
+                    onAdd={addBrokerTradingPlatform}
+                    onRemove={removeBrokerTradingPlatform}
+                    onPatch={patchBrokerTradingPlatform}
+                    onUploadLogo={(file) => uploadPropMetaLogo(file, "broker-platform")}
+                  />
+                </Field>
                 {([
                   ["scalping","Scalping allowed",["Yes","No"]],
                   ["hedging","Hedging allowed",["Yes","No"]],
@@ -855,13 +1024,33 @@ function NewBrandPage() {
                   ["maxDD","Max drawdown","10%"],
                   ["minDays","Min trading days","3"],
                   ["payoutSchedule","Payout schedule","Bi-weekly"],
-                  ["payoutMethods","Payout methods","USDT, Wire, Rise"],
                   ["scaling","Scaling plan","+25% per 10% profit"],
                   ["maxAlloc","Max allocation","$2M"],
-                  ["platform","Trading platform","MT4, MT5, cTrader, DXTrade"],
                 ] as const).map(([k, label, ph]) => (
                   <Field key={k} label={label}><input className={inputCls} placeholder={ph} value={(prop as any)[k]} onChange={(e) => setProp({ ...prop, [k]: e.target.value })} /></Field>
                 ))}
+                <Field label="Payout Methods" span={2}>
+                  <NamedLogoListEditor
+                    items={propPayoutMethods}
+                    addLabel="Add payout method"
+                    namePlaceholder="e.g. Rise, USDT, Bank Wire"
+                    onAdd={addPropPayoutMethod}
+                    onRemove={removePropPayoutMethod}
+                    onPatch={patchPropPayoutMethod}
+                    onUploadLogo={(file) => uploadPropMetaLogo(file, "payout-method")}
+                  />
+                </Field>
+                <Field label="Trading Platforms" span={2}>
+                  <NamedLogoListEditor
+                    items={propTradingPlatforms}
+                    addLabel="Add trading platform"
+                    namePlaceholder="e.g. MT5, cTrader, DXtrade"
+                    onAdd={addPropTradingPlatform}
+                    onRemove={removePropTradingPlatform}
+                    onPatch={patchPropTradingPlatform}
+                    onUploadLogo={(file) => uploadPropMetaLogo(file, "trading-platform")}
+                  />
+                </Field>
                 <Field label="Allowed instruments" span={2}><input className={inputCls} placeholder="Forex, Indices, Metals, Crypto" value={prop.instruments} onChange={(e) => setProp({ ...prop, instruments: e.target.value })} /></Field>
                 {([
                   ["news","News trading",["Allowed","Restricted","Not allowed"]],
@@ -1152,8 +1341,16 @@ function NewBrandPage() {
                     </div>
                     <div className="grid gap-2 md:grid-cols-3">
                       <Field label="Program">
-                        <select className={selectCls} value={c.program} onChange={(e) => patchChallenge(c.id, { program: e.target.value as ChallengeRow["program"] })}>
-                          <option>1-Step</option><option>2-Step</option><option>Instant</option>
+                        <input
+                          className={inputCls}
+                          value={c.program}
+                          onChange={(e) => patchChallenge(c.id, { program: e.target.value })}
+                          placeholder="e.g. Standard, Swing, Rapid"
+                        />
+                      </Field>
+                      <Field label="Account step">
+                        <select className={selectCls} value={c.accountStep} onChange={(e) => patchChallenge(c.id, { accountStep: e.target.value as ChallengeRow["accountStep"] })}>
+                          <option>1-Step</option><option>2-Step</option><option>3-Step</option><option>Instant</option>
                         </select>
                       </Field>
                       <Field label="Account size">
@@ -1172,7 +1369,12 @@ function NewBrandPage() {
                       <Field label="PT : DD ratio"><input className={inputCls} value={c.ptdd} onChange={(e) => patchChallenge(c.id, { ptdd: e.target.value })} /></Field>
                       <Field label="Profit split %"><input type="number" className={inputCls} placeholder="80" value={c.profitSplit} onChange={(e) => patchChallenge(c.id, { profitSplit: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
                       <Field label="Payout frequency"><input className={inputCls} placeholder="Bi-weekly" value={c.payoutFreq} onChange={(e) => patchChallenge(c.id, { payoutFreq: e.target.value })} /></Field>
-                      <Field label="RR Points"><input type="number" className={inputCls} placeholder="200" value={c.rrPoints} onChange={(e) => patchChallenge(c.id, { rrPoints: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
+                      <Field
+                        label="RR Points"
+                        hint={typeof c.rrPoints === "number" ? `${c.rrPoints} RR = ${formatUsd(rrToUsd(c.rrPoints))}` : "100 RR = $1.00"}
+                      >
+                        <input type="number" className={inputCls} placeholder="200" value={c.rrPoints} onChange={(e) => patchChallenge(c.id, { rrPoints: e.target.value === "" ? "" : Number(e.target.value) })} />
+                      </Field>
                       <Field label="Original price ($)"><input type="number" className={inputCls} placeholder="539" value={c.originalPrice} onChange={(e) => patchChallenge(c.id, { originalPrice: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
                       <Field label="Sale price ($)"><input type="number" className={inputCls} placeholder="539" value={c.price} onChange={(e) => patchChallenge(c.id, { price: e.target.value === "" ? "" : Number(e.target.value) })} /></Field>
                       <Field label="Discount code"><input className={inputCls} value={c.discountCode ?? ""} onChange={(e) => patchChallenge(c.id, { discountCode: e.target.value })} /></Field>
@@ -1198,7 +1400,7 @@ function NewBrandPage() {
                 <Field label="Logo (SVG / PNG)" span={2}>
                   <label className="block">
                     <input
-                      type="file" accept="image/*" className="hidden"
+                      type="file" accept="image/*,.svg,image/svg+xml" className="hidden"
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (!f) return;
@@ -1220,7 +1422,7 @@ function NewBrandPage() {
                 <Field label="Cover image" span={2}>
                   <label className="block">
                     <input
-                      type="file" accept="image/*" className="hidden"
+                      type="file" accept="image/*,.svg,image/svg+xml" className="hidden"
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (!f) return;
@@ -1242,7 +1444,7 @@ function NewBrandPage() {
                 <Field label="Screenshots / gallery" span={2}>
                   <label className="block">
                     <input
-                      type="file" accept="image/*" multiple className="hidden"
+                      type="file" accept="image/*,.svg,image/svg+xml" multiple className="hidden"
                       onChange={async (e) => {
                         const files = Array.from(e.target.files ?? []);
                         if (!files.length) return;
@@ -1391,6 +1593,66 @@ function ToggleField({ label, hint, checked, onChange }: { label: string; hint?:
 /* =====================================================================
  * Reusable: step list panel (Link existing / Create new)
  * ===================================================================== */
+function NamedLogoListEditor({
+  items,
+  addLabel,
+  namePlaceholder,
+  onAdd,
+  onRemove,
+  onPatch,
+  onUploadLogo,
+}: {
+  items: NamedLogoItem[];
+  addLabel: string;
+  namePlaceholder: string;
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onPatch: (id: string, patch: Partial<NamedLogoItem>) => void;
+  onUploadLogo: (file: File) => Promise<string>;
+}) {
+  return (
+    <div className="space-y-3">
+      {items.map((item, index) => (
+        <div key={item.id} className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-white">{addLabel.replace("Add ", "")} #{index + 1}</span>
+            <button
+              type="button"
+              onClick={() => onRemove(item.id)}
+              className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30 hover:bg-rose-500/25"
+              title="Remove item"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+            <input
+              className={inputCls}
+              placeholder={namePlaceholder}
+              value={item.name}
+              onChange={(e) => onPatch(item.id, { name: e.target.value })}
+            />
+            <ThumbnailUploader
+              value={item.logo}
+              onChange={(url) => onPatch(item.id, { logo: url })}
+              onSelectFile={onUploadLogo}
+              label="Logo"
+              height="h-24"
+            />
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={onAdd}
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:border-fuchsia-400/30 hover:text-white"
+      >
+        <Plus className="h-3.5 w-3.5" /> {addLabel}
+      </button>
+    </div>
+  );
+}
+
 function StepListPanel({
   title, hint, ctl,
 }: {
