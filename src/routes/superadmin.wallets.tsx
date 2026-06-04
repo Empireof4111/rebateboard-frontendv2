@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatCard, Pill, Toolbar } from "@/components/superadmin/AdminUI";
 import { Modal, Field, fieldCls, ConfirmDialog, toast } from "@/components/superadmin/AdminActions";
-import { useAdminCollection, creditWallet, debitWallet, setWalletStatus, addTransaction } from "@/lib/admin-store";
-import { userWallets, type UserWallet } from "@/lib/admin-data";
-import { Plus, Minus, History, Snowflake, Search, Send } from "lucide-react";
+import {
+  adjustAdminWallet,
+  fetchAdminWalletLogs,
+  fetchAdminWallets,
+  updateAdminWalletStatus,
+  type AdminWalletLogRecord,
+  type AdminWalletRecord,
+} from "@/lib/admin-wallet-api";
+import { Plus, Minus, History, Snowflake, Search } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/wallets")({
   component: WalletsPage,
@@ -13,80 +19,102 @@ export const Route = createFileRoute("/superadmin/wallets")({
 type Action = "credit" | "debit" | null;
 
 function WalletsPage() {
-  const { items } = useAdminCollection<UserWallet & { id: string }>("userWallets", userWallets.map((w) => ({ ...w, id: w.walletId })));
+  const [items, setItems] = useState<AdminWalletRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [acting, setActing] = useState<{ w: UserWallet; type: Action }>({ w: items[0], type: null });
-  const [history, setHistory] = useState<UserWallet | null>(null);
-  const [freezing, setFreezing] = useState<UserWallet | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkOpen, setBulkOpen] = useState(false);
+  const [acting, setActing] = useState<{ w: AdminWalletRecord | null; type: Action }>({ w: null, type: null });
+  const [history, setHistory] = useState<AdminWalletRecord | null>(null);
+  const [historyItems, setHistoryItems] = useState<AdminWalletLogRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [freezing, setFreezing] = useState<AdminWalletRecord | null>(null);
 
-  const filtered = useMemo(() => items.filter((w) => !q.trim() || `${w.name} ${w.walletId} ${w.userId}`.toLowerCase().includes(q.toLowerCase())), [items, q]);
+  const loadWallets = async (query = "") => {
+    setLoading(true);
+    try {
+      const payload = await fetchAdminWallets(query);
+      setItems(payload);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load wallets");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const totalAvail = items.reduce((s, w) => s + w.available, 0);
-  const totalPending = items.reduce((s, w) => s + w.pending, 0);
-  const totalEarned = items.reduce((s, w) => s + w.totalEarned, 0);
-  const totalArr = items.reduce((s, w) => s + (w.arr ?? 0), 0);
+  useEffect(() => {
+    void loadWallets();
+  }, []);
 
-  const toggle = (id: string) => setSelected((s) => {
-    const n = new Set(s);
-    if (n.has(id)) n.delete(id); else n.add(id);
-    return n;
-  });
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      void loadWallets(q);
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [q]);
+
+  const totalAvail = items.reduce((s, w) => s + w.balance, 0);
+  const activeCount = items.filter((w) => w.status === "ACTIVE").length;
+
+  const openHistory = async (wallet: AdminWalletRecord) => {
+    setHistory(wallet);
+    setHistoryLoading(true);
+    try {
+      const payload = await fetchAdminWalletLogs(wallet.userId);
+      setHistoryItems(payload);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load wallet history");
+      setHistoryItems([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const filtered = useMemo(() => items, [items]);
 
   return (
     <div>
       <PageHeader
         title="User Wallets"
-        subtitle="USD cashback + ARR reward token. Credit, debit, freeze, bulk pay or audit any wallet."
-        actions={
-          <>
-            <button
-              disabled={selected.size === 0}
-              onClick={() => setBulkOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
-            >
-              <Send className="h-3.5 w-3.5" /> Bulk pay {selected.size > 0 && `(${selected.size})`}
-            </button>
-          </>
-        }
+        subtitle="Live wallet balances, admin adjustments, freeze controls, and user ledger history."
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Total available" value={`$${totalAvail.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} delta="across all users" tone="up" />
-        <StatCard label="Pending" value={`$${totalPending.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} delta="awaiting clearance" tone="flat" />
-        <StatCard label="Lifetime earned" value={`$${totalEarned.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} delta="+18% MoM" tone="up" />
-        <StatCard label="Total ARR" value={`${totalArr.toLocaleString()} ARR`} delta="reward token float" tone="flat" />
+        <StatCard label="Total available" value={`$${totalAvail.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} delta="live wallet balances" tone="up" />
+        <StatCard label="Wallets" value={String(items.length)} delta="loaded from backend" tone="flat" />
+        <StatCard label="Active" value={String(activeCount)} delta="operational wallets" tone="up" />
+        <StatCard label="Frozen" value={String(items.length - activeCount)} delta="status controlled" tone="down" />
       </div>
 
       <Panel title={`All user wallets — ${filtered.length}`}>
         <Toolbar>
           <div className="glass flex flex-1 items-center gap-2 rounded-full px-3 py-1.5 text-xs">
             <Search className="h-3.5 w-3.5 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, wallet ID…" className="w-full bg-transparent text-white outline-none" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by user, email, wallet account number..." className="w-full bg-transparent text-white outline-none" />
           </div>
         </Toolbar>
         <DataTable head={<>
-          <th><input type="checkbox" onChange={(e) => setSelected(e.target.checked ? new Set(filtered.map((w) => w.walletId)) : new Set())} /></th>
-          <th>Wallet</th><th>User</th><th>Available</th><th>Pending</th><th>ARR</th><th>Earned</th><th>Withdrawn</th><th>Status</th><th></th>
+          <th>Wallet</th><th>User</th><th>Email</th><th>Balance</th><th>Previous</th><th>Status</th><th></th>
         </>}>
-          {filtered.map((w) => (
-            <tr key={w.walletId}>
-              <td><input type="checkbox" checked={selected.has(w.walletId)} onChange={() => toggle(w.walletId)} /></td>
-              <td className="font-mono text-xs text-muted-foreground">{w.walletId}</td>
-              <td className="font-semibold">{w.name}</td>
-              <td className="font-mono text-emerald-300">${w.available.toFixed(2)}</td>
-              <td className="font-mono text-amber-300">${w.pending.toFixed(2)}</td>
-              <td className="font-mono text-fuchsia-300">{(w.arr ?? 0).toLocaleString()}</td>
-              <td className="font-mono">${w.totalEarned.toFixed(2)}</td>
-              <td className="font-mono text-muted-foreground">${w.totalWithdrawn.toFixed(2)}</td>
-              <td>{w.status === "active" ? <Pill tone="good">active</Pill> : <Pill tone="bad">frozen</Pill>}</td>
+          {loading ? (
+            <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">Loading wallets...</td></tr>
+          ) : filtered.length === 0 ? (
+            <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No wallets found.</td></tr>
+          ) : filtered.map((w) => (
+            <tr key={w.id}>
+              <td>
+                <div className="font-mono text-xs text-muted-foreground">{w.accountNumber}</div>
+                <div className="text-[10px] text-muted-foreground">{w.address}</div>
+              </td>
+              <td className="font-semibold">{w.userName}</td>
+              <td className="text-xs text-muted-foreground">{w.userEmail || "—"}</td>
+              <td className="font-mono text-emerald-300">${w.balance.toFixed(2)}</td>
+              <td className="font-mono text-muted-foreground">${w.prevBalance.toFixed(2)}</td>
+              <td>{w.status === "ACTIVE" ? <Pill tone="good">active</Pill> : <Pill tone="bad">{w.status.toLowerCase()}</Pill>}</td>
               <td className="text-right">
                 <div className="flex justify-end gap-1">
                   <button onClick={() => setActing({ w, type: "credit" })} title="Credit" className="grid h-7 w-7 place-items-center rounded-md bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30"><Plus className="h-3 w-3" /></button>
                   <button onClick={() => setActing({ w, type: "debit" })} title="Debit" className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30"><Minus className="h-3 w-3" /></button>
-                  <button onClick={() => setFreezing(w)} title={w.status === "active" ? "Freeze" : "Unfreeze"} className="grid h-7 w-7 place-items-center rounded-md bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/30"><Snowflake className="h-3 w-3" /></button>
-                  <button onClick={() => setHistory(w)} title="History" className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white"><History className="h-3 w-3" /></button>
+                  <button onClick={() => setFreezing(w)} title={w.status === "ACTIVE" ? "Freeze" : "Unfreeze"} className="grid h-7 w-7 place-items-center rounded-md bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/30"><Snowflake className="h-3 w-3" /></button>
+                  <button onClick={() => void openHistory(w)} title="History" className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white"><History className="h-3 w-3" /></button>
                 </div>
               </td>
             </tr>
@@ -98,14 +126,21 @@ function WalletsPage() {
         <CreditDebitModal
           wallet={acting.w}
           mode={acting.type}
-          onClose={() => setActing({ w: acting.w, type: null })}
-          onSubmit={({ amount, currency, narration, type }) => {
-            const ok = acting.type === "credit"
-              ? creditWallet({ walletsSeed: userWallets, userKey: acting.w.userId, amount, currency, narration, type })
-              : debitWallet({ walletsSeed: userWallets, userKey: acting.w.userId, amount, currency, narration, type });
-            if (ok) toast.success(`${acting.type === "credit" ? "Credited" : "Debited"} ${currency === "ARR" ? `${amount} ARR` : `$${amount}`} ${acting.type === "credit" ? "to" : "from"} ${acting.w.name}`);
-            else toast.error("Wallet not found");
-            setActing({ w: acting.w, type: null });
+          onClose={() => setActing({ w: null, type: null })}
+          onSubmit={async ({ amount, narration, type }) => {
+            try {
+              await adjustAdminWallet({
+                userId: acting.w!.userId,
+                amount,
+                narration,
+                type: type === "Manual Debit" ? "DEBIT" : "CREDIT",
+              });
+              toast.success(`${acting.type === "credit" ? "Credited" : "Debited"} $${amount} ${acting.type === "credit" ? "to" : "from"} ${acting.w!.userName}`);
+              setActing({ w: null, type: null });
+              await loadWallets(q);
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Unable to update wallet");
+            }
           }}
         />
       )}
@@ -113,106 +148,89 @@ function WalletsPage() {
       <ConfirmDialog
         open={!!freezing}
         onClose={() => setFreezing(null)}
-        onConfirm={() => freezing && setWalletStatus({ walletsSeed: userWallets, walletId: freezing.walletId, status: freezing.status === "active" ? "frozen" : "active" })}
-        title={`${freezing?.status === "active" ? "Freeze" : "Unfreeze"} ${freezing?.name}'s wallet?`}
-        message={freezing?.status === "active" ? "Freezing blocks all withdrawals and credits until unfrozen." : "Wallet will return to normal operation."}
-        confirmText={freezing?.status === "active" ? "Freeze" : "Unfreeze"}
-        tone={freezing?.status === "active" ? "danger" : "primary"}
+        onConfirm={() => {
+          if (!freezing) return;
+          void (async () => {
+            try {
+              await updateAdminWalletStatus(freezing.id, freezing.status === "ACTIVE" ? "BLOCKED" : "ACTIVE");
+              toast.success(`Wallet ${freezing.status === "ACTIVE" ? "frozen" : "reactivated"}`);
+              setFreezing(null);
+              await loadWallets(q);
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Unable to update wallet status");
+            }
+          })();
+        }}
+        title={`${freezing?.status === "ACTIVE" ? "Freeze" : "Unfreeze"} ${freezing?.userName}'s wallet?`}
+        message={freezing?.status === "ACTIVE" ? "Freezing blocks wallet operations until it is reactivated." : "Wallet will return to active status."}
+        confirmText={freezing?.status === "ACTIVE" ? "Freeze" : "Unfreeze"}
+        tone={freezing?.status === "ACTIVE" ? "danger" : "primary"}
       />
 
       {history && (
-        <Modal open onClose={() => setHistory(null)} title={`${history.name} — wallet history`} size="lg">
-          <p className="mb-3 text-xs text-muted-foreground">Open the Transactions page filtered by this user for the full ledger.</p>
-          <dl className="grid gap-2 text-sm">
-            <div className="flex justify-between"><dt className="text-muted-foreground">Wallet ID</dt><dd className="font-mono">{history.walletId}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Available USD</dt><dd className="font-mono text-emerald-300">${history.available.toFixed(2)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Pending USD</dt><dd className="font-mono text-amber-300">${history.pending.toFixed(2)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">ARR</dt><dd className="font-mono text-fuchsia-300">{(history.arr ?? 0).toLocaleString()}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Lifetime earned</dt><dd className="font-mono">${history.totalEarned.toFixed(2)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Lifetime withdrawn</dt><dd className="font-mono">${history.totalWithdrawn.toFixed(2)}</dd></div>
-          </dl>
+        <Modal open onClose={() => setHistory(null)} title={`${history.userName} — wallet history`} size="lg">
+          <p className="mb-3 text-xs text-muted-foreground">Live wallet ledger for {history.accountNumber}.</p>
+          {historyLoading ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">Loading wallet history...</div>
+          ) : historyItems.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">No wallet logs found.</div>
+          ) : (
+            <div className="space-y-2">
+              {historyItems.map((log) => (
+                <div key={log.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{log.activity}</div>
+                      <div className="text-[11px] text-muted-foreground">{log.channel} · {new Date(log.createdAt).toLocaleString()}</div>
+                    </div>
+                    <div className={`font-mono text-sm ${log.activity === "DEBIT" ? "text-rose-300" : "text-emerald-300"}`}>
+                      {log.activity === "DEBIT" ? "-" : "+"}${Math.abs(log.amount).toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-[11px] text-muted-foreground">Ref: {log.ref}</div>
+                  {log.narration && <div className="mt-1 text-xs text-white/75">{log.narration}</div>}
+                </div>
+              ))}
+            </div>
+          )}
         </Modal>
-      )}
-
-      {bulkOpen && (
-        <BulkPayModal
-          wallets={items.filter((w) => selected.has(w.walletId))}
-          onClose={() => setBulkOpen(false)}
-          onConfirm={(amount, narration) => {
-            items.filter((w) => selected.has(w.walletId)).forEach((w) => {
-              creditWallet({ walletsSeed: userWallets, userKey: w.userId, amount, narration, type: "Bulk Payout" });
-            });
-            toast.success(`Paid $${amount} × ${selected.size} wallets`);
-            setSelected(new Set());
-            setBulkOpen(false);
-          }}
-        />
       )}
     </div>
   );
 }
 
 function CreditDebitModal({ wallet, mode, onClose, onSubmit }: {
-  wallet: UserWallet; mode: "credit" | "debit"; onClose: () => void;
-  onSubmit: (v: { amount: number; currency: "USD" | "ARR"; narration: string; type: string }) => void;
+  wallet: AdminWalletRecord; mode: "credit" | "debit"; onClose: () => void;
+  onSubmit: (v: { amount: number; narration: string; type: string }) => void | Promise<void>;
 }) {
   const [amount, setAmount] = useState(0);
-  const [currency, setCurrency] = useState<"USD" | "ARR">("USD");
   const [type, setType] = useState(mode === "credit" ? "Manual Credit" : "Manual Debit");
   const [narration, setNarration] = useState("");
   return (
     <Modal open onClose={onClose}
-      title={`${mode === "credit" ? "Credit" : "Debit"} ${wallet.name}`}
-      subtitle={`Wallet ${wallet.walletId} · current available $${wallet.available.toFixed(2)} · ${wallet.arr ?? 0} ARR`}
+      title={`${mode === "credit" ? "Credit" : "Debit"} ${wallet.userName}`}
+      subtitle={`Wallet ${wallet.accountNumber} · current balance $${wallet.balance.toFixed(2)}`}
       size="md"
       footer={<>
         <button onClick={onClose} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-        <button onClick={() => { if (amount <= 0) { toast.error("Amount required"); return; } onSubmit({ amount, currency, narration: narration || `${type} by admin`, type }); }} className={`rounded-xl px-4 py-2 text-xs font-bold text-white ${mode === "credit" ? "bg-gradient-to-r from-emerald-500 to-emerald-600" : "bg-gradient-to-r from-rose-500 to-rose-600"}`}>
+        <button onClick={() => { if (amount <= 0) { toast.error("Amount required"); return; } void onSubmit({ amount, narration: narration || `${type} by admin`, type }); }} className={`rounded-xl px-4 py-2 text-xs font-bold text-white ${mode === "credit" ? "bg-gradient-to-r from-emerald-500 to-emerald-600" : "bg-gradient-to-r from-rose-500 to-rose-600"}`}>
           {mode === "credit" ? "Credit wallet" : "Debit wallet"}
         </button>
       </>}
     >
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="Amount"><input type="number" className={fieldCls} value={amount || ""} onChange={(e) => setAmount(Number(e.target.value))} placeholder="0.00" /></Field>
-        <Field label="Currency">
-          <select className={fieldCls} value={currency} onChange={(e) => setCurrency(e.target.value as "USD" | "ARR")}>
-            <option value="USD">USD</option>
-            <option value="ARR">ARR (RebateBoard reward)</option>
-          </select>
-        </Field>
         <Field label="Type" span={2}>
           <select className={fieldCls} value={type} onChange={(e) => setType(e.target.value)}>
             {mode === "credit" ? (
-              <><option>Manual Credit</option><option>Cashback Credit</option><option>Goodwill</option><option>Affiliate Payout</option><option>RR Conversion</option></>
+              <><option>Manual Credit</option><option>Cashback Credit</option><option>Goodwill</option><option>Affiliate Payout</option></>
             ) : (
-              <><option>Manual Debit</option><option>Fraud Reversal</option><option>Adjustment</option><option>Withdrawal Reversal</option></>
+              <><option>Manual Debit</option><option>Fraud Reversal</option><option>Adjustment</option></>
             )}
           </select>
         </Field>
-        <Field label="Narration / reason" span={2}><textarea rows={3} className={fieldCls} value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="Visible in transactions and audit log…" /></Field>
+        <Field label="Narration / reason" span={2}><textarea rows={3} className={fieldCls} value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="Visible in wallet logs..." /></Field>
       </div>
-    </Modal>
-  );
-}
-
-function BulkPayModal({ wallets, onClose, onConfirm }: { wallets: UserWallet[]; onClose: () => void; onConfirm: (amount: number, narration: string) => void }) {
-  const [amount, setAmount] = useState(0);
-  const [narration, setNarration] = useState("Monthly bonus");
-  return (
-    <Modal open onClose={onClose} title={`Bulk pay ${wallets.length} wallets`} size="md"
-      footer={<>
-        <button onClick={onClose} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-        <button onClick={() => { if (amount <= 0) { toast.error("Amount required"); return; } onConfirm(amount, narration); }} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">
-          Send ${amount} × {wallets.length}
-        </button>
-      </>}
-    >
-      <Field label="Amount per wallet (USD)"><input type="number" className={fieldCls} value={amount || ""} onChange={(e) => setAmount(Number(e.target.value))} /></Field>
-      <Field label="Narration"><input className={fieldCls} value={narration} onChange={(e) => setNarration(e.target.value)} /></Field>
-      <div className="mt-3 max-h-40 overflow-y-auto rounded-lg bg-white/5 p-2 text-xs">
-        {wallets.map((w) => <div key={w.walletId} className="flex justify-between py-0.5"><span>{w.name}</span><span className="font-mono text-muted-foreground">{w.walletId}</span></div>)}
-      </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">Total cost: <span className="font-bold text-emerald-300">${(amount * wallets.length).toLocaleString()}</span></p>
     </Modal>
   );
 }

@@ -61,7 +61,7 @@ const propFirms = [
 function RewardsPage() {
   const { user } = useAuth();
   const userId = user?.email ?? "@me";
-  const rrBalance = Math.round(user?.rrBalance ?? 1284);
+  const rrBalance = Math.round(user?.rrBalance ?? 0);
   const cashValue = (rrBalance / 100).toFixed(2);
 
   // Contributor tier (action-based: reviews + streak + verified)

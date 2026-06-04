@@ -7,16 +7,21 @@ import {
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
 import {
-  walletSummary, walletTransactions, internalTransfers, earningsBySource,
-  earningsTimeline, type WalletTransaction, type TxStatus,
-} from "@/lib/wallet-data";
-import { adminBrands, claims as claimsSeed, linkedAccounts as laSeed, type Claim, type LinkedAccount, type PayoutTarget } from "@/lib/admin-data";
+  createWalletTransfer,
+  createWalletWithdrawal,
+  fetchWalletDashboard,
+  type WalletDashboardPayload,
+  type WalletDashboardTransaction,
+} from "@/lib/wallet-api";
+import { adminBrands, type Claim, type LinkedAccount, type PayoutTarget } from "@/lib/admin-data";
 import { pushCollection, newId, useAdminCollection } from "@/lib/admin-store";
 import { LinkAccountModal } from "@/components/dashboard/LinkAccountModal";
+import { useAuth } from "@/lib/auth";
 
 const PAYOUT_PREF_KEY = "rb-user:payoutPref";
 type PayoutPref = { default: PayoutTarget };
 const defaultPref: PayoutPref = { default: "rebate-wallet" };
+type TxStatus = WalletDashboardTransaction["status"];
 
 export const Route = createFileRoute("/dashboard/wallet")({
   head: () => ({
@@ -44,15 +49,19 @@ const statusTone: Record<TxStatus, "success" | "warning" | "primary" | "default"
 };
 
 function WalletPage() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<"all" | "cashback" | "referral" | "transfer" | "withdrawal">("all");
   const [query, setQuery] = useState("");
-  const [selectedTx, setSelectedTx] = useState<WalletTransaction | null>(null);
+  const [selectedTx, setSelectedTx] = useState<WalletDashboardTransaction | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [pref, setPref] = useState<PayoutPref>(defaultPref);
-  const { items: linkedAccts } = useAdminCollection<LinkedAccount>("linkedAccounts", laSeed);
+  const [walletDashboard, setWalletDashboard] = useState<WalletDashboardPayload | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const { items: linkedAccts } = useAdminCollection<LinkedAccount>("linkedAccounts", []);
 
   useEffect(() => {
     try {
@@ -60,10 +69,78 @@ function WalletPage() {
       if (raw) setPref(JSON.parse(raw));
     } catch {}
   }, []);
+
+  const loadWalletDashboard = async () => {
+    setWalletLoading(true);
+    setWalletError(null);
+    try {
+      const payload = await fetchWalletDashboard();
+      setWalletDashboard(payload);
+    } catch (error) {
+      setWalletError(error instanceof Error ? error.message : "Unable to load wallet");
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadWalletDashboard();
+  }, []);
+
   const updatePref = (next: PayoutPref) => {
     setPref(next);
     try { sessionStorage.setItem(PAYOUT_PREF_KEY, JSON.stringify(next)); } catch {}
   };
+
+  const walletSummary = walletDashboard?.summary ?? {
+    balance: 0,
+    totalEarned: 0,
+    totalDebited: 0,
+    availableForWithdrawal: 0,
+    pendingWithdrawals: 0,
+    totalWithdrawn: 0,
+    transactionCount: 0,
+    withdrawalCount: 0,
+  };
+  const walletTransactions = walletDashboard?.transactions ?? [];
+  const internalTransfers = useMemo(() => {
+    return walletTransactions
+      .filter((t) => t.type === "Transfer")
+      .map((t) => ({
+        id: t.id,
+        date: t.date,
+        direction: t.amount >= 0 ? "in" as const : "out" as const,
+        counterpartyName: t.brandName,
+        counterpartyHandle: t.note || t.ref || "Internal transfer",
+        amount: Math.abs(t.amount),
+        status: t.status === "Pending" ? "Pending" as const : "Completed" as const,
+      }));
+  }, [walletTransactions]);
+  const earningsBySource = useMemo(() => {
+    const grouped = new Map<string, number>();
+    walletTransactions
+      .filter((t) => t.amount > 0 && (t.type === "Cashback" || t.type === "Referral" || t.type === "Reward"))
+      .forEach((t) => {
+        grouped.set(t.brandName, (grouped.get(t.brandName) ?? 0) + t.amount);
+      });
+
+    return Array.from(grouped.entries())
+      .map(([source, amount]) => ({ source, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 6);
+  }, [walletTransactions]);
+  const earningsTimeline = useMemo(() => {
+    const grouped = new Map<string, number>();
+    walletTransactions
+      .filter((t) => t.amount > 0)
+      .forEach((t) => {
+        const bucket = new Date(t.date).toLocaleDateString(undefined, { month: "short" });
+        grouped.set(bucket, (grouped.get(bucket) ?? 0) + t.amount);
+      });
+
+    const points = Array.from(grouped.entries()).map(([month, amount]) => ({ month, amount }));
+    return points.length ? points.slice(-6) : [{ month: "Now", amount: 0 }];
+  }, [walletTransactions]);
 
   const filtered = useMemo(() => {
     return walletTransactions.filter((t) => {
@@ -71,7 +148,22 @@ function WalletPage() {
       if (query && !`${t.brandName} ${t.source} ${t.type}`.toLowerCase().includes(query.toLowerCase())) return false;
       return true;
     });
-  }, [tab, query]);
+  }, [tab, query, walletTransactions]);
+
+  if (walletLoading) {
+    return <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm text-white/70">Loading wallet...</div>;
+  }
+
+  if (walletError) {
+    return (
+      <div className="space-y-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-6 text-sm text-rose-100">
+        <div>Unable to load wallet: {walletError}</div>
+        <button onClick={() => void loadWalletDashboard()} className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -100,8 +192,9 @@ function WalletPage() {
             </div>
             <div className="mt-2 text-4xl font-bold text-white md:text-5xl">{fmtUSD(walletSummary.balance)}</div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Pill tone="success"><TrendingUp className="h-3 w-3" /> +{fmtUSD(walletSummary.cashbackThisMonth)} this month</Pill>
-              <span>· RR balance: <b className="text-white">{walletSummary.rrBalance}</b> ≈ {fmtUSD(walletSummary.rrCashValue)}</span>
+              <Pill tone="success"><TrendingUp className="h-3 w-3" /> {walletSummary.transactionCount} transactions tracked</Pill>
+              <span>· Wallet ID: <b className="text-white">{walletDashboard?.wallet.accountNumber ?? "—"}</b></span>
+              {user && <span>· Owner: <b className="text-white">{user.fullName ?? user.name}</b></span>}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <button onClick={() => setWithdrawOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400">
@@ -159,9 +252,9 @@ function WalletPage() {
         </Panel>
         <Panel title="Earnings Intelligence" action={<Pill tone="primary"><Zap className="h-3 w-3" />AI</Pill>}>
           <div className="space-y-3 text-xs">
-            <Insight tone="success" text={<>You earned <b>$1,240</b> from <b>Exness</b> this month — your top source.</>} />
-            <Insight tone="warning" text={<>Switching <b>40%</b> of crypto volume from Binance to Bybit could earn you ~<b>+$48/mo</b>.</>} />
-            <Insight tone="primary" text={<>Your <b>FundingPips</b> rebate jumped <b>50% → 60%</b> this week. Lock it in.</>} />
+            <Insight tone="success" text={<>Total credited into this wallet so far: <b>{fmtUSD(walletSummary.totalEarned)}</b>.</>} />
+            <Insight tone="warning" text={<>Pending withdrawals currently hold <b>{fmtUSD(walletSummary.pendingWithdrawals)}</b>.</>} />
+            <Insight tone="primary" text={<>Completed withdrawals paid out so far: <b>{fmtUSD(walletSummary.totalWithdrawn)}</b>.</>} />
           </div>
         </Panel>
       </div>
@@ -171,7 +264,7 @@ function WalletPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-white">Transactions</h3>
-            <p className="text-[11px] text-muted-foreground">Click any row to see the cashback breakdown.</p>
+            <p className="text-[11px] text-muted-foreground">Click any row to see the wallet activity breakdown.</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="glass-pill flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
@@ -209,9 +302,9 @@ function WalletPage() {
                 <th className="py-2 font-medium">Date</th>
                 <th className="font-medium">Source</th>
                 <th className="font-medium">Type</th>
-                <th className="font-medium text-right">Volume</th>
-                <th className="font-medium text-right">Commission</th>
-                <th className="font-medium text-right">Rebate %</th>
+                <th className="font-medium">Channel</th>
+                <th className="font-medium">Reference</th>
+                <th className="font-medium text-right">Activity</th>
                 <th className="font-medium text-right">Amount</th>
                 <th className="font-medium">Status</th>
                 <th></th>
@@ -223,9 +316,9 @@ function WalletPage() {
                   <td className="py-3">{fmtDate(t.date)}</td>
                   <td><div className="font-semibold text-white">{t.brandName}</div><div className="text-[10px] text-muted-foreground">{t.source}</div></td>
                   <td><Pill tone={t.type === "Cashback" ? "success" : t.type === "Referral" ? "primary" : t.type === "Withdrawal" ? "destructive" : "default"}>{t.type}</Pill></td>
-                  <td className="text-right">{t.volumeLots ? `${t.volumeLots} lots` : "—"}</td>
-                  <td className="text-right">{t.commissionGenerated ? fmtUSD(t.commissionGenerated) : "—"}</td>
-                  <td className="text-right">{t.rebatePercent ? `${t.rebatePercent}%` : "—"}</td>
+                  <td>{t.channel ?? "—"}</td>
+                  <td className="font-mono text-[10px] text-muted-foreground">{t.ref ?? "—"}</td>
+                  <td className="text-right">{t.activity ?? "—"}</td>
                   <td className={`text-right font-semibold ${t.amount >= 0 ? "text-success" : "text-destructive"}`}>{fmtUSD(t.amount)}</td>
                   <td><Pill tone={statusTone[t.status]}>{t.status}</Pill></td>
                   <td className="text-right"><ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" /></td>
@@ -345,8 +438,8 @@ function WalletPage() {
 
       {/* Modals */}
       {selectedTx && <CashbackBreakdown tx={selectedTx} onClose={() => setSelectedTx(null)} />}
-      {withdrawOpen && <WithdrawModal onClose={() => setWithdrawOpen(false)} />}
-      {transferOpen && <TransferModal onClose={() => setTransferOpen(false)} />}
+      {withdrawOpen && <WithdrawModal onClose={() => setWithdrawOpen(false)} onSuccess={() => void loadWalletDashboard()} availableAmount={walletSummary.availableForWithdrawal} />}
+      {transferOpen && <TransferModal onClose={() => setTransferOpen(false)} onSuccess={() => void loadWalletDashboard()} />}
       {claimOpen && <ClaimCashbackModal defaultPref={pref.default} onClose={() => setClaimOpen(false)} />}
       {linkOpen && <LinkAccountModal onClose={() => setLinkOpen(false)} />}
     </div>
@@ -427,7 +520,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   );
 }
 
-function CashbackBreakdown({ tx, onClose }: { tx: WalletTransaction; onClose: () => void }) {
+function CashbackBreakdown({ tx, onClose }: { tx: WalletDashboardTransaction; onClose: () => void }) {
   return (
     <ModalShell title="Transaction Breakdown" onClose={onClose}>
       <div className="space-y-3 text-sm">
@@ -436,9 +529,9 @@ function CashbackBreakdown({ tx, onClose }: { tx: WalletTransaction; onClose: ()
           <div className="text-lg font-bold text-white">{tx.brandName}</div>
           <div className="mt-1 text-[11px] text-muted-foreground">{fmtDate(tx.date)} · {tx.type}</div>
         </div>
-        <Row label="Trade Volume" value={tx.volumeLots ? `${tx.volumeLots} lots` : "—"} />
-        <Row label="Commission Generated" value={tx.commissionGenerated ? fmtUSD(tx.commissionGenerated) : "—"} />
-        <Row label="Rebate Share" value={tx.rebatePercent ? `${tx.rebatePercent}%` : "—"} />
+        <Row label="Channel" value={tx.channel ?? "—"} />
+        <Row label="Reference" value={tx.ref ?? "—"} />
+        <Row label="Activity" value={tx.activity ?? "—"} />
         <div className="rounded-xl bg-emerald-500/10 p-4 ring-1 ring-emerald-400/30">
           <div className="text-[11px] uppercase text-emerald-300">Final Cashback</div>
           <div className="mt-1 text-2xl font-bold text-white">{fmtUSD(tx.amount)}</div>
@@ -461,16 +554,38 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function WithdrawModal({ onClose }: { onClose: () => void }) {
+function WithdrawModal({ onClose, onSuccess, availableAmount }: { onClose: () => void; onSuccess: () => void; availableAmount: number }) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("USDT (TRC20)");
+  const [destination, setDestination] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const isBank = method === "Bank Transfer";
+  const submit = async () => {
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) return;
+    setSubmitting(true);
+    try {
+      await createWalletWithdrawal({
+        channel: method,
+        amount: numericAmount,
+        walletAddress: isBank ? undefined : destination,
+        walletType: isBank ? undefined : method,
+        bankName: isBank ? "Bank Transfer" : undefined,
+        accountName: isBank ? destination : undefined,
+      });
+      onSuccess();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
   return (
     <ModalShell title="Withdraw funds" onClose={onClose}>
       <div className="space-y-3">
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Amount (USD)</label>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/50" />
-          <div className="mt-1 text-[11px] text-muted-foreground">Available: {fmtUSD(walletSummary.availableForWithdrawal)}</div>
+          <div className="mt-1 text-[11px] text-muted-foreground">Available: {fmtUSD(availableAmount)}</div>
         </div>
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Method</label>
@@ -481,30 +596,50 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
             <option>PayPal</option>
           </select>
         </div>
-        <button onClick={onClose} className="mt-2 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white">
-          Request withdrawal
+        <div>
+          <label className="text-[11px] uppercase text-muted-foreground">{isBank ? "Bank account details" : "Wallet address"}</label>
+          <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={isBank ? "Account name / number" : "USDT wallet address"} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/50" />
+        </div>
+        <button onClick={() => void submit()} disabled={submitting} className="mt-2 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+          {submitting ? "Submitting..." : "Request withdrawal"}
         </button>
       </div>
     </ModalShell>
   );
 }
 
-function TransferModal({ onClose }: { onClose: () => void }) {
+function TransferModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    const numericAmount = Number(amount);
+    if (!recipient.trim() || !numericAmount || numericAmount <= 0) return;
+    setSubmitting(true);
+    try {
+      await createWalletTransfer({
+        recipient: recipient.trim(),
+        amount: numericAmount,
+      });
+      onSuccess();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
   return (
     <ModalShell title="Send to another user" onClose={onClose}>
       <div className="space-y-3">
         <div>
-          <label className="text-[11px] uppercase text-muted-foreground">Recipient (username or wallet ID)</label>
-          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="@username or wal_…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <label className="text-[11px] uppercase text-muted-foreground">Recipient wallet account number</label>
+          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Enter recipient account number" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
         </div>
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Amount (USD)</label>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
         </div>
-        <button onClick={onClose} className="mt-2 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white">
-          Send instantly
+        <button onClick={() => void submit()} disabled={submitting} className="mt-2 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+          {submitting ? "Sending..." : "Send instantly"}
         </button>
         <p className="text-center text-[10px] text-muted-foreground">Internal transfers are free and instant.</p>
       </div>
@@ -594,7 +729,7 @@ function ClaimCashbackModal({ defaultPref, onClose }: { defaultPref: PayoutTarge
       status: "pending",
       note: note.trim() || undefined,
     };
-    pushCollection<Claim>("claims", claim, claimsSeed);
+    pushCollection<Claim>("claims", claim, []);
     onClose();
   };
 

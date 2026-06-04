@@ -808,7 +808,15 @@ function NewBrandPage() {
     }
   }
 
-  async function uploadPropMetaLogo(file: File, group: "payout-method" | "trading-platform") {
+  async function uploadPropMetaLogo(
+    file: File,
+    group:
+      | "payout-method"
+      | "trading-platform"
+      | "deposit-method"
+      | "withdrawal-method"
+      | "broker-platform",
+  ) {
     const uploaded = await uploadMediaFile(file, {
       folder: `brands/${group}s`,
       prefix: slug.trim() || name.trim() || category.toLowerCase().replace(/\s+/g, "-"),

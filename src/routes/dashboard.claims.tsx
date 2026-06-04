@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ClipboardCheck, Search, Filter, Plus, ArrowLeft } from "lucide-react";
-import { claims as claimsSeed, type Claim } from "@/lib/admin-data";
+import { type Claim } from "@/lib/admin-data";
 import { useAdminCollection } from "@/lib/admin-store";
 import { ClaimDetailDrawer } from "@/components/dashboard/ClaimDetailDrawer";
 
@@ -19,7 +19,7 @@ const ME = "Aiden Park"; // demo current user
 
 function ClaimsPage() {
   const navigate = useNavigate();
-  const { items: all } = useAdminCollection<Claim>("claims", claimsSeed);
+  const { items: all } = useAdminCollection<Claim>("claims", []);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | Claim["status"]>("all");
   const [openId, setOpenId] = useState<string | null>(null);

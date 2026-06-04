@@ -7,6 +7,7 @@ import {
   type TbiProfile,
   tbiConfidenceTone,
   tbiLabelTone,
+  tbiStateTone,
 } from "@/lib/tbi-api";
 import { AlertTriangle, ArrowRight, CheckCircle2, Info, Shield } from "lucide-react";
 
@@ -221,8 +222,4 @@ function TBIPage() {
       <SiteFooter />
     </div>
   );
-}
-
-function tbiStateTone() {
-  return "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30";
 }
