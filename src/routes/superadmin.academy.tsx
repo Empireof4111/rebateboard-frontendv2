@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import {
   PageHeader, Panel, StatCard,
 } from "@/components/superadmin/AdminUI";
-import { Modal, Field, fieldCls, ConfirmDialog, toast } from "@/components/superadmin/AdminActions";
+import { Modal, Field, fieldCls, selectCls, ConfirmDialog, toast } from "@/components/superadmin/AdminActions";
 import {
   useFaculties, saveCurriculum, resetCurriculum, courseTotals,
   type Faculty, type Program, type Course, type Module, type Lesson, type QuizQuestion,
@@ -465,7 +465,7 @@ function ProgramModal({ program, onClose, onSave }: { program: Program; onClose:
           <input className={fieldCls} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Forex Beginner Track" />
         </Field>
         <Field label="Level">
-          <select className={fieldCls} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as Level })}>
+          <select className={selectCls} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as Level })}>
             <option>Beginner</option><option>Intermediate</option><option>Pro</option>
           </select>
         </Field>
@@ -661,12 +661,12 @@ function DetailsTab({ form, setForm }: { form: Course; setForm: (c: Course) => v
       </Field></div>
 
       <Field label="Level">
-        <select className={fieldCls} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as Level })}>
+        <select className={selectCls} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as Level })}>
           <option>Beginner</option><option>Intermediate</option><option>Pro</option>
         </select>
       </Field>
       <Field label="Access">
-        <select className={fieldCls} value={form.access} onChange={(e) => setForm({ ...form, access: e.target.value as AccessTier })}>
+        <select className={selectCls} value={form.access} onChange={(e) => setForm({ ...form, access: e.target.value as AccessTier })}>
           <option value="free">Free</option><option value="paid">Paid</option>
         </select>
       </Field>

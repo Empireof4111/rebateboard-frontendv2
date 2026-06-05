@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, Pill, StatCard } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { popups as seed, type Popup } from "@/lib/admin-data";
 import { Plus, Edit3, Trash2 } from "lucide-react";
@@ -108,19 +108,19 @@ function PopupsPage() {
             <Field label="CTA label"><input className={fieldCls} value={editing.cta} onChange={(e) => setEditing({ ...editing, cta: e.target.value })} /></Field>
             <Field label="CTA link"><input className={fieldCls} value={editing.link} onChange={(e) => setEditing({ ...editing, link: e.target.value })} /></Field>
             <Field label="Trigger">
-              <select className={fieldCls} value={editing.trigger} onChange={(e) => setEditing({ ...editing, trigger: e.target.value as Popup["trigger"] })}>
+              <select className={selectCls} value={editing.trigger} onChange={(e) => setEditing({ ...editing, trigger: e.target.value as Popup["trigger"] })}>
                 <option>On load</option><option>After 10s</option><option>Exit intent</option><option>Specific page</option>
               </select>
             </Field>
             <Field label="Audience">
-              <select className={fieldCls} value={editing.audience} onChange={(e) => setEditing({ ...editing, audience: e.target.value as Popup["audience"] })}>
+              <select className={selectCls} value={editing.audience} onChange={(e) => setEditing({ ...editing, audience: e.target.value as Popup["audience"] })}>
                 <option>All</option><option>Logged in</option><option>Guests</option>
               </select>
             </Field>
             <Field label="Start"><input className={fieldCls} value={editing.start} onChange={(e) => setEditing({ ...editing, start: e.target.value })} /></Field>
             <Field label="End"><input className={fieldCls} value={editing.end} onChange={(e) => setEditing({ ...editing, end: e.target.value })} /></Field>
             <Field label="Status">
-              <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Popup["status"] })}>
+              <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Popup["status"] })}>
                 <option value="draft">draft</option><option value="active">active</option><option value="paused">paused</option>
               </select>
             </Field>

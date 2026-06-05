@@ -1,18 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Wallet, ArrowDownToLine, Send, Sparkles, X, ChevronRight, ArrowUpRight,
   ArrowDownLeft, Filter, Search, CheckCircle2, Clock, CircleDollarSign,
   TrendingUp, Building2, Zap, Upload, Coins, Banknote,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
-import {
-  walletSummary, walletTransactions, internalTransfers, earningsBySource,
-  earningsTimeline, type WalletTransaction, type TxStatus,
-} from "@/lib/wallet-data";
-import { adminBrands, claims as claimsSeed, linkedAccounts as laSeed, type Claim, type LinkedAccount, type PayoutTarget } from "@/lib/admin-data";
-import { pushCollection, newId, useAdminCollection } from "@/lib/admin-store";
+import { type WalletTransaction, type TxStatus } from "@/lib/wallet-data";
+import { adminBrands, type PayoutTarget } from "@/lib/admin-data";
 import { LinkAccountModal } from "@/components/dashboard/LinkAccountModal";
+import { useAuth } from "@/lib/auth";
+import { financeApi, type WalletSummary, type PartnerRequestRecord } from "@/lib/finance-api";
+import { ApiError } from "@/lib/api";
 
 const PAYOUT_PREF_KEY = "rb-user:payoutPref";
 type PayoutPref = { default: PayoutTarget };
@@ -44,6 +43,16 @@ const statusTone: Record<TxStatus, "success" | "warning" | "primary" | "default"
 };
 
 function WalletPage() {
+  const { token, user } = useAuth();
+  const [summary, setSummary] = useState<WalletSummary | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [internalTransfers, setInternalTransfers] = useState<WalletTransaction[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  const [earningsBySource, setEarningsBySource] = useState<{ source: string; amount: number }[]>([]);
+  const [earningsTimeline, setEarningsTimeline] = useState<{ month: string; amount: number }[]>([]);
+  const [linkedAccts, setLinkedAccts] = useState<PartnerRequestRecord[]>([]);
+
   const [tab, setTab] = useState<"all" | "cashback" | "referral" | "transfer" | "withdrawal">("all");
   const [query, setQuery] = useState("");
   const [selectedTx, setSelectedTx] = useState<WalletTransaction | null>(null);
@@ -52,7 +61,75 @@ function WalletPage() {
   const [claimOpen, setClaimOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [pref, setPref] = useState<PayoutPref>(defaultPref);
-  const { items: linkedAccts } = useAdminCollection<LinkedAccount>("linkedAccounts", laSeed);
+
+  // Map backend WalletLog to the UI's WalletTransaction shape
+  const mapLog = useCallback((log: import("@/lib/finance-api").WalletTransaction): WalletTransaction => {
+    const channelToSource = (ch: string): WalletTransaction["source"] => {
+      if (ch === "Wallet Transfer") return "Internal";
+      if (ch === "Cashback") return "Prop Firm";
+      if (ch === "Rebateboard" || ch === "Adjustment") return "System";
+      return "System";
+    };
+    const activityToType = (act: string, ch: string): WalletTransaction["type"] => {
+      if (act === "DEBIT" && ch === "Wallet Transfer") return "Transfer";
+      if (act === "DEBIT") return "Withdrawal";
+      if (ch === "Cashback") return "Cashback";
+      if (ch === "Transfer" || ch === "Wallet Transfer") return "Transfer";
+      if (ch === "Rebateboard" || ch === "Funding") return "Reward";
+      return "Cashback";
+    };
+    const statusMap: Record<string, TxStatus> = {
+      SUCCESSFUL: log.activity === "DEBIT" ? "Withdrawn" : "Credited",
+      PENDING: "Pending",
+      APPROVED: "Approved",
+    };
+    return {
+      id: String(log.id),
+      date: log.createdAt,
+      source: channelToSource(log.channel),
+      brandName: log.narration ?? log.channel,
+      type: activityToType(log.activity, log.channel),
+      amount: log.activity === "DEBIT" ? -Math.abs(Number(log.amount)) : Math.abs(Number(log.amount)),
+      status: statusMap[log.status] ?? "Pending",
+      note: log.narration,
+    };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    if (!token) return;
+    setLoadingData(true);
+    try {
+      const [summaryRes, logsRes, brkRes, timeRes, acctRes] = await Promise.allSettled([
+        financeApi.getWalletSummary(token),
+        financeApi.getTransactions(token, { size: 50 }),
+        financeApi.getEarningsBreakdown(token),
+        financeApi.getEarningsTimeline(token),
+        financeApi.getMyPartnerRequests(token, { size: 50 }),
+      ]);
+      if (summaryRes.status === "fulfilled" && summaryRes.value.payload) setSummary(summaryRes.value.payload);
+      if (logsRes.status === "fulfilled" && logsRes.value.payload) {
+        const all = logsRes.value.payload.page.map(mapLog);
+        setTransactions(all.filter((t) => t.type !== "Transfer" || t.amount >= 0));
+        setInternalTransfers(logsRes.value.payload.page
+          .filter((l) => l.channel === "Wallet Transfer")
+          .map((l): WalletTransaction => ({
+            ...mapLog(l),
+            source: "Internal",
+            type: "Transfer",
+          }))
+        );
+      }
+      if (brkRes.status === "fulfilled" && brkRes.value.payload) setEarningsBySource(brkRes.value.payload);
+      if (timeRes.status === "fulfilled" && timeRes.value.payload) setEarningsTimeline(timeRes.value.payload);
+      if (acctRes.status === "fulfilled" && acctRes.value.payload) setLinkedAccts(acctRes.value.payload.page);
+    } catch (e) {
+      console.error("Wallet load failed", e);
+    } finally {
+      setLoadingData(false);
+    }
+  }, [token, mapLog]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   useEffect(() => {
     try {
@@ -65,13 +142,31 @@ function WalletPage() {
     try { sessionStorage.setItem(PAYOUT_PREF_KEY, JSON.stringify(next)); } catch {}
   };
 
+  // Derive summary values — fall back to 0 while loading
+  const walletSummary = {
+    balance: summary?.balance ?? 0,
+    totalEarned: summary?.totalEarned ?? 0,
+    availableForWithdrawal: summary?.availableForWithdrawal ?? 0,
+    pendingWithdrawals: summary?.pendingWithdrawals ?? 0,
+    totalWithdrawn: summary?.totalWithdrawn ?? 0,
+    cashbackThisMonth: transactions.filter((t) => {
+      const d = new Date(t.date);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.amount > 0;
+    }).reduce((s, t) => s + t.amount, 0),
+    rrBalance: user?.rrBalance ?? 0,
+    rrCashValue: (user?.rrBalance ?? 0) / 100,
+  };
+
+  const walletTransactions = transactions;
+
   const filtered = useMemo(() => {
     return walletTransactions.filter((t) => {
       if (tab !== "all" && t.type.toLowerCase() !== tab) return false;
       if (query && !`${t.brandName} ${t.source} ${t.type}`.toLowerCase().includes(query.toLowerCase())) return false;
       return true;
     });
-  }, [tab, query]);
+  }, [walletTransactions, tab, query]);
 
   return (
     <div className="space-y-6">
@@ -136,26 +231,30 @@ function WalletPage() {
       {/* Earnings intelligence */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Earnings over time" action={<Pill tone="primary">6m</Pill>}>
-          <MiniLineChart data={earningsTimeline} />
+          {earningsTimeline.length > 0
+            ? <MiniLineChart data={earningsTimeline} />
+            : <div className="flex h-[120px] items-center justify-center text-xs text-muted-foreground">No data yet.</div>}
         </Panel>
         <Panel title="Cashback by source">
-          <div className="space-y-2">
-            {earningsBySource.map((s) => {
-              const max = Math.max(...earningsBySource.map((x) => x.amount));
-              const pct = (s.amount / max) * 100;
-              return (
-                <div key={s.source}>
-                  <div className="flex items-center justify-between text-[11px] text-white/80">
-                    <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-muted-foreground" />{s.source}</span>
-                    <span className="font-semibold text-white">{fmtUSD(s.amount)}</span>
+          {earningsBySource.length === 0
+            ? <div className="flex h-[100px] items-center justify-center text-xs text-muted-foreground">No earnings data yet.</div>
+            : <div className="space-y-2">
+              {earningsBySource.map((s) => {
+                const max = Math.max(...earningsBySource.map((x) => x.amount));
+                const pct = (s.amount / max) * 100;
+                return (
+                  <div key={s.source}>
+                    <div className="flex items-center justify-between text-[11px] text-white/80">
+                      <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-muted-foreground" />{s.source}</span>
+                      <span className="font-semibold text-white">{fmtUSD(s.amount)}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-fuchsia-500" style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5">
-                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-fuchsia-500" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>}
         </Panel>
         <Panel title="Earnings Intelligence" action={<Pill tone="primary"><Zap className="h-3 w-3" />AI</Pill>}>
           <div className="space-y-3 text-xs">
@@ -310,7 +409,7 @@ function WalletPage() {
         </div>
       </Panel>
 
-      {/* Linked accounts */}
+      {/* Linked accounts — partner attach requests */}
       <Panel title={`Linked accounts (${linkedAccts.length})`} action={
         <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-bold text-white">
           + Link new
@@ -322,32 +421,33 @@ function WalletPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {linkedAccts.map((la) => (
-              <div key={la.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-fuchsia-500/15 text-fuchsia-300"><Building2 className="h-4 w-4" /></div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{la.brand} · <span className="font-mono text-[11px] text-muted-foreground">{la.accountId}</span></div>
-                    <div className="text-[10px] text-muted-foreground">{la.brandCategory} · {la.isNewAccount ? "Created via our link" : "Existing account attached"}</div>
+            {linkedAccts.map((la) => {
+              const statusTone = la.status === "acknowledged" ? "success" : la.status === "rejected" ? "destructive" : "warning";
+              const statusLabel = la.status === "acknowledged" ? "Active" : la.status === "queued" ? "Pending attach" : la.status;
+              return (
+                <div key={la.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-fuchsia-500/15 text-fuchsia-300"><Building2 className="h-4 w-4" /></div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">{la.brand} · <span className="font-mono text-[11px] text-muted-foreground">{la.accountId}</span></div>
+                      <div className="text-[10px] text-muted-foreground">{la.brandCategory}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Pill tone={statusTone}>{statusLabel}</Pill>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Pill tone={la.status === "active" ? "success" : la.status === "pending-attach" ? "warning" : "destructive"}>
-                    {la.status === "pending-attach" ? "Pending attach" : la.status}
-                  </Pill>
-                  <div className="mt-1 text-[10px] text-muted-foreground">→ {la.payoutTarget}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Panel>
 
       {/* Modals */}
       {selectedTx && <CashbackBreakdown tx={selectedTx} onClose={() => setSelectedTx(null)} />}
-      {withdrawOpen && <WithdrawModal onClose={() => setWithdrawOpen(false)} />}
-      {transferOpen && <TransferModal onClose={() => setTransferOpen(false)} />}
-      {claimOpen && <ClaimCashbackModal defaultPref={pref.default} onClose={() => setClaimOpen(false)} />}
+      {withdrawOpen && token && <WithdrawModal token={token} walletSummary={walletSummary} onClose={() => setWithdrawOpen(false)} onSuccess={loadData} />}
+      {transferOpen && token && <TransferModal token={token} onClose={() => setTransferOpen(false)} onSuccess={loadData} />}
+      {claimOpen && token && user && <ClaimCashbackModal token={token} userId={user.id} defaultPref={pref.default} onClose={() => setClaimOpen(false)} onSuccess={loadData} />}
       {linkOpen && <LinkAccountModal onClose={() => setLinkOpen(false)} />}
     </div>
   );
@@ -461,9 +561,37 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function WithdrawModal({ onClose }: { onClose: () => void }) {
+function WithdrawModal({ token, walletSummary, onClose, onSuccess }: { token: string; walletSummary: { availableForWithdrawal: number }; onClose: () => void; onSuccess: () => void }) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("USDT (TRC20)");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) { setError("Enter a valid amount"); return; }
+    if (amt > walletSummary.availableForWithdrawal) { setError("Insufficient balance"); return; }
+    if (!address.trim()) { setError("Destination address / account required"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const isCrypto = method.startsWith("USDT");
+      await financeApi.requestWithdrawal(token, {
+        channel: method,
+        amount: amt,
+        ...(isCrypto ? { walletAddress: address, walletType: method } : { accountNumber: address }),
+        narration: `Withdrawal via ${method}`,
+      });
+      onSuccess();
+      onClose();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Request failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ModalShell title="Withdraw funds" onClose={onClose}>
       <div className="space-y-3">
@@ -481,30 +609,63 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
             <option>PayPal</option>
           </select>
         </div>
-        <button onClick={onClose} className="mt-2 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white">
-          Request withdrawal
+        <div>
+          <label className="text-[11px] uppercase text-muted-foreground">
+            {method.startsWith("USDT") ? "Wallet address" : "Account number / email"}
+          </label>
+          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={method.startsWith("USDT") ? "T… or 0x…" : "Account / email"} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/50" />
+        </div>
+        {error && <p className="text-[11px] text-rose-400">{error}</p>}
+        <button onClick={submit} disabled={loading} className="mt-2 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+          {loading ? "Submitting…" : "Request withdrawal"}
         </button>
       </div>
     </ModalShell>
   );
 }
 
-function TransferModal({ onClose }: { onClose: () => void }) {
+function TransferModal({ token, onClose, onSuccess }: { token: string; onClose: () => void; onSuccess: () => void }) {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [narration, setNarration] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!recipient.trim()) { setError("Recipient required"); return; }
+    const amt = Number(amount);
+    if (!amt || amt <= 0) { setError("Enter a valid amount"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      await financeApi.transferFunds(token, { recipient: recipient.trim(), amount: amt, narration: narration.trim() || undefined });
+      onSuccess();
+      onClose();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Transfer failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ModalShell title="Send to another user" onClose={onClose}>
       <div className="space-y-3">
         <div>
-          <label className="text-[11px] uppercase text-muted-foreground">Recipient (username or wallet ID)</label>
-          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="@username or wal_…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <label className="text-[11px] uppercase text-muted-foreground">Recipient account number</label>
+          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Account number…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
         </div>
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Amount (USD)</label>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
         </div>
-        <button onClick={onClose} className="mt-2 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white">
-          Send instantly
+        <div>
+          <label className="text-[11px] uppercase text-muted-foreground">Note (optional)</label>
+          <input value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="What's it for?" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+        </div>
+        {error && <p className="text-[11px] text-rose-400">{error}</p>}
+        <button onClick={submit} disabled={loading} className="mt-2 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+          {loading ? "Sending…" : "Send instantly"}
         </button>
         <p className="text-center text-[10px] text-muted-foreground">Internal transfers are free and instant.</p>
       </div>
@@ -513,12 +674,11 @@ function TransferModal({ onClose }: { onClose: () => void }) {
 }
 
 /* =====================================================================
- * Claim Cashback modal — wires to /superadmin/claims via shared store
+ * Claim Cashback modal — submits to backend via API
  * ===================================================================== */
 type BrandLike = { name: string; category: string; cashback?: { supportsApiAuto?: boolean; supportsRebateWallet?: boolean; supportsReveteWallet?: boolean; requiresManualClaim?: boolean; proofRequired?: { screenshot?: boolean; registeredEmail?: boolean; accountId?: boolean; orderId?: boolean } } };
 
-function ClaimCashbackModal({ defaultPref, onClose }: { defaultPref: PayoutTarget; onClose: () => void }) {
-  // Brands list = admin brands seed (auto-merge anything saved by superadmin)
+function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSuccess }: { token: string; userId: string; defaultPref: PayoutTarget; onClose: () => void; onSuccess: () => void }) {
   const customBrands = useMemo<BrandLike[]>(() => {
     try {
       const raw = sessionStorage.getItem("rb-admin:brands");
@@ -538,6 +698,8 @@ function ClaimCashbackModal({ defaultPref, onClose }: { defaultPref: PayoutTarge
   const [note, setNote] = useState("");
   const [files, setFiles] = useState<string[]>([]);
   const [target, setTarget] = useState<PayoutTarget>(defaultPref);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const brand = allBrands.find((b) => b.name === partner);
   const cat = brand?.category ?? "";
@@ -567,35 +729,38 @@ function ClaimCashbackModal({ defaultPref, onClose }: { defaultPref: PayoutTarge
     setFiles((prev) => [...prev, ...next].slice(0, 4));
   };
 
-  const submit = () => {
+  const submit = async () => {
     const amt = Number(amount);
-    if (!partner) return alert("Pick a partner");
-    if (!amt || amt <= 0) return alert("Enter a valid amount");
+    setError("");
+    if (!partner) { setError("Pick a partner"); return; }
+    if (!amt || amt <= 0) { setError("Enter a valid amount"); return; }
     if (proofNeeded) {
-      if (proof.accountId && !accountId.trim()) return alert("Account ID is required for this partner");
-      if (proof.registeredEmail && !registeredEmail.trim()) return alert("Registered email is required for this partner");
-      if (proof.orderId && !orderId.trim()) return alert("Order / Tx ID is required for this partner");
-      if (proof.screenshot && files.length === 0) return alert("Upload at least one screenshot as proof");
+      if (proof.accountId && !accountId.trim()) { setError("Account ID is required for this partner"); return; }
+      if (proof.registeredEmail && !registeredEmail.trim()) { setError("Registered email is required"); return; }
+      if (proof.orderId && !orderId.trim()) { setError("Order / Tx ID is required"); return; }
+      if (proof.screenshot && files.length === 0) { setError("Upload at least one screenshot as proof"); return; }
     }
-    const claim: Claim = {
-      id: newId("cl"),
-      user: "Aiden Park", // demo user — would come from auth
-      partner,
-      partnerCategory: cat,
-      accountId: accountId.trim(),
-      type: "Cashback",
-      amount: amt,
-      evidence: files.length,
-      evidenceUrls: files,
-      registeredEmail: registeredEmail.trim() || undefined,
-      orderId: orderId.trim() || undefined,
-      payoutTarget: target,
-      submitted: "just now",
-      status: "pending",
-      note: note.trim() || undefined,
-    };
-    pushCollection<Claim>("claims", claim, claimsSeed);
-    onClose();
+    setLoading(true);
+    try {
+      await financeApi.submitClaim(token, {
+        partner,
+        partnerCategory: cat,
+        accountId: accountId.trim() || undefined,
+        registeredEmail: registeredEmail.trim() || undefined,
+        orderId: orderId.trim() || undefined,
+        type: "Cashback",
+        amount: amt,
+        evidenceUrls: files,
+        payoutTarget: target,
+        note: note.trim() || undefined,
+      });
+      onSuccess();
+      onClose();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Failed to submit claim");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -680,8 +845,9 @@ function ClaimCashbackModal({ defaultPref, onClose }: { defaultPref: PayoutTarge
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Anything we should know…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
         </div>
 
-        <button onClick={submit} className="mt-1 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white">
-          Submit claim for review
+        {error && <p className="text-[11px] text-rose-400">{error}</p>}
+        <button onClick={submit} disabled={loading} className="mt-1 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+          {loading ? "Submitting…" : "Submit claim for review"}
         </button>
         <p className="text-center text-[10px] text-muted-foreground">Our team reviews every claim within 24h. You'll see status updates in this wallet.</p>
       </div>

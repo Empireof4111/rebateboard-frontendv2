@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { financeApi } from "@/lib/finance-api";
 import { PageHeader, Panel, StatCard, Pill } from "@/components/dashboard/Primitives";
 import {
   Gift, Sparkles, Zap, TrendingUp, GraduationCap, Percent, Building2, X,
@@ -59,10 +60,22 @@ const propFirms = [
 ];
 
 function RewardsPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const userId = user?.email ?? "@me";
-  const rrBalance = Math.round(user?.rrBalance ?? 1284);
+  const rrBalance = Math.round(user?.rrBalance ?? 0);
   const cashValue = (rrBalance / 100).toFixed(2);
+
+  const [rrStats, setRrStats] = useState<{ balance: number; earned30d: number; lifetimeEarned: number } | null>(null);
+
+  const loadRrStats = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await financeApi.getRrStats(token);
+      if (res.payload) setRrStats(res.payload);
+    } catch {}
+  }, [token]);
+
+  useEffect(() => { loadRrStats(); }, [loadRrStats]);
 
   // Contributor tier (action-based: reviews + streak + verified)
   const contribTier = useUserTier(userId);
@@ -124,8 +137,8 @@ function RewardsPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
-            <StatCard label="Earned (30d)" value="412 RR" trend="up" accent="success" />
-            <StatCard label="Lifetime" value="6,840 RR" accent="primary" />
+            <StatCard label="Earned (30d)" value={rrStats ? `$${Number(rrStats.earned30d).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "—"} trend="up" accent="success" />
+            <StatCard label="Lifetime" value={rrStats ? `$${Number(rrStats.lifetimeEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} accent="primary" />
           </div>
         </div>
       </div>

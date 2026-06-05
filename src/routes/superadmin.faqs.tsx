@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, StatCard, Toolbar } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { faqs as seedFaqs, type Faq } from "@/lib/admin-data";
 import { Plus, Edit2, Trash2, Search } from "lucide-react";
@@ -127,12 +127,12 @@ function FaqEditor({ faq, onClose, onSave }: { faq: Faq; onClose: () => void; on
     >
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="Category">
-          <select className={fieldCls} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as Faq["category"] })}>
+          <select className={selectCls} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as Faq["category"] })}>
             {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
         <Field label="Status">
-          <select className={fieldCls} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Faq["status"] })}>
+          <select className={selectCls} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Faq["status"] })}>
             <option value="draft">draft</option>
             <option value="published">published</option>
           </select>

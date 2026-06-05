@@ -1,18 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth, usePersonalization } from "@/lib/auth";
 import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
 import { MiniLineChart, SourceBars } from "@/components/dashboard/Charts";
 import {
-  walletSummary, earningsBySource, earningsTimeline,
-} from "@/lib/wallet-data";
-import {
   TrendingUp, TrendingDown, Sparkles, AlertTriangle, Activity,
-  Plus, Upload, Star, Building2, Bot, Lightbulb, Target,
+  Plus, Star, Building2, Bot, Lightbulb, Target,
   Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck,
 } from "lucide-react";
 import { openAddTrade } from "@/lib/ui-bus";
 import { tickStreak, getStreakConfig } from "@/lib/rr-rewards";
+import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/finance-api";
 
 function fmtUSD(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -23,7 +21,31 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function DashboardHome() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const [summary, setSummary] = useState<WalletSummary | null>(null);
+  const [recentTx, setRecentTx] = useState<WalletTransaction[]>([]);
+  const [earningsBySource, setEarningsBySource] = useState<{ source: string; amount: number }[]>([]);
+  const [earningsTimeline, setEarningsTimeline] = useState<{ month: string; amount: number }[]>([]);
+  const [referralStats, setReferralStats] = useState<{ total: number; thisMonth: number } | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    const [sumRes, txRes, brkRes, timeRes, refRes] = await Promise.allSettled([
+      financeApi.getWalletSummary(token),
+      financeApi.getTransactions(token, { size: 5 }),
+      financeApi.getEarningsBreakdown(token),
+      financeApi.getEarningsTimeline(token),
+      financeApi.getReferralStats(token),
+    ]);
+    if (sumRes.status === "fulfilled" && sumRes.value.payload) setSummary(sumRes.value.payload);
+    if (txRes.status === "fulfilled" && txRes.value.payload) setRecentTx(txRes.value.payload.page);
+    if (brkRes.status === "fulfilled" && brkRes.value.payload) setEarningsBySource(brkRes.value.payload);
+    if (timeRes.status === "fulfilled" && timeRes.value.payload) setEarningsTimeline(timeRes.value.payload);
+    if (refRes.status === "fulfilled" && refRes.value.payload) setReferralStats(refRes.value.payload);
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
   useEffect(() => {
     const cfg = getStreakConfig();
     if (cfg.enabled && (cfg.qualifier === "login" || cfg.qualifier === "any_activity")) {
@@ -63,12 +85,12 @@ function DashboardHome() {
 
       {/* Section 1 — Money First */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Wallet Balance" value={`$${walletSummary.balance.toLocaleString()}`} hint={`+${fmtUSD(walletSummary.cashbackThisMonth)} this month`} trend="up" accent="success" />
-        <StatCard label="Total Cashback" value={`$${walletSummary.totalEarned.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} hint="All-time" trend="up" accent="success" />
-        <StatCard label="RR Balance" value={`${user?.rrBalance.toFixed(0) ?? walletSummary.rrBalance}`} hint={`≈ ${fmtUSD(walletSummary.rrCashValue)} cash`} accent="warning" />
-        <StatCard label="Total Withdrawn" value={`$${walletSummary.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} hint="Lifetime" accent="primary" />
-        <StatCard label="True ROI" value="194%" hint="Net +$16,390" trend="up" accent="primary" />
-        <StatCard label="Active Accounts" value="6" hint="3 prop · 2 broker · 1 cex" />
+        <StatCard label="Wallet Balance" value={summary ? `$${Number(summary.balance).toLocaleString()}` : "—"} trend="up" accent="success" />
+        <StatCard label="Total Cashback" value={summary ? `$${Number(summary.totalEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint="All-time" trend="up" accent="success" />
+        <StatCard label="RR Balance" value={user ? String(Math.round(user.rrBalance)) : "—"} accent="warning" />
+        <StatCard label="Total Withdrawn" value={summary ? `$${Number(summary.totalWithdrawn).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint="Lifetime" accent="primary" />
+        <StatCard label="Pending" value={summary ? `$${Number(summary.pendingWithdrawals).toLocaleString()}` : "—"} hint="withdrawals" accent="warning" />
+        <StatCard label="Referrals" value={referralStats ? String(referralStats.total) : "—"} hint={referralStats ? `+${referralStats.thisMonth} this month` : ""} />
       </div>
 
       {/* Wallet Hero */}
@@ -81,9 +103,9 @@ function DashboardHome() {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Available to withdraw</div>
-              <div className="text-2xl font-bold text-white">${walletSummary.availableForWithdrawal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+              <div className="text-2xl font-bold text-white">{summary ? `$${Number(summary.availableForWithdrawal).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</div>
               <div className="text-[11px] text-muted-foreground">
-                Pending {fmtUSD(walletSummary.pendingWithdrawals)} · This month +{fmtUSD(walletSummary.cashbackThisMonth)}
+                Pending {summary ? fmtUSD(Number(summary.pendingWithdrawals)) : "—"}
               </div>
             </div>
           </div>
@@ -103,8 +125,10 @@ function DashboardHome() {
 
       {/* Earnings Intelligence */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Earnings over time" action={<Pill tone="success">+15% MoM</Pill>}>
-          <MiniLineChart data={earningsTimeline.map((d) => ({ label: d.month, amount: d.amount }))} height={140} />
+        <Panel title="Earnings over time" action={<Pill tone="success">6m</Pill>}>
+          {earningsTimeline.length > 0
+            ? <MiniLineChart data={earningsTimeline.map((d) => ({ label: d.month, amount: d.amount }))} height={140} />
+            : <div className="h-[140px] flex items-center justify-center text-xs text-muted-foreground">No data yet</div>}
           <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>Last 6 months</span>
             <Link to={"/dashboard/wallet" as string} className="text-accent hover:underline">View wallet →</Link>
@@ -112,7 +136,9 @@ function DashboardHome() {
         </Panel>
 
         <Panel title="Cashback by source" action={<Building2 className="h-3.5 w-3.5 text-muted-foreground" />}>
-          <SourceBars data={earningsBySource.slice(0, 6)} color="from-emerald-400 to-fuchsia-500" />
+          {earningsBySource.length > 0
+            ? <SourceBars data={earningsBySource.slice(0, 6)} color="from-emerald-400 to-fuchsia-500" />
+            : <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">No earnings yet</div>}
         </Panel>
 
         <Panel title="Earnings Intelligence" action={<Pill tone="primary">AI</Pill>}>
@@ -139,23 +165,18 @@ function DashboardHome() {
       </div>
 
       {/* Referral summary */}
-      <div className="glass grid gap-4 rounded-2xl p-5 ring-1 ring-white/10 md:grid-cols-4">
+      <div className="glass grid gap-4 rounded-2xl p-5 ring-1 ring-white/10 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
             <Users className="h-3.5 w-3.5" /> Referrals
           </div>
-          <div className="mt-1 text-2xl font-bold text-white">12</div>
-          <div className="text-[11px] text-muted-foreground">Active traders</div>
-        </div>
-        <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Lifetime earned</div>
-          <div className="mt-1 text-2xl font-bold text-emerald-400">$612</div>
-          <div className="text-[11px] text-muted-foreground">From referrals</div>
+          <div className="mt-1 text-2xl font-bold text-white">{referralStats?.total ?? "—"}</div>
+          <div className="text-[11px] text-muted-foreground">Traders referred</div>
         </div>
         <div>
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">This month</div>
-          <div className="mt-1 text-2xl font-bold text-white">+$84</div>
-          <div className="text-[11px] text-muted-foreground">3 new signups</div>
+          <div className="mt-1 text-2xl font-bold text-white">+{referralStats?.thisMonth ?? "—"}</div>
+          <div className="text-[11px] text-muted-foreground">New signups</div>
         </div>
         <div className="flex items-end justify-end">
           <Link to={"/dashboard/referrals" as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
@@ -224,22 +245,23 @@ function DashboardHome() {
         </Panel>
 
         {/* Activity feed */}
-        <Panel title="Activity" action={<Link to={"/dashboard/profile" as string} className="text-[11px] text-accent hover:underline">View all →</Link>}>
+        <Panel title="Recent activity" action={<Link to={"/dashboard/wallet" as string} className="text-[11px] text-accent hover:underline">View all →</Link>}>
           <ul className="space-y-3 text-xs">
-            {[
-              { icon: TrendingUp, color: "text-success", text: "Trade logged · EURUSD +0.8R", time: "12m ago" },
-              { icon: Star, color: "text-accent", text: "Review posted · FTMO (4★)", time: "1h ago" },
-              { icon: Sparkles, color: "text-primary", text: "Earned 24 RR · daily journal", time: "3h ago" },
-              { icon: Target, color: "text-success", text: "Milestone unlocked · 30-day streak", time: "Yesterday" },
-            ].map((a, i) => {
-              const Icon = a.icon;
+            {recentTx.length === 0 && <li className="py-4 text-center text-muted-foreground">No recent activity.</li>}
+            {recentTx.map((t) => {
+              const isCredit = t.activity === "CREDIT";
+              const Icon = isCredit ? TrendingUp : ArrowDownToLine;
+              const color = isCredit ? "text-success" : "text-muted-foreground";
+              const amt = `${isCredit ? "+" : "−"}$${Number(t.amount).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+              const when = new Date(t.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
               return (
-                <li key={i} className="flex items-center gap-3">
-                  <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/5 ${a.color}`}>
+                <li key={t.id} className="flex items-center gap-3">
+                  <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/5 ${color}`}>
                     <Icon className="h-3.5 w-3.5" />
                   </div>
-                  <div className="flex-1 text-white/90">{a.text}</div>
-                  <span className="text-[10px] text-muted-foreground">{a.time}</span>
+                  <div className="flex-1 text-white/90 truncate">{t.narration ?? t.channel}</div>
+                  <span className={`font-semibold ${color}`}>{amt}</span>
+                  <span className="text-[10px] text-muted-foreground">{when}</span>
                 </li>
               );
             })}

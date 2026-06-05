@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, Pill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { announcements as seed, adminBrands, type Announcement } from "@/lib/admin-data";
 import { Plus, Edit3, Trash2, Check, X, Globe, Building2, Clock } from "lucide-react";
@@ -242,21 +242,21 @@ function AnnouncementsPage() {
 
             {editing.category === "Global" && (
               <Field label="Placement">
-                <select className={fieldCls} value={editing.placement} onChange={(e) => setEditing({ ...editing, placement: e.target.value as Announcement["placement"] })}>
+                <select className={selectCls} value={editing.placement} onChange={(e) => setEditing({ ...editing, placement: e.target.value as Announcement["placement"] })}>
                   <option>Top bar</option><option>Dashboard</option>
                 </select>
               </Field>
             )}
 
             <Field label="Source">
-              <select className={fieldCls} value={editing.source} onChange={(e) => setEditing({ ...editing, source: e.target.value as Announcement["source"] })}>
+              <select className={selectCls} value={editing.source} onChange={(e) => setEditing({ ...editing, source: e.target.value as Announcement["source"] })}>
                 <option value="Admin">Admin (auto-approved)</option>
                 <option value="Brand">Brand submission</option>
               </select>
             </Field>
 
             <Field label="Approval">
-              <select className={fieldCls} value={editing.approval} onChange={(e) => setEditing({ ...editing, approval: e.target.value as Announcement["approval"] })}>
+              <select className={selectCls} value={editing.approval} onChange={(e) => setEditing({ ...editing, approval: e.target.value as Announcement["approval"] })}>
                 <option value="approved">approved</option>
                 <option value="pending">pending</option>
                 <option value="rejected">rejected</option>
@@ -264,7 +264,7 @@ function AnnouncementsPage() {
             </Field>
 
             <Field label="Status">
-              <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Announcement["status"] })}>
+              <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Announcement["status"] })}>
                 <option value="scheduled">scheduled</option><option value="active">active</option><option value="expired">expired</option>
               </select>
             </Field>

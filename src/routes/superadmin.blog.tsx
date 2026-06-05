@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { blogPosts as seed, type BlogPost } from "@/lib/admin-data";
 import { Plus, Edit3, Trash2 } from "lucide-react";
@@ -80,12 +80,12 @@ function BlogAdmin() {
             <Field label="Title" span={2}><input className={fieldCls} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></Field>
             <Field label="Author"><input className={fieldCls} value={editing.author} onChange={(e) => setEditing({ ...editing, author: e.target.value })} /></Field>
             <Field label="Status">
-              <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as BlogPost["status"] })}>
+              <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as BlogPost["status"] })}>
                 <option value="draft">draft</option><option value="published">published</option>
               </select>
             </Field>
             <Field label="Tag / Category">
-              <select className={fieldCls} value={editing.tag ?? "Guide"} onChange={(e) => setEditing({ ...editing, tag: e.target.value })}>
+              <select className={selectCls} value={editing.tag ?? "Guide"} onChange={(e) => setEditing({ ...editing, tag: e.target.value })}>
                 {TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </Field>

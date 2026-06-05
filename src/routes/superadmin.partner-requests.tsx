@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Inbox, Search, Mail, Send, CheckCircle2, XCircle, Copy } from "lucide-react";
-import { partnerRequests as seed, linkedAccounts as laSeed, type PartnerRequest, type LinkedAccount } from "@/lib/admin-data";
-import { useAdminCollection, patchCollection, addAudit } from "@/lib/admin-store";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Inbox, Search, Mail, Send, CheckCircle2, XCircle, Copy, RefreshCw } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { financeApi, type PartnerRequestRecord, type PartnerRequestStats } from "@/lib/finance-api";
+import { ApiError } from "@/lib/api";
+import { toast } from "@/components/superadmin/AdminActions";
 
 export const Route = createFileRoute("/superadmin/partner-requests")({
   head: () => ({
@@ -14,37 +16,61 @@ export const Route = createFileRoute("/superadmin/partner-requests")({
   component: PartnerRequestsInbox,
 });
 
+type FilterStatus = "all" | "queued" | "sent" | "acknowledged" | "rejected";
+
 function PartnerRequestsInbox() {
-  const { items, update } = useAdminCollection<PartnerRequest>("partnerRequests", seed);
+  const { token } = useAuth();
+  const [items, setItems] = useState<PartnerRequestRecord[]>([]);
+  const [stats, setStats] = useState<PartnerRequestStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<"all" | PartnerRequest["status"]>("all");
-  const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
+  const [status, setStatus] = useState<FilterStatus>("all");
+  const [openId, setOpenId] = useState<number | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const [listRes, statsRes] = await Promise.all([
+        financeApi.getAllPartnerRequests(token, { size: 100 }),
+        financeApi.getPartnerRequestStats(token),
+      ]);
+      if (listRes.payload) {
+        setItems(listRes.payload.page);
+        if (!openId && listRes.payload.page.length > 0) setOpenId(listRes.payload.page[0].id);
+      }
+      if (statsRes.payload) setStats(statsRes.payload);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to load partner requests");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = useMemo(() => items.filter((r) =>
     (status === "all" || r.status === status) &&
     (q.trim() === "" ||
       r.brand.toLowerCase().includes(q.toLowerCase()) ||
-      r.user.toLowerCase().includes(q.toLowerCase()) ||
+      (r.user?.name ?? "").toLowerCase().includes(q.toLowerCase()) ||
       r.toEmail.toLowerCase().includes(q.toLowerCase()))
   ), [items, q, status]);
 
   const open = openId ? items.find((r) => r.id === openId) : null;
 
-  function setStatusOf(id: string, next: PartnerRequest["status"]) {
-    update(id, { status: next, sentAt: next === "sent" ? "just now" : undefined });
-    addAudit({ actor: "@admin", action: `Partner request → ${next}`, target: id });
+  const setStatusOf = async (id: number, next: string) => {
+    if (!token) return;
+    try {
+      await financeApi.updatePartnerRequestStatus(token, id, { status: next });
+      toast.success(`Request → ${next}`);
+      load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Update failed");
+    }
+  };
 
-    if (next === "acknowledged") {
-      // mark linked account active
-      const r = items.find((x) => x.id === id);
-      if (r?.linkedAccountId) {
-        patchCollection<LinkedAccount>("linkedAccounts", r.linkedAccountId, { status: "active" }, laSeed);
-      }
-    }
-    if (next === "rejected" && open?.linkedAccountId) {
-      patchCollection<LinkedAccount>("linkedAccounts", open.linkedAccountId, { status: "rejected" }, laSeed);
-    }
-  }
+  const fmt = (d?: string) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
@@ -55,10 +81,13 @@ function PartnerRequestsInbox() {
           </h1>
           <p className="mt-1 text-sm text-white/60">Outbound emails to broker / exchange partner inboxes asking them to attach a trader's account under our affiliate code.</p>
         </div>
-        <div className="flex gap-2 text-xs">
-          <Pill tone="amber">{items.filter((r) => r.status === "queued").length} queued</Pill>
-          <Pill tone="sky">{items.filter((r) => r.status === "sent").length} sent</Pill>
-          <Pill tone="emerald">{items.filter((r) => r.status === "acknowledged").length} done</Pill>
+        <div className="flex items-center gap-2 text-xs">
+          <Pill tone="amber">{stats?.queued ?? 0} queued</Pill>
+          <Pill tone="sky">{stats?.sent ?? 0} sent</Pill>
+          <Pill tone="emerald">{stats?.acknowledged ?? 0} done</Pill>
+          <button onClick={load} className="grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10">
+            <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </header>
 
@@ -81,7 +110,8 @@ function PartnerRequestsInbox() {
           </div>
 
           <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
-            {filtered.length === 0 && <div className="p-6 text-center text-sm text-white/50">Nothing here.</div>}
+            {loading && <div className="p-6 text-center text-sm text-white/50">Loading…</div>}
+            {!loading && filtered.length === 0 && <div className="p-6 text-center text-sm text-white/50">Nothing here.</div>}
             {filtered.map((r) => (
               <button key={r.id} onClick={() => setOpenId(r.id)}
                 className={`flex w-full flex-col gap-1 border-b border-white/5 px-3 py-3 text-left text-sm hover:bg-white/5 ${openId === r.id ? "bg-white/10" : ""}`}>
@@ -94,7 +124,7 @@ function PartnerRequestsInbox() {
                     : "bg-amber-500/15 text-amber-300"
                   }`}>{r.status}</span>
                 </div>
-                <div className="text-xs text-white/60">{r.user} · acct {r.accountId}</div>
+                <div className="text-xs text-white/60">{r.user?.name ?? `User #${r.userId}`} · acct {r.accountId}</div>
                 <div className="truncate text-[11px] text-white/40">→ {r.toEmail}</div>
               </button>
             ))}
@@ -109,8 +139,12 @@ function PartnerRequestsInbox() {
                 <div>
                   <div className="text-xs uppercase tracking-wide text-white/50">{open.brandCategory}</div>
                   <h2 className="mt-0.5 text-lg font-bold text-white">{open.brand}</h2>
-                  <div className="mt-1 text-xs text-white/60">From: <span className="text-white/80">{open.user}</span> · To: <span className="text-white/80">{open.toEmail}</span></div>
-                  <div className="text-[11px] text-white/40">Created {open.createdAt}{open.sentAt ? ` · sent ${open.sentAt}` : ""}</div>
+                  <div className="mt-1 text-xs text-white/60">
+                    From: <span className="text-white/80">{open.user?.name ?? `User #${open.userId}`}</span> · To: <span className="text-white/80">{open.toEmail}</span>
+                  </div>
+                  <div className="text-[11px] text-white/40">
+                    Created {fmt(open.createdAt)}{open.sentAt ? ` · sent ${fmt(open.sentAt)}` : ""}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   {open.status === "queued" && (

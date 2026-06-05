@@ -1,21 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
-import { Brain, AlertTriangle, Target, Sparkles } from "lucide-react";
+import { AlertTriangle, Target, Sparkles } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { financeApi, type WalletSummary, type ClaimStats } from "@/lib/finance-api";
 
 export const Route = createFileRoute("/dashboard/intelligence")({
   component: IntelligencePage,
 });
 
 function IntelligencePage() {
+  const { token } = useAuth();
+  const [summary, setSummary] = useState<WalletSummary | null>(null);
+  const [claimStats, setClaimStats] = useState<ClaimStats | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    const [sumRes, claimRes] = await Promise.allSettled([
+      financeApi.getWalletSummary(token),
+      financeApi.getClaimStats(token),
+    ]);
+    if (sumRes.status === "fulfilled" && sumRes.value.payload) setSummary(sumRes.value.payload);
+    if (claimRes.status === "fulfilled" && claimRes.value.payload) setClaimStats(claimRes.value.payload);
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const fmtUSD = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
   return (
     <div className="space-y-6">
       <PageHeader title="Intelligence" subtitle="Your performance, behavior, and what to fix next." />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Net PnL (30d)" value="+$3,820" trend="up" accent="success" />
-        <StatCard label="ROI (30d)" value="+18.4%" trend="up" accent="primary" />
-        <StatCard label="Trader Score" value="7.4 / 10" accent="primary" />
-        <StatCard label="Mistake Cost" value="−$1,210" hint="Recoverable" accent="warning" />
+        <StatCard label="Wallet balance" value={summary ? fmtUSD(Number(summary.balance)) : "—"} trend="up" accent="success" />
+        <StatCard label="Total cashback" value={summary ? fmtUSD(Number(summary.totalEarned)) : "—"} trend="up" accent="primary" />
+        <StatCard label="Claims paid" value={claimStats ? String(claimStats.paid) : "—"} accent="primary" />
+        <StatCard label="Total withdrawn" value={summary ? fmtUSD(Number(summary.totalWithdrawn)) : "—"} hint="Lifetime" accent="warning" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -44,30 +65,30 @@ function IntelligencePage() {
         </Panel>
       </div>
 
-      <Panel title="Behavior Tracking">
+      <Panel title="Cashback claim breakdown">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 text-xs">
           {[
-            { k: "Patience", v: 7.8 },
-            { k: "Discipline", v: 6.2 },
-            { k: "Risk Mgmt", v: 8.1 },
-            { k: "Consistency", v: 7.0 },
+            { k: "Pending", v: claimStats?.pending ?? 0, max: claimStats?.total || 1 },
+            { k: "Approved", v: claimStats?.approved ?? 0, max: claimStats?.total || 1 },
+            { k: "Paid", v: claimStats?.paid ?? 0, max: claimStats?.total || 1 },
+            { k: "Rejected", v: claimStats?.rejected ?? 0, max: claimStats?.total || 1 },
           ].map((b) => (
             <div key={b.k}>
               <div className="mb-1 flex justify-between"><span className="text-muted-foreground">{b.k}</span><span className="font-semibold text-white">{b.v}</span></div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${b.v * 10}%` }} />
+                <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${(b.v / b.max) * 100}%` }} />
               </div>
             </div>
           ))}
         </div>
       </Panel>
 
-      <Panel title="What-if Simulation" action={<Sparkles className="h-4 w-4 text-accent" />}>
-        <p className="text-xs text-muted-foreground">If you removed your worst 10% of trades:</p>
+      <Panel title="Cashback summary" action={<Sparkles className="h-4 w-4 text-accent" />}>
+        <p className="text-xs text-muted-foreground">Lifetime cashback earnings overview.</p>
         <div className="mt-3 grid grid-cols-3 gap-3">
-          <StatCard label="Net PnL" value="+$5,940" trend="up" accent="success" />
-          <StatCard label="ROI" value="+28.1%" trend="up" accent="primary" />
-          <StatCard label="Win Rate" value="68%" trend="up" accent="success" />
+          <StatCard label="Total claims" value={claimStats ? String(claimStats.total) : "—"} accent="primary" />
+          <StatCard label="Amount paid out" value={claimStats ? fmtUSD(Number(claimStats.totalAmountPaid)) : "—"} trend="up" accent="success" />
+          <StatCard label="Pending review" value={claimStats ? String(claimStats.pending) : "—"} accent="warning" />
         </div>
       </Panel>
     </div>

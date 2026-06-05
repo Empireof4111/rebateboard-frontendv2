@@ -48,6 +48,7 @@ export type SignupInput = {
 
 type AuthContextType = {
   user: User | null;
+  token: string | null;
   login: (email: string, password: string) => Promise<User>;
   signup: (input: SignupInput) => Promise<User>;
   verifyOtp: (otp: string) => Promise<User>;
@@ -400,6 +401,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token,
         login,
         signup,
         verifyOtp,

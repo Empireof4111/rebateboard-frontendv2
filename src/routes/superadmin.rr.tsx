@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Sparkles, RotateCcw, Plus, Trash2, GraduationCap, BookOpen, Star, UserPlus, Flag,
   Instagram, Youtube, Send, MessageCircle, Mail, Coins, ShieldCheck, Check, X,
   TrendingUp, Users, Gift, Activity, ExternalLink, Music2, Flame,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard, DataTable, Pill } from "@/components/superadmin/AdminUI";
-import { walletLedger } from "@/lib/admin-data";
+import { useAuth } from "@/lib/auth";
+import { financeApi, type WalletTransaction, type Wallet } from "@/lib/finance-api";
 import {
   useRrRules, updateRrRule, resetRrRules, type RrActionId,
   useSocialRules, updateSocialRule, resetSocialRules, type RrSocialId,
@@ -470,38 +471,71 @@ function ClaimsPanel() {
 /* ============================================================ Ledger */
 
 function LedgerPanel() {
+  const { token } = useAuth();
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [topWallets, setTopWallets] = useState<Wallet[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!token) return;
+    Promise.allSettled([
+      financeApi.getTransactions(token, { size: 50 }),
+      financeApi.getAllWallets(token, 0, 10),
+    ]).then(([txRes, walletRes]) => {
+      if (txRes.status === "fulfilled" && txRes.value.payload) setTransactions(txRes.value.payload.page);
+      if (walletRes.status === "fulfilled" && walletRes.value.payload) {
+        const sorted = [...walletRes.value.payload.page].sort((a, b) => Number(b.balance ?? 0) - Number(a.balance ?? 0));
+        setTopWallets(sorted.slice(0, 5));
+      }
+      setLoading(false);
+    });
+  }, [token]);
+
   return (
     <div className="grid gap-4">
-      <Panel title="RR ledger (latest)">
-        <DataTable head={<><th>TX</th><th>User</th><th>Type</th><th>Amount</th><th>Balance</th><th>Time</th></>}>
-          {walletLedger.map((t) => (
-            <tr key={t.id}>
-              <td className="font-mono text-xs text-muted-foreground">{t.id}</td>
-              <td className="font-mono">{t.user}</td>
-              <td>{t.type}</td>
-              <td className={`font-mono font-bold ${t.amount.startsWith("+") ? "text-emerald-300" : "text-rose-300"}`}>{t.amount}</td>
-              <td className="font-mono">{t.balance}</td>
-              <td className="text-xs text-muted-foreground">{t.time}</td>
-            </tr>
-          ))}
-        </DataTable>
+      <Panel title="RR ledger (latest 50 transactions)">
+        {loading ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>
+        ) : (
+          <DataTable head={<><th>Date</th><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Narration</th></>}>
+            {transactions.map((t) => (
+              <tr key={t.id}>
+                <td className="text-xs text-muted-foreground whitespace-nowrap">
+                  {new Date(t.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </td>
+                <td className="font-mono text-xs">{t.user?.name ?? `User #${t.userId}`}</td>
+                <td>{t.activity}</td>
+                <td className={`font-mono font-bold ${t.activity === "CREDIT" ? "text-emerald-300" : "text-rose-300"}`}>
+                  {t.activity === "CREDIT" ? "+" : "−"}${Number(t.amount).toFixed(2)}
+                </td>
+                <td>
+                  <Pill tone={t.status === "SUCCESSFUL" ? "good" : t.status === "PENDING" ? "warn" : "bad"}>
+                    {t.status?.toLowerCase()}
+                  </Pill>
+                </td>
+                <td className="text-xs text-muted-foreground max-w-xs line-clamp-1">{t.narration ?? t.channel ?? "—"}</td>
+              </tr>
+            ))}
+            {transactions.length === 0 && (
+              <tr><td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">No transactions found.</td></tr>
+            )}
+          </DataTable>
+        )}
       </Panel>
 
-      <Panel title="Top RR balances">
-        <DataTable head={<><th>User</th><th>Balance</th><th>Earned (lifetime)</th><th>Spent (lifetime)</th></>}>
-          {[
-            { u: "Aiden Park", b: "12,420 RR", e: "18,200 RR", s: "5,780 RR" },
-            { u: "Liam O'Connor", b: "8,840 RR", e: "14,100 RR", s: "5,260 RR" },
-            { u: "Marta Silva", b: "6,210 RR", e: "9,440 RR", s: "3,230 RR" },
-            { u: "Yuki Tanaka", b: "4,820 RR", e: "7,120 RR", s: "2,300 RR" },
-          ].map((r) => (
-            <tr key={r.u}>
-              <td className="font-semibold">{r.u}</td>
-              <td className="font-mono text-fuchsia-300">{r.b}</td>
-              <td className="font-mono text-emerald-300">{r.e}</td>
-              <td className="font-mono text-rose-300">{r.s}</td>
+      <Panel title="Top wallet balances">
+        <DataTable head={<><th>User</th><th>Balance</th><th>Earned (lifetime)</th><th>Withdrawn (lifetime)</th></>}>
+          {topWallets.map((w) => (
+            <tr key={w.id}>
+              <td className="font-semibold">{w.user?.name ?? `User #${w.userId}`}</td>
+              <td className="font-mono text-fuchsia-300">${Number(w.balance ?? 0).toFixed(2)}</td>
+              <td className="font-mono text-emerald-300">${Number(w.earned ?? 0).toFixed(2)}</td>
+              <td className="font-mono text-rose-300">${Number(w.withdrawn ?? 0).toFixed(2)}</td>
             </tr>
           ))}
+          {topWallets.length === 0 && !loading && (
+            <tr><td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">No wallets found.</td></tr>
+          )}
         </DataTable>
       </Panel>
     </div>

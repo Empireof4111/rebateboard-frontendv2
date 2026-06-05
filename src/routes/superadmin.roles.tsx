@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader, Panel, DataTable, StatCard, Pill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { roles as seed, allPermissions, permissionGroups, type Role } from "@/lib/admin-data";
 import { Plus, Edit3, Trash2, Users as UsersIcon } from "lucide-react";
@@ -102,7 +102,7 @@ function RolesPage() {
             <Field label="Role name"><input className={fieldCls} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="e.g. Finance Admin" /></Field>
             <Field label="Description"><textarea rows={2} className={fieldCls} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></Field>
             <Field label="Status">
-              <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Role["status"] })}>
+              <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Role["status"] })}>
                 <option value="active">active</option><option value="inactive">inactive</option>
               </select>
             </Field>

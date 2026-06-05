@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, Pill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { fetchAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import {
   createAdminOffer,
@@ -389,7 +389,7 @@ function OffersAdmin() {
                 />
               </Field>
               <Field label="Category">
-                <select className={fieldCls} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value as OfferCategory })}>
+                <select className={selectCls} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value as OfferCategory })}>
                   {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
               </Field>
@@ -467,7 +467,7 @@ function OffersAdmin() {
               )}
 
               <Field label="Status">
-                <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as AdminOffer["status"] })}>
+                <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as AdminOffer["status"] })}>
                   <option value="active">active</option>
                   <option value="paused">paused</option>
                   <option value="expired">expired</option>

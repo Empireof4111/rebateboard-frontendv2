@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { companyNews as seed, type NewsItem } from "@/lib/admin-data";
 import { Plus, Edit3, Trash2 } from "lucide-react";
@@ -80,7 +80,7 @@ function NewsPage() {
             <Field label="Title" span={2}><input className={fieldCls} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></Field>
             <Field label="Author"><input className={fieldCls} value={editing.author} onChange={(e) => setEditing({ ...editing, author: e.target.value })} /></Field>
             <Field label="Status">
-              <select className={fieldCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as NewsItem["status"] })}>
+              <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as NewsItem["status"] })}>
                 <option value="draft">draft</option><option value="published">published</option>
               </select>
             </Field>

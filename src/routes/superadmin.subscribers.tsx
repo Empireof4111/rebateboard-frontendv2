@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatCard, Pill, Toolbar } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { subscribers as seed, type Subscriber } from "@/lib/admin-data";
 import { Download, Mail, Plus, Trash2, Search } from "lucide-react";
@@ -104,7 +104,7 @@ function SubscribersPage() {
             <Field label="Email"><input className={fieldCls} value={editing.email} onChange={(e) => setEditing({ ...editing, email: e.target.value })} /></Field>
             <Field label="Name (optional)"><input className={fieldCls} value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>
             <Field label="Source">
-              <select className={fieldCls} value={editing.source} onChange={(e) => setEditing({ ...editing, source: e.target.value as Subscriber["source"] })}>
+              <select className={selectCls} value={editing.source} onChange={(e) => setEditing({ ...editing, source: e.target.value as Subscriber["source"] })}>
                 <option>Manual</option><option>Footer</option><option>Popup</option><option>Blog</option>
               </select>
             </Field>

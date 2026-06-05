@@ -180,6 +180,23 @@
   @media (max-width: 640px) {
     button:not(.no-min-tap), a.btn:not(.no-min-tap) { min-height: 40px; }
   }
+
+  /* Dark select dropdowns — fixes white option background on Windows/Chrome */
+  select {
+    background-color: #160b2e;
+    color: white;
+    color-scheme: dark;
+  }
+  select option {
+    background-color: #160b2e;
+    color: white;
+  }
+  select option:hover,
+  select option:focus,
+  select option:checked {
+    background-color: #2d1060;
+    color: white;
+  }
 }
 
 @font-face { font-family: "Inter"; font-display: swap; src: local("Inter"); }

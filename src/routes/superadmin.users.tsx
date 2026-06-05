@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, Toolbar, Pill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
+import { Modal, ConfirmDialog, Field, fieldCls, selectCls, toast } from "@/components/superadmin/AdminActions";
 import { useAdminCollection, newId } from "@/lib/admin-store";
 import { adminUsers as seed } from "@/lib/admin-data";
 import { Search, UserPlus, Filter, Download, Eye, Ban, Check, Trash2 } from "lucide-react";
@@ -122,7 +122,7 @@ function UsersPage() {
             <Field label="Email" span={2}><input className={fieldCls} value={editing.email} onChange={(e) => setEditing({ ...editing, email: e.target.value })} /></Field>
             <Field label="Country"><input className={fieldCls} value={editing.country} onChange={(e) => setEditing({ ...editing, country: e.target.value })} /></Field>
             <Field label="KYC verified">
-              <select className={fieldCls} value={String(editing.verified)} onChange={(e) => setEditing({ ...editing, verified: e.target.value === "true" })}>
+              <select className={selectCls} value={String(editing.verified)} onChange={(e) => setEditing({ ...editing, verified: e.target.value === "true" })}>
                 <option value="false">Pending</option><option value="true">Verified</option>
               </select>
             </Field>
