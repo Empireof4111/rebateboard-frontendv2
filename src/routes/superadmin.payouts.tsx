@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, StatCard, Toolbar } from "@/components/superadmin/AdminUI";
-import { toast } from "@/components/superadmin/AdminActions";
+import { Modal, Field, fieldCls, toast } from "@/components/superadmin/AdminActions";
 import { RefreshCw, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type WithdrawalRequest, type AdminFinanceStats } from "@/lib/finance-api";
@@ -25,6 +25,8 @@ function PayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [q, setQ] = useState("");
+  const [rejectTarget, setRejectTarget] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -51,15 +53,23 @@ function PayoutsPage() {
     return matchStatus && matchQ;
   }), [withdrawals, filter, q]);
 
-  const updateStatus = async (id: number, status: string) => {
+  const updateStatus = async (id: number, status: string, reason?: string) => {
     if (!token) return;
     try {
-      await financeApi.updateWithdrawalStatus(token, id, status);
+      await financeApi.updateWithdrawalStatus(token, id, { status, rejectionReason: reason });
       toast.success(`Withdrawal #${id} → ${status}`);
       load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Update failed");
     }
+  };
+
+  const submitRejection = async () => {
+    if (!rejectTarget) return;
+    if (!rejectionReason.trim()) { toast.error("Rejection reason is required"); return; }
+    await updateStatus(rejectTarget, "DECLINED", rejectionReason.trim());
+    setRejectTarget(null);
+    setRejectionReason("");
   };
 
   const fmt = (d?: string) => d ? new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -117,7 +127,7 @@ function PayoutsPage() {
                           className="rounded-md bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">
                           Approve
                         </button>
-                        <button onClick={() => updateStatus(w.id, "DECLINED")}
+                        <button onClick={() => { setRejectTarget(w.id); setRejectionReason(""); }}
                           className="rounded-md bg-rose-500/15 px-2 py-1 text-[10px] font-bold text-rose-300 ring-1 ring-rose-400/30">
                           Decline
                         </button>
@@ -137,6 +147,26 @@ function PayoutsPage() {
           {!loading && filtered.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No withdrawals match.</td></tr>}
         </DataTable>
       </Panel>
+
+      {rejectTarget !== null && (
+        <Modal open onClose={() => setRejectTarget(null)} title={`Reject withdrawal #${rejectTarget}`} size="sm">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Provide a reason for rejection. Recorded in the audit log and visible to the user.
+          </p>
+          <Field label="Rejection reason (required)">
+            <textarea
+              className={fieldCls + " min-h-[80px] resize-none"}
+              placeholder="e.g. KYC verification incomplete"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </Field>
+          <div className="mt-4 flex justify-end gap-2">
+            <button onClick={() => setRejectTarget(null)} className="rounded-md bg-white/10 px-4 py-1.5 text-xs text-white">Cancel</button>
+            <button onClick={submitRejection} disabled={!rejectionReason.trim()} className="rounded-md bg-rose-500 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40">Reject</button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

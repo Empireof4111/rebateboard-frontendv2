@@ -9,10 +9,10 @@ import {
   Instagram, Youtube, Send, MessageCircle, Mail, Music2, ExternalLink, Check, Clock,
 } from "lucide-react";
 import {
-  useSocialRules, useClaims, submitSocialClaim, type RrSocialId,
-  useStreakConfig, useStreakState,
-  useUserTier, useTiers, getNextTierProgress, useUsageFor, useCaps,
-} from "@/lib/rr-rewards";
+  rrApi,
+  type RrAllConfig, type RrClaim, type RrUserStreak,
+} from "@/lib/rr-api";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard/rewards")({
   head: () => ({
@@ -26,21 +26,11 @@ export const Route = createFileRoute("/dashboard/rewards")({
 
 type RedeemKind = "cash" | "propfirm" | "fees" | "academy";
 
-type RedeemOption = {
-  id: RedeemKind;
-  title: string;
-  tagline: string;
-  rate: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: "success" | "primary" | "warning" | "destructive";
-  cta: string;
-};
-
-const redeemOptions: RedeemOption[] = [
-  { id: "cash", title: "Convert to Cash", tagline: "Sent straight to your wallet", rate: "1,000 RR → $10", icon: TrendingUp, accent: "success", cta: "Convert now" },
-  { id: "propfirm", title: "Prop Firm Discount", tagline: "Apply RR at checkout for any prop account", rate: "500 RR → 25% off", icon: Building2, accent: "primary", cta: "Pick a firm" },
-  { id: "fees", title: "Trading Fee Discount", tagline: "Reduce spreads & commissions on partner brokers", rate: "750 RR → −30% fees · 30 days", icon: Percent, accent: "warning", cta: "Activate" },
-  { id: "academy", title: "Academy & Tools", tagline: "Unlock premium courses, calculators and indicators", rate: "300 RR / unlock", icon: GraduationCap, accent: "primary", cta: "Browse" },
+const redeemOptions = [
+  { id: "cash" as RedeemKind, title: "Convert to Cash", tagline: "Sent straight to your wallet", rate: "1,000 RR → $10", icon: TrendingUp, accent: "success" as const, cta: "Convert now" },
+  { id: "propfirm" as RedeemKind, title: "Prop Firm Discount", tagline: "Apply RR at checkout for any prop account", rate: "500 RR → 25% off", icon: Building2, accent: "primary" as const, cta: "Pick a firm" },
+  { id: "fees" as RedeemKind, title: "Trading Fee Discount", tagline: "Reduce spreads & commissions on partner brokers", rate: "750 RR → −30% fees · 30 days", icon: Percent, accent: "warning" as const, cta: "Activate" },
+  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Unlock premium courses, calculators and indicators", rate: "300 RR / unlock", icon: GraduationCap, accent: "primary" as const, cta: "Browse" },
 ];
 
 const earnList = [
@@ -59,43 +49,49 @@ const propFirms = [
   { name: "MyForexFunds", sizes: ["$10K", "$50K", "$100K"], baseFee: 540 },
 ];
 
+const DEFAULT_CONFIG: RrAllConfig = {
+  earn_rules: [],
+  tiers: [],
+  caps: { dailyCap: 0, weeklyCap: 0, cooldowns: {}, dailyActionLimit: {} },
+  social_rules: [],
+  streak_config: { enabled: false, qualifier: "any_activity", graceHours: 2, milestones: [] },
+  spend_rules: [],
+};
+
 function RewardsPage() {
   const { user, token } = useAuth();
-  const userId = user?.email ?? "@me";
   const rrBalance = Math.round(user?.rrBalance ?? 0);
   const cashValue = (rrBalance / 100).toFixed(2);
 
   const [rrStats, setRrStats] = useState<{ balance: number; earned30d: number; lifetimeEarned: number } | null>(null);
+  const [config, setConfig] = useState<RrAllConfig>(DEFAULT_CONFIG);
+  const [claims, setClaims] = useState<RrClaim[]>([]);
+  const [streak, setStreak] = useState<RrUserStreak>({ id: 0, userId: 0, current: 0, longest: 0, lastDay: "", claimedMilestones: [] });
+  const [redeemOpen, setRedeemOpen] = useState<RedeemKind | null>(null);
 
-  const loadRrStats = useCallback(async () => {
+  const load = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await financeApi.getRrStats(token);
-      if (res.payload) setRrStats(res.payload);
+      const [statsRes, cfgRes, claimsRes, streakRes] = await Promise.allSettled([
+        financeApi.getRrStats(token),
+        rrApi.getConfig(token),
+        rrApi.getClaims(token, 0, 100),
+        rrApi.getStreak(token),
+      ]);
+      if (statsRes.status === "fulfilled" && statsRes.value.payload) setRrStats(statsRes.value.payload);
+      if (cfgRes.status === "fulfilled" && cfgRes.value.payload) setConfig(cfgRes.value.payload);
+      if (claimsRes.status === "fulfilled" && claimsRes.value.payload) setClaims(claimsRes.value.payload.page);
+      if (streakRes.status === "fulfilled" && streakRes.value.payload) setStreak(streakRes.value.payload);
     } catch {}
   }, [token]);
 
-  useEffect(() => { loadRrStats(); }, [loadRrStats]);
+  useEffect(() => { load(); }, [load]);
 
-  // Contributor tier (action-based: reviews + streak + verified)
-  const contribTier = useUserTier(userId);
-  const allTiers = useTiers();
-  const tierProgress = getNextTierProgress(userId);
-  const tier = contribTier.name;
-  const progress = tierProgress ? tierProgress.pct : 100;
-
-  const streakCfg = useStreakConfig();
-  const streak = useStreakState();
+  const streakCfg = config.streak_config;
+  const tiers = [...config.tiers].sort((a, b) => a.rank - b.rank);
   const nextMilestone = streakCfg.milestones
     .filter((m) => m.enabled && m.days > streak.current)
     .sort((a, b) => a.days - b.days)[0];
-
-  // Caps usage (today / week)
-  const caps = useCaps();
-  const usage = useUsageFor(userId);
-  const dailyCap = Math.max(caps.dailyCap, contribTier.dailyCap || 0);
-
-  const [redeemOpen, setRedeemOpen] = useState<RedeemKind | null>(null);
 
   return (
     <div className="space-y-6">
@@ -117,12 +113,8 @@ function RewardsPage() {
               <div className="pb-2 text-sm text-muted-foreground">≈ <b className="text-emerald-400">${cashValue}</b></div>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Pill tone="warning"><Trophy className="h-3 w-3" />{tier} tier</Pill>
-              <Pill tone="success"><Flame className="h-3 w-3" />{streak.current}-day streak</Pill>
-              <span className="text-[11px] text-muted-foreground">{tierProgress ? `Next: ${tierProgress.next.name}` : "Top tier reached"}</span>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500" style={{ width: `${progress}%` }} />
+              <Pill tone="warning"><Flame className="h-3 w-3" />{streak.current}-day streak</Pill>
+              <Pill tone="success">Longest: {streak.longest}d</Pill>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <button onClick={() => setRedeemOpen("cash")} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white">
@@ -143,121 +135,53 @@ function RewardsPage() {
         </div>
       </div>
 
-      {/* Contributor Tier — action-based progression */}
-      <Panel
-        title="Contributor tier"
-        action={<Pill tone="primary"><Trophy className="h-3 w-3" />{contribTier.name} · ×{contribTier.multiplier.toFixed(2)}</Pill>}
-      >
-        <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+      {/* Contributor Tiers */}
+      {tiers.length > 0 && (
+        <Panel title="Contributor tiers" action={<Pill tone="primary"><Trophy className="h-3 w-3" />How you level up</Pill>}>
+          <p className="mb-3 text-[12px] text-muted-foreground">
+            Tiers are earned by <b>real contribution</b> — approved reviews, daily streaks and verifying your account.
+            Higher tiers earn more RR per action and unlock exclusive spend rewards.
+          </p>
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(tiers.length, 5)}, 1fr)` }}>
+            {tiers.map((t) => (
+              <div key={t.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-center text-[10px]">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{t.name}</div>
+                <div className="mt-1 font-mono text-[11px] text-white">×{t.multiplier.toFixed(2)}</div>
+                <div className="text-[9px] text-muted-foreground">{t.dailyCap || "∞"}/d</div>
+                <div className="mt-1 text-[9px] text-muted-foreground">{t.perks.slice(0, 1).join("")}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {/* Streak Center */}
+      {streakCfg.enabled && (
+        <Panel title="Streak Center" action={<Pill tone="warning"><Flame className="h-3 w-3" />{streak.current}-day streak · longest {streak.longest}d</Pill>}>
           <div>
             <p className="text-[12px] text-muted-foreground">
-              Tiers are earned by <b>real contribution</b> — approved reviews, daily streaks and verifying your account — not by spending RR. The higher your tier, the more RR you earn per action and the more rewards you can unlock.
+              Show up every day ({streakCfg.qualifier === "trade_log" ? "log a trade" : streakCfg.qualifier === "login" ? "log in" : "log in or log a trade"}) to grow your streak. Hit a milestone, RR auto-credits to your wallet.
+              {nextMilestone && (
+                <> Next reward: <b className="text-amber-300">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({nextMilestone.days - streak.current} to go).</>
+              )}
             </p>
-
-            {/* Tier ladder */}
-            <div className="mt-3 grid grid-cols-5 gap-1.5">
-              {allTiers.map((t) => {
-                const reached = t.rank <= contribTier.rank;
-                const current = t.rank === contribTier.rank;
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {streakCfg.milestones.filter((m) => m.enabled).map((m) => {
+                const claimed = (streak.claimedMilestones ?? []).includes(m.id);
+                const pct = Math.min(100, (streak.current / m.days) * 100);
                 return (
-                  <div key={t.id} className={`rounded-xl border p-2 text-center text-[10px] ${current ? "border-fuchsia-400/50 bg-fuchsia-500/10" : reached ? "border-emerald-400/30 bg-emerald-500/5" : "border-white/10 bg-white/[0.03]"}`}>
-                    <div className={`text-[9px] font-bold uppercase tracking-wider ${current ? "text-fuchsia-300" : reached ? "text-emerald-300" : "text-muted-foreground"}`}>{t.name}</div>
-                    <div className="mt-1 font-mono text-[11px] text-white">×{t.multiplier.toFixed(2)}</div>
-                    <div className="text-[9px] text-muted-foreground">{t.dailyCap || "∞"}/d</div>
+                  <div key={m.id} className={`rounded-xl border p-3 ${claimed ? "border-emerald-400/30 bg-emerald-500/5" : "border-white/10 bg-white/[0.04]"}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-white">{m.label}</div>
+                      {claimed ? <Pill tone="success"><CheckCircle2 className="h-3 w-3" />Claimed</Pill> : <Pill tone="warning">{m.days}d</Pill>}
+                    </div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">+{m.reward} RR on day {m.days}</div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
+                      <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : "bg-gradient-to-r from-amber-400 to-fuchsia-500"}`} style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
                 );
               })}
-            </div>
-
-            {tierProgress ? (
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Progress to <b className="text-white">{tierProgress.next.name}</b></span>
-                  <span className="font-mono text-fuchsia-300">{tierProgress.pct}%</span>
-                </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500" style={{ width: `${tierProgress.pct}%` }} />
-                </div>
-                {tierProgress.missing.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {tierProgress.missing.map((m) => (
-                      <span key={m} className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-amber-200 ring-1 ring-amber-400/30">Need: {m}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-xl bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-300 ring-1 ring-emerald-400/30">
-                You've reached the top tier. Maximum earn rate active.
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your current perks</div>
-            <ul className="mt-2 space-y-1.5">
-              {contribTier.perks.map((p) => (
-                <li key={p} className="flex items-start gap-2 text-[12px] text-white/90">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Daily cap usage */}
-            <div className="mt-4 border-t border-white/10 pt-3">
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
-                <span>Today's earn cap</span>
-                <span className="font-mono text-white/85">{usage.dayTotal} / {dailyCap || "∞"} RR</span>
-              </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5">
-                <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: dailyCap > 0 ? `${Math.min(100, (usage.dayTotal / dailyCap) * 100)}%` : "0%" }} />
-              </div>
-              {caps.weeklyCap > 0 && (
-                <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>This week</span>
-                  <span className="font-mono">{usage.weekTotal} / {caps.weeklyCap} RR</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </Panel>
-
-      {/* Streak Center — admin-controlled milestones */}
-      {streakCfg.enabled && (
-        <Panel
-          title="Streak Center"
-          action={<Pill tone="warning"><Flame className="h-3 w-3" />{streak.current}-day streak · longest {streak.longest}d</Pill>}
-        >
-          <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-            <div>
-              <p className="text-[12px] text-muted-foreground">
-                Show up every day ({streakCfg.qualifier === "trade_log" ? "log a trade" : streakCfg.qualifier === "login" ? "log in" : "log in or log a trade"}) to grow your streak. Hit a milestone, RR auto-credits to your wallet.
-                {nextMilestone && (
-                  <> Next reward: <b className="text-amber-300">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({nextMilestone.days - streak.current} to go).</>
-                )}
-              </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {streakCfg.milestones.filter((m) => m.enabled).map((m) => {
-                  const claimed = streak.claimedMilestones.includes(m.id);
-                  const pct = Math.min(100, (streak.current / m.days) * 100);
-                  return (
-                    <div key={m.id} className={`rounded-xl border p-3 ${claimed ? "border-emerald-400/30 bg-emerald-500/5" : "border-white/10 bg-white/[0.04]"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm font-semibold text-white">{m.label}</div>
-                        {claimed
-                          ? <Pill tone="success"><CheckCircle2 className="h-3 w-3" />Claimed</Pill>
-                          : <Pill tone="warning">{m.days}d</Pill>}
-                      </div>
-                      <div className="mt-1 text-[11px] text-muted-foreground">+{m.reward} RR on day {m.days}</div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
-                        <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : "bg-gradient-to-r from-amber-400 to-fuchsia-500"}`} style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
         </Panel>
@@ -270,22 +194,14 @@ function RewardsPage() {
             const Icon = opt.icon;
             const ring = opt.accent === "success" ? "ring-emerald-400/30" : opt.accent === "warning" ? "ring-amber-400/30" : "ring-primary/30";
             return (
-              <button
-                key={opt.id}
-                onClick={() => setRedeemOpen(opt.id)}
+              <button key={opt.id} onClick={() => setRedeemOpen(opt.id)}
                 className={`group rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.07] ${ring} hover:ring-1`}
               >
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5">
-                  <Icon className="h-5 w-5 text-accent" />
-                </div>
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Icon className="h-5 w-5 text-accent" /></div>
                 <div className="mt-3 text-sm font-semibold text-white">{opt.title}</div>
                 <p className="mt-1 text-[11px] text-muted-foreground">{opt.tagline}</p>
-                <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[10px] font-medium text-white">
-                  {opt.rate}
-                </div>
-                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-accent transition group-hover:gap-2">
-                  {opt.cta} <ArrowRight className="h-3 w-3" />
-                </div>
+                <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[10px] font-medium text-white">{opt.rate}</div>
+                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-accent transition group-hover:gap-2">{opt.cta} <ArrowRight className="h-3 w-3" /></div>
               </button>
             );
           })}
@@ -307,7 +223,14 @@ function RewardsPage() {
         </div>
       </Panel>
 
-      <FollowAndEarnPanel />
+      <FollowAndEarnPanel
+        socialRules={config.social_rules}
+        claims={claims}
+        onClaimSubmitted={(claim) => setClaims((prev) => {
+          const i = prev.findIndex((c) => c.id === claim.id);
+          return i >= 0 ? prev.map((c) => c.id === claim.id ? claim : c) : [...prev, claim];
+        })}
+      />
 
       <Panel title="Smart suggestion" action={<Pill tone="primary"><Zap className="h-3 w-3" />AI</Pill>}>
         <p className="text-sm text-white/85">
@@ -325,6 +248,155 @@ function RewardsPage() {
     </div>
   );
 }
+
+/* ============================================================ Follow & Earn */
+
+const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  follow_instagram: Instagram,
+  follow_twitter: Sparkles,
+  subscribe_youtube: Youtube,
+  follow_tiktok: Music2,
+  join_telegram: Send,
+  join_discord: MessageCircle,
+  subscribe_newsletter: Mail,
+};
+
+function FollowAndEarnPanel({
+  socialRules,
+  claims,
+  onClaimSubmitted,
+}: {
+  socialRules: RrAllConfig["social_rules"];
+  claims: RrClaim[];
+  onClaimSubmitted: (c: RrClaim) => void;
+}) {
+  const social = socialRules.filter((r) => r.enabled);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  if (social.length === 0) return null;
+
+  return (
+    <>
+      <Panel title="Follow & earn — one-time RR rewards" action={<Pill tone="primary"><Sparkles className="h-3 w-3" />Once per account</Pill>}>
+        <p className="mb-3 text-[12px] text-muted-foreground">
+          Follow our official channels to unlock RR. Each reward is paid <b>once per account</b> after we verify your follow/subscribe.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {social.map((r) => {
+            const Icon = SOCIAL_ICONS[r.id] ?? Sparkles;
+            const claim = claims.find((c) => c.socialId === r.id);
+            const claimed = claim?.status === "approved";
+            const pending = claim?.status === "pending";
+            return (
+              <div key={r.id} className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex items-start justify-between">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <Pill tone="warning"><Gift className="h-3 w-3" />+{r.reward} RR</Pill>
+                </div>
+                <div className="mt-3 text-sm font-semibold text-white">{r.label}</div>
+                <p className="mt-1 flex-1 text-[11px] text-muted-foreground">{r.description}</p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 hover:underline">
+                    {r.handle} <ExternalLink className="h-3 w-3" />
+                  </a>
+                  {claimed ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">
+                      <Check className="h-3 w-3" /> Claimed
+                    </span>
+                  ) : pending ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-300 ring-1 ring-amber-400/30">
+                      <Clock className="h-3 w-3" /> Verifying
+                    </span>
+                  ) : (
+                    <button onClick={() => setOpenId(r.id)} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[11px] font-bold text-white">
+                      Claim
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+
+      {openId && (
+        <ClaimSocialModal
+          socialId={openId}
+          socialRules={social}
+          onClose={() => setOpenId(null)}
+          onSubmitted={(claim) => { onClaimSubmitted(claim); setOpenId(null); }}
+        />
+      )}
+    </>
+  );
+}
+
+function ClaimSocialModal({ socialId, socialRules, onClose, onSubmitted }: {
+  socialId: string;
+  socialRules: RrAllConfig["social_rules"];
+  onClose: () => void;
+  onSubmitted: (c: RrClaim) => void;
+}) {
+  const { token } = useAuth();
+  const rule = socialRules.find((r) => r.id === socialId);
+  const [proof, setProof] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  if (!rule) return null;
+
+  const submit = async () => {
+    if (!token || !proof.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await rrApi.submitClaim(token, socialId, proof.trim());
+      if (res.payload) { onSubmitted(res.payload); setDone(true); }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not submit claim");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <ModalShell title={done ? "Submitted!" : `Claim ${rule.reward} RR`} onClose={onClose}>
+      {done ? (
+        <Success text="We'll verify your follow within 24 hours and credit your wallet automatically." onClose={onClose} />
+      ) : (
+        <div className="space-y-3 text-sm">
+          <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+            <div className="text-[11px] uppercase text-muted-foreground">Step 1 — Follow our channel</div>
+            <a href={rule.url} target="_blank" rel="noreferrer"
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-fuchsia-300 hover:underline">
+              {rule.handle} <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+          <div>
+            <label className="text-[11px] uppercase text-muted-foreground">
+              Step 2 — Your {rule.verification === "email" ? "email" : "handle / username"}
+            </label>
+            <input value={proof} onChange={(e) => { setProof(e.target.value); setError(null); }}
+              placeholder={rule.verification === "email" ? "you@example.com" : "@yourhandle"}
+              className="input mt-1" />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              We check your account followed/subscribed to <b>{rule.handle}</b> before crediting RR.
+            </p>
+          </div>
+          {error && <div className="rounded-lg bg-rose-500/10 px-3 py-2 text-[11px] text-rose-300 ring-1 ring-rose-400/30">{error}</div>}
+          <button onClick={submit} disabled={!proof.trim() || submitting}
+            className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+            {submitting ? "Submitting…" : "Submit for verification"}
+          </button>
+          <style>{`.input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);padding:10px 12px;font-size:14px;color:white;outline:none}`}</style>
+        </div>
+      )}
+    </ModalShell>
+  );
+}
+
+/* ============================================================ Shared UI */
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
@@ -350,9 +422,7 @@ function RedeemModal({ kind, rrBalance, onClose }: { kind: RedeemKind; rrBalance
       <ModalShell title="Convert RR to Cash" onClose={onClose}>
         {done ? <Success text={`$${cash} credited to wallet.`} onClose={onClose} /> : (
           <div className="space-y-3">
-            <Field label="RR amount">
-              <input value={rr} onChange={(e) => setRr(e.target.value)} className="input" />
-            </Field>
+            <Field label="RR amount"><input value={rr} onChange={(e) => setRr(e.target.value)} className="input" /></Field>
             <div className="rounded-xl bg-emerald-500/10 p-4 ring-1 ring-emerald-400/30">
               <div className="text-[11px] uppercase text-emerald-300">You'll receive</div>
               <div className="mt-1 text-2xl font-bold text-white">${cash}</div>
@@ -372,9 +442,7 @@ function RedeemModal({ kind, rrBalance, onClose }: { kind: RedeemKind; rrBalance
     const [firm, setFirm] = useState(propFirms[0].name);
     const [size, setSize] = useState(propFirms[0].sizes[2]);
     const selected = propFirms.find((f) => f.name === firm)!;
-    const discount = 0.25;
-    const rrCost = 500;
-    const finalPrice = (selected.baseFee * (1 - discount)).toFixed(2);
+    const finalPrice = (selected.baseFee * 0.75).toFixed(2);
     return (
       <ModalShell title="Buy Prop Firm with RR Discount" onClose={onClose}>
         {done ? <Success text={`Discount applied. Continue to ${firm} checkout.`} onClose={onClose} /> : (
@@ -391,7 +459,7 @@ function RedeemModal({ kind, rrBalance, onClose }: { kind: RedeemKind; rrBalance
             </Field>
             <div className="space-y-1 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs">
               <Row label="Base price" value={`$${selected.baseFee}`} />
-              <Row label="RR discount" value={`−25% (${rrCost} RR)`} />
+              <Row label="RR discount" value="−25% (500 RR)" />
               <Row label="You pay" value={`$${finalPrice}`} bold />
             </div>
             <button onClick={() => setDone(true)} className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white">
@@ -413,11 +481,6 @@ function RedeemModal({ kind, rrBalance, onClose }: { kind: RedeemKind; rrBalance
               <div className="mt-1 text-2xl font-bold text-white">750 RR</div>
               <div className="mt-1 text-[11px] text-amber-300">Reduces spreads & commissions by 30% for 30 days</div>
             </div>
-            <ul className="space-y-1.5 text-[11px] text-muted-foreground">
-              <li>• Works on Exness, IC Markets, Pepperstone</li>
-              <li>• Stacks with existing cashback</li>
-              <li>• Auto-applies on linked accounts</li>
-            </ul>
             <button onClick={() => setDone(true)} className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white">
               Activate for 750 RR
             </button>
@@ -476,152 +539,5 @@ function Success({ text, onClose }: { text: string; onClose: () => void }) {
       <p className="text-sm text-white">{text}</p>
       <button onClick={onClose} className="rounded-full bg-white/10 px-4 py-1.5 text-xs text-white">Done</button>
     </div>
-  );
-}
-
-/* ============================================================
- * Follow & Earn — admin-controlled, once per user
- * ============================================================ */
-
-const SOCIAL_ICONS: Record<RrSocialId, React.ComponentType<{ className?: string }>> = {
-  follow_instagram: Instagram,
-  follow_twitter: Sparkles,
-  subscribe_youtube: Youtube,
-  follow_tiktok: Music2,
-  join_telegram: Send,
-  join_discord: MessageCircle,
-  subscribe_newsletter: Mail,
-};
-
-function FollowAndEarnPanel() {
-  const social = useSocialRules().filter((r) => r.enabled);
-  const claims = useClaims();
-  const { user } = useAuth();
-  const userId = user?.email ?? "@me";
-  const [openId, setOpenId] = useState<RrSocialId | null>(null);
-
-  if (social.length === 0) return null;
-
-  return (
-    <>
-      <Panel
-        title="Follow & earn — one-time RR rewards"
-        action={<Pill tone="primary"><Sparkles className="h-3 w-3" />Once per account</Pill>}
-      >
-        <p className="mb-3 text-[12px] text-muted-foreground">
-          Follow our official channels to unlock RR. Each reward is paid <b>once per account</b> after we verify your follow / subscribe.
-        </p>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {social.map((r) => {
-            const Icon = SOCIAL_ICONS[r.id] ?? Sparkles;
-            const claim = claims.find((c) => c.socialId === r.id && c.userId === userId);
-            const claimed = claim?.status === "approved";
-            const pending = claim?.status === "pending";
-            return (
-              <div key={r.id} className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <div className="flex items-start justify-between">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <Pill tone="warning"><Gift className="h-3 w-3" />+{r.reward} RR</Pill>
-                </div>
-                <div className="mt-3 text-sm font-semibold text-white">{r.label}</div>
-                <p className="mt-1 flex-1 text-[11px] text-muted-foreground">{r.description}</p>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 hover:underline">
-                    {r.handle} <ExternalLink className="h-3 w-3" />
-                  </a>
-                  {claimed ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">
-                      <Check className="h-3 w-3" /> Claimed
-                    </span>
-                  ) : pending ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-300 ring-1 ring-amber-400/30">
-                      <Clock className="h-3 w-3" /> Verifying
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => setOpenId(r.id)}
-                      className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[11px] font-bold text-white"
-                    >
-                      Claim
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Panel>
-
-      {openId && (
-        <ClaimSocialModal
-          socialId={openId}
-          userId={userId}
-          onClose={() => setOpenId(null)}
-        />
-      )}
-    </>
-  );
-}
-
-function ClaimSocialModal({ socialId, userId, onClose }: { socialId: RrSocialId; userId: string; onClose: () => void }) {
-  const social = useSocialRules();
-  const rule = social.find((r) => r.id === socialId);
-  const [proof, setProof] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-  if (!rule) return null;
-
-  const submit = () => {
-    const res = submitSocialClaim({ userId, socialId, proof });
-    if (!res.ok) { setError(res.reason ?? "Could not submit"); return; }
-    setDone(true);
-  };
-
-  return (
-    <ModalShell title={done ? "Submitted!" : `Claim ${rule.reward} RR`} onClose={onClose}>
-      {done ? (
-        <Success
-          text="We'll verify your follow within 24 hours and credit your wallet automatically."
-          onClose={onClose}
-        />
-      ) : (
-        <div className="space-y-3 text-sm">
-          <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-            <div className="text-[11px] uppercase text-muted-foreground">Step 1 — Follow our channel</div>
-            <a
-              href={rule.url} target="_blank" rel="noreferrer"
-              className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-fuchsia-300 hover:underline"
-            >
-              {rule.handle} <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-          <div>
-            <label className="text-[11px] uppercase text-muted-foreground">
-              Step 2 — Your {rule.verification === "email" ? "email" : "handle / username"}
-            </label>
-            <input
-              value={proof}
-              onChange={(e) => { setProof(e.target.value); setError(null); }}
-              placeholder={rule.verification === "email" ? "you@example.com" : "@yourhandle"}
-              className="input mt-1"
-            />
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              We check your account followed/subscribed to <b>{rule.handle}</b> before crediting RR. Cheating disqualifies your wallet.
-            </p>
-          </div>
-          {error && <div className="rounded-lg bg-rose-500/10 px-3 py-2 text-[11px] text-rose-300 ring-1 ring-rose-400/30">{error}</div>}
-          <button
-            onClick={submit}
-            disabled={!proof.trim()}
-            className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            Submit for verification
-          </button>
-          <style>{`.input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);padding:10px 12px;font-size:14px;color:white;outline:none}`}</style>
-        </div>
-      )}
-    </ModalShell>
   );
 }

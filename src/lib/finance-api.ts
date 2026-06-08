@@ -350,9 +350,9 @@ export const financeApi = {
     return apiRequest<PaginatedResult<WithdrawalRequest>>(`/wallet/withdrawal-request/list?${q}`, { token });
   },
 
-  // Admin: update withdrawal status (ACTIVE=approve, DECLINED=reject, PAID-like)
-  updateWithdrawalStatus(token: string, id: number, status: string): Promise<ApiResponse<WithdrawalRequest>> {
-    return apiRequest<WithdrawalRequest>(`/wallet/withdrawal-request/status/${id}?status=${status}`, { method: "PUT", token });
+  // Admin: update withdrawal status — rejectionReason required when status is DECLINED or CANCELED
+  updateWithdrawalStatus(token: string, id: number, body: { status: string; rejectionReason?: string }): Promise<ApiResponse<WithdrawalRequest>> {
+    return apiRequest<WithdrawalRequest>(`/wallet/withdrawal-request/status/${id}`, { method: "PUT", body, token });
   },
 
   // Admin: update a wallet status (ACTIVE/INACTIVE)
@@ -549,5 +549,29 @@ export const financeApi = {
 
   getFinanceAnalytics(token: string): Promise<ApiResponse<AdminFinanceStats & { netFlow: number }>> {
     return apiRequest("/analytic/finance", { token });
+  },
+
+  // ─── TRT Analytics ───────────────────────────────────────────────────────────
+
+  getTrtAnalytics(token: string): Promise<ApiResponse<{
+    totalSpend: number;
+    totalIncome: number;
+    net: number;
+    trueRoi: number;
+    transactions: number;
+    avgTxSize: number;
+    activeAccounts: number;
+    funded: number;
+    spendByBrand: { brand: string; spend: number; income: number; net: number }[];
+    categoryMix: { category: string; amount: number }[];
+  }>> {
+    return apiRequest("/analytic/trt", { token });
+  },
+
+  // ─── RR (Reward Points) ───────────────────────────────────────────────────────
+
+  // Admin: adjust a user's RR balance (CREDIT/DEBIT/UPDATE)
+  adjustRrBalance(token: string, body: { userId: number; amount: number; type: string; narration?: string }): Promise<ApiResponse<Wallet>> {
+    return apiRequest<Wallet>("/wallet/adjustment-rr", { method: "POST", body, token });
   },
 };

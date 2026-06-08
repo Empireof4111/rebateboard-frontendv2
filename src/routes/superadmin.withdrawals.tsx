@@ -21,7 +21,9 @@ function WithdrawalsPage() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [confirm, setConfirm] = useState<{ w: WithdrawalRequest; action: "approve" | "reject" | "pay" } | null>(null);
+  const [confirm, setConfirm] = useState<{ w: WithdrawalRequest; action: "approve" | "pay" } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<WithdrawalRequest | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [viewing, setViewing] = useState<WithdrawalRequest | null>(null);
 
   const loadWithdrawals = useCallback(async (pageNum = 0, statusFilter: StatusFilter = filter) => {
@@ -52,18 +54,31 @@ function WithdrawalsPage() {
     loadWithdrawals(0, f);
   };
 
-  const apply = async (w: WithdrawalRequest, action: "approve" | "reject" | "pay") => {
+  const apply = async (w: WithdrawalRequest, action: "approve" | "pay") => {
     if (!token) return;
-    // Backend status map: ACTIVE = approved, DECLINED = rejected
-    const statusMap = { approve: "ACTIVE", reject: "DECLINED", pay: "APPROVED" } as const;
+    const statusMap = { approve: "ACTIVE", pay: "APPROVED" } as const;
     try {
-      await financeApi.updateWithdrawalStatus(token, w.id, statusMap[action]);
-      toast.success(`Withdrawal ${w.id} ${action === "pay" ? "marked paid" : action + "d"}`);
+      await financeApi.updateWithdrawalStatus(token, w.id, { status: statusMap[action] });
+      toast.success(`Withdrawal ${w.id} ${action === "pay" ? "marked paid" : "approved"}`);
       loadWithdrawals(0, filter);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Action failed");
     }
     setConfirm(null);
+  };
+
+  const applyRejection = async () => {
+    if (!token || !rejectTarget) return;
+    if (!rejectionReason.trim()) { toast.error("Rejection reason is required"); return; }
+    try {
+      await financeApi.updateWithdrawalStatus(token, rejectTarget.id, { status: "DECLINED", rejectionReason: rejectionReason.trim() });
+      toast.success(`Withdrawal #${rejectTarget.id} rejected`);
+      loadWithdrawals(0, filter);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Rejection failed");
+    }
+    setRejectTarget(null);
+    setRejectionReason("");
   };
 
   const filtered = useMemo(() =>
@@ -135,7 +150,7 @@ function WithdrawalsPage() {
                     {w.status === "PENDING" && (
                       <>
                         <button onClick={() => setConfirm({ w, action: "approve" })} title="Approve" className="grid h-7 w-7 place-items-center rounded-md bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30"><Check className="h-3 w-3" /></button>
-                        <button onClick={() => setConfirm({ w, action: "reject" })} title="Reject" className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30"><X className="h-3 w-3" /></button>
+                        <button onClick={() => { setRejectTarget(w); setRejectionReason(""); }} title="Reject" className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30"><X className="h-3 w-3" /></button>
                       </>
                     )}
                     {w.status === "ACTIVE" && (
@@ -164,17 +179,35 @@ function WithdrawalsPage() {
         onConfirm={() => confirm && apply(confirm.w, confirm.action)}
         title={
           confirm?.action === "approve" ? `Approve $${Number(confirm.w.amount).toLocaleString()} withdrawal?`
-          : confirm?.action === "reject" ? `Reject withdrawal #${confirm?.w.id}?`
           : `Mark withdrawal #${confirm?.w.id} as paid?`
         }
         message={
           confirm?.action === "approve" ? "Moves the request to approved. Mark as paid once the transfer is confirmed."
-          : confirm?.action === "reject" ? "Funds remain in the user's wallet. Notify the user if needed."
           : "Confirms the transfer is complete and marks this withdrawal as fully paid."
         }
-        confirmText={confirm?.action === "reject" ? "Reject" : confirm?.action === "pay" ? "Mark paid" : "Approve"}
-        tone={confirm?.action === "reject" ? "danger" : "primary"}
+        confirmText={confirm?.action === "pay" ? "Mark paid" : "Approve"}
+        tone="primary"
       />
+
+      {rejectTarget && (
+        <Modal open onClose={() => setRejectTarget(null)} title={`Reject withdrawal #${rejectTarget.id}`} size="sm">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Provide a reason for rejection. This is shown to the user and recorded in the audit log.
+          </p>
+          <Field label="Rejection reason (required)">
+            <textarea
+              className={fieldCls + " min-h-[80px] resize-none"}
+              placeholder="e.g. KYC verification required before withdrawal"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </Field>
+          <div className="mt-4 flex justify-end gap-2">
+            <button onClick={() => setRejectTarget(null)} className="rounded-md bg-white/10 px-4 py-1.5 text-xs text-white">Cancel</button>
+            <button onClick={applyRejection} disabled={!rejectionReason.trim()} className="rounded-md bg-rose-500 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40">Reject</button>
+          </div>
+        </Modal>
+      )}
 
       {viewing && (
         <Modal open onClose={() => setViewing(null)} title={`Withdrawal #${viewing.id}`} size="md">

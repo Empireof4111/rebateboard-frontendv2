@@ -1,29 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Sparkles, RotateCcw, Plus, Trash2, GraduationCap, BookOpen, Star, UserPlus, Flag,
   Instagram, Youtube, Send, MessageCircle, Mail, Coins, ShieldCheck, Check, X,
-  TrendingUp, Users, Gift, Activity, ExternalLink, Music2, Flame,
+  TrendingUp, Users, Gift, Activity, ExternalLink, Music2, Flame, Save, RefreshCw,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard, DataTable, Pill } from "@/components/superadmin/AdminUI";
-import { useAuth } from "@/lib/auth";
-import { financeApi, type WalletTransaction, type Wallet } from "@/lib/finance-api";
+import { toast } from "@/components/superadmin/AdminActions";
 import {
-  useRrRules, updateRrRule, resetRrRules, type RrActionId,
-  useSocialRules, updateSocialRule, resetSocialRules, type RrSocialId,
-  useSpendRules, updateSpendRule, addSpendRule, removeSpendRule, resetSpendRules,
-  useClaims, reviewClaim,
-  useRrAnalytics,
-  useStreakConfig, updateStreakConfig, updateStreakMilestone, addStreakMilestone, removeStreakMilestone, resetStreakConfig,
-  useTiers, updateTier, resetTiers,
-  useCaps, updateCaps, resetCaps,
-} from "@/lib/rr-rewards";
+  rrApi,
+  type RrAllConfig, type RrRule, type RrTier, type RrCaps,
+  type RrSocialRule, type RrStreakConfig, type RrSpendRule, type RrClaim, type RrStats,
+} from "@/lib/rr-api";
+import { useAuth } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/superadmin/rr")({
   head: () => ({
     meta: [
       { title: "RR Control Center — Superadmin" },
-      { name: "description", content: "Single control room for the entire RebateRewards economy: earn, social tasks, spend, ledger and analytics." },
+      { name: "description", content: "Single control room for the entire RebateRewards economy." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -32,83 +28,186 @@ export const Route = createFileRoute("/superadmin/rr")({
 
 type Tab = "overview" | "earn" | "tiers" | "caps" | "social" | "streaks" | "spend" | "claims" | "ledger";
 
+const DEFAULT_CONFIG: RrAllConfig = {
+  earn_rules: [],
+  tiers: [],
+  caps: { dailyCap: 0, weeklyCap: 0, cooldowns: {}, dailyActionLimit: {} },
+  social_rules: [],
+  streak_config: { enabled: false, qualifier: "any_activity", graceHours: 2, milestones: [] },
+  spend_rules: [],
+};
+
 function RrControlCenter() {
+  const { token } = useAuth();
+  const [config, setConfig] = useState<RrAllConfig>(DEFAULT_CONFIG);
+  const [stats, setStats] = useState<RrStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
-  const a = useRrAnalytics();
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const [cfgRes, statsRes] = await Promise.allSettled([
+        rrApi.getConfig(token),
+        rrApi.getStats(token),
+      ]);
+      if (cfgRes.status === "fulfilled" && cfgRes.value.payload) setConfig(cfgRes.value.payload);
+      if (statsRes.status === "fulfilled" && statsRes.value.payload) setStats(statsRes.value.payload);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to load RR config");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveKey = useCallback(async (key: keyof RrAllConfig, value: unknown) => {
+    if (!token) return;
+    setSaving(key);
+    try {
+      const res = await rrApi.updateConfig(token, key, value);
+      if (res.payload !== undefined) {
+        setConfig((prev) => ({ ...prev, [key]: res.payload }));
+        toast.success("Config saved");
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Save failed");
+    } finally {
+      setSaving(null);
+    }
+  }, [token]);
+
+  const resetKey = useCallback(async (key: keyof RrAllConfig) => {
+    if (!token || !confirm(`Reset ${key} to defaults?`)) return;
+    setSaving(key);
+    try {
+      const res = await rrApi.resetConfig(token, key);
+      if (res.payload !== undefined) {
+        setConfig((prev) => ({ ...prev, [key]: res.payload }));
+        toast.success("Reset to defaults");
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Reset failed");
+    } finally {
+      setSaving(null);
+    }
+  }, [token]);
 
   return (
     <div>
       <PageHeader
         title="RR Control Center"
         subtitle="One place to manage everything related to RebateRewards — earn, tiers, caps, spend, social tasks, claims, ledger and analytics."
+        actions={
+          <button onClick={load} className="grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10">
+            <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label="RR circulating" value={fmt(a.circulating)} delta="user wallet" tone="up" />
-        <StatCard label="Earned (lifetime)" value={fmt(a.earnedTotal)} delta="+8% MoM" tone="up" />
-        <StatCard label="Redeemed" value={fmt(a.redeemedTotal)} delta="+5% MoM" tone="up" />
-        <StatCard label="Social offered/user" value={`${a.socialRewardsOffered} RR`} delta={`${a.socialRulesActive} active`} tone="flat" />
-        <StatCard label="Streak rewards/user" value={`${a.streakRewardsOffered} RR`} delta={`${a.streakActiveUsers} active · max ${a.streakLongestActive}d`} tone="up" />
+        <StatCard label="RR circulating" value={fmt(stats?.totalRrCirculating ?? 0)} delta="user wallets" tone="up" />
+        <StatCard label="Total claims" value={fmt(stats?.totalClaims ?? 0)} delta="all time" tone="up" />
+        <StatCard label="Approved" value={fmt(stats?.approvedClaims ?? 0)} delta="credited" tone="up" />
+        <StatCard label="Pending review" value={fmt(stats?.pendingClaims ?? 0)} delta={stats?.pendingClaims ? "action needed" : "clear"} tone={stats?.pendingClaims ? "down" : "up"} />
+        <StatCard label="Users with RR" value={fmt(stats?.totalUsersWithRr ?? 0)} delta="active holders" tone="flat" />
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {(["overview","earn","tiers","caps","social","streaks","spend","claims","ledger"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
+        {(["overview", "earn", "tiers", "caps", "social", "streaks", "spend", "claims", "ledger"] as Tab[]).map((t) => (
+          <button key={t} onClick={() => setTab(t)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${
-              tab === t
-                ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40"
-                : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
+              tab === t ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
             }`}
           >
-            {t === "claims" ? `Claims${a.pendingClaims ? ` (${a.pendingClaims})` : ""}` : t}
+            {t === "claims" && (stats?.pendingClaims ?? 0) > 0 ? `Claims (${stats!.pendingClaims})` : t}
           </button>
         ))}
       </div>
 
-      {tab === "overview" && <OverviewPanel />}
-      {tab === "earn" && <EarnRulesPanel />}
-      {tab === "tiers" && <TiersPanel />}
-      {tab === "caps" && <CapsPanel />}
-      {tab === "social" && <SocialRulesPanel />}
-      {tab === "streaks" && <StreaksPanel />}
-      {tab === "spend" && <SpendRulesPanel />}
-      {tab === "claims" && <ClaimsPanel />}
-      {tab === "ledger" && <LedgerPanel />}
+      {loading ? (
+        <div className="py-16 text-center text-sm text-muted-foreground">Loading RR config…</div>
+      ) : (
+        <>
+          {tab === "overview" && <OverviewPanel stats={stats} config={config} />}
+          {tab === "earn" && <EarnRulesPanel rules={config.earn_rules} saving={saving === "earn_rules"} onSave={(v) => saveKey("earn_rules", v)} onReset={() => resetKey("earn_rules")} />}
+          {tab === "tiers" && <TiersPanel tiers={config.tiers} saving={saving === "tiers"} onSave={(v) => saveKey("tiers", v)} onReset={() => resetKey("tiers")} />}
+          {tab === "caps" && <CapsPanel caps={config.caps} saving={saving === "caps"} onSave={(v) => saveKey("caps", v)} onReset={() => resetKey("caps")} />}
+          {tab === "social" && <SocialRulesPanel rules={config.social_rules} saving={saving === "social_rules"} onSave={(v) => saveKey("social_rules", v)} onReset={() => resetKey("social_rules")} />}
+          {tab === "streaks" && <StreaksPanel cfg={config.streak_config} stats={stats} saving={saving === "streak_config"} onSave={(v) => saveKey("streak_config", v)} onReset={() => resetKey("streak_config")} />}
+          {tab === "spend" && <SpendRulesPanel rules={config.spend_rules} saving={saving === "spend_rules"} onSave={(v) => saveKey("spend_rules", v)} onReset={() => resetKey("spend_rules")} />}
+          {tab === "claims" && <ClaimsPanel socialRules={config.social_rules} />}
+          {tab === "ledger" && <LedgerPanel />}
+        </>
+      )}
     </div>
   );
 }
 
 const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
-/* ============================================================ Overview */
+/* ============================================================ Shared sub-components */
 
-function OverviewPanel() {
-  const a = useRrAnalytics();
+function Note({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Panel title="Economy snapshot">
-        <div className="grid grid-cols-2 gap-3">
-          <Mini icon={Activity} label="Active earn rules" value={String(a.earnRulesActive)} />
-          <Mini icon={Sparkles} label="Active social tasks" value={String(a.socialRulesActive)} />
-          <Mini icon={Coins} label="Active spend rules" value={String(a.spendRulesActive)} />
-          <Mini icon={Users} label="Unique claimers" value={String(a.uniqueClaimers)} />
-          <Mini icon={Gift} label="Approved claims" value={String(a.approvedClaims)} />
-          <Mini icon={ShieldCheck} label="Pending review" value={String(a.pendingClaims)} tone={a.pendingClaims ? "warn" : undefined} />
-        </div>
-      </Panel>
-
-      <Panel title="How it works">
-        <ol className="space-y-2 text-sm text-white/85">
-          <li><b className="text-fuchsia-300">Earn</b> — recurring actions (trade log, review, course) auto-credit RR using rates you set.</li>
-          <li><b className="text-fuchsia-300">Social tasks</b> — one-time follow / subscribe rewards. Users submit handle/email; you approve in Claims.</li>
-          <li><b className="text-fuchsia-300">Spend</b> — what RR can be redeemed for and at what cost.</li>
-          <li><b className="text-fuchsia-300">Ledger</b> — every credit/debit traced back to a user.</li>
-          <li><b className="text-fuchsia-300">Analytics</b> — circulating supply, earned vs redeemed, conversion rates.</li>
-        </ol>
-      </Panel>
+    <div className="mb-4 flex items-start gap-2 rounded-xl bg-fuchsia-500/10 px-3 py-2 text-[11px] text-fuchsia-100 ring-1 ring-fuchsia-400/20">
+      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+      <span>{children}</span>
     </div>
+  );
+}
+
+function SaveBar({ onSave, onReset, saving }: { onSave: () => void; onReset: () => void; saving: boolean }) {
+  return (
+    <div className="mt-4 flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+      <button onClick={onReset} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-white/15">
+        <RotateCcw className="h-3 w-3" /> Reset defaults
+      </button>
+      <button onClick={onSave} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-40">
+        <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save changes"}
+      </button>
+    </div>
+  );
+}
+
+function Toggle({ label, active, onChange }: { label: string; active: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex flex-col items-center gap-1">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Active</span>
+      <button onClick={() => onChange(!active)}
+        className={`relative h-6 w-11 rounded-full transition ${active ? "bg-emerald-500/80" : "bg-white/15"}`}
+        aria-label={`Toggle ${label}`}
+      >
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${active ? "translate-x-5" : "translate-x-0.5"}`} />
+      </button>
+    </label>
+  );
+}
+
+function NumField({ label, value, onChange, min = 0, max, step = 1, suffix }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
+  return (
+    <label className="flex flex-col items-center gap-1">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-fuchsia-400/30 text-fuchsia-200">
+        <input type="number" min={min} max={max} step={step} value={value}
+          onChange={(e) => onChange(Math.max(min, max !== undefined ? Math.min(max, Number(e.target.value) || 0) : Number(e.target.value) || 0))}
+          className="w-20 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none" />
+        {suffix && <span className="pr-2 text-[10px] font-bold opacity-70">{suffix}</span>}
+      </div>
+    </label>
+  );
+}
+
+function LabeledInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <input value={value} onChange={(e) => onChange(e.target.value)}
+        className="mt-0.5 w-full rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40" />
+    </label>
   );
 }
 
@@ -126,9 +225,42 @@ function Mini({ icon: Icon, label, value, tone }: { icon: React.ComponentType<{ 
   );
 }
 
-/* ============================================================ Earn */
+/* ============================================================ Overview */
 
-const EARN_ICONS: Record<RrActionId, React.ComponentType<{ className?: string }>> = {
+function OverviewPanel({ stats, config }: { stats: RrStats | null; config: RrAllConfig }) {
+  const earnActive = config.earn_rules.filter((r) => r.enabled).length;
+  const socialActive = config.social_rules.filter((r) => r.enabled).length;
+  const spendActive = config.spend_rules.filter((r) => r.enabled).length;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Panel title="Economy snapshot">
+        <div className="grid grid-cols-2 gap-3">
+          <Mini icon={Activity} label="Active earn rules" value={String(earnActive)} />
+          <Mini icon={Sparkles} label="Active social tasks" value={String(socialActive)} />
+          <Mini icon={Coins} label="Active spend rules" value={String(spendActive)} />
+          <Mini icon={Users} label="Users holding RR" value={String(stats?.totalUsersWithRr ?? 0)} />
+          <Mini icon={Gift} label="Approved claims" value={String(stats?.approvedClaims ?? 0)} />
+          <Mini icon={ShieldCheck} label="Pending review" value={String(stats?.pendingClaims ?? 0)} tone={(stats?.pendingClaims ?? 0) > 0 ? "warn" : undefined} />
+        </div>
+      </Panel>
+
+      <Panel title="How it works">
+        <ol className="space-y-2 text-sm text-white/85">
+          <li><b className="text-fuchsia-300">Earn</b> — recurring actions (trade log, review, course) auto-credit RR using rates you set.</li>
+          <li><b className="text-fuchsia-300">Social tasks</b> — one-time follow/subscribe rewards. Users submit handle/email; you approve in Claims.</li>
+          <li><b className="text-fuchsia-300">Spend</b> — what RR can be redeemed for and at what cost.</li>
+          <li><b className="text-fuchsia-300">Ledger</b> — every credit/debit traced back to a user.</li>
+          <li><b className="text-fuchsia-300">Analytics</b> — circulating supply, earned vs redeemed, conversion rates.</li>
+        </ol>
+      </Panel>
+    </div>
+  );
+}
+
+/* ============================================================ Earn Rules */
+
+const EARN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   academy_course_complete: GraduationCap,
   trade_log: BookOpen,
   review_submit: Star,
@@ -136,50 +268,179 @@ const EARN_ICONS: Record<RrActionId, React.ComponentType<{ className?: string }>
   complaint_evidence: Flag,
 };
 
-function EarnRulesPanel() {
-  const rules = useRrRules();
+function EarnRulesPanel({ rules, saving, onSave, onReset }: { rules: RrRule[]; saving: boolean; onSave: (v: RrRule[]) => void; onReset: () => void }) {
+  const [draft, setDraft] = useState<RrRule[]>(rules);
+  useEffect(() => setDraft(rules), [rules]);
+
+  const update = (id: string, patch: Partial<RrRule>) =>
+    setDraft((prev) => prev.map((r) => r.id === id ? { ...r, ...patch } : r));
+
   return (
-    <Panel
-      title="Earn rules — recurring auto-credit"
-      action={
-        <button
-          onClick={() => { if (confirm("Reset all earn rules to defaults?")) resetRrRules(); }}
-          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white ring-1 ring-white/10 hover:bg-white/15"
-        >
-          <RotateCcw className="h-3 w-3" /> Reset defaults
-        </button>
-      }
-    >
+    <Panel title="Earn rules — recurring auto-credit">
       <Note>
-        When a user triggers an action below, the matching tier amount is automatically credited to their RR wallet
-        and logged in the ledger. Toggle off to disable an action entirely. Premium users earn the higher tier.
+        When a user triggers an action below, the matching tier amount is automatically credited to their RR wallet.
+        Toggle off to disable an action entirely. Premium users earn the higher tier.
       </Note>
 
       <div className="grid gap-3">
-        {rules.map((r) => {
+        {draft.map((r) => {
           const Icon = EARN_ICONS[r.id] ?? Sparkles;
           return (
-            <div
-              key={r.id}
-              className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 transition md:grid-cols-[1fr_auto_auto_auto] md:items-center ${
-                r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"
-              }`}
+            <div key={r.id}
+              className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 transition md:grid-cols-[1fr_auto_auto_auto] md:items-center ${r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"}`}
             >
-              <RuleHead Icon={Icon} title={r.label} sub={r.description} id={r.id} />
-              <Tier label="Free" tone="emerald" value={r.free} disabled={!r.enabled} onChange={(v) => updateRrRule(r.id, { free: v })} />
-              <Tier label="Premium" tone="amber" value={r.premium} disabled={!r.enabled} onChange={(v) => updateRrRule(r.id, { premium: v })} />
-              <Toggle label={r.label} active={r.enabled} onChange={(v) => updateRrRule(r.id, { enabled: v })} />
+              <div className="flex items-start gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-white">{r.label}</div>
+                  <div className="text-[11px] text-muted-foreground">{r.description}</div>
+                  <div className="mt-1 font-mono text-[10px] text-white/40">{r.id}</div>
+                </div>
+              </div>
+              <TierInput label="Free" tone="emerald" value={r.freeAmount} disabled={!r.enabled} onChange={(v) => update(r.id, { freeAmount: v })} />
+              <TierInput label="Premium" tone="amber" value={r.premiumAmount} disabled={!r.enabled} onChange={(v) => update(r.id, { premiumAmount: v })} />
+              <Toggle label={r.label} active={r.enabled} onChange={(v) => update(r.id, { enabled: v })} />
             </div>
           );
         })}
       </div>
+
+      <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
     </Panel>
   );
 }
 
-/* ============================================================ Social */
+function TierInput({ label, tone, value, onChange, disabled }: { label: string; tone: "emerald" | "amber"; value: number; onChange: (v: number) => void; disabled?: boolean }) {
+  const cls = tone === "emerald" ? "ring-emerald-400/30 text-emerald-300" : "ring-amber-400/30 text-amber-300";
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <div className={`flex items-center rounded-lg bg-black/30 ring-1 ${cls}`}>
+        <input type="number" min={0} value={value} disabled={disabled}
+          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+          className="w-16 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none disabled:cursor-not-allowed" />
+        <span className="pr-2 text-[10px] font-bold opacity-70">RR</span>
+      </div>
+    </div>
+  );
+}
 
-const SOCIAL_ICONS: Record<RrSocialId, React.ComponentType<{ className?: string }>> = {
+/* ============================================================ Tiers */
+
+function TiersPanel({ tiers, saving, onSave, onReset }: { tiers: RrTier[]; saving: boolean; onSave: (v: RrTier[]) => void; onReset: () => void }) {
+  const [draft, setDraft] = useState<RrTier[]>(tiers);
+  useEffect(() => setDraft(tiers), [tiers]);
+
+  const update = (id: string, patch: Partial<RrTier>) =>
+    setDraft((prev) => prev.map((t) => t.id === id ? { ...t, ...patch } : t));
+
+  return (
+    <Panel title="Contributor tiers — action-based progression">
+      <Note>
+        Users automatically progress through tiers when they meet ALL requirements: <b>approved reviews</b>, <b>streak days</b>, and (optionally) <b>verified email</b>.
+        Each tier applies an <b>earn multiplier</b> on top of base RR and unlocks a higher daily cap.
+      </Note>
+
+      <div className="grid gap-3">
+        {draft.map((t) => (
+          <div key={t.id} className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+            <div className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+              <div className="flex items-start gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10 text-sm font-bold text-white">
+                  {t.rank}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <input value={t.name} onChange={(e) => update(t.id, { name: e.target.value })}
+                    className="w-full rounded-md bg-transparent px-1 py-0.5 text-sm font-bold text-white outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10" />
+                  <div className="font-mono text-[10px] text-white/40">{t.id} · rank {t.rank}</div>
+                </div>
+              </div>
+              <NumField label="Multiplier" step={0.05} min={1} max={5} value={t.multiplier} onChange={(v) => update(t.id, { multiplier: v })} suffix="×" />
+              <NumField label="Daily cap" min={0} value={t.dailyCap} onChange={(v) => update(t.id, { dailyCap: v })} suffix="RR" />
+              <NumField label="Rank order" min={0} value={t.rank} onChange={(v) => update(t.id, { rank: v })} />
+            </div>
+
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              <NumField label="Min approved reviews" min={0} value={t.requirements.approvedReviews} onChange={(v) => update(t.id, { requirements: { ...t.requirements, approvedReviews: v } })} />
+              <NumField label="Min streak (days)" min={0} value={t.requirements.streakDays} onChange={(v) => update(t.id, { requirements: { ...t.requirements, streakDays: v } })} />
+              <label className="flex items-end gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Verified email</span>
+                <Toggle label="Verified email" active={t.requirements.verifiedEmail} onChange={(v) => update(t.id, { requirements: { ...t.requirements, verifiedEmail: v } })} />
+              </label>
+            </div>
+
+            <div className="mt-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Perks (one per line)</div>
+              <textarea value={t.perks.join("\n")} onChange={(e) => update(t.id, { perks: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })}
+                className="mt-1 w-full rounded-md bg-black/30 p-2 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40" rows={3} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
+    </Panel>
+  );
+}
+
+/* ============================================================ Caps */
+
+const CAP_ACTIONS = ["trade_log", "review_submit", "referral_kyc", "academy_course_complete", "complaint_evidence"];
+
+function CapsPanel({ caps, saving, onSave, onReset }: { caps: RrCaps; saving: boolean; onSave: (v: RrCaps) => void; onReset: () => void }) {
+  const [draft, setDraft] = useState<RrCaps>(caps);
+  useEffect(() => setDraft(caps), [caps]);
+
+  return (
+    <div className="space-y-4">
+      <Panel title="Anti-abuse caps — global daily / weekly limits">
+        <Note>
+          These caps apply to <b>every user</b>. A higher tier <b>dailyCap</b> overrides the global daily cap (only if larger). Set to <b>0</b> to disable a cap.
+        </Note>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <NumField label="Global daily cap (RR/user)" min={0} value={draft.dailyCap} onChange={(v) => setDraft((d) => ({ ...d, dailyCap: v }))} suffix="RR" />
+          <NumField label="Global weekly cap (RR/user)" min={0} value={draft.weeklyCap} onChange={(v) => setDraft((d) => ({ ...d, weeklyCap: v }))} suffix="RR" />
+        </div>
+      </Panel>
+
+      <Panel title="Per-action cooldowns + daily limits">
+        <Note>
+          <b>Cooldown</b> = minimum seconds between two credits of the same action. <b>Daily limit</b> = max credits per user per day. Set to <b>0</b> to disable.
+        </Note>
+
+        <DataTable head={<><th>Action</th><th>Cooldown (sec)</th><th>Daily limit</th></>}>
+          {CAP_ACTIONS.map((id) => (
+            <tr key={id}>
+              <td className="font-semibold text-white">
+                {id.replace(/_/g, " ")}
+                <div className="font-mono text-[10px] text-white/40">{id}</div>
+              </td>
+              <td>
+                <input type="number" min={0} value={draft.cooldowns[id] ?? 0}
+                  onChange={(e) => setDraft((d) => ({ ...d, cooldowns: { ...d.cooldowns, [id]: Math.max(0, Number(e.target.value) || 0) } }))}
+                  className="w-28 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-amber-200 ring-1 ring-amber-400/30 outline-none" />
+              </td>
+              <td>
+                <input type="number" min={0} value={draft.dailyActionLimit[id] ?? 0}
+                  onChange={(e) => setDraft((d) => ({ ...d, dailyActionLimit: { ...d.dailyActionLimit, [id]: Math.max(0, Number(e.target.value) || 0) } }))}
+                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none" />
+              </td>
+            </tr>
+          ))}
+        </DataTable>
+
+        <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
+      </Panel>
+    </div>
+  );
+}
+
+/* ============================================================ Social Rules */
+
+const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   follow_instagram: Instagram,
   follow_twitter: Sparkles,
   subscribe_youtube: Youtube,
@@ -189,34 +450,26 @@ const SOCIAL_ICONS: Record<RrSocialId, React.ComponentType<{ className?: string 
   subscribe_newsletter: Mail,
 };
 
-function SocialRulesPanel() {
-  const rules = useSocialRules();
+function SocialRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSocialRule[]; saving: boolean; onSave: (v: RrSocialRule[]) => void; onReset: () => void }) {
+  const [draft, setDraft] = useState<RrSocialRule[]>(rules);
+  useEffect(() => setDraft(rules), [rules]);
+
+  const update = (id: string, patch: Partial<RrSocialRule>) =>
+    setDraft((prev) => prev.map((r) => r.id === id ? { ...r, ...patch } : r));
+
   return (
-    <Panel
-      title="Social tasks — one-time rewards per user"
-      action={
-        <button
-          onClick={() => { if (confirm("Reset all social rules to defaults?")) resetSocialRules(); }}
-          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white ring-1 ring-white/10 hover:bg-white/15"
-        >
-          <RotateCcw className="h-3 w-3" /> Reset defaults
-        </button>
-      }
-    >
+    <Panel title="Social tasks — one-time rewards per user">
       <Note>
-        These reward users <b>once per account</b> when they follow / subscribe to our channels. Users submit their
+        These reward users <b>once per account</b> when they follow/subscribe to our channels. Users submit their
         handle (or email for newsletter) — you approve in the <b>Claims</b> tab. Approved claims auto-credit RR.
       </Note>
 
       <div className="grid gap-3">
-        {rules.map((r) => {
+        {draft.map((r) => {
           const Icon = SOCIAL_ICONS[r.id] ?? Sparkles;
           return (
-            <div
-              key={r.id}
-              className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 md:grid-cols-[1fr_auto_auto_auto] md:items-center ${
-                r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"
-              }`}
+            <div key={r.id}
+              className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 md:grid-cols-[1fr_auto_auto_auto] md:items-center ${r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"}`}
             >
               <div className="flex items-start gap-3">
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
@@ -226,8 +479,8 @@ function SocialRulesPanel() {
                   <div className="text-sm font-bold text-white">{r.label}</div>
                   <div className="text-[11px] text-muted-foreground">{r.description}</div>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <LabeledInput label="Official handle" value={r.handle} onChange={(v) => updateSocialRule(r.id, { handle: v })} />
-                    <LabeledInput label="URL" value={r.url} onChange={(v) => updateSocialRule(r.id, { url: v })} />
+                    <LabeledInput label="Official handle" value={r.handle} onChange={(v) => update(r.id, { handle: v })} />
+                    <LabeledInput label="URL" value={r.url} onChange={(v) => update(r.id, { url: v })} />
                   </div>
                 </div>
               </div>
@@ -235,23 +488,17 @@ function SocialRulesPanel() {
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Reward (one-time)</span>
                 <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-fuchsia-400/30 text-fuchsia-200">
-                  <input
-                    type="number" min={0}
-                    value={r.reward}
-                    disabled={!r.enabled}
-                    onChange={(e) => updateSocialRule(r.id, { reward: Math.max(0, Number(e.target.value) || 0) })}
-                    className="w-16 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none disabled:cursor-not-allowed"
-                  />
+                  <input type="number" min={0} value={r.reward} disabled={!r.enabled}
+                    onChange={(e) => update(r.id, { reward: Math.max(0, Number(e.target.value) || 0) })}
+                    className="w-16 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none disabled:cursor-not-allowed" />
                   <span className="pr-2 text-[10px] font-bold opacity-70">RR</span>
                 </div>
               </div>
 
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Verify by</span>
-                <select
-                  value={r.verification}
-                  disabled={!r.enabled}
-                  onChange={(e) => updateSocialRule(r.id, { verification: e.target.value as "handle" | "email" | "manual" })}
+                <select value={r.verification} disabled={!r.enabled}
+                  onChange={(e) => update(r.id, { verification: e.target.value as RrSocialRule["verification"] })}
                   className="rounded-lg bg-black/30 px-2 py-1.5 text-xs font-semibold text-white ring-1 ring-white/10 outline-none"
                 >
                   <option value="handle">Handle</option>
@@ -260,110 +507,77 @@ function SocialRulesPanel() {
                 </select>
               </div>
 
-              <Toggle label={r.label} active={r.enabled} onChange={(v) => updateSocialRule(r.id, { enabled: v })} />
+              <Toggle label={r.label} active={r.enabled} onChange={(v) => update(r.id, { enabled: v })} />
             </div>
           );
         })}
       </div>
+
+      <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
     </Panel>
   );
 }
 
-/* ============================================================ Spend */
+/* ============================================================ Spend Rules */
 
-function SpendRulesPanel() {
-  const rules = useSpendRules();
-  const [showNew, setShowNew] = useState(false);
+const SPEND_CATS = ["cash", "discount", "fees", "academy", "boost", "partner", "badge", "raffle", "other"] as const;
+
+function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRule[]; saving: boolean; onSave: (v: RrSpendRule[]) => void; onReset: () => void }) {
+  const [draft, setDraft] = useState<RrSpendRule[]>(rules);
+  useEffect(() => setDraft(rules), [rules]);
+
+  const update = (id: string, patch: Partial<RrSpendRule>) =>
+    setDraft((prev) => prev.map((r) => r.id === id ? { ...r, ...patch } : r));
+
+  const remove = (id: string) => {
+    if (!confirm("Remove this spend rule?")) return;
+    setDraft((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const add = (newRule: Omit<RrSpendRule, "id" | "redeemed">) => {
+    const id = `sr-${Math.random().toString(36).slice(2, 8)}`;
+    setDraft((prev) => [...prev, { ...newRule, id, redeemed: 0 }]);
+  };
+
   return (
-    <Panel
-      title="Spend rules — what RR can be redeemed for"
-      action={
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { if (confirm("Reset all spend rules to defaults?")) resetSpendRules(); }}
-            className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white ring-1 ring-white/10 hover:bg-white/15"
-          >
-            <RotateCcw className="h-3 w-3" /> Reset
-          </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white"
-          >
-            <Plus className="h-3 w-3" /> New rule
-          </button>
-        </div>
-      }
-    >
-      {showNew && <NewSpendForm onDone={() => setShowNew(false)} />}
+    <Panel title="Spend rules — what RR can be redeemed for">
+      <NewSpendForm onAdd={add} />
 
       <DataTable head={<><th>Reward</th><th>Category</th><th>Cost (RR)</th><th>Tier gate</th><th>Stock</th><th>Status</th><th></th></>}>
-        {rules.map((r) => (
+        {draft.map((r) => (
           <tr key={r.id}>
             <td>
-              <input
-                value={r.label}
-                onChange={(e) => updateSpendRule(r.id, { label: e.target.value })}
-                className="w-full rounded-md bg-transparent px-2 py-1 text-sm font-semibold text-white outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10"
-              />
-              <input
-                value={r.description}
-                onChange={(e) => updateSpendRule(r.id, { description: e.target.value })}
-                className="mt-1 w-full rounded-md bg-transparent px-2 py-1 text-[11px] text-muted-foreground outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10"
-              />
+              <input value={r.label} onChange={(e) => update(r.id, { label: e.target.value })}
+                className="w-full rounded-md bg-transparent px-2 py-1 text-sm font-semibold text-white outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10" />
+              <input value={r.description} onChange={(e) => update(r.id, { description: e.target.value })}
+                className="mt-1 w-full rounded-md bg-transparent px-2 py-1 text-[11px] text-muted-foreground outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10" />
             </td>
             <td>
-              <select
-                value={r.category}
-                onChange={(e) => updateSpendRule(r.id, { category: e.target.value as typeof r.category })}
-                className="rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none"
-              >
-                {(["cash","discount","fees","academy","boost","partner","badge","raffle","other"] as const).map((c) => <option key={c} value={c}>{c}</option>)}
+              <select value={r.category} onChange={(e) => update(r.id, { category: e.target.value })}
+                className="rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none">
+                {SPEND_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </td>
             <td>
-              <input
-                type="number" min={0}
-                value={r.cost}
-                onChange={(e) => updateSpendRule(r.id, { cost: Math.max(0, Number(e.target.value) || 0) })}
-                className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-rose-300 ring-1 ring-rose-400/30 outline-none"
-              />
+              <input type="number" min={0} value={r.cost} onChange={(e) => update(r.id, { cost: Math.max(0, Number(e.target.value) || 0) })}
+                className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-rose-300 ring-1 ring-rose-400/30 outline-none" />
             </td>
             <td>
-              <input
-                type="number" min={0} max={4}
-                value={r.tierGate ?? 0}
-                onChange={(e) => updateSpendRule(r.id, { tierGate: Math.max(0, Math.min(4, Number(e.target.value) || 0)) })}
-                className="w-16 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-xs font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none"
-              />
+              <input type="number" min={0} max={4} value={r.tierGate ?? 0} onChange={(e) => update(r.id, { tierGate: Number(e.target.value) || null })}
+                className="w-16 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-xs font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none" />
             </td>
             <td>
-              <input
-                type="number" min={0}
-                value={r.stock ?? 0}
-                onChange={(e) => updateSpendRule(r.id, { stock: Number(e.target.value) > 0 ? Number(e.target.value) : undefined })}
-                placeholder="∞"
-                className="w-20 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-xs font-bold text-amber-200 ring-1 ring-amber-400/30 outline-none"
-              />
-              {r.stock !== undefined && (
-                <div className="mt-0.5 text-[9px] text-muted-foreground">{r.redeemed ?? 0}/{r.stock}</div>
-              )}
+              <input type="number" min={0} value={r.stock ?? 0} placeholder="∞" onChange={(e) => update(r.id, { stock: Number(e.target.value) > 0 ? Number(e.target.value) : null })}
+                className="w-20 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-xs font-bold text-amber-200 ring-1 ring-amber-400/30 outline-none" />
+              {r.stock != null && <div className="mt-0.5 text-[9px] text-muted-foreground">{r.redeemed}/{r.stock}</div>}
             </td>
-            <td>
-              {r.enabled ? <Pill tone="good">enabled</Pill> : <Pill tone="neutral">disabled</Pill>}
-            </td>
+            <td>{r.enabled ? <Pill tone="good">enabled</Pill> : <Pill tone="neutral">disabled</Pill>}</td>
             <td className="text-right">
               <div className="inline-flex items-center gap-1">
-                <button
-                  onClick={() => updateSpendRule(r.id, { enabled: !r.enabled })}
-                  className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white"
-                >
+                <button onClick={() => update(r.id, { enabled: !r.enabled })} className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white">
                   {r.enabled ? "Disable" : "Enable"}
                 </button>
-                <button
-                  onClick={() => { if (confirm(`Remove "${r.label}"?`)) removeSpendRule(r.id); }}
-                  className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-rose-300 hover:bg-rose-500/20"
-                  aria-label="Remove"
-                >
+                <button onClick={() => remove(r.id)} className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-rose-300 hover:bg-rose-500/20" aria-label="Remove">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
@@ -371,290 +585,84 @@ function SpendRulesPanel() {
           </tr>
         ))}
       </DataTable>
+
+      <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
     </Panel>
   );
 }
 
-function NewSpendForm({ onDone }: { onDone: () => void }) {
+function NewSpendForm({ onAdd }: { onAdd: (r: Omit<RrSpendRule, "id" | "redeemed">) => void }) {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [cost, setCost] = useState(100);
-  const [category, setCategory] = useState<"cash" | "discount" | "fees" | "academy" | "boost" | "partner" | "badge" | "raffle" | "other">("other");
+  const [category, setCategory] = useState<string>("other");
+  const [show, setShow] = useState(false);
+
+  if (!show) {
+    return (
+      <button onClick={() => setShow(true)} className="mb-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white">
+        <Plus className="h-3 w-3" /> New rule
+      </button>
+    );
+  }
+
   return (
     <div className="mb-3 grid gap-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10 md:grid-cols-[2fr_2fr_1fr_1fr_auto]">
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Reward title" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
-      <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none">
-        {(["cash","discount","fees","academy","boost","partner","badge","raffle","other"] as const).map((c) => <option key={c} value={c}>{c}</option>)}
+      <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none">
+        {SPEND_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
       <input type="number" min={0} value={cost} onChange={(e) => setCost(Math.max(0, Number(e.target.value) || 0))} className="rounded-md bg-black/30 px-2 py-1.5 text-right font-mono text-sm text-white ring-1 ring-white/10 outline-none" />
       <div className="flex gap-2">
-        <button
-          onClick={() => { if (!label.trim()) return; addSpendRule({ label, description, cost, category, enabled: true }); onDone(); }}
-          className="rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white"
-        >Add</button>
-        <button onClick={onDone} className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Cancel</button>
+        <button onClick={() => { if (!label.trim()) return; onAdd({ label, description, cost, category, tierGate: null, stock: null, enabled: true }); setLabel(""); setDescription(""); setShow(false); }}
+          className="rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">Add</button>
+        <button onClick={() => setShow(false)} className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Cancel</button>
       </div>
     </div>
-  );
-}
-
-/* ============================================================ Claims */
-
-function ClaimsPanel() {
-  const claims = useClaims();
-  const social = useSocialRules();
-  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
-  const list = useMemo(() => filter === "all" ? claims : claims.filter((c) => c.status === filter), [claims, filter]);
-
-  return (
-    <Panel
-      title="Social claims — verify follows / subscribes"
-      action={
-        <div className="flex gap-1">
-          {(["pending","approved","rejected","all"] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${filter === f ? "bg-white/15 text-white" : "bg-white/5 text-muted-foreground hover:text-white"}`}>{f}</button>
-          ))}
-        </div>
-      }
-    >
-      {list.length === 0 ? (
-        <div className="rounded-2xl bg-white/[0.03] p-6 text-center text-sm text-muted-foreground ring-1 ring-white/10">
-          No {filter === "all" ? "" : filter} claims yet. Users submit claims from <b>Dashboard → Rewards → Follow & earn</b>.
-        </div>
-      ) : (
-        <DataTable head={<><th>Action</th><th>User</th><th>Proof</th><th>Amount</th><th>Status</th><th>Submitted</th><th></th></>}>
-          {list.map((c) => {
-            const rule = social.find((s) => s.id === c.socialId);
-            const Icon = SOCIAL_ICONS[c.socialId] ?? Sparkles;
-            return (
-              <tr key={c.id}>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-fuchsia-300" />
-                    <span className="font-semibold text-white">{rule?.label ?? c.socialId}</span>
-                  </div>
-                </td>
-                <td className="font-mono text-xs">{c.userId}</td>
-                <td>
-                  <span className="font-mono text-xs text-white/85">{c.proof}</span>
-                  {rule?.url && <a href={rule.url} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center text-[10px] text-fuchsia-300"><ExternalLink className="h-3 w-3" /></a>}
-                </td>
-                <td className="font-mono font-bold text-emerald-300">+{c.amount} RR</td>
-                <td>
-                  {c.status === "pending" && <Pill tone="warn">pending</Pill>}
-                  {c.status === "approved" && <Pill tone="good">approved</Pill>}
-                  {c.status === "rejected" && <Pill tone="bad">rejected</Pill>}
-                </td>
-                <td className="text-xs text-muted-foreground">{new Date(c.submittedAt).toLocaleString()}</td>
-                <td className="text-right">
-                  {c.status === "pending" && (
-                    <div className="inline-flex gap-1">
-                      <button onClick={() => reviewClaim(c.id, "approved")} className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-2 py-1 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">
-                        <Check className="h-3 w-3" /> Approve
-                      </button>
-                      <button onClick={() => reviewClaim(c.id, "rejected")} className="inline-flex items-center gap-1 rounded-md bg-rose-500/20 px-2 py-1 text-[10px] font-bold text-rose-300 ring-1 ring-rose-400/30">
-                        <X className="h-3 w-3" /> Reject
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </DataTable>
-      )}
-    </Panel>
-  );
-}
-
-/* ============================================================ Ledger */
-
-function LedgerPanel() {
-  const { token } = useAuth();
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [topWallets, setTopWallets] = useState<Wallet[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!token) return;
-    Promise.allSettled([
-      financeApi.getTransactions(token, { size: 50 }),
-      financeApi.getAllWallets(token, 0, 10),
-    ]).then(([txRes, walletRes]) => {
-      if (txRes.status === "fulfilled" && txRes.value.payload) setTransactions(txRes.value.payload.page);
-      if (walletRes.status === "fulfilled" && walletRes.value.payload) {
-        const sorted = [...walletRes.value.payload.page].sort((a, b) => Number(b.balance ?? 0) - Number(a.balance ?? 0));
-        setTopWallets(sorted.slice(0, 5));
-      }
-      setLoading(false);
-    });
-  }, [token]);
-
-  return (
-    <div className="grid gap-4">
-      <Panel title="RR ledger (latest 50 transactions)">
-        {loading ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>
-        ) : (
-          <DataTable head={<><th>Date</th><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Narration</th></>}>
-            {transactions.map((t) => (
-              <tr key={t.id}>
-                <td className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(t.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </td>
-                <td className="font-mono text-xs">{t.user?.name ?? `User #${t.userId}`}</td>
-                <td>{t.activity}</td>
-                <td className={`font-mono font-bold ${t.activity === "CREDIT" ? "text-emerald-300" : "text-rose-300"}`}>
-                  {t.activity === "CREDIT" ? "+" : "−"}${Number(t.amount).toFixed(2)}
-                </td>
-                <td>
-                  <Pill tone={t.status === "SUCCESSFUL" ? "good" : t.status === "PENDING" ? "warn" : "bad"}>
-                    {t.status?.toLowerCase()}
-                  </Pill>
-                </td>
-                <td className="text-xs text-muted-foreground max-w-xs line-clamp-1">{t.narration ?? t.channel ?? "—"}</td>
-              </tr>
-            ))}
-            {transactions.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">No transactions found.</td></tr>
-            )}
-          </DataTable>
-        )}
-      </Panel>
-
-      <Panel title="Top wallet balances">
-        <DataTable head={<><th>User</th><th>Balance</th><th>Earned (lifetime)</th><th>Withdrawn (lifetime)</th></>}>
-          {topWallets.map((w) => (
-            <tr key={w.id}>
-              <td className="font-semibold">{w.user?.name ?? `User #${w.userId}`}</td>
-              <td className="font-mono text-fuchsia-300">${Number(w.balance ?? 0).toFixed(2)}</td>
-              <td className="font-mono text-emerald-300">${Number(w.earned ?? 0).toFixed(2)}</td>
-              <td className="font-mono text-rose-300">${Number(w.withdrawn ?? 0).toFixed(2)}</td>
-            </tr>
-          ))}
-          {topWallets.length === 0 && !loading && (
-            <tr><td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">No wallets found.</td></tr>
-          )}
-        </DataTable>
-      </Panel>
-    </div>
-  );
-}
-
-/* ============================================================ Shared bits */
-
-function Note({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex items-start gap-2 rounded-xl bg-fuchsia-500/10 px-3 py-2 text-[11px] text-fuchsia-100 ring-1 ring-fuchsia-400/20">
-      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
-      <span>{children}</span>
-    </div>
-  );
-}
-
-function RuleHead({ Icon, title, sub, id }: { Icon: React.ComponentType<{ className?: string }>; title: string; sub: string; id: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
-        <Icon className="h-4 w-4 text-white" />
-      </div>
-      <div>
-        <div className="text-sm font-bold text-white">{title}</div>
-        <div className="text-[11px] text-muted-foreground">{sub}</div>
-        <div className="mt-1 font-mono text-[10px] text-white/40">{id}</div>
-      </div>
-    </div>
-  );
-}
-
-function Tier({ label, tone, value, onChange, disabled }: { label: string; tone: "emerald" | "amber"; value: number; onChange: (v: number) => void; disabled?: boolean }) {
-  const cls = tone === "emerald" ? "ring-emerald-400/30 text-emerald-300" : "ring-amber-400/30 text-amber-300";
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-      <div className={`flex items-center rounded-lg bg-black/30 ring-1 ${cls}`}>
-        <input
-          type="number" min={0}
-          value={value}
-          disabled={disabled}
-          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-          className="w-16 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none disabled:cursor-not-allowed"
-        />
-        <span className="pr-2 text-[10px] font-bold opacity-70">RR</span>
-      </div>
-    </div>
-  );
-}
-
-function Toggle({ label, active, onChange }: { label: string; active: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex flex-col items-center gap-1">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Active</span>
-      <button
-        onClick={() => onChange(!active)}
-        className={`relative h-6 w-11 rounded-full transition ${active ? "bg-emerald-500/80" : "bg-white/15"}`}
-        aria-label={`Toggle ${label}`}
-      >
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${active ? "translate-x-5" : "translate-x-0.5"}`} />
-      </button>
-    </label>
-  );
-}
-
-function LabeledInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="block">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 w-full rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
-      />
-    </label>
   );
 }
 
 /* ============================================================ Streaks */
 
-function StreaksPanel() {
-  const cfg = useStreakConfig();
-  const a = useRrAnalytics();
-  const [draft, setDraft] = useState({ days: 21, reward: 150, label: "" });
+function StreaksPanel({ cfg, stats, saving, onSave, onReset }: { cfg: RrStreakConfig; stats: RrStats | null; saving: boolean; onSave: (v: RrStreakConfig) => void; onReset: () => void }) {
+  const [draft, setDraft] = useState<RrStreakConfig>(cfg);
+  useEffect(() => setDraft(cfg), [cfg]);
+
+  const [newMilestone, setNewMilestone] = useState({ days: 21, reward: 150, label: "" });
+
+  const updateMilestone = (id: string, patch: Partial<typeof draft.milestones[0]>) =>
+    setDraft((d) => ({ ...d, milestones: d.milestones.map((m) => m.id === id ? { ...m, ...patch } : m) }));
+  const removeMilestone = (id: string) => {
+    if (!confirm("Remove this milestone?")) return;
+    setDraft((d) => ({ ...d, milestones: d.milestones.filter((m) => m.id !== id) }));
+  };
+  const addMilestone = () => {
+    if (!newMilestone.label.trim()) return;
+    setDraft((d) => ({ ...d, milestones: [...d.milestones, { id: `ms-${Math.random().toString(36).slice(2, 8)}`, ...newMilestone, enabled: true }] }));
+    setNewMilestone({ days: 21, reward: 150, label: "" });
+  };
 
   return (
     <div className="space-y-4">
-      <Panel
-        title="Streak engine — daily activity rewards"
-        action={
-          <button
-            onClick={() => { if (confirm("Reset streak settings to defaults?")) resetStreakConfig(); }}
-            className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white ring-1 ring-white/10 hover:bg-white/15"
-          >
-            <RotateCcw className="h-3 w-3" /> Reset defaults
-          </button>
-        }
-      >
+      <Panel title="Streak engine — daily activity rewards">
         <Note>
           A user's streak grows by 1 each day they perform the qualifying action. Miss a day → streak resets to 0.
-          When the streak count exactly hits a milestone, the reward auto-credits to their RR wallet (once per user).
+          When the streak hits a milestone, the reward auto-credits to their RR wallet (once per user).
         </Note>
 
         <div className="mb-4 grid gap-3 md:grid-cols-3">
-          <div className={`flex items-center justify-between rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10`}>
+          <div className="flex items-center justify-between rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Engine</div>
-              <div className="text-sm font-bold text-white">{cfg.enabled ? "Live — auto-rewarding" : "Paused"}</div>
+              <div className="text-sm font-bold text-white">{draft.enabled ? "Live — auto-rewarding" : "Paused"}</div>
             </div>
-            <Toggle label="Streak engine" active={cfg.enabled} onChange={(v) => updateStreakConfig({ enabled: v })} />
+            <Toggle label="Streak engine" active={draft.enabled} onChange={(v) => setDraft((d) => ({ ...d, enabled: v }))} />
           </div>
           <label className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Qualifying action</div>
-            <select
-              value={cfg.qualifier}
-              onChange={(e) => updateStreakConfig({ qualifier: e.target.value as typeof cfg.qualifier })}
-              className="mt-1 w-full rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none"
-            >
+            <select value={draft.qualifier} onChange={(e) => setDraft((d) => ({ ...d, qualifier: e.target.value as RrStreakConfig["qualifier"] }))}
+              className="mt-1 w-full rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none">
               <option value="any_activity">Any activity (login OR trade log)</option>
               <option value="login">Login only</option>
               <option value="trade_log">Log a trade</option>
@@ -662,55 +670,34 @@ function StreaksPanel() {
           </label>
           <label className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Grace window (hours after midnight)</div>
-            <input
-              type="number" min={0} max={23}
-              value={cfg.graceHours}
-              onChange={(e) => updateStreakConfig({ graceHours: Math.max(0, Math.min(23, Number(e.target.value) || 0)) })}
-              className="mt-1 w-full rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none"
-            />
+            <input type="number" min={0} max={23} value={draft.graceHours}
+              onChange={(e) => setDraft((d) => ({ ...d, graceHours: Math.max(0, Math.min(23, Number(e.target.value) || 0)) }))}
+              className="mt-1 w-full rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
           </label>
         </div>
 
         <DataTable head={<><th>Milestone</th><th>Days</th><th>Reward (RR)</th><th>Status</th><th></th></>}>
-          {cfg.milestones.map((m) => (
+          {draft.milestones.map((m) => (
             <tr key={m.id}>
               <td>
-                <input
-                  value={m.label}
-                  onChange={(e) => updateStreakMilestone(m.id, { label: e.target.value })}
-                  className="w-full rounded-md bg-transparent px-2 py-1 text-sm font-semibold text-white outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10"
-                />
+                <input value={m.label} onChange={(e) => updateMilestone(m.id, { label: e.target.value })}
+                  className="w-full rounded-md bg-transparent px-2 py-1 text-sm font-semibold text-white outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10" />
               </td>
               <td>
-                <input
-                  type="number" min={1}
-                  value={m.days}
-                  onChange={(e) => updateStreakMilestone(m.id, { days: Math.max(1, Number(e.target.value) || 1) })}
-                  className="w-20 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-amber-200 ring-1 ring-amber-400/30 outline-none"
-                />
+                <input type="number" min={1} value={m.days} onChange={(e) => updateMilestone(m.id, { days: Math.max(1, Number(e.target.value) || 1) })}
+                  className="w-20 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-amber-200 ring-1 ring-amber-400/30 outline-none" />
               </td>
               <td>
-                <input
-                  type="number" min={0}
-                  value={m.reward}
-                  onChange={(e) => updateStreakMilestone(m.id, { reward: Math.max(0, Number(e.target.value) || 0) })}
-                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none"
-                />
+                <input type="number" min={0} value={m.reward} onChange={(e) => updateMilestone(m.id, { reward: Math.max(0, Number(e.target.value) || 0) })}
+                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none" />
               </td>
               <td>{m.enabled ? <Pill tone="good">enabled</Pill> : <Pill tone="neutral">disabled</Pill>}</td>
               <td className="text-right">
                 <div className="inline-flex items-center gap-1">
-                  <button
-                    onClick={() => updateStreakMilestone(m.id, { enabled: !m.enabled })}
-                    className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white"
-                  >
+                  <button onClick={() => updateMilestone(m.id, { enabled: !m.enabled })} className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white">
                     {m.enabled ? "Disable" : "Enable"}
                   </button>
-                  <button
-                    onClick={() => { if (confirm(`Remove "${m.label}"?`)) removeStreakMilestone(m.id); }}
-                    className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-rose-300 hover:bg-rose-500/20"
-                    aria-label="Remove"
-                  >
+                  <button onClick={() => removeMilestone(m.id)} className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-rose-300 hover:bg-rose-500/20" aria-label="Remove">
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
@@ -722,193 +709,278 @@ function StreaksPanel() {
         <div className="mt-3 flex flex-wrap items-end gap-2 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/10">
           <label className="flex flex-col">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Days</span>
-            <input type="number" min={1} value={draft.days} onChange={(e) => setDraft((d) => ({ ...d, days: Math.max(1, Number(e.target.value) || 1) }))}
+            <input type="number" min={1} value={newMilestone.days} onChange={(e) => setNewMilestone((d) => ({ ...d, days: Math.max(1, Number(e.target.value) || 1) }))}
               className="w-20 rounded-md bg-black/30 px-2 py-1.5 text-right font-mono text-sm text-white ring-1 ring-white/10 outline-none" />
           </label>
           <label className="flex flex-col">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Reward (RR)</span>
-            <input type="number" min={0} value={draft.reward} onChange={(e) => setDraft((d) => ({ ...d, reward: Math.max(0, Number(e.target.value) || 0) }))}
+            <input type="number" min={0} value={newMilestone.reward} onChange={(e) => setNewMilestone((d) => ({ ...d, reward: Math.max(0, Number(e.target.value) || 0) }))}
               className="w-24 rounded-md bg-black/30 px-2 py-1.5 text-right font-mono text-sm text-white ring-1 ring-white/10 outline-none" />
           </label>
           <label className="flex flex-1 flex-col">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Label</span>
-            <input value={draft.label} onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))} placeholder="e.g. 21-day momentum"
+            <input value={newMilestone.label} onChange={(e) => setNewMilestone((d) => ({ ...d, label: e.target.value }))} placeholder="e.g. 21-day momentum"
               className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
           </label>
-          <button
-            onClick={() => {
-              if (!draft.label.trim()) return;
-              addStreakMilestone({ days: draft.days, reward: draft.reward, label: draft.label, enabled: true });
-              setDraft({ days: 21, reward: 150, label: "" });
-            }}
-            className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white"
-          >
-            <Plus className="h-3 w-3" /> Add milestone
+          <button onClick={addMilestone} className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+            <Plus className="h-3 w-3" /> Add
           </button>
         </div>
+
+        <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
       </Panel>
 
       <Panel title="Live streak analytics">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Mini icon={Flame} label="Active streaks" value={String(a.streakActiveUsers)} />
-          <Mini icon={TrendingUp} label="Longest active" value={`${a.streakLongestActive}d`} />
-          <Mini icon={Sparkles} label="Milestones live" value={String(a.streakMilestonesActive)} />
-          <Mini icon={Gift} label="RR offered/user" value={`${a.streakRewardsOffered} RR`} />
+          <Mini icon={Flame} label="Active milestones" value={String(draft.milestones.filter((m) => m.enabled).length)} />
+          <Mini icon={TrendingUp} label="Grace window" value={`${draft.graceHours}h`} />
+          <Mini icon={Sparkles} label="Qualifier" value={draft.qualifier} />
+          <Mini icon={Gift} label="Streaks enabled" value={draft.enabled ? "Yes" : "Paused"} />
         </div>
       </Panel>
     </div>
   );
 }
 
-/* ============================================================ Tiers */
+/* ============================================================ Claims */
 
-const TIER_ACTIONS: { id: RrActionId; label: string }[] = [
-  { id: "trade_log", label: "Log trade" },
-  { id: "review_submit", label: "Review" },
-  { id: "referral_kyc", label: "Referral" },
-  { id: "academy_course_complete", label: "Course" },
-  { id: "complaint_evidence", label: "Complaint" },
-];
+function ClaimsPanel({ socialRules }: { socialRules: RrSocialRule[] }) {
+  const { token } = useAuth();
+  const [claims, setClaims] = useState<RrClaim[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [reviewing, setReviewing] = useState<number | null>(null);
+  const [rejectId, setRejectId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
-function TiersPanel() {
-  const tiers = useTiers();
+  const load = useCallback(async (p = 0) => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await rrApi.getClaims(token, p, 30, filter === "all" ? undefined : filter);
+      if (res.payload) {
+        setClaims(p === 0 ? res.payload.page : (prev) => [...prev, ...res.payload!.page]);
+        setTotalPages(res.payload.totalPages);
+        setPage(p);
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to load claims");
+    } finally {
+      setLoading(false);
+    }
+  }, [token, filter]);
+
+  useEffect(() => { load(0); }, [load]);
+
+  const review = async (id: number, status: "approved" | "rejected", reason?: string) => {
+    if (!token) return;
+    setReviewing(id);
+    try {
+      const res = await rrApi.reviewClaim(token, id, status, reason);
+      if (res.payload) {
+        setClaims((prev) => prev.map((c) => c.id === id ? res.payload! : c));
+        toast.success(status === "approved" ? "Claim approved — RR credited" : "Claim rejected");
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Review failed");
+    } finally {
+      setReviewing(null);
+      setRejectId(null);
+      setRejectReason("");
+    }
+  };
+
   return (
-    <Panel
-      title="Contributor tiers — action-based progression"
+    <Panel title="Social claims — verify follows / subscribes"
       action={
-        <button
-          onClick={() => { if (confirm("Reset all tiers to defaults?")) resetTiers(); }}
-          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white ring-1 ring-white/10 hover:bg-white/15"
-        >
-          <RotateCcw className="h-3 w-3" /> Reset defaults
-        </button>
+        <div className="flex gap-1">
+          {(["pending", "approved", "rejected", "all"] as const).map((f) => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${filter === f ? "bg-white/15 text-white" : "bg-white/5 text-muted-foreground hover:text-white"}`}>{f}</button>
+          ))}
+        </div>
       }
     >
-      <Note>
-        Users automatically progress through tiers when they meet ALL requirements: <b>approved reviews</b>, <b>streak days</b>, and (optionally) <b>verified email</b>.
-        Each tier applies an <b>earn multiplier</b> on top of base RR and unlocks a higher daily cap. Redemption items can also be tier-gated under <b>Spend</b>.
-      </Note>
+      {rejectId !== null && (
+        <div className="mb-3 flex items-center gap-2 rounded-xl bg-rose-500/10 p-3 ring-1 ring-rose-400/20">
+          <input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Rejection reason (optional)"
+            className="flex-1 rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
+          <button onClick={() => review(rejectId, "rejected", rejectReason || undefined)} disabled={reviewing === rejectId}
+            className="rounded-md bg-rose-500/80 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40">
+            {reviewing === rejectId ? "…" : "Confirm reject"}
+          </button>
+          <button onClick={() => setRejectId(null)} className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Cancel</button>
+        </div>
+      )}
 
-      <div className="grid gap-3">
-        {tiers.map((t) => (
-          <div key={t.id} className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
-            <div className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
-              <div className="flex items-start gap-3">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10 text-sm font-bold text-white">
-                  {t.rank}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <input
-                    value={t.name}
-                    onChange={(e) => updateTier(t.id, { name: e.target.value })}
-                    className="w-full rounded-md bg-transparent px-1 py-0.5 text-sm font-bold text-white outline-none ring-1 ring-transparent focus:bg-white/5 focus:ring-white/10"
-                  />
-                  <div className="font-mono text-[10px] text-white/40">{t.id} · rank {t.rank}</div>
-                </div>
-              </div>
+      {loading && claims.length === 0 ? (
+        <div className="py-10 text-center text-sm text-muted-foreground">Loading claims…</div>
+      ) : claims.length === 0 ? (
+        <div className="rounded-2xl bg-white/[0.03] p-6 text-center text-sm text-muted-foreground ring-1 ring-white/10">
+          No {filter === "all" ? "" : filter} claims. Users submit from <b>Dashboard → Rewards → Follow &amp; earn</b>.
+        </div>
+      ) : (
+        <DataTable head={<><th>Action</th><th>User</th><th>Proof</th><th>Amount</th><th>Status</th><th>Submitted</th><th></th></>}>
+          {claims.map((c) => {
+            const rule = socialRules.find((s) => s.id === c.socialId);
+            const Icon = SOCIAL_ICONS[c.socialId] ?? Sparkles;
+            return (
+              <tr key={c.id}>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-fuchsia-300" />
+                    <span className="font-semibold text-white">{rule?.label ?? c.socialId}</span>
+                  </div>
+                </td>
+                <td className="font-mono text-xs">{c.user?.name ?? `User #${c.userId}`}</td>
+                <td>
+                  <span className="font-mono text-xs text-white/85">{c.proof}</span>
+                  {rule?.url && (
+                    <a href={rule.url} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center text-[10px] text-fuchsia-300">
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </td>
+                <td className="font-mono font-bold text-emerald-300">+{c.amount} RR</td>
+                <td>
+                  {c.status === "pending" && <Pill tone="warn">pending</Pill>}
+                  {c.status === "approved" && <Pill tone="good">approved</Pill>}
+                  {c.status === "rejected" && <Pill tone="bad">rejected</Pill>}
+                </td>
+                <td className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</td>
+                <td className="text-right">
+                  {c.status === "pending" && (
+                    <div className="inline-flex gap-1">
+                      <button onClick={() => review(c.id, "approved")} disabled={reviewing === c.id}
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-2 py-1 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-400/30 disabled:opacity-40">
+                        <Check className="h-3 w-3" /> Approve
+                      </button>
+                      <button onClick={() => { setRejectId(c.id); setRejectReason(""); }}
+                        className="inline-flex items-center gap-1 rounded-md bg-rose-500/20 px-2 py-1 text-[10px] font-bold text-rose-300 ring-1 ring-rose-400/30">
+                        <X className="h-3 w-3" /> Reject
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </DataTable>
+      )}
 
-              <NumField label="Multiplier" step={0.05} min={1} max={5} value={t.multiplier} onChange={(v) => updateTier(t.id, { multiplier: v })} suffix="×" />
-              <NumField label="Daily cap" min={0} value={t.dailyCap} onChange={(v) => updateTier(t.id, { dailyCap: v })} suffix="RR" />
-              <NumField label="Rank order" min={0} value={t.rank} onChange={(v) => updateTier(t.id, { rank: v })} />
-            </div>
-
-            <div className="mt-3 grid gap-2 md:grid-cols-3">
-              <NumField label="Min approved reviews" min={0} value={t.requirements.approvedReviews} onChange={(v) => updateTier(t.id, { requirements: { ...t.requirements, approvedReviews: v } })} />
-              <NumField label="Min streak (days)" min={0} value={t.requirements.streakDays} onChange={(v) => updateTier(t.id, { requirements: { ...t.requirements, streakDays: v } })} />
-              <label className="flex items-end gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Verified email</span>
-                <Toggle label="Verified email" active={t.requirements.verifiedEmail} onChange={(v) => updateTier(t.id, { requirements: { ...t.requirements, verifiedEmail: v } })} />
-              </label>
-            </div>
-
-            <div className="mt-3">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Perks (one per line)</div>
-              <textarea
-                value={t.perks.join("\n")}
-                onChange={(e) => updateTier(t.id, { perks: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })}
-                className="mt-1 w-full rounded-md bg-black/30 p-2 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
-                rows={3}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      {totalPages > 1 && page < totalPages - 1 && (
+        <div className="mt-4 flex justify-center">
+          <button onClick={() => load(page + 1)} disabled={loading} className="rounded-full bg-white/10 px-4 py-1.5 text-xs text-white disabled:opacity-40">
+            {loading ? "Loading…" : "Load more"}
+          </button>
+        </div>
+      )}
     </Panel>
   );
 }
 
-function NumField({ label, value, onChange, min = 0, max, step = 1, suffix }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
-  return (
-    <label className="flex flex-col items-center gap-1">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-      <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-fuchsia-400/30 text-fuchsia-200">
-        <input
-          type="number" min={min} max={max} step={step}
-          value={value}
-          onChange={(e) => onChange(Math.max(min, max !== undefined ? Math.min(max, Number(e.target.value) || 0) : Number(e.target.value) || 0))}
-          className="w-20 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none"
-        />
-        {suffix && <span className="pr-2 text-[10px] font-bold opacity-70">{suffix}</span>}
-      </div>
-    </label>
-  );
-}
+/* ============================================================ Ledger */
 
-/* ============================================================ Caps */
+function LedgerPanel() {
+  const { token } = useAuth();
+  const [data, setData] = useState<{ topUsers: any[]; ledger: any[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [awardForm, setAwardForm] = useState<{ userId: string; amount: string; narration: string } | null>(null);
+  const [awarding, setAwarding] = useState(false);
 
-function CapsPanel() {
-  const caps = useCaps();
+  useEffect(() => {
+    if (!token) return;
+    rrApi.getLedger(token).then((res) => {
+      if (res.payload) setData(res.payload);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [token]);
+
+  const doAward = async () => {
+    if (!token || !awardForm) return;
+    const userId = Number(awardForm.userId);
+    const amount = Number(awardForm.amount);
+    if (!userId || !amount) { toast.error("Fill in user ID and amount"); return; }
+    setAwarding(true);
+    try {
+      await rrApi.awardRr(token, userId, amount, awardForm.narration || "Manual award");
+      toast.success(`Awarded ${amount} RR to user #${userId}`);
+      setAwardForm(null);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Award failed");
+    } finally {
+      setAwarding(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <Panel
-        title="Anti-abuse caps — global daily / weekly limits"
+    <div className="grid gap-4">
+      <Panel title="Manual RR award"
         action={
-          <button
-            onClick={() => { if (confirm("Reset caps to defaults?")) resetCaps(); }}
-            className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold text-white ring-1 ring-white/10 hover:bg-white/15"
-          >
-            <RotateCcw className="h-3 w-3" /> Reset defaults
+          <button onClick={() => setAwardForm(awardForm ? null : { userId: "", amount: "", narration: "" })}
+            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white">
+            <Plus className="h-3 w-3" /> Award RR
           </button>
         }
       >
-        <Note>
-          These caps apply to <b>every user</b>. A higher tier <b>dailyCap</b> overrides the global daily cap (only if larger). Set to <b>0</b> to disable a cap.
-        </Note>
-
-        <div className="grid gap-3 md:grid-cols-2">
-          <NumField label="Global daily cap (RR/user)" min={0} value={caps.dailyCap} onChange={(v) => updateCaps({ dailyCap: v })} suffix="RR" />
-          <NumField label="Global weekly cap (RR/user)" min={0} value={caps.weeklyCap} onChange={(v) => updateCaps({ weeklyCap: v })} suffix="RR" />
-        </div>
+        {awardForm && (
+          <div className="mb-3 grid gap-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10 md:grid-cols-[1fr_1fr_2fr_auto]">
+            <input value={awardForm.userId} onChange={(e) => setAwardForm((d) => d && { ...d, userId: e.target.value })} placeholder="User ID" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
+            <input type="number" value={awardForm.amount} onChange={(e) => setAwardForm((d) => d && { ...d, amount: e.target.value })} placeholder="Amount (RR)" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
+            <input value={awardForm.narration} onChange={(e) => setAwardForm((d) => d && { ...d, narration: e.target.value })} placeholder="Narration" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
+            <button onClick={doAward} disabled={awarding} className="rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40">
+              {awarding ? "…" : "Award"}
+            </button>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">Use this form to manually credit RR to a user for support resolutions or promotions.</p>
       </Panel>
 
-      <Panel title="Per-action cooldowns + daily limits">
-        <Note>
-          <b>Cooldown</b> = minimum seconds between two credits of the same action. <b>Daily limit</b> = max number of times an action can pay out per user per day. Set to <b>0</b> to disable.
-        </Note>
+      <Panel title="Top RR holders">
+        {loading ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
+        ) : (
+          <DataTable head={<><th>User</th><th>Name</th><th>RR Balance</th></>}>
+            {(data?.topUsers ?? []).map((u) => (
+              <tr key={u.id}>
+                <td className="font-mono text-xs">#{u.id}</td>
+                <td className="font-semibold">{u.name ?? u.emailAddress ?? "—"}</td>
+                <td className="font-mono font-bold text-fuchsia-300">{Number(u.rrBalance ?? 0).toLocaleString()} RR</td>
+              </tr>
+            ))}
+            {(data?.topUsers ?? []).length === 0 && (
+              <tr><td colSpan={3} className="py-8 text-center text-sm text-muted-foreground">No RR holders yet.</td></tr>
+            )}
+          </DataTable>
+        )}
+      </Panel>
 
-        <DataTable head={<><th>Action</th><th>Cooldown (sec)</th><th>Daily limit</th></>}>
-          {TIER_ACTIONS.map((a) => (
-            <tr key={a.id}>
-              <td className="font-semibold text-white">{a.label}<div className="font-mono text-[10px] text-white/40">{a.id}</div></td>
-              <td>
-                <input
-                  type="number" min={0}
-                  value={caps.cooldowns[a.id] ?? 0}
-                  onChange={(e) => updateCaps({ cooldowns: { [a.id]: Math.max(0, Number(e.target.value) || 0) } })}
-                  className="w-28 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-amber-200 ring-1 ring-amber-400/30 outline-none"
-                />
-              </td>
-              <td>
-                <input
-                  type="number" min={0}
-                  value={caps.dailyActionLimit[a.id] ?? 0}
-                  onChange={(e) => updateCaps({ dailyActionLimit: { [a.id]: Math.max(0, Number(e.target.value) || 0) } })}
-                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none"
-                />
-              </td>
-            </tr>
-          ))}
-        </DataTable>
+      <Panel title="RR claim ledger (latest 50)">
+        {loading ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
+        ) : (
+          <DataTable head={<><th>Date</th><th>User</th><th>Action</th><th>Amount</th><th>Status</th></>}>
+            {(data?.ledger ?? []).map((entry) => (
+              <tr key={entry.id}>
+                <td className="text-xs text-muted-foreground whitespace-nowrap">
+                  {new Date(entry.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </td>
+                <td className="font-mono text-xs">{entry.user?.name ?? `User #${entry.userId}`}</td>
+                <td className="text-white/80">{entry.socialId ?? entry.narration ?? "—"}</td>
+                <td className="font-mono font-bold text-emerald-300">+{Number(entry.amount ?? 0).toLocaleString()} RR</td>
+                <td>
+                  <Pill tone={entry.status === "approved" ? "good" : entry.status === "pending" ? "warn" : "bad"}>
+                    {entry.status}
+                  </Pill>
+                </td>
+              </tr>
+            ))}
+            {(data?.ledger ?? []).length === 0 && (
+              <tr><td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No entries yet.</td></tr>
+            )}
+          </DataTable>
+        )}
       </Panel>
     </div>
   );
