@@ -568,6 +568,18 @@ export const financeApi = {
     return apiRequest("/analytic/trt", { token });
   },
 
+  getUserAnalytics(token: string): Promise<ApiResponse<{
+    totalUsers: number;
+    byCountry: { name: string; value: number }[];
+    byExperience: { name: string; value: number }[];
+    bySource: { name: string; value: number }[];
+    byAsset: { name: string; value: number }[];
+    byStatus: { name: string; value: number }[];
+    signupTrend: { month: string; count: number }[];
+  }>> {
+    return apiRequest("/analytic/users", { token });
+  },
+
   // ─── RR (Reward Points) ───────────────────────────────────────────────────────
 
   // Admin: adjust a user's RR balance (CREDIT/DEBIT/UPDATE)
