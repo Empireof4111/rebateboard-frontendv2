@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { awardRr } from "@/lib/rr-rewards";
+import { API_BASE_URL } from "@/lib/api";
 
 export type Level = "Beginner" | "Intermediate" | "Pro";
 export type AccessTier = "free" | "paid";
@@ -413,26 +414,53 @@ export const FACULTIES_SEED: Faculty[] = [
   },
 ];
 
+/* ─────────────────── API → frontend type mappers ─────────────────────────
+ * The backend returns numeric ids and uses `question` instead of `q`.
+ * These mappers normalise the shape and attach _dbId so mutations know
+ * which DB row to target.
+ */
+
+function mapQuiz(q: any): QuizQuestion {
+  return { id: String(q.id), q: q.question ?? q.q ?? "", options: q.options ?? [], correctIndex: q.correctIndex ?? 0, explain: q.explain, _dbId: q.id } as any;
+}
+function mapLesson(l: any): Lesson {
+  return { id: String(l.id), title: l.title ?? "", durationMin: l.durationMin ?? 8, summary: l.summary ?? "", body: l.body ?? "", videoUrl: l.videoUrl ?? undefined, screenshot: l.screenshot ?? undefined, images: l.images ?? undefined, _dbId: l.id } as any;
+}
+function mapModule(m: any): Module {
+  return { id: String(m.id), title: m.title ?? "", summary: m.summary ?? "", lessons: (m.lessons ?? []).map(mapLesson), quiz: (m.quiz ?? []).map(mapQuiz), _dbId: m.id } as any;
+}
+function mapCourse(c: any): Course {
+  return { id: String(c.id), title: c.title ?? "", tagline: c.tagline ?? "", cover: c.cover ?? "📘", coverImage: c.coverImage ?? undefined, level: (c.level ?? "Beginner") as Level, access: (c.access ?? "free") as AccessTier, priceUsd: Number(c.priceUsd) || 0, priceRr: Number(c.priceRr) || 0, rrReward: Number(c.rrReward) || 50, estHours: Number(c.estHours) || 1, rating: Number(c.rating) || 4.7, enrolled: c.enrolled ?? 0, authors: c.authors ?? [], outcomes: c.outcomes ?? [], modules: (c.modules ?? []).map(mapModule), finalExam: (c.finalExam ?? []).map(mapQuiz), _dbId: c.id } as any;
+}
+function mapProgram(p: any): Program {
+  return { id: String(p.id), title: p.title ?? "", level: (p.level ?? "Beginner") as Level, summary: p.summary ?? "", courses: (p.courses ?? []).map(mapCourse), _dbId: p.id } as any;
+}
+function mapFaculty(f: any): Faculty {
+  return { id: String(f.id), slug: f.slug ?? "", title: f.title ?? "", emoji: f.emoji ?? "🎓", tagline: f.tagline ?? "", color: f.color ?? "from-fuchsia-500 to-violet-600", programs: (f.programs ?? []).map(mapProgram), _dbId: f.id } as any;
+}
+
+async function fetchCurriculumFromApi(): Promise<Faculty[] | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/academy/curriculum`);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.payload)) {
+      return (json.payload as any[]).map(mapFaculty);
+    }
+    return null;
+  } catch { return null; }
+}
+
 /* ─────────────────── live curriculum store ───────────────────
- * Admin-overridable. Persisted to localStorage so Superadmin edits
- * survive reloads and reflect immediately in the public Academy.
+ * Source of truth is the backend API (/academy/curriculum).
+ * localStorage is used only as an instant-render cache — never as
+ * the fallback seed.  Dummy FACULTIES_SEED data is never shown.
  */
 
 const CURRICULUM_KEY = "rb-academy-curriculum-v1";
-const CURRICULUM_EVT = "rb-academy-curriculum-update";
+const CURRICULUM_EVT = "rb-academy-curriculum-update";   // optimistic local patch
+const CURRICULUM_REFRESH_EVT = "rb-academy-curriculum-refresh"; // triggers API re-fetch
 
-function readCurriculum(): Faculty[] {
-  if (typeof window === "undefined") return FACULTIES_SEED;
-  try {
-    const raw = localStorage.getItem(CURRICULUM_KEY);
-    if (!raw) return FACULTIES_SEED;
-    const parsed = JSON.parse(raw) as Faculty[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return FACULTIES_SEED;
-    return parsed;
-  } catch { return FACULTIES_SEED; }
-}
-
-let curriculumCache: Faculty[] = readCurriculum();
+let curriculumCache: Faculty[] = [];
 
 export function getFaculties(): Faculty[] { return curriculumCache; }
 
@@ -444,23 +472,65 @@ export function saveCurriculum(next: Faculty[]) {
   }
 }
 
+// Trigger a full re-fetch from the API (call after any mutation completes)
+export function refreshCurriculum() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CURRICULUM_REFRESH_EVT));
+  }
+}
+
 export function resetCurriculum() {
-  saveCurriculum(FACULTIES_SEED);
+  // Clear local cache and pull fresh from API
+  curriculumCache = [];
+  if (typeof window !== "undefined") {
+    try { localStorage.removeItem(CURRICULUM_KEY); } catch {}
+  }
+  refreshCurriculum();
 }
 
 export function useFaculties(): Faculty[] {
-  const [data, setData] = useState<Faculty[]>(() => curriculumCache);
+  const [data, setData] = useState<Faculty[]>([]);
+
   useEffect(() => {
-    setData(readCurriculum());
-    curriculumCache = readCurriculum();
-    const fn = () => { curriculumCache = readCurriculum(); setData(curriculumCache); };
-    window.addEventListener(CURRICULUM_EVT, fn);
-    window.addEventListener("storage", fn);
+    let cancelled = false;
+
+    const load = async () => {
+      const fromApi = await fetchCurriculumFromApi();
+      if (cancelled) return;
+      if (fromApi !== null) {
+        curriculumCache = fromApi;
+        setData(fromApi);
+        try { localStorage.setItem(CURRICULUM_KEY, JSON.stringify(fromApi)); } catch {}
+      }
+    };
+
+    // Warm render from cache while API loads
+    try {
+      const raw = localStorage.getItem(CURRICULUM_KEY);
+      if (raw) {
+        const cached = JSON.parse(raw) as Faculty[];
+        // Only use cache if it looks like API data (items have numeric _dbId), not seed
+        if (Array.isArray(cached) && cached.length > 0 && (cached[0] as any)._dbId) {
+          curriculumCache = cached;
+          setData(cached);
+        }
+      }
+    } catch {}
+
+    load();
+
+    const onLocalPatch = () => { setData([...curriculumCache]); };
+    const onRefresh = () => { load(); };
+
+    window.addEventListener(CURRICULUM_EVT, onLocalPatch);
+    window.addEventListener(CURRICULUM_REFRESH_EVT, onRefresh);
     return () => {
-      window.removeEventListener(CURRICULUM_EVT, fn);
-      window.removeEventListener("storage", fn);
+      cancelled = true;
+      window.removeEventListener(CURRICULUM_EVT, onLocalPatch);
+      window.removeEventListener(CURRICULUM_REFRESH_EVT, onRefresh);
     };
   }, []);
+
   return data;
 }
 

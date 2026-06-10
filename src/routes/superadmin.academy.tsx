@@ -5,7 +5,7 @@ import {
 } from "@/components/superadmin/AdminUI";
 import { Modal, Field, fieldCls, selectCls, ConfirmDialog, toast } from "@/components/superadmin/AdminActions";
 import {
-  useFaculties, saveCurriculum, resetCurriculum, courseTotals,
+  useFaculties, refreshCurriculum, resetCurriculum, courseTotals,
   type Faculty, type Program, type Course, type Module, type Lesson, type QuizQuestion,
   type Level, type AccessTier,
 } from "@/lib/academy-data";
@@ -45,61 +45,45 @@ function AcademyAdmin() {
     return { faculties: faculties.length, programs: faculties.flatMap((f) => f.programs).length, courses: courses.length, lessons, free, paid };
   }, [faculties]);
 
-  /* mutations */
-  const writeFaculties = (next: Faculty[]) => saveCurriculum(next);
+  /* mutations — all changes go to the API first, then refreshCurriculum() re-fetches */
 
   const upsertFaculty = async (fac: Faculty) => {
-    const exists = faculties.some((f) => f.id === fac.id);
-    // Optimistic local update
-    writeFaculties(exists ? faculties.map((f) => f.id === fac.id ? fac : f) : [...faculties, fac]);
-    toast.success(`Faculty "${fac.title}" saved`);
-    // Persist to backend
+    const payload = { slug: fac.slug, title: fac.title, emoji: fac.emoji, tagline: fac.tagline, color: fac.color };
     try {
-      const payload = { slug: fac.slug, title: fac.title, emoji: fac.emoji, tagline: fac.tagline, color: fac.color };
       if ((fac as any)._dbId) {
         await apiUpdateFaculty((fac as any)._dbId, payload);
       } else {
         await apiCreateFaculty(payload);
       }
+      toast.success(`Faculty "${fac.title}" saved`);
+      refreshCurriculum();
     } catch (e) {
-      console.warn("Academy API sync error (faculty):", e);
+      console.warn("Academy API error (faculty):", e);
+      toast.error("Failed to save faculty");
     }
   };
 
   const upsertProgram = async (facId: string, prog: Program) => {
-    writeFaculties(faculties.map((f) => {
-      if (f.id !== facId) return f;
-      const exists = f.programs.some((p) => p.id === prog.id);
-      return { ...f, programs: exists ? f.programs.map((p) => p.id === prog.id ? prog : p) : [...f.programs, prog] };
-    }));
-    toast.success(`Program "${prog.title}" saved`);
     try {
       if ((prog as any)._dbId) {
         await apiUpdateProgram((prog as any)._dbId, { title: prog.title, level: prog.level, summary: prog.summary });
-      } else if ((faculties.find(f => f.id === facId) as any)?._dbId) {
+      } else {
+        const fac = faculties.find(f => f.id === facId);
+        if (!(fac as any)?._dbId) throw new Error("Faculty not yet saved to DB");
         await apiCreateProgram({
-          facultyId: (faculties.find(f => f.id === facId) as any)._dbId,
+          facultyId: (fac as any)._dbId,
           title: prog.title, level: prog.level, summary: prog.summary,
         });
       }
+      toast.success(`Program "${prog.title}" saved`);
+      refreshCurriculum();
     } catch (e) {
-      console.warn("Academy API sync error (program):", e);
+      console.warn("Academy API error (program):", e);
+      toast.error("Failed to save program");
     }
   };
 
   const upsertCourse = async (facId: string, pgId: string, course: Course) => {
-    writeFaculties(faculties.map((f) => {
-      if (f.id !== facId) return f;
-      return {
-        ...f,
-        programs: f.programs.map((p) => {
-          if (p.id !== pgId) return p;
-          const exists = p.courses.some((c) => c.id === course.id);
-          return { ...p, courses: exists ? p.courses.map((c) => c.id === course.id ? course : c) : [...p.courses, course] };
-        }),
-      };
-    }));
-    toast.success(`Course "${course.title}" saved`);
     try {
       const prog = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId);
       const dbCourseId = (course as any)._dbId;
@@ -119,39 +103,38 @@ function AcademyAdmin() {
         if (created.payload) {
           await apiSyncCourse((created.payload as any).id, course);
         }
+      } else {
+        throw new Error("Program not yet saved to DB");
       }
+      toast.success(`Course "${course.title}" saved`);
+      refreshCurriculum();
     } catch (e) {
-      console.warn("Academy API sync error (course):", e);
+      console.warn("Academy API error (course):", e);
+      toast.error("Failed to save course");
     }
   };
 
   const removeTarget = async () => {
     if (!delTarget) return;
-    if (delTarget.kind === "faculty") {
-      writeFaculties(faculties.filter((f) => f.id !== delTarget.ids[0]));
-      const fac = faculties.find(f => f.id === delTarget.ids[0]);
-      if ((fac as any)?._dbId) {
-        try { await apiDeleteFaculty((fac as any)._dbId); } catch (e) { console.warn(e); }
+    try {
+      if (delTarget.kind === "faculty") {
+        const fac = faculties.find(f => f.id === delTarget.ids[0]);
+        if ((fac as any)?._dbId) await apiDeleteFaculty((fac as any)._dbId);
+      } else if (delTarget.kind === "program") {
+        const [facId, pgId] = delTarget.ids;
+        const prog = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId);
+        if ((prog as any)?._dbId) await apiDeleteProgram((prog as any)._dbId);
+      } else {
+        const [facId, pgId, courseId] = delTarget.ids;
+        const course = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId)?.courses.find(c => c.id === courseId);
+        if ((course as any)?._dbId) await apiDeleteCourse((course as any)._dbId);
       }
-    } else if (delTarget.kind === "program") {
-      const [facId, pgId] = delTarget.ids;
-      writeFaculties(faculties.map((f) => f.id !== facId ? f : { ...f, programs: f.programs.filter((p) => p.id !== pgId) }));
-      const prog = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId);
-      if ((prog as any)?._dbId) {
-        try { await apiDeleteProgram((prog as any)._dbId); } catch (e) { console.warn(e); }
-      }
-    } else {
-      const [facId, pgId, courseId] = delTarget.ids;
-      writeFaculties(faculties.map((f) => f.id !== facId ? f : {
-        ...f,
-        programs: f.programs.map((p) => p.id !== pgId ? p : { ...p, courses: p.courses.filter((c) => c.id !== courseId) }),
-      }));
-      const course = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId)?.courses.find(c => c.id === courseId);
-      if ((course as any)?._dbId) {
-        try { await apiDeleteCourse((course as any)._dbId); } catch (e) { console.warn(e); }
-      }
+      toast.success(`Deleted ${delTarget.label}`);
+      refreshCurriculum();
+    } catch (e) {
+      console.warn("Academy API error (delete):", e);
+      toast.error("Failed to delete");
     }
-    toast.success(`Deleted ${delTarget.label}`);
     setDelTarget(null);
   };
 
