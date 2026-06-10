@@ -10,9 +10,14 @@ import {
   type Level, type AccessTier,
 } from "@/lib/academy-data";
 import {
+  apiCreateFaculty, apiUpdateFaculty, apiDeleteFaculty,
+  apiCreateProgram, apiUpdateProgram, apiDeleteProgram,
+  apiCreateCourse, apiUpdateCourse, apiDeleteCourse, apiSyncCourse,
+} from "@/lib/academy-api";
+import {
   Plus, Edit3, Trash2, ChevronRight, BookOpen, GraduationCap, Layers,
   Sparkles, RotateCcw, Search, Eye, FileQuestion, PlayCircle,
-  ChevronDown,
+  ChevronDown, Image, Upload,
 } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/academy")({
@@ -43,22 +48,46 @@ function AcademyAdmin() {
   /* mutations */
   const writeFaculties = (next: Faculty[]) => saveCurriculum(next);
 
-  const upsertFaculty = (fac: Faculty) => {
+  const upsertFaculty = async (fac: Faculty) => {
     const exists = faculties.some((f) => f.id === fac.id);
+    // Optimistic local update
     writeFaculties(exists ? faculties.map((f) => f.id === fac.id ? fac : f) : [...faculties, fac]);
     toast.success(`Faculty "${fac.title}" saved`);
+    // Persist to backend
+    try {
+      const payload = { slug: fac.slug, title: fac.title, emoji: fac.emoji, tagline: fac.tagline, color: fac.color };
+      if ((fac as any)._dbId) {
+        await apiUpdateFaculty((fac as any)._dbId, payload);
+      } else {
+        await apiCreateFaculty(payload);
+      }
+    } catch (e) {
+      console.warn("Academy API sync error (faculty):", e);
+    }
   };
 
-  const upsertProgram = (facId: string, prog: Program) => {
+  const upsertProgram = async (facId: string, prog: Program) => {
     writeFaculties(faculties.map((f) => {
       if (f.id !== facId) return f;
       const exists = f.programs.some((p) => p.id === prog.id);
       return { ...f, programs: exists ? f.programs.map((p) => p.id === prog.id ? prog : p) : [...f.programs, prog] };
     }));
     toast.success(`Program "${prog.title}" saved`);
+    try {
+      if ((prog as any)._dbId) {
+        await apiUpdateProgram((prog as any)._dbId, { title: prog.title, level: prog.level, summary: prog.summary });
+      } else if ((faculties.find(f => f.id === facId) as any)?._dbId) {
+        await apiCreateProgram({
+          facultyId: (faculties.find(f => f.id === facId) as any)._dbId,
+          title: prog.title, level: prog.level, summary: prog.summary,
+        });
+      }
+    } catch (e) {
+      console.warn("Academy API sync error (program):", e);
+    }
   };
 
-  const upsertCourse = (facId: string, pgId: string, course: Course) => {
+  const upsertCourse = async (facId: string, pgId: string, course: Course) => {
     writeFaculties(faculties.map((f) => {
       if (f.id !== facId) return f;
       return {
@@ -71,21 +100,56 @@ function AcademyAdmin() {
       };
     }));
     toast.success(`Course "${course.title}" saved`);
+    try {
+      const prog = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId);
+      const dbCourseId = (course as any)._dbId;
+      const dbProgId = (prog as any)?._dbId;
+      if (dbCourseId) {
+        await apiSyncCourse(dbCourseId, course);
+      } else if (dbProgId) {
+        const created = await apiCreateCourse({
+          programId: dbProgId,
+          title: course.title, tagline: course.tagline, cover: course.cover,
+          coverImage: (course as any).coverImage,
+          level: course.level, access: course.access,
+          priceUsd: course.priceUsd, priceRr: course.priceRr, rrReward: course.rrReward,
+          estHours: course.estHours, rating: course.rating, enrolled: course.enrolled,
+          authors: course.authors, outcomes: course.outcomes,
+        });
+        if (created.payload) {
+          await apiSyncCourse((created.payload as any).id, course);
+        }
+      }
+    } catch (e) {
+      console.warn("Academy API sync error (course):", e);
+    }
   };
 
-  const removeTarget = () => {
+  const removeTarget = async () => {
     if (!delTarget) return;
     if (delTarget.kind === "faculty") {
       writeFaculties(faculties.filter((f) => f.id !== delTarget.ids[0]));
+      const fac = faculties.find(f => f.id === delTarget.ids[0]);
+      if ((fac as any)?._dbId) {
+        try { await apiDeleteFaculty((fac as any)._dbId); } catch (e) { console.warn(e); }
+      }
     } else if (delTarget.kind === "program") {
       const [facId, pgId] = delTarget.ids;
       writeFaculties(faculties.map((f) => f.id !== facId ? f : { ...f, programs: f.programs.filter((p) => p.id !== pgId) }));
+      const prog = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId);
+      if ((prog as any)?._dbId) {
+        try { await apiDeleteProgram((prog as any)._dbId); } catch (e) { console.warn(e); }
+      }
     } else {
       const [facId, pgId, courseId] = delTarget.ids;
       writeFaculties(faculties.map((f) => f.id !== facId ? f : {
         ...f,
         programs: f.programs.map((p) => p.id !== pgId ? p : { ...p, courses: p.courses.filter((c) => c.id !== courseId) }),
       }));
+      const course = faculties.find(f => f.id === facId)?.programs.find(p => p.id === pgId)?.courses.find(c => c.id === courseId);
+      if ((course as any)?._dbId) {
+        try { await apiDeleteCourse((course as any)._dbId); } catch (e) { console.warn(e); }
+      }
     }
     toast.success(`Deleted ${delTarget.label}`);
     setDelTarget(null);
@@ -660,6 +724,25 @@ function DetailsTab({ form, setForm }: { form: Course; setForm: (c: Course) => v
         <input className={fieldCls} value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} placeholder="Pairs, pips, lots, leverage, sessions — explained without jargon." />
       </Field></div>
 
+      <div className="md:col-span-4">
+        <Field label="Cover image / screenshot (URL)">
+          <input
+            className={fieldCls}
+            value={(form as any).coverImage ?? ""}
+            onChange={(e) => setForm({ ...form, coverImage: e.target.value } as any)}
+            placeholder="Upload via File Manager then paste the URL here"
+          />
+        </Field>
+        {(form as any).coverImage && (
+          <img
+            src={(form as any).coverImage}
+            alt="cover preview"
+            className="mt-2 h-32 w-full rounded-xl object-cover ring-1 ring-white/10"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+        )}
+      </div>
+
       <Field label="Level">
         <select className={selectCls} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as Level })}>
           <option>Beginner</option><option>Intermediate</option><option>Pro</option>
@@ -701,6 +784,60 @@ function DetailsTab({ form, setForm }: { form: Course; setForm: (c: Course) => v
       <div className="md:col-span-4"><Field label="Learning outcomes (one per line)">
         <textarea rows={4} className={fieldCls} value={(form.outcomes ?? []).join("\n")} onChange={(e) => setOutcomes(e.target.value)} placeholder={"Read any FX quote confidently\nSize positions in lots and pips"} />
       </Field></div>
+    </div>
+  );
+}
+
+// Inline image gallery editor for lesson content (UI correction)
+function LessonImagesEditor({ images, onChange }: { images: string[]; onChange: (imgs: string[]) => void }) {
+  const [inputVal, setInputVal] = useState("");
+  const add = () => {
+    const url = inputVal.trim();
+    if (!url) return;
+    onChange([...images, url]);
+    setInputVal("");
+  };
+  const remove = (idx: number) => onChange(images.filter((_, i) => i !== idx));
+  return (
+    <div className="mt-2 rounded-lg bg-black/20 p-2 ring-1 ring-white/5">
+      <div className="mb-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-white/60">
+        <Upload className="h-3 w-3 text-violet-300" /> Content images
+      </div>
+      {images.length > 0 && (
+        <div className="mb-2 grid grid-cols-3 gap-1.5">
+          {images.map((src, i) => (
+            <div key={i} className="group relative">
+              <img
+                src={src}
+                alt={`img-${i}`}
+                className="h-16 w-full rounded-md object-cover ring-1 ring-white/10"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+              <button
+                onClick={() => remove(i)}
+                className="absolute right-0.5 top-0.5 hidden h-5 w-5 place-items-center rounded-full bg-rose-500/80 text-white group-hover:grid"
+              >
+                <Trash2 className="h-2.5 w-2.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-1.5">
+        <input
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder="Paste image URL and press Enter or Add"
+          className={fieldCls + " flex-1 text-xs"}
+        />
+        <button
+          onClick={add}
+          className="inline-flex items-center gap-1 rounded-lg bg-violet-500/20 px-2 py-1 text-[10px] text-violet-200 hover:bg-violet-500/30"
+        >
+          <Plus className="h-3 w-3" /> Add
+        </button>
+      </div>
     </div>
   );
 }
@@ -845,12 +982,37 @@ function ModuleEditor({
                       className={fieldCls + " text-xs"}
                     />
                   </div>
+                  {/* Screenshot / topic thumbnail (UI correction) */}
+                  <div className="mt-2">
+                    <div className="mb-1 inline-flex items-center gap-1 text-[10px] font-bold text-white/60">
+                      <Image className="h-3 w-3 text-sky-300" /> Topic screenshot
+                    </div>
+                    <input
+                      value={(l as any).screenshot ?? ""}
+                      onChange={(e) => onPatchLesson(l.id, { screenshot: e.target.value } as any)}
+                      placeholder="Paste screenshot URL or upload via File Manager then paste the link"
+                      className={fieldCls + " text-xs"}
+                    />
+                    {(l as any).screenshot && (
+                      <img
+                        src={(l as any).screenshot}
+                        alt="screenshot preview"
+                        className="mt-1.5 h-24 w-full rounded-lg object-cover ring-1 ring-white/10"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
+                  </div>
                   <textarea
                     rows={3}
                     value={l.body}
                     onChange={(e) => onPatchLesson(l.id, { body: e.target.value })}
                     placeholder="Lesson body — explain the concept clearly. Plain text or markdown-lite."
                     className={fieldCls + " mt-2 text-xs"}
+                  />
+                  {/* Inline content images (UI correction) */}
+                  <LessonImagesEditor
+                    images={(l as any).images ?? []}
+                    onChange={(imgs) => onPatchLesson(l.id, { images: imgs } as any)}
                   />
                 </div>
               ))}
