@@ -58,6 +58,7 @@ export type DashboardAd = {
   startAt?: string;         // ISO date – inclusive
   endAt?: string;           // ISO date – inclusive
   priority: number;         // higher wins when several are active
+  thumbnail?: string;       // banner thumbnail image URL
   // marquee/single
   headline?: string;
   sub?: string;
