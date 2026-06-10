@@ -1,17 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill } from "@/components/superadmin/AdminUI";
 import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { blogApi, type BlogPost } from "@/lib/admin-api";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
-import { Plus, Edit3, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Edit3, Trash2, RefreshCw, Wand2, X } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/blog")({
   component: BlogAdmin,
 });
 
 const TAGS = ["Guide", "Comparison", "Brand spotlight", "Trader 101", "Industry", "Partner news"];
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 const emptyPost = (): BlogPost => ({
   id: "",
@@ -25,6 +34,10 @@ const emptyPost = (): BlogPost => ({
   tag: "Guide",
   excerpt: "",
   readTime: "5 min read",
+  tags: [],
+  seoTitle: "",
+  seoDescription: "",
+  urlSlug: "",
 });
 
 function BlogAdmin() {
@@ -34,6 +47,7 @@ function BlogAdmin() {
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<BlogPost | null>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -173,8 +187,13 @@ function BlogAdmin() {
           }
         >
           <div className="grid gap-3 md:grid-cols-2">
+            {/* ── Core ── */}
             <Field label="Title" span={2}>
-              <input className={fieldCls} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+              <input
+                className={fieldCls}
+                value={editing.title}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+              />
             </Field>
             <Field label="Status">
               <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as BlogPost["status"] })}>
@@ -182,7 +201,7 @@ function BlogAdmin() {
                 <option value="published">published</option>
               </select>
             </Field>
-            <Field label="Tag / Category">
+            <Field label="Category">
               <select className={selectCls} value={editing.tag ?? "Guide"} onChange={(e) => setEditing({ ...editing, tag: e.target.value })}>
                 {TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -198,6 +217,87 @@ function BlogAdmin() {
             </div>
             <Field label="Body (markdown)" span={2}>
               <textarea rows={10} className={fieldCls} value={editing.body ?? ""} onChange={(e) => setEditing({ ...editing, body: e.target.value })} placeholder="# Heading…" />
+            </Field>
+
+            {/* ── SEO & Discovery ── */}
+            <div className="md:col-span-2 border-t border-white/10 pt-3">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-white/40">SEO &amp; Discovery</p>
+            </div>
+            <Field label="SEO Title" span={2}>
+              <input
+                className={fieldCls}
+                value={editing.seoTitle}
+                onChange={(e) => setEditing({ ...editing, seoTitle: e.target.value })}
+                placeholder="Defaults to post title if empty"
+                maxLength={70}
+              />
+              <p className="mt-1 text-right text-[10px] text-white/30">{editing.seoTitle.length}/70</p>
+            </Field>
+            <Field label="SEO Meta Description" span={2}>
+              <textarea
+                rows={3}
+                className={fieldCls}
+                value={editing.seoDescription}
+                onChange={(e) => setEditing({ ...editing, seoDescription: e.target.value })}
+                placeholder="Concise summary for search engines (max 160 chars)…"
+                maxLength={160}
+              />
+              <p className="mt-1 text-right text-[10px] text-white/30">{editing.seoDescription.length}/160</p>
+            </Field>
+            <Field label="URL Slug" span={2}>
+              <div className="flex gap-2">
+                <input
+                  className={fieldCls + " flex-1"}
+                  value={editing.urlSlug}
+                  onChange={(e) => setEditing({ ...editing, urlSlug: slugify(e.target.value) })}
+                  placeholder="e.g. best-cashback-brokers-2025"
+                />
+                <button
+                  type="button"
+                  title="Generate from title"
+                  onClick={() => setEditing({ ...editing, urlSlug: slugify(editing.title) })}
+                  className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/15"
+                >
+                  <Wand2 className="h-3 w-3" /> Generate
+                </button>
+              </div>
+            </Field>
+            <Field label="Tags" span={2}>
+              <div
+                className="flex flex-wrap gap-1.5 rounded-xl bg-white/5 p-2 ring-1 ring-white/10 cursor-text"
+                onClick={() => tagInputRef.current?.focus()}
+              >
+                {(editing.tags ?? []).map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/20 px-2.5 py-0.5 text-xs font-medium text-fuchsia-300">
+                    {t}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setEditing({ ...editing, tags: editing.tags.filter((x) => x !== t) }); }}
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-fuchsia-500/30"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  ref={tagInputRef}
+                  className="min-w-[130px] flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/30"
+                  placeholder={editing.tags.length === 0 ? "Type a tag, press Enter or comma…" : "Add another…"}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const val = e.currentTarget.value.trim().replace(/,+$/, "");
+                      if (val && !editing.tags.includes(val)) {
+                        setEditing({ ...editing, tags: [...editing.tags, val] });
+                      }
+                      e.currentTarget.value = "";
+                    } else if (e.key === "Backspace" && e.currentTarget.value === "" && editing.tags.length > 0) {
+                      setEditing({ ...editing, tags: editing.tags.slice(0, -1) });
+                    }
+                  }}
+                />
+              </div>
+              <p className="mt-1 text-[10px] text-white/30">Press Enter or comma to add · Backspace to remove last</p>
             </Field>
           </div>
         </Modal>

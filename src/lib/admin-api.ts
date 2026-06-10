@@ -21,6 +21,10 @@ export type BlogPost = {
   tag: string;
   excerpt: string;
   readTime: string;
+  tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+  urlSlug: string;
 };
 
 function mapBlog(raw: any): BlogPost {
@@ -36,6 +40,10 @@ function mapBlog(raw: any): BlogPost {
     tag: raw.category ?? "",
     excerpt: raw.shortDescription ?? "",
     readTime: raw.subCategory ?? "",
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    seoTitle: raw.seoTitle ?? "",
+    seoDescription: raw.seoDescription ?? "",
+    urlSlug: raw.urlSlug ?? "",
   };
 }
 
@@ -48,6 +56,10 @@ function blogToDto(post: Partial<BlogPost>) {
     shortDescription: post.excerpt,
     thumbnail: post.cover,
     status: post.status === "published" ? "ACTIVE" : "INACTIVE",
+    tags: post.tags ?? [],
+    seoTitle: post.seoTitle,
+    seoDescription: post.seoDescription,
+    urlSlug: post.urlSlug,
   };
 }
 

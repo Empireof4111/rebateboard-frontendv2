@@ -5,8 +5,17 @@
 import { apiRequest } from "@/lib/api";
 import type { Faculty, Program, Course } from "@/lib/academy-data";
 
-function token() {
-  return localStorage.getItem("rb-auth-token") ?? null;
+const AUTH_STORAGE_KEY = "rb_auth_session";
+
+function token(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    return (JSON.parse(raw) as { token?: string | null }).token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // ─── Curriculum (full tree, public) ────────────────────────────────────────
