@@ -372,7 +372,6 @@ export type DashboardAd = {
   cta?: string;
   href: string;
   accent: string;
-  thumbnail?: string;
   slides?: any[];
   sponsors?: any[];
   trendingLimit?: number;
@@ -383,18 +382,13 @@ export type DashboardAd = {
   endAt?: string;
 };
 
-const VALID_FORMATS = new Set(["marquee", "single", "carousel", "trending"]);
-const VALID_PLACEMENTS = new Set(["dashboard", "landing-hero", "landing-sponsors", "landing-advertise"]);
-
 function mapAdvert(raw: any): DashboardAd {
   const meta = raw.metadata ?? {};
-  const rawFormat = meta.format ?? "single";
-  const rawPlacement = meta.placement ?? raw.page ?? "dashboard";
   return {
     id: String(raw.id),
     name: raw.title ?? "",
-    format: VALID_FORMATS.has(rawFormat) ? rawFormat : "single",
-    placement: VALID_PLACEMENTS.has(rawPlacement) ? rawPlacement : "dashboard",
+    format: meta.format ?? "single",
+    placement: meta.placement ?? raw.page ?? "dashboard",
     active: raw.active !== false,
     priority: Number(raw.priority ?? 0),
     headline: raw.title ?? "",
@@ -402,7 +396,6 @@ function mapAdvert(raw: any): DashboardAd {
     cta: raw.action ?? meta.cta,
     href: meta.href ?? "",
     accent: meta.accent ?? "from-violet-500 to-fuchsia-600",
-    thumbnail: raw.thumbnail ?? "",
     slides: meta.slides,
     sponsors: meta.sponsors,
     trendingLimit: meta.trendingLimit,
@@ -418,7 +411,7 @@ function advertToDto(data: Partial<DashboardAd>) {
   return {
     title: data.name ?? data.headline,
     subTitle: data.sub,
-    thumbnail: data.thumbnail ?? "",
+    thumbnail: "",
     page: data.placement,
     action: data.cta,
     priority: data.priority,
@@ -457,125 +450,5 @@ export const advertApi = {
   },
   async remove(token: string, id: string): Promise<ApiResponse<void>> {
     return apiRequest(`/advert/${id}`, { method: "DELETE", token });
-  },
-};
-
-// ─── Admin Brands ───────────────────────────────────────────────────────────
-export type AdminBrand = {
-  id: string;
-  name: string;
-  slug: string;
-  category: string;
-  thumbnail: string;
-  primaryColor: string;
-  tbi: number;
-  status: string;
-};
-
-function mapAdminBrand(raw: any): AdminBrand {
-  return {
-    id: String(raw.id),
-    name: raw.name ?? "",
-    slug: raw.slug ?? "",
-    category: raw.category ?? "",
-    thumbnail: raw.thumbnail ?? "",
-    primaryColor: raw.primaryColor ?? "",
-    tbi: Number(raw.tbi ?? 0),
-    status: raw.status ?? "",
-  };
-}
-
-export const adminBrandApi = {
-  async list(token: string): Promise<ApiResponse<AdminBrand[]>> {
-    const res = await apiRequest<any>("/admin-brand/list", { token });
-    if (res.payload) res.payload = (Array.isArray(res.payload) ? res.payload : res.payload.page ?? []).map(mapAdminBrand);
-    return res as any;
-  },
-};
-
-// ─── Popups ────────────────────────────────────────────────────────────────
-export type PopupItem = {
-  id: string;
-  title: string;
-  message: string;
-  cta: string;
-  link: string;
-  trigger: "On load" | "After 10s" | "Exit intent" | "Specific page";
-  audience: "All" | "Logged in" | "Guests";
-  start: string;
-  end: string;
-  status: "draft" | "active" | "paused";
-  views: number;
-  clicks: number;
-  thumbnail: string;
-};
-
-function mapPopup(raw: any): PopupItem {
-  const statusMap: Record<string, PopupItem["status"]> = {
-    ACTIVE: "active",
-    INACTIVE: "draft",
-    PENDING: "paused",
-  };
-  return {
-    id: String(raw.id),
-    title: raw.title ?? "",
-    message: raw.description ?? "",
-    cta: raw.actionText ?? "Learn more",
-    link: raw.actionURL ?? "/",
-    trigger: raw.trigger ?? "On load",
-    audience: raw.audience ?? "All",
-    start: raw.startAt ? new Date(raw.startAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—",
-    end: raw.endAt ? new Date(raw.endAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—",
-    status: statusMap[raw.status] ?? "draft",
-    views: Number(raw.views ?? 0),
-    clicks: Number(raw.clicks ?? 0),
-    thumbnail: raw.thumbnail ?? "",
-  };
-}
-
-function popupToDto(data: Partial<PopupItem>) {
-  const statusMap: Record<string, string> = {
-    active: "ACTIVE",
-    draft: "INACTIVE",
-    paused: "PENDING",
-  };
-  return {
-    title: data.title,
-    description: data.message,
-    actionText: data.cta,
-    actionURL: data.link,
-    thumbnail: data.thumbnail,
-    trigger: data.trigger,
-    audience: data.audience,
-    startAt: data.start && data.start !== "—" ? data.start : undefined,
-    endAt: data.end && data.end !== "—" ? data.end : undefined,
-    status: data.status ? statusMap[data.status] : undefined,
-  };
-}
-
-export const popupApi = {
-  async list(token: string, page = 0, size = 100): Promise<ApiResponse<PaginatedResult<PopupItem>>> {
-    const res = await apiRequest<any>(`/popup/list?page=${page}&size=${size}`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapPopup) };
-    return res as any;
-  },
-  async create(token: string, data: Partial<PopupItem>): Promise<ApiResponse<PopupItem>> {
-    const res = await apiRequest<any>("/popup/", { method: "POST", token, body: popupToDto(data) });
-    if (res.payload) res.payload = mapPopup(res.payload);
-    return res as any;
-  },
-  async update(token: string, id: string, data: Partial<PopupItem>): Promise<ApiResponse<PopupItem>> {
-    const res = await apiRequest<any>(`/popup/${id}`, { method: "PUT", token, body: popupToDto(data) });
-    if (res.payload) res.payload = mapPopup(res.payload);
-    return res as any;
-  },
-  async remove(token: string, id: string): Promise<ApiResponse<void>> {
-    return apiRequest(`/popup/${id}`, { method: "DELETE", token });
-  },
-  async recordView(id: string): Promise<void> {
-    await apiRequest(`/popup/${id}/view`, { method: "POST" });
-  },
-  async recordClick(id: string): Promise<void> {
-    await apiRequest(`/popup/${id}/click`, { method: "POST" });
   },
 };
