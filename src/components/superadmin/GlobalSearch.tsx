@@ -21,6 +21,9 @@ function buildIndex(): Hit[] {
   const modules = [
     ["Mission Control", "/superadmin"],
     ["Roles & Permissions", "/superadmin/roles"],
+    ["Journal Analytics", "/superadmin/journal-analytics"],
+    ["Daily Tasks", "/superadmin/daily-tasks"],
+    ["RR Purchases", "/superadmin/rr-purchases"],
     ["TBI Engine", "/superadmin/tbi"],
     ["Cashback Engine", "/superadmin/cashback"],
     ["User Wallets", "/superadmin/wallets"],
@@ -29,10 +32,14 @@ function buildIndex(): Hit[] {
     ["Announcements", "/superadmin/announcements"],
     ["Pop-ups", "/superadmin/popups"],
     ["Offers", "/superadmin/offers"],
+    ["Demo Accounts", "/superadmin/demo-accounts"],
+    ["Challenge Purchases", "/superadmin/challenge-purchases"],
+    ["Top Sellers", "/superadmin/top-sellers"],
     ["Subscribers", "/superadmin/subscribers"],
     ["Audit Log", "/superadmin/audit"],
     ["Feature Flags", "/superadmin/flags"],
     ["API Keys", "/superadmin/api-keys"],
+    ["Bug Bounty", "/superadmin/Bug-bounty"],
     ["Settings", "/superadmin/settings"],
   ] as const;
   modules.forEach(([label, to]) => hits.push({ id: `m-${to}`, label, sub: "Open module", group: "Navigate", to }));

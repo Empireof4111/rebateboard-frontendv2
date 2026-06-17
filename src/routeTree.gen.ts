@@ -40,10 +40,12 @@ import { Route as SuperadminWalletRouteImport } from './routes/superadmin.wallet
 import { Route as SuperadminUsersRouteImport } from './routes/superadmin.users'
 import { Route as SuperadminTrtRouteImport } from './routes/superadmin.trt'
 import { Route as SuperadminTransactionsRouteImport } from './routes/superadmin.transactions'
+import { Route as SuperadminTopSellersRouteImport } from './routes/superadmin.top-sellers'
 import { Route as SuperadminTbiRouteImport } from './routes/superadmin.tbi'
 import { Route as SuperadminSubscribersRouteImport } from './routes/superadmin.subscribers'
 import { Route as SuperadminSettingsRouteImport } from './routes/superadmin.settings'
 import { Route as SuperadminSearchAnalyticsRouteImport } from './routes/superadmin.search-analytics'
+import { Route as SuperadminRrPurchasesRouteImport } from './routes/superadmin.rr-purchases'
 import { Route as SuperadminRrRouteImport } from './routes/superadmin.rr'
 import { Route as SuperadminRolesRouteImport } from './routes/superadmin.roles'
 import { Route as SuperadminRewardsRouteImport } from './routes/superadmin.rewards'
@@ -55,12 +57,16 @@ import { Route as SuperadminOffersRouteImport } from './routes/superadmin.offers
 import { Route as SuperadminNotificationsRouteImport } from './routes/superadmin.notifications'
 import { Route as SuperadminNewsRouteImport } from './routes/superadmin.news'
 import { Route as SuperadminLeaderboardsRouteImport } from './routes/superadmin.leaderboards'
+import { Route as SuperadminJournalAnalyticsRouteImport } from './routes/superadmin.journal-analytics'
 import { Route as SuperadminInboxRouteImport } from './routes/superadmin.inbox'
 import { Route as SuperadminFlagsRouteImport } from './routes/superadmin.flags'
 import { Route as SuperadminFaqsRouteImport } from './routes/superadmin.faqs'
 import { Route as SuperadminDisputesRouteImport } from './routes/superadmin.disputes'
+import { Route as SuperadminDemoAccountsRouteImport } from './routes/superadmin.demo-accounts'
+import { Route as SuperadminDailyTasksRouteImport } from './routes/superadmin.daily-tasks'
 import { Route as SuperadminComplaintsRouteImport } from './routes/superadmin.complaints'
 import { Route as SuperadminClaimsRouteImport } from './routes/superadmin.claims'
+import { Route as SuperadminChallengePurchasesRouteImport } from './routes/superadmin.challenge-purchases'
 import { Route as SuperadminCashbackRouteImport } from './routes/superadmin.cashback'
 import { Route as SuperadminBrandsRouteImport } from './routes/superadmin.brands'
 import { Route as SuperadminBrandRequestsRouteImport } from './routes/superadmin.brand-requests'
@@ -73,6 +79,7 @@ import { Route as SuperadminAnalyticsRouteImport } from './routes/superadmin.ana
 import { Route as SuperadminAffiliatesRouteImport } from './routes/superadmin.affiliates'
 import { Route as SuperadminAdsRouteImport } from './routes/superadmin.ads'
 import { Route as SuperadminAcademyRouteImport } from './routes/superadmin.academy'
+import { Route as SuperadminBugBountyRouteImport } from './routes/superadmin.Bug-bounty'
 import { Route as ReviewsCategoryRouteImport } from './routes/reviews.$category'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as PayoutsBrandSlugRouteImport } from './routes/payouts.$brandSlug'
@@ -273,6 +280,11 @@ const SuperadminTransactionsRoute = SuperadminTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const SuperadminTopSellersRoute = SuperadminTopSellersRouteImport.update({
+  id: '/top-sellers',
+  path: '/top-sellers',
+  getParentRoute: () => SuperadminRoute,
+} as any)
 const SuperadminTbiRoute = SuperadminTbiRouteImport.update({
   id: '/tbi',
   path: '/tbi',
@@ -294,6 +306,11 @@ const SuperadminSearchAnalyticsRoute =
     path: '/search-analytics',
     getParentRoute: () => SuperadminRoute,
   } as any)
+const SuperadminRrPurchasesRoute = SuperadminRrPurchasesRouteImport.update({
+  id: '/rr-purchases',
+  path: '/rr-purchases',
+  getParentRoute: () => SuperadminRoute,
+} as any)
 const SuperadminRrRoute = SuperadminRrRouteImport.update({
   id: '/rr',
   path: '/rr',
@@ -350,6 +367,12 @@ const SuperadminLeaderboardsRoute = SuperadminLeaderboardsRouteImport.update({
   path: '/leaderboards',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const SuperadminJournalAnalyticsRoute =
+  SuperadminJournalAnalyticsRouteImport.update({
+    id: '/journal-analytics',
+    path: '/journal-analytics',
+    getParentRoute: () => SuperadminRoute,
+  } as any)
 const SuperadminInboxRoute = SuperadminInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -370,6 +393,16 @@ const SuperadminDisputesRoute = SuperadminDisputesRouteImport.update({
   path: '/disputes',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const SuperadminDemoAccountsRoute = SuperadminDemoAccountsRouteImport.update({
+  id: '/demo-accounts',
+  path: '/demo-accounts',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminDailyTasksRoute = SuperadminDailyTasksRouteImport.update({
+  id: '/daily-tasks',
+  path: '/daily-tasks',
+  getParentRoute: () => SuperadminRoute,
+} as any)
 const SuperadminComplaintsRoute = SuperadminComplaintsRouteImport.update({
   id: '/complaints',
   path: '/complaints',
@@ -380,6 +413,12 @@ const SuperadminClaimsRoute = SuperadminClaimsRouteImport.update({
   path: '/claims',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const SuperadminChallengePurchasesRoute =
+  SuperadminChallengePurchasesRouteImport.update({
+    id: '/challenge-purchases',
+    path: '/challenge-purchases',
+    getParentRoute: () => SuperadminRoute,
+  } as any)
 const SuperadminCashbackRoute = SuperadminCashbackRouteImport.update({
   id: '/cashback',
   path: '/cashback',
@@ -438,6 +477,11 @@ const SuperadminAdsRoute = SuperadminAdsRouteImport.update({
 const SuperadminAcademyRoute = SuperadminAcademyRouteImport.update({
   id: '/academy',
   path: '/academy',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminBugBountyRoute = SuperadminBugBountyRouteImport.update({
+  id: '/Bug-bounty',
+  path: '/Bug-bounty',
   getParentRoute: () => SuperadminRoute,
 } as any)
 const ReviewsCategoryRoute = ReviewsCategoryRouteImport.update({
@@ -723,6 +767,7 @@ export interface FileRoutesByFullPath {
   '/payouts/$brandSlug': typeof PayoutsBrandSlugRouteWithChildren
   '/r/$slug': typeof RSlugRoute
   '/reviews/$category': typeof ReviewsCategoryRoute
+  '/superadmin/Bug-bounty': typeof SuperadminBugBountyRoute
   '/superadmin/academy': typeof SuperadminAcademyRoute
   '/superadmin/ads': typeof SuperadminAdsRoute
   '/superadmin/affiliates': typeof SuperadminAffiliatesRoute
@@ -735,12 +780,16 @@ export interface FileRoutesByFullPath {
   '/superadmin/brand-requests': typeof SuperadminBrandRequestsRoute
   '/superadmin/brands': typeof SuperadminBrandsRoute
   '/superadmin/cashback': typeof SuperadminCashbackRoute
+  '/superadmin/challenge-purchases': typeof SuperadminChallengePurchasesRoute
   '/superadmin/claims': typeof SuperadminClaimsRoute
   '/superadmin/complaints': typeof SuperadminComplaintsRoute
+  '/superadmin/daily-tasks': typeof SuperadminDailyTasksRoute
+  '/superadmin/demo-accounts': typeof SuperadminDemoAccountsRoute
   '/superadmin/disputes': typeof SuperadminDisputesRoute
   '/superadmin/faqs': typeof SuperadminFaqsRoute
   '/superadmin/flags': typeof SuperadminFlagsRoute
   '/superadmin/inbox': typeof SuperadminInboxRoute
+  '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
   '/superadmin/news': typeof SuperadminNewsRoute
   '/superadmin/notifications': typeof SuperadminNotificationsRoute
@@ -752,10 +801,12 @@ export interface FileRoutesByFullPath {
   '/superadmin/rewards': typeof SuperadminRewardsRoute
   '/superadmin/roles': typeof SuperadminRolesRoute
   '/superadmin/rr': typeof SuperadminRrRoute
+  '/superadmin/rr-purchases': typeof SuperadminRrPurchasesRoute
   '/superadmin/search-analytics': typeof SuperadminSearchAnalyticsRoute
   '/superadmin/settings': typeof SuperadminSettingsRoute
   '/superadmin/subscribers': typeof SuperadminSubscribersRoute
   '/superadmin/tbi': typeof SuperadminTbiRoute
+  '/superadmin/top-sellers': typeof SuperadminTopSellersRoute
   '/superadmin/transactions': typeof SuperadminTransactionsRoute
   '/superadmin/trt': typeof SuperadminTrtRoute
   '/superadmin/users': typeof SuperadminUsersRoute
@@ -829,6 +880,7 @@ export interface FileRoutesByTo {
   '/payouts/$brandSlug': typeof PayoutsBrandSlugRouteWithChildren
   '/r/$slug': typeof RSlugRoute
   '/reviews/$category': typeof ReviewsCategoryRoute
+  '/superadmin/Bug-bounty': typeof SuperadminBugBountyRoute
   '/superadmin/academy': typeof SuperadminAcademyRoute
   '/superadmin/ads': typeof SuperadminAdsRoute
   '/superadmin/affiliates': typeof SuperadminAffiliatesRoute
@@ -841,12 +893,16 @@ export interface FileRoutesByTo {
   '/superadmin/brand-requests': typeof SuperadminBrandRequestsRoute
   '/superadmin/brands': typeof SuperadminBrandsRoute
   '/superadmin/cashback': typeof SuperadminCashbackRoute
+  '/superadmin/challenge-purchases': typeof SuperadminChallengePurchasesRoute
   '/superadmin/claims': typeof SuperadminClaimsRoute
   '/superadmin/complaints': typeof SuperadminComplaintsRoute
+  '/superadmin/daily-tasks': typeof SuperadminDailyTasksRoute
+  '/superadmin/demo-accounts': typeof SuperadminDemoAccountsRoute
   '/superadmin/disputes': typeof SuperadminDisputesRoute
   '/superadmin/faqs': typeof SuperadminFaqsRoute
   '/superadmin/flags': typeof SuperadminFlagsRoute
   '/superadmin/inbox': typeof SuperadminInboxRoute
+  '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
   '/superadmin/news': typeof SuperadminNewsRoute
   '/superadmin/notifications': typeof SuperadminNotificationsRoute
@@ -858,10 +914,12 @@ export interface FileRoutesByTo {
   '/superadmin/rewards': typeof SuperadminRewardsRoute
   '/superadmin/roles': typeof SuperadminRolesRoute
   '/superadmin/rr': typeof SuperadminRrRoute
+  '/superadmin/rr-purchases': typeof SuperadminRrPurchasesRoute
   '/superadmin/search-analytics': typeof SuperadminSearchAnalyticsRoute
   '/superadmin/settings': typeof SuperadminSettingsRoute
   '/superadmin/subscribers': typeof SuperadminSubscribersRoute
   '/superadmin/tbi': typeof SuperadminTbiRoute
+  '/superadmin/top-sellers': typeof SuperadminTopSellersRoute
   '/superadmin/transactions': typeof SuperadminTransactionsRoute
   '/superadmin/trt': typeof SuperadminTrtRoute
   '/superadmin/users': typeof SuperadminUsersRoute
@@ -940,6 +998,7 @@ export interface FileRoutesById {
   '/payouts/$brandSlug': typeof PayoutsBrandSlugRouteWithChildren
   '/r/$slug': typeof RSlugRoute
   '/reviews/$category': typeof ReviewsCategoryRoute
+  '/superadmin/Bug-bounty': typeof SuperadminBugBountyRoute
   '/superadmin/academy': typeof SuperadminAcademyRoute
   '/superadmin/ads': typeof SuperadminAdsRoute
   '/superadmin/affiliates': typeof SuperadminAffiliatesRoute
@@ -952,12 +1011,16 @@ export interface FileRoutesById {
   '/superadmin/brand-requests': typeof SuperadminBrandRequestsRoute
   '/superadmin/brands': typeof SuperadminBrandsRoute
   '/superadmin/cashback': typeof SuperadminCashbackRoute
+  '/superadmin/challenge-purchases': typeof SuperadminChallengePurchasesRoute
   '/superadmin/claims': typeof SuperadminClaimsRoute
   '/superadmin/complaints': typeof SuperadminComplaintsRoute
+  '/superadmin/daily-tasks': typeof SuperadminDailyTasksRoute
+  '/superadmin/demo-accounts': typeof SuperadminDemoAccountsRoute
   '/superadmin/disputes': typeof SuperadminDisputesRoute
   '/superadmin/faqs': typeof SuperadminFaqsRoute
   '/superadmin/flags': typeof SuperadminFlagsRoute
   '/superadmin/inbox': typeof SuperadminInboxRoute
+  '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
   '/superadmin/news': typeof SuperadminNewsRoute
   '/superadmin/notifications': typeof SuperadminNotificationsRoute
@@ -969,10 +1032,12 @@ export interface FileRoutesById {
   '/superadmin/rewards': typeof SuperadminRewardsRoute
   '/superadmin/roles': typeof SuperadminRolesRoute
   '/superadmin/rr': typeof SuperadminRrRoute
+  '/superadmin/rr-purchases': typeof SuperadminRrPurchasesRoute
   '/superadmin/search-analytics': typeof SuperadminSearchAnalyticsRoute
   '/superadmin/settings': typeof SuperadminSettingsRoute
   '/superadmin/subscribers': typeof SuperadminSubscribersRoute
   '/superadmin/tbi': typeof SuperadminTbiRoute
+  '/superadmin/top-sellers': typeof SuperadminTopSellersRoute
   '/superadmin/transactions': typeof SuperadminTransactionsRoute
   '/superadmin/trt': typeof SuperadminTrtRoute
   '/superadmin/users': typeof SuperadminUsersRoute
@@ -1052,6 +1117,7 @@ export interface FileRouteTypes {
     | '/payouts/$brandSlug'
     | '/r/$slug'
     | '/reviews/$category'
+    | '/superadmin/Bug-bounty'
     | '/superadmin/academy'
     | '/superadmin/ads'
     | '/superadmin/affiliates'
@@ -1064,12 +1130,16 @@ export interface FileRouteTypes {
     | '/superadmin/brand-requests'
     | '/superadmin/brands'
     | '/superadmin/cashback'
+    | '/superadmin/challenge-purchases'
     | '/superadmin/claims'
     | '/superadmin/complaints'
+    | '/superadmin/daily-tasks'
+    | '/superadmin/demo-accounts'
     | '/superadmin/disputes'
     | '/superadmin/faqs'
     | '/superadmin/flags'
     | '/superadmin/inbox'
+    | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
     | '/superadmin/news'
     | '/superadmin/notifications'
@@ -1081,10 +1151,12 @@ export interface FileRouteTypes {
     | '/superadmin/rewards'
     | '/superadmin/roles'
     | '/superadmin/rr'
+    | '/superadmin/rr-purchases'
     | '/superadmin/search-analytics'
     | '/superadmin/settings'
     | '/superadmin/subscribers'
     | '/superadmin/tbi'
+    | '/superadmin/top-sellers'
     | '/superadmin/transactions'
     | '/superadmin/trt'
     | '/superadmin/users'
@@ -1158,6 +1230,7 @@ export interface FileRouteTypes {
     | '/payouts/$brandSlug'
     | '/r/$slug'
     | '/reviews/$category'
+    | '/superadmin/Bug-bounty'
     | '/superadmin/academy'
     | '/superadmin/ads'
     | '/superadmin/affiliates'
@@ -1170,12 +1243,16 @@ export interface FileRouteTypes {
     | '/superadmin/brand-requests'
     | '/superadmin/brands'
     | '/superadmin/cashback'
+    | '/superadmin/challenge-purchases'
     | '/superadmin/claims'
     | '/superadmin/complaints'
+    | '/superadmin/daily-tasks'
+    | '/superadmin/demo-accounts'
     | '/superadmin/disputes'
     | '/superadmin/faqs'
     | '/superadmin/flags'
     | '/superadmin/inbox'
+    | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
     | '/superadmin/news'
     | '/superadmin/notifications'
@@ -1187,10 +1264,12 @@ export interface FileRouteTypes {
     | '/superadmin/rewards'
     | '/superadmin/roles'
     | '/superadmin/rr'
+    | '/superadmin/rr-purchases'
     | '/superadmin/search-analytics'
     | '/superadmin/settings'
     | '/superadmin/subscribers'
     | '/superadmin/tbi'
+    | '/superadmin/top-sellers'
     | '/superadmin/transactions'
     | '/superadmin/trt'
     | '/superadmin/users'
@@ -1268,6 +1347,7 @@ export interface FileRouteTypes {
     | '/payouts/$brandSlug'
     | '/r/$slug'
     | '/reviews/$category'
+    | '/superadmin/Bug-bounty'
     | '/superadmin/academy'
     | '/superadmin/ads'
     | '/superadmin/affiliates'
@@ -1280,12 +1360,16 @@ export interface FileRouteTypes {
     | '/superadmin/brand-requests'
     | '/superadmin/brands'
     | '/superadmin/cashback'
+    | '/superadmin/challenge-purchases'
     | '/superadmin/claims'
     | '/superadmin/complaints'
+    | '/superadmin/daily-tasks'
+    | '/superadmin/demo-accounts'
     | '/superadmin/disputes'
     | '/superadmin/faqs'
     | '/superadmin/flags'
     | '/superadmin/inbox'
+    | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
     | '/superadmin/news'
     | '/superadmin/notifications'
@@ -1297,10 +1381,12 @@ export interface FileRouteTypes {
     | '/superadmin/rewards'
     | '/superadmin/roles'
     | '/superadmin/rr'
+    | '/superadmin/rr-purchases'
     | '/superadmin/search-analytics'
     | '/superadmin/settings'
     | '/superadmin/subscribers'
     | '/superadmin/tbi'
+    | '/superadmin/top-sellers'
     | '/superadmin/transactions'
     | '/superadmin/trt'
     | '/superadmin/users'
@@ -1571,6 +1657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminTransactionsRouteImport
       parentRoute: typeof SuperadminRoute
     }
+    '/superadmin/top-sellers': {
+      id: '/superadmin/top-sellers'
+      path: '/top-sellers'
+      fullPath: '/superadmin/top-sellers'
+      preLoaderRoute: typeof SuperadminTopSellersRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/superadmin/tbi': {
       id: '/superadmin/tbi'
       path: '/tbi'
@@ -1597,6 +1690,13 @@ declare module '@tanstack/react-router' {
       path: '/search-analytics'
       fullPath: '/superadmin/search-analytics'
       preLoaderRoute: typeof SuperadminSearchAnalyticsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/rr-purchases': {
+      id: '/superadmin/rr-purchases'
+      path: '/rr-purchases'
+      fullPath: '/superadmin/rr-purchases'
+      preLoaderRoute: typeof SuperadminRrPurchasesRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/superadmin/rr': {
@@ -1676,6 +1776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminLeaderboardsRouteImport
       parentRoute: typeof SuperadminRoute
     }
+    '/superadmin/journal-analytics': {
+      id: '/superadmin/journal-analytics'
+      path: '/journal-analytics'
+      fullPath: '/superadmin/journal-analytics'
+      preLoaderRoute: typeof SuperadminJournalAnalyticsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/superadmin/inbox': {
       id: '/superadmin/inbox'
       path: '/inbox'
@@ -1704,6 +1811,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminDisputesRouteImport
       parentRoute: typeof SuperadminRoute
     }
+    '/superadmin/demo-accounts': {
+      id: '/superadmin/demo-accounts'
+      path: '/demo-accounts'
+      fullPath: '/superadmin/demo-accounts'
+      preLoaderRoute: typeof SuperadminDemoAccountsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/daily-tasks': {
+      id: '/superadmin/daily-tasks'
+      path: '/daily-tasks'
+      fullPath: '/superadmin/daily-tasks'
+      preLoaderRoute: typeof SuperadminDailyTasksRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/superadmin/complaints': {
       id: '/superadmin/complaints'
       path: '/complaints'
@@ -1716,6 +1837,13 @@ declare module '@tanstack/react-router' {
       path: '/claims'
       fullPath: '/superadmin/claims'
       preLoaderRoute: typeof SuperadminClaimsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/challenge-purchases': {
+      id: '/superadmin/challenge-purchases'
+      path: '/challenge-purchases'
+      fullPath: '/superadmin/challenge-purchases'
+      preLoaderRoute: typeof SuperadminChallengePurchasesRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/superadmin/cashback': {
@@ -1800,6 +1928,13 @@ declare module '@tanstack/react-router' {
       path: '/academy'
       fullPath: '/superadmin/academy'
       preLoaderRoute: typeof SuperadminAcademyRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/Bug-bounty': {
+      id: '/superadmin/Bug-bounty'
+      path: '/Bug-bounty'
+      fullPath: '/superadmin/Bug-bounty'
+      preLoaderRoute: typeof SuperadminBugBountyRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/reviews/$category': {
@@ -2223,6 +2358,7 @@ const ReviewsRouteWithChildren =
   ReviewsRoute._addFileChildren(ReviewsRouteChildren)
 
 interface SuperadminRouteChildren {
+  SuperadminBugBountyRoute: typeof SuperadminBugBountyRoute
   SuperadminAcademyRoute: typeof SuperadminAcademyRoute
   SuperadminAdsRoute: typeof SuperadminAdsRoute
   SuperadminAffiliatesRoute: typeof SuperadminAffiliatesRoute
@@ -2235,12 +2371,16 @@ interface SuperadminRouteChildren {
   SuperadminBrandRequestsRoute: typeof SuperadminBrandRequestsRoute
   SuperadminBrandsRoute: typeof SuperadminBrandsRoute
   SuperadminCashbackRoute: typeof SuperadminCashbackRoute
+  SuperadminChallengePurchasesRoute: typeof SuperadminChallengePurchasesRoute
   SuperadminClaimsRoute: typeof SuperadminClaimsRoute
   SuperadminComplaintsRoute: typeof SuperadminComplaintsRoute
+  SuperadminDailyTasksRoute: typeof SuperadminDailyTasksRoute
+  SuperadminDemoAccountsRoute: typeof SuperadminDemoAccountsRoute
   SuperadminDisputesRoute: typeof SuperadminDisputesRoute
   SuperadminFaqsRoute: typeof SuperadminFaqsRoute
   SuperadminFlagsRoute: typeof SuperadminFlagsRoute
   SuperadminInboxRoute: typeof SuperadminInboxRoute
+  SuperadminJournalAnalyticsRoute: typeof SuperadminJournalAnalyticsRoute
   SuperadminLeaderboardsRoute: typeof SuperadminLeaderboardsRoute
   SuperadminNewsRoute: typeof SuperadminNewsRoute
   SuperadminNotificationsRoute: typeof SuperadminNotificationsRoute
@@ -2252,10 +2392,12 @@ interface SuperadminRouteChildren {
   SuperadminRewardsRoute: typeof SuperadminRewardsRoute
   SuperadminRolesRoute: typeof SuperadminRolesRoute
   SuperadminRrRoute: typeof SuperadminRrRoute
+  SuperadminRrPurchasesRoute: typeof SuperadminRrPurchasesRoute
   SuperadminSearchAnalyticsRoute: typeof SuperadminSearchAnalyticsRoute
   SuperadminSettingsRoute: typeof SuperadminSettingsRoute
   SuperadminSubscribersRoute: typeof SuperadminSubscribersRoute
   SuperadminTbiRoute: typeof SuperadminTbiRoute
+  SuperadminTopSellersRoute: typeof SuperadminTopSellersRoute
   SuperadminTransactionsRoute: typeof SuperadminTransactionsRoute
   SuperadminTrtRoute: typeof SuperadminTrtRoute
   SuperadminUsersRoute: typeof SuperadminUsersRoute
@@ -2267,6 +2409,7 @@ interface SuperadminRouteChildren {
 }
 
 const SuperadminRouteChildren: SuperadminRouteChildren = {
+  SuperadminBugBountyRoute: SuperadminBugBountyRoute,
   SuperadminAcademyRoute: SuperadminAcademyRoute,
   SuperadminAdsRoute: SuperadminAdsRoute,
   SuperadminAffiliatesRoute: SuperadminAffiliatesRoute,
@@ -2279,12 +2422,16 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminBrandRequestsRoute: SuperadminBrandRequestsRoute,
   SuperadminBrandsRoute: SuperadminBrandsRoute,
   SuperadminCashbackRoute: SuperadminCashbackRoute,
+  SuperadminChallengePurchasesRoute: SuperadminChallengePurchasesRoute,
   SuperadminClaimsRoute: SuperadminClaimsRoute,
   SuperadminComplaintsRoute: SuperadminComplaintsRoute,
+  SuperadminDailyTasksRoute: SuperadminDailyTasksRoute,
+  SuperadminDemoAccountsRoute: SuperadminDemoAccountsRoute,
   SuperadminDisputesRoute: SuperadminDisputesRoute,
   SuperadminFaqsRoute: SuperadminFaqsRoute,
   SuperadminFlagsRoute: SuperadminFlagsRoute,
   SuperadminInboxRoute: SuperadminInboxRoute,
+  SuperadminJournalAnalyticsRoute: SuperadminJournalAnalyticsRoute,
   SuperadminLeaderboardsRoute: SuperadminLeaderboardsRoute,
   SuperadminNewsRoute: SuperadminNewsRoute,
   SuperadminNotificationsRoute: SuperadminNotificationsRoute,
@@ -2296,10 +2443,12 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminRewardsRoute: SuperadminRewardsRoute,
   SuperadminRolesRoute: SuperadminRolesRoute,
   SuperadminRrRoute: SuperadminRrRoute,
+  SuperadminRrPurchasesRoute: SuperadminRrPurchasesRoute,
   SuperadminSearchAnalyticsRoute: SuperadminSearchAnalyticsRoute,
   SuperadminSettingsRoute: SuperadminSettingsRoute,
   SuperadminSubscribersRoute: SuperadminSubscribersRoute,
   SuperadminTbiRoute: SuperadminTbiRoute,
+  SuperadminTopSellersRoute: SuperadminTopSellersRoute,
   SuperadminTransactionsRoute: SuperadminTransactionsRoute,
   SuperadminTrtRoute: SuperadminTrtRoute,
   SuperadminUsersRoute: SuperadminUsersRoute,

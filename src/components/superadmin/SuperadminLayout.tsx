@@ -6,6 +6,10 @@ import {
   Bell, Activity, Coins, Handshake, Scale, Search, Menu, X, ChevronDown, Sparkles,
   CircleDollarSign, ClipboardCheck, ArrowDownToLine, HelpCircle, BadgePlus,
   ShieldCheck, Inbox, Mail, Radio, MousePointerClick, FlaskConical, BarChart3,
+  Bug,
+  ListTodo,
+  Monitor,
+  BookOpen,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ToastViewport, toast } from "./AdminActions";
@@ -22,6 +26,8 @@ const groups: Group[] = [
     items: [
       { to: "/superadmin", label: "Mission Control", icon: LayoutDashboard, exact: true },
       { to: "/superadmin/analytics", label: "Analytics", icon: BarChart3, badge: "LIVE" },
+      { to: "/superadmin/journal-analytics", label: "Journal Analytics", icon: BookOpen, badge: "NEW" },
+      { to: "/superadmin/daily-tasks", label: "Daily Tasks", icon: ListTodo, badge: "NEW" },
       { to: "/superadmin/search-analytics", label: "Search Analytics", icon: Search, badge: "NEW" },
       { to: "/superadmin/users", label: "Users", icon: Users, badge: "48K" },
       { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck },
@@ -64,6 +70,7 @@ const groups: Group[] = [
     label: "Growth & Content",
     items: [
       { to: "/superadmin/rr", label: "RR Control Center", icon: Coins, badge: "HUB" },
+      { to: "/superadmin/rr-purchases", label: "RR Purchases", icon: CircleDollarSign, badge: "NEW" },
       { to: "/superadmin/leaderboards", label: "Leaderboards", icon: Trophy },
       { to: "/superadmin/academy", label: "Academy", icon: GraduationCap },
       { to: "/superadmin/blog", label: "Blog & News", icon: Newspaper },
@@ -71,6 +78,9 @@ const groups: Group[] = [
       { to: "/superadmin/faqs", label: "FAQs", icon: HelpCircle },
       { to: "/superadmin/announcements", label: "Announcements", icon: Megaphone },
       { to: "/superadmin/ads", label: "Dashboard Ads", icon: Megaphone, badge: "NEW" },
+      { to: "/superadmin/demo-accounts", label: "Demo Accounts", icon: Monitor, badge: "NEW" },
+      { to: "/superadmin/challenge-purchases", label: "Challenge Purchases", icon: ClipboardCheck, badge: "NEW" },
+      { to: "/superadmin/top-sellers", label: "Top Sellers", icon: Trophy, badge: "NEW" },
       { to: "/superadmin/popups", label: "Pop-ups", icon: MousePointerClick },
       { to: "/superadmin/subscribers", label: "Subscribers", icon: Mail },
     ],
@@ -83,6 +93,7 @@ const groups: Group[] = [
       { to: "/superadmin/flags", label: "Feature Flags", icon: Flag },
       { to: "/superadmin/notifications", label: "Notifications", icon: Bell },
       { to: "/superadmin/api-keys", label: "API Keys", icon: KeyRound },
+      { to: "/superadmin/Bug-bounty", label: "Bug Bounty", icon: Bug, badge: "NEW" },
       { to: "/superadmin/settings", label: "Settings", icon: Settings },
     ],
   },

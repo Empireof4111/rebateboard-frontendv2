@@ -617,6 +617,8 @@ export const permissionGroups: PermissionGroup[] = [
     permissions: [
       { id: "view_mission_control", label: "View Mission Control", route: "/superadmin" },
       { id: "view_analytics", label: "View Analytics", route: "/superadmin/analytics" },
+      { id: "view_journal_analytics", label: "View Journal Analytics", route: "/superadmin/journal-analytics" },
+      { id: "manage_daily_tasks", label: "Manage Daily Tasks", route: "/superadmin/daily-tasks" },
       { id: "view_search_analytics", label: "View Search Analytics", route: "/superadmin/search-analytics" },
       { id: "view_users", label: "View Users", route: "/superadmin/users" },
       { id: "edit_users", label: "Edit Users" },
@@ -660,6 +662,7 @@ export const permissionGroups: PermissionGroup[] = [
     label: "Growth & Content",
     permissions: [
       { id: "manage_rr", label: "Manage RR Control Center", route: "/superadmin/rr" },
+      { id: "manage_rr_purchases", label: "Manage RR Purchases", route: "/superadmin/rr-purchases" },
       { id: "manage_leaderboards", label: "Manage Leaderboards", route: "/superadmin/leaderboards" },
       { id: "manage_academy", label: "Manage Academy", route: "/superadmin/academy" },
       { id: "manage_blog", label: "Manage Blog & News", route: "/superadmin/blog" },
@@ -667,6 +670,9 @@ export const permissionGroups: PermissionGroup[] = [
       { id: "manage_faqs", label: "Manage FAQs", route: "/superadmin/faqs" },
       { id: "manage_announcements", label: "Manage Announcements", route: "/superadmin/announcements" },
       { id: "manage_ads", label: "Manage Dashboard Ads", route: "/superadmin/ads" },
+      { id: "manage_demo_accounts", label: "Manage Demo Accounts", route: "/superadmin/demo-accounts" },
+      { id: "manage_challenge_purchases", label: "Manage Challenge Purchases", route: "/superadmin/challenge-purchases" },
+      { id: "manage_top_sellers", label: "Manage Top Sellers", route: "/superadmin/top-sellers" },
       { id: "manage_popups", label: "Manage Pop-ups", route: "/superadmin/popups" },
       { id: "manage_subscribers", label: "Manage Subscribers", route: "/superadmin/subscribers" },
     ],
@@ -679,6 +685,7 @@ export const permissionGroups: PermissionGroup[] = [
       { id: "manage_flags", label: "Manage Feature Flags", route: "/superadmin/flags" },
       { id: "manage_notifications", label: "Manage Notifications", route: "/superadmin/notifications" },
       { id: "manage_api_keys", label: "Manage API Keys", route: "/superadmin/api-keys" },
+      { id: "manage_bug_bounty", label: "Manage Bug Bounty", route: "/superadmin/Bug-bounty" },
       { id: "manage_settings", label: "Manage Platform Settings", route: "/superadmin/settings" },
       { id: "export_data", label: "Export Data" },
     ],
@@ -697,17 +704,17 @@ export const roles: Role[] = [
   {
     id: "ro_2", name: "Finance Admin", description: "Wallets, withdrawals, transactions, cashback, payouts.",
     status: "active", users: 4, created: "Jan 2025",
-    permissions: ["view_mission_control", "manage_wallets", "approve_withdrawals", "view_transactions", "manage_claims", "manage_cashback", "manage_payouts", "manage_rr_ledger", "manage_affiliates", "manage_disputes", "export_data"],
+    permissions: ["view_mission_control", "view_journal_analytics", "manage_daily_tasks", "manage_wallets", "approve_withdrawals", "view_transactions", "manage_claims", "manage_cashback", "manage_payouts", "manage_rr_ledger", "manage_rr_purchases", "manage_affiliates", "manage_disputes", "export_data"],
   },
   {
     id: "ro_3", name: "Content Admin", description: "Blog, Academy, FAQs, News, Announcements, Ads.",
     status: "active", users: 6, created: "Feb 2025",
-    permissions: ["view_mission_control", "manage_blog", "manage_news", "manage_academy", "manage_faqs", "manage_announcements", "manage_ads", "manage_popups", "manage_subscribers", "view_users"],
+    permissions: ["view_mission_control", "manage_daily_tasks", "manage_blog", "manage_news", "manage_academy", "manage_faqs", "manage_announcements", "manage_ads", "manage_demo_accounts", "manage_challenge_purchases", "manage_popups", "manage_subscribers", "view_users"],
   },
   {
     id: "ro_4", name: "Support Admin", description: "Inbox, complaints triage, user help.",
     status: "active", users: 8, created: "Feb 2025",
-    permissions: ["view_mission_control", "view_users", "manage_inbox", "manage_complaints", "manage_disputes"],
+    permissions: ["view_mission_control", "manage_daily_tasks", "view_users", "manage_inbox", "manage_complaints", "manage_disputes"],
   },
   {
     id: "ro_5", name: "Review Moderator", description: "Approves / rejects user reviews and updates TBI impact.",
@@ -722,17 +729,17 @@ export const roles: Role[] = [
   {
     id: "ro_7", name: "Partner Manager", description: "Brand onboarding, partner & brand requests, offers.",
     status: "active", users: 2, created: "Apr 2025",
-    permissions: ["view_mission_control", "manage_brands", "create_brands", "manage_offers", "manage_brand_requests", "manage_partner_requests", "manage_affiliates", "view_users"],
+    permissions: ["view_mission_control", "manage_daily_tasks", "manage_brands", "create_brands", "manage_offers", "manage_brand_requests", "manage_partner_requests", "manage_affiliates", "view_users"],
   },
   {
     id: "ro_8", name: "Rewards Manager", description: "RR Control Center, leaderboards, ROI tracker, backtest.",
     status: "active", users: 2, created: "May 2026",
-    permissions: ["view_mission_control", "manage_rr", "manage_rr_ledger", "manage_leaderboards", "manage_trt", "manage_backtest", "view_analytics"],
+    permissions: ["view_mission_control", "view_journal_analytics", "manage_daily_tasks", "manage_rr", "manage_rr_purchases", "manage_rr_ledger", "manage_demo_accounts", "manage_challenge_purchases", "manage_leaderboards", "manage_trt", "manage_backtest", "view_analytics"],
   },
   {
     id: "ro_9", name: "Analytics Viewer", description: "Read-only access to analytics dashboards.",
     status: "active", users: 4, created: "May 2026",
-    permissions: ["view_mission_control", "view_analytics", "view_search_analytics", "view_transactions", "export_data"],
+    permissions: ["view_mission_control", "view_journal_analytics", "manage_daily_tasks", "view_analytics", "view_search_analytics", "view_transactions", "export_data"],
   },
 ];
 
