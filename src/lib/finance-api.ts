@@ -70,6 +70,55 @@ export type Wallet = {
   rr?: number;
 };
 
+export type TrtAnalytics = {
+  totalSpend: number;
+  totalIncome: number;
+  net: number;
+  trueRoi: number;
+  transactions: number;
+  avgTxSize: number;
+  activeAccounts: number;
+  funded: number;
+  selectedUser: {
+    id: number;
+    name: string;
+    emailAddress: string;
+  } | null;
+  trackedUsers: number;
+  paidClaimsAmount: number;
+  pendingClaims: number;
+  approvedClaims: number;
+  paidClaims: number;
+  rejectedClaims: number;
+  claimApprovalRate: number;
+  recoveryRate: number;
+  last30: {
+    spend: number;
+    income: number;
+    net: number;
+    transactions: number;
+  };
+  spendByBrand: { brand: string; spend: number; income: number; net: number }[];
+  categoryMix: { category: string; amount: number }[];
+  recentEntries: {
+    id: number;
+    createdAt: string;
+    brand: string;
+    category: string;
+    spend: number;
+    income: number;
+    status: string;
+    note?: string | null;
+    userId?: number | null;
+    userName: string;
+  }[];
+  riskSignals: {
+    title: string;
+    detail: string;
+    tone: "success" | "warning" | "destructive";
+  }[];
+};
+
 export type WithdrawalRequest = {
   id: number;
   bankName?: string;
@@ -553,19 +602,9 @@ export const financeApi = {
 
   // ─── TRT Analytics ───────────────────────────────────────────────────────────
 
-  getTrtAnalytics(token: string): Promise<ApiResponse<{
-    totalSpend: number;
-    totalIncome: number;
-    net: number;
-    trueRoi: number;
-    transactions: number;
-    avgTxSize: number;
-    activeAccounts: number;
-    funded: number;
-    spendByBrand: { brand: string; spend: number; income: number; net: number }[];
-    categoryMix: { category: string; amount: number }[];
-  }>> {
-    return apiRequest("/analytic/trt", { token });
+  getTrtAnalytics(token: string, userId?: string | number | null): Promise<ApiResponse<TrtAnalytics>> {
+    const query = userId ? `?userId=${encodeURIComponent(String(userId))}` : "";
+    return apiRequest(`/analytic/trt${query}`, { token });
   },
 
   // ─── RR (Reward Points) ───────────────────────────────────────────────────────
