@@ -4,12 +4,13 @@ import {
   Plus, Trash2, Save, Eye, MousePointerClick, Power, X, Megaphone, Sparkles, Flame, RefreshCw,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard } from "@/components/superadmin/AdminUI";
-import { toast } from "@/components/superadmin/AdminActions";
+import { ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { advertApi, blogApi, type DashboardAd, type BlogPost } from "@/lib/admin-api";
 import type { AdFormat, AdPlacement, AdSlide, SponsorLogo } from "@/lib/dashboard-ads";
 import { TBI_BRANDS } from "@/lib/tbi-data";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { uploadMediaFile } from "@/lib/media-api";
 
 export const Route = createFileRoute("/superadmin/ads")({
   head: () => ({ meta: [{ title: "Dashboard Ads — Superadmin" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -43,6 +44,7 @@ function emptyAd(): DashboardAd {
     cta: "Learn more",
     href: "/dashboard/wallet",
     accent: "from-fuchsia-500 to-violet-600",
+    thumbnail: "",
     slides: [],
     sponsors: [],
     trendingLimit: 5,
@@ -247,6 +249,13 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
   useEffect(() => setDraft(ad), [ad]);
 
   const set = <K extends keyof DashboardAd>(k: K, v: DashboardAd[K]) => setDraft((d) => ({ ...d, [k]: v }));
+  const uploadBanner = async (file: File) => {
+    const uploaded = await uploadMediaFile(file, {
+      folder: "adverts/banners",
+      prefix: draft.id || draft.name || "banner",
+    });
+    return uploaded.url;
+  };
 
   const addSlide = () => set("slides", [...(draft.slides ?? []), { source: "template", label: "New slide", sub: "", href: "/payouts/ftmo", accent: "from-fuchsia-500 to-violet-600" }]);
   const updateSlide = (i: number, patch: Partial<AdSlide>) => set("slides", (draft.slides ?? []).map((s, idx) => idx === i ? { ...s, ...patch } : s));
@@ -299,12 +308,22 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
         </div>
       </Field>
 
-      {(draft.format === "marquee" || draft.format === "single") && (
+      {draft.format === "single" && (
+        <Field label="Banner image">
+          <ThumbnailUploader
+            value={draft.thumbnail}
+            onChange={(url) => set("thumbnail", url)}
+            onSelectFile={uploadBanner}
+            label="Upload banner image"
+            height="h-44"
+          />
+        </Field>
+      )}
+
+      {draft.format === "marquee" && (
         <>
           <Field label="Headline"><input className={inputCls} value={draft.headline ?? ""} onChange={(e) => set("headline", e.target.value)} /></Field>
-          {draft.format === "single" && <Field label="Subtitle"><input className={inputCls} value={draft.sub ?? ""} onChange={(e) => set("sub", e.target.value)} /></Field>}
           <div className="grid gap-3 sm:grid-cols-2">
-            {draft.format === "single" && <Field label="CTA label"><input className={inputCls} value={draft.cta ?? ""} onChange={(e) => set("cta", e.target.value)} /></Field>}
             <Field label="Link target"><input className={inputCls} value={draft.href ?? ""} onChange={(e) => set("href", e.target.value)} /></Field>
           </div>
           <Field label="Accent gradient"><input className={inputCls} value={draft.accent ?? ""} onChange={(e) => set("accent", e.target.value)} /></Field>

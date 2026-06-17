@@ -372,6 +372,7 @@ export type DashboardAd = {
   cta?: string;
   href: string;
   accent: string;
+  thumbnail?: string;
   slides?: any[];
   sponsors?: any[];
   trendingLimit?: number;
@@ -396,6 +397,7 @@ function mapAdvert(raw: any): DashboardAd {
     cta: raw.action ?? meta.cta,
     href: meta.href ?? "",
     accent: meta.accent ?? "from-violet-500 to-fuchsia-600",
+    thumbnail: raw.thumbnail ?? "",
     slides: meta.slides,
     sponsors: meta.sponsors,
     trendingLimit: meta.trendingLimit,
@@ -411,7 +413,7 @@ function advertToDto(data: Partial<DashboardAd>) {
   return {
     title: data.name ?? data.headline,
     subTitle: data.sub,
-    thumbnail: "",
+    thumbnail: data.thumbnail ?? "",
     page: data.placement,
     action: data.cta,
     priority: data.priority,
