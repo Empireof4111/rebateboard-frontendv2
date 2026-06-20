@@ -20,8 +20,10 @@ import { Route as LegalRouteImport } from './routes/legal'
 import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ExchangesRouteImport } from './routes/exchanges'
 import { Route as EconomicCalendarRouteImport } from './routes/economic-calendar'
+import { Route as DemoAccountsRouteImport } from './routes/demo-accounts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as BugBountyRouteImport } from './routes/bug-bounty'
 import { Route as BrokersRouteImport } from './routes/brokers'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as BlogRouteImport } from './routes/blog'
@@ -180,6 +182,11 @@ const EconomicCalendarRoute = EconomicCalendarRouteImport.update({
   path: '/economic-calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoAccountsRoute = DemoAccountsRouteImport.update({
+  id: '/demo-accounts',
+  path: '/demo-accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -188,6 +195,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BugBountyRoute = BugBountyRouteImport.update({
+  id: '/bug-bounty',
+  path: '/bug-bounty',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrokersRoute = BrokersRouteImport.update({
@@ -714,8 +726,10 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRoute
   '/brand': typeof BrandRouteWithChildren
   '/brokers': typeof BrokersRoute
+  '/bug-bounty': typeof BugBountyRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/demo-accounts': typeof DemoAccountsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
@@ -830,7 +844,9 @@ export interface FileRoutesByTo {
   '/academy': typeof AcademyRoute
   '/blog': typeof BlogRoute
   '/brokers': typeof BrokersRoute
+  '/bug-bounty': typeof BugBountyRoute
   '/compare': typeof CompareRoute
+  '/demo-accounts': typeof DemoAccountsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
@@ -945,8 +961,10 @@ export interface FileRoutesById {
   '/blog': typeof BlogRoute
   '/brand': typeof BrandRouteWithChildren
   '/brokers': typeof BrokersRoute
+  '/bug-bounty': typeof BugBountyRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/demo-accounts': typeof DemoAccountsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
@@ -1064,8 +1082,10 @@ export interface FileRouteTypes {
     | '/blog'
     | '/brand'
     | '/brokers'
+    | '/bug-bounty'
     | '/compare'
     | '/dashboard'
+    | '/demo-accounts'
     | '/economic-calendar'
     | '/exchanges'
     | '/faqs'
@@ -1180,7 +1200,9 @@ export interface FileRouteTypes {
     | '/academy'
     | '/blog'
     | '/brokers'
+    | '/bug-bounty'
     | '/compare'
+    | '/demo-accounts'
     | '/economic-calendar'
     | '/exchanges'
     | '/faqs'
@@ -1294,8 +1316,10 @@ export interface FileRouteTypes {
     | '/blog'
     | '/brand'
     | '/brokers'
+    | '/bug-bounty'
     | '/compare'
     | '/dashboard'
+    | '/demo-accounts'
     | '/economic-calendar'
     | '/exchanges'
     | '/faqs'
@@ -1412,8 +1436,10 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRoute
   BrandRoute: typeof BrandRouteWithChildren
   BrokersRoute: typeof BrokersRoute
+  BugBountyRoute: typeof BugBountyRoute
   CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DemoAccountsRoute: typeof DemoAccountsRoute
   EconomicCalendarRoute: typeof EconomicCalendarRoute
   ExchangesRoute: typeof ExchangesRoute
   FaqsRoute: typeof FaqsRoute
@@ -1517,6 +1543,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EconomicCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo-accounts': {
+      id: '/demo-accounts'
+      path: '/demo-accounts'
+      fullPath: '/demo-accounts'
+      preLoaderRoute: typeof DemoAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -1529,6 +1562,13 @@ declare module '@tanstack/react-router' {
       path: '/compare'
       fullPath: '/compare'
       preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bug-bounty': {
+      id: '/bug-bounty'
+      path: '/bug-bounty'
+      fullPath: '/bug-bounty'
+      preLoaderRoute: typeof BugBountyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brokers': {
@@ -2480,8 +2520,10 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRoute,
   BrandRoute: BrandRouteWithChildren,
   BrokersRoute: BrokersRoute,
+  BugBountyRoute: BugBountyRoute,
   CompareRoute: CompareRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DemoAccountsRoute: DemoAccountsRoute,
   EconomicCalendarRoute: EconomicCalendarRoute,
   ExchangesRoute: ExchangesRoute,
   FaqsRoute: FaqsRoute,

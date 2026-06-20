@@ -6,11 +6,13 @@ import { MiniLineChart, SourceBars } from "@/components/dashboard/Charts";
 import {
   TrendingUp, TrendingDown, Sparkles, AlertTriangle, Activity,
   Plus, Star, Building2, Bot, Lightbulb, Target,
-  Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck,
+  Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug,
 } from "lucide-react";
 import { openAddTrade } from "@/lib/ui-bus";
 import { tickStreak, getStreakConfig } from "@/lib/rr-rewards";
 import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/finance-api";
+import { completeDailyTask, fetchMyDailyTasks, type DailyTaskUserBoard } from "@/lib/daily-tasks-api";
+import { toast } from "@/components/superadmin/AdminActions";
 
 function fmtUSD(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -27,6 +29,8 @@ function DashboardHome() {
   const [earningsBySource, setEarningsBySource] = useState<{ source: string; amount: number }[]>([]);
   const [earningsTimeline, setEarningsTimeline] = useState<{ month: string; amount: number }[]>([]);
   const [referralStats, setReferralStats] = useState<{ total: number; thisMonth: number } | null>(null);
+  const [dailyTaskBoard, setDailyTaskBoard] = useState<DailyTaskUserBoard | null>(null);
+  const [claimingTaskId, setClaimingTaskId] = useState("");
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -42,6 +46,12 @@ function DashboardHome() {
     if (brkRes.status === "fulfilled" && brkRes.value.payload) setEarningsBySource(brkRes.value.payload);
     if (timeRes.status === "fulfilled" && timeRes.value.payload) setEarningsTimeline(timeRes.value.payload);
     if (refRes.status === "fulfilled" && refRes.value.payload) setReferralStats(refRes.value.payload);
+    try {
+      const taskBoard = await fetchMyDailyTasks();
+      setDailyTaskBoard(taskBoard);
+    } catch {
+      // Keep dashboard stable if daily task engine is unavailable.
+    }
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
@@ -270,6 +280,91 @@ function DashboardHome() {
       </div>
 
       {/* Section 5 — Quick Actions */}
+      <div className="grid gap-4 lg:grid-cols-[1.3fr_0.9fr]">
+        <Panel title="Today's tasks" action={<Pill tone="warning">{dailyTaskBoard?.stats.remaining ?? 0} left</Pill>}>
+          {!dailyTaskBoard || dailyTaskBoard.tasks.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-muted-foreground">
+              No live tasks from superadmin right now.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {dailyTaskBoard.tasks.slice(0, 4).map((task) => (
+                <div key={task.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{task.title}</div>
+                      <div className="mt-1 text-xs text-white/65">{task.description}</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{task.category}</span>
+                        <span>·</span>
+                        <span>{task.quantity}/day</span>
+                        <span>·</span>
+                        <span className="text-amber-300">+{task.rrReward} RR</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      {task.url ? (
+                        <a
+                          href={task.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="glass-pill inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] text-white"
+                        >
+                          Open task <ArrowRight className="h-3 w-3" />
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={task.completedToday || claimingTaskId === task.id}
+                        onClick={async () => {
+                          try {
+                            setClaimingTaskId(task.id);
+                            const payload = await completeDailyTask(task.id);
+                            setDailyTaskBoard(payload);
+                            toast.success(`Claimed ${task.rrReward} RR`);
+                          } catch (error) {
+                            toast.error(error instanceof Error ? error.message : "Unable to claim task");
+                          } finally {
+                            setClaimingTaskId("");
+                          }
+                        }}
+                        className={`rounded-full px-3 py-1.5 text-[11px] font-semibold ${
+                          task.completedToday
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white"
+                        }`}
+                      >
+                        {task.completedToday ? "Completed" : claimingTaskId === task.id ? "Claiming..." : "Claim RR"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Daily task progress" action={<Pill tone="success">Live</Pill>}>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <div className="text-[10px] uppercase text-muted-foreground">Available</div>
+              <div className="mt-1 text-xl font-bold text-white">{dailyTaskBoard?.stats.total ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase text-muted-foreground">Completed</div>
+              <div className="mt-1 text-xl font-bold text-emerald-300">{dailyTaskBoard?.stats.completedToday ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase text-muted-foreground">RR Claimed</div>
+              <div className="mt-1 text-xl font-bold text-amber-300">{dailyTaskBoard?.stats.rrClaimedToday ?? 0}</div>
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
+            Superadmin controls these tasks from <b>/superadmin/daily-tasks</b>. As soon as they publish or disable tasks there, this block updates from the live backend.
+          </div>
+        </Panel>
+      </div>
+
       <Panel title="Quick Actions">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {[
@@ -277,6 +372,7 @@ function DashboardHome() {
             { to: "/dashboard/trading-plan", icon: ClipboardCheck, label: "Trading Plan" },
             { to: "/dashboard/reviews", icon: Star, label: "Write Review" },
             { to: "/dashboard/brands", icon: Building2, label: "Explore Firms" },
+            { to: "/bug-bounty", icon: Bug, label: "Report Bug" },
             { to: "/dashboard/ai-coach", icon: Bot, label: "Ask AI" },
           ].map((q) => {
             const Icon = q.icon;

@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { RefreshCcw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
+import { toast } from "@/components/superadmin/AdminActions";
+import {
+  deleteDailyTask,
+  fetchDailyTaskAdminBoard,
+  resetDailyTasks,
+  saveDailyTask,
+  updateDailyTask,
+  type DailyTaskAdminBoard,
+  type DailyTaskRecord,
+} from "@/lib/daily-tasks-api";
 
 export const Route = createFileRoute("/superadmin/daily-tasks")({
   component: DailyTasksPage,
@@ -22,87 +32,6 @@ type TaskCategory =
   | "content"
   | "conversion";
 
-type DailyTaskRow = {
-  id: string;
-  title: string;
-  description: string;
-  action: TaskAction;
-  category: TaskCategory;
-  quantity: number;
-  rrReward: number;
-  url: string;
-  enabled: boolean;
-};
-
-const DEFAULT_TASKS: DailyTaskRow[] = [
-  {
-    id: "task-1",
-    title: "Like today's post",
-    description: "Tap the heart on our latest Instagram post",
-    action: "like_post",
-    category: "social",
-    quantity: 2,
-    rrReward: 5,
-    url: "https://instagram.com/rebateboard",
-    enabled: true,
-  },
-  {
-    id: "task-2",
-    title: "Share a post",
-    description: "Repost any RebateBoard update to your story",
-    action: "share_post",
-    category: "social",
-    quantity: 5,
-    rrReward: 3,
-    url: "https://instagram.com/rebateboard",
-    enabled: true,
-  },
-  {
-    id: "task-3",
-    title: "Comment on a post",
-    description: "Drop a meaningful comment on our latest post",
-    action: "comment_post",
-    category: "engagement",
-    quantity: 3,
-    rrReward: 3,
-    url: "https://instagram.com/rebateboard",
-    enabled: true,
-  },
-  {
-    id: "task-4",
-    title: "Join Telegram channel",
-    description: "Enter the official channel and stay subscribed",
-    action: "join_channel",
-    category: "community",
-    quantity: 1,
-    rrReward: 8,
-    url: "https://t.me/rebateboard",
-    enabled: false,
-  },
-  {
-    id: "task-5",
-    title: "Watch education reel",
-    description: "Watch the latest short-form market education video",
-    action: "watch_video",
-    category: "content",
-    quantity: 1,
-    rrReward: 4,
-    url: "https://youtube.com/@rebateboard",
-    enabled: true,
-  },
-  {
-    id: "task-6",
-    title: "Submit a verified review",
-    description: "Complete one trader review with valid proof of use",
-    action: "submit_review",
-    category: "conversion",
-    quantity: 1,
-    rrReward: 15,
-    url: "https://rebateboard.com/reviews",
-    enabled: false,
-  },
-];
-
 const ACTION_OPTIONS: { value: TaskAction; label: string }[] = [
   { value: "like_post", label: "like_post" },
   { value: "share_post", label: "share_post" },
@@ -121,29 +50,120 @@ const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
 ];
 
 function DailyTasksPage() {
-  const [tasks, setTasks] = useState<DailyTaskRow[]>(DEFAULT_TASKS);
+  const [board, setBoard] = useState<DailyTaskAdminBoard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string>("");
 
-  const metrics = useMemo(() => {
-    return {
-      activeTasks: tasks.length,
-      usersToday: 0,
-      completionsToday: 0,
-      rrAwardedToday: 0,
+  const tasks = board?.tasks ?? [];
+  const metrics = board?.stats ?? {
+    activeTasks: 0,
+    configuredTasks: 0,
+    usersToday: 0,
+    completionsToday: 0,
+    rrAwardedToday: 0,
+    totalCompletions: 0,
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const payload = await fetchDailyTaskAdminBoard();
+        if (!cancelled) setBoard(payload);
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : "Failed to load daily tasks");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
     };
-  }, [tasks]);
+  }, []);
 
-  function updateTask<K extends keyof DailyTaskRow>(id: string, key: K, value: DailyTaskRow[K]) {
-    setTasks((current) =>
-      current.map((task) => (task.id === id ? { ...task, [key]: value } : task)),
-    );
+  async function persistTask(task: DailyTaskRecord) {
+    try {
+      setSavingId(task.id);
+      const payload = task.id.startsWith("draft-")
+        ? await saveDailyTask(task)
+        : await updateDailyTask(task.id, task);
+      setBoard(payload);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save task");
+    } finally {
+      setSavingId("");
+    }
   }
 
-  function resetDefaults() {
-    setTasks(DEFAULT_TASKS);
+  function patchTask<K extends keyof DailyTaskRecord>(id: string, key: K, value: DailyTaskRecord[K]) {
+    setBoard((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        tasks: current.tasks.map((task) => (task.id === id ? { ...task, [key]: value } : task)),
+      };
+    });
   }
 
-  function removeTask(id: string) {
-    setTasks((current) => current.filter((task) => task.id !== id));
+  async function addTask() {
+    const newTask: DailyTaskRecord = {
+      id: `draft-${Date.now()}`,
+      title: "",
+      description: "",
+      action: "like_post",
+      category: "social",
+      quantity: 1,
+      rrReward: 0,
+      url: "",
+      enabled: true,
+      displayOrder: tasks.length,
+    };
+    setBoard((current) => ({
+      ...(current ?? { tasks: [], stats: metrics }),
+      tasks: [...(current?.tasks ?? []), newTask],
+      stats: {
+        ...(current?.stats ?? metrics),
+        configuredTasks: (current?.stats.configuredTasks ?? tasks.length) + 1,
+      },
+    }));
+  }
+
+  async function resetDefaults() {
+    try {
+      setLoading(true);
+      const payload = await resetDailyTasks();
+      setBoard(payload);
+      toast.success("Daily tasks reset to defaults");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to reset tasks");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeTask(id: string) {
+    if (id.startsWith("draft-")) {
+      setBoard((current) =>
+        current
+          ? { ...current, tasks: current.tasks.filter((task) => task.id !== id) }
+          : current,
+      );
+      return;
+    }
+
+    try {
+      setSavingId(id);
+      const payload = await deleteDailyTask(id);
+      setBoard(payload);
+      toast.success("Daily task removed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to delete task");
+    } finally {
+      setSavingId("");
+    }
   }
 
   return (
@@ -153,7 +173,15 @@ function DailyTasksPage() {
         subtitle="Manage rewardable daily actions, activation state, and RR values from one superadmin workspace."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Pill tone="neutral">{tasks.length} configured</Pill>
+            <Pill tone="neutral">{metrics.configuredTasks} configured</Pill>
+            <button
+              type="button"
+              onClick={addTask}
+              className="inline-flex items-center gap-2 rounded-full bg-fuchsia-500/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-fuchsia-500/30"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add task
+            </button>
             <button
               type="button"
               onClick={resetDefaults}
@@ -175,54 +203,68 @@ function DailyTasksPage() {
 
       <Panel title="Tasks" action={<Pill tone="good">Task engine</Pill>}>
         <div className="space-y-3">
+          {loading && tasks.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
+              Loading daily task engine...
+            </div>
+          ) : null}
           {tasks.map((task) => (
             <div
               key={task.id}
               className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 ring-1 ring-white/5"
             >
               <div className="grid gap-2 md:grid-cols-[1.1fr_1.6fr_1fr_1fr_0.7fr_0.7fr_auto]">
-                <input
-                  value={task.title}
-                  onChange={(event) => updateTask(task.id, "title", event.target.value)}
-                  className={fieldClassName}
-                  placeholder="Task title"
-                />
-                <input
-                  value={task.description}
-                  onChange={(event) => updateTask(task.id, "description", event.target.value)}
-                  className={fieldClassName}
-                  placeholder="Task description"
-                />
-                <select
-                  value={task.action}
-                  onChange={(event) => updateTask(task.id, "action", event.target.value as TaskAction)}
-                  className={fieldClassName}
-                >
+                  <input
+                    value={task.title}
+                    onChange={(event) => patchTask(task.id, "title", event.target.value)}
+                    onBlur={() => void persistTask(task)}
+                    className={fieldClassName}
+                    placeholder="Task title"
+                  />
+                  <input
+                    value={task.description}
+                    onChange={(event) => patchTask(task.id, "description", event.target.value)}
+                    onBlur={() => void persistTask(task)}
+                    className={fieldClassName}
+                    placeholder="Task description"
+                  />
+                  <select
+                    value={task.action}
+                    onChange={(event) => {
+                      patchTask(task.id, "action", event.target.value as TaskAction);
+                      void persistTask({ ...task, action: event.target.value as TaskAction });
+                    }}
+                    className={fieldClassName}
+                  >
                   {ACTION_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-[#150829] text-white">
                       {option.label}
                     </option>
                   ))}
                 </select>
-                <select
-                  value={task.category}
-                  onChange={(event) => updateTask(task.id, "category", event.target.value as TaskCategory)}
-                  className={fieldClassName}
-                >
+                  <select
+                    value={task.category}
+                    onChange={(event) => {
+                      patchTask(task.id, "category", event.target.value as TaskCategory);
+                      void persistTask({ ...task, category: event.target.value as TaskCategory });
+                    }}
+                    className={fieldClassName}
+                  >
                   {CATEGORY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-[#150829] text-white">
                       {option.label}
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  min={1}
-                  value={task.quantity}
-                  onChange={(event) => updateTask(task.id, "quantity", Number(event.target.value) || 1)}
-                  className={fieldClassName}
-                  placeholder="Qty"
-                />
+                  <input
+                    type="number"
+                    min={1}
+                    value={task.quantity}
+                    onChange={(event) => patchTask(task.id, "quantity", Number(event.target.value) || 1)}
+                    onBlur={() => void persistTask(task)}
+                    className={fieldClassName}
+                    placeholder="Qty"
+                  />
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     RR
@@ -231,7 +273,8 @@ function DailyTasksPage() {
                     type="number"
                     min={0}
                     value={task.rrReward}
-                    onChange={(event) => updateTask(task.id, "rrReward", Number(event.target.value) || 0)}
+                    onChange={(event) => patchTask(task.id, "rrReward", Number(event.target.value) || 0)}
+                    onBlur={() => void persistTask(task)}
                     className={`${fieldClassName} pl-10`}
                     placeholder="Reward"
                   />
@@ -245,13 +288,17 @@ function DailyTasksPage() {
                     <input
                       type="checkbox"
                       checked={task.enabled}
-                      onChange={(event) => updateTask(task.id, "enabled", event.target.checked)}
+                      onChange={(event) => {
+                        patchTask(task.id, "enabled", event.target.checked);
+                        void persistTask({ ...task, enabled: event.target.checked });
+                      }}
                       className="h-4 w-4 rounded border-white/20 bg-white/10 accent-sky-500"
                     />
                   </label>
                   <button
                     type="button"
                     onClick={() => removeTask(task.id)}
+                    disabled={savingId === task.id}
                     className="grid h-7 w-7 place-items-center rounded-full bg-rose-500/10 text-rose-300 transition hover:bg-rose-500/20"
                     aria-label={`Delete ${task.title}`}
                   >
@@ -263,13 +310,19 @@ function DailyTasksPage() {
               <div className="mt-2">
                 <input
                   value={task.url}
-                  onChange={(event) => updateTask(task.id, "url", event.target.value)}
+                  onChange={(event) => patchTask(task.id, "url", event.target.value)}
+                  onBlur={() => void persistTask(task)}
                   className={fieldClassName}
                   placeholder="Task link"
                 />
               </div>
             </div>
           ))}
+          {!loading && tasks.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
+              No daily tasks configured yet.
+            </div>
+          ) : null}
         </div>
       </Panel>
     </div>

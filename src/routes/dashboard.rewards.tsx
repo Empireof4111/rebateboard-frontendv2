@@ -13,6 +13,12 @@ import {
   type RrAllConfig, type RrClaim, type RrUserStreak,
 } from "@/lib/rr-api";
 import { ApiError } from "@/lib/api";
+import {
+  buyRr,
+  fetchRrPurchaseCatalog,
+  type RrPurchaseCatalog,
+  type RrPurchasePackage,
+} from "@/lib/rr-purchase-api";
 
 export const Route = createFileRoute("/dashboard/rewards")({
   head: () => ({
@@ -59,7 +65,7 @@ const DEFAULT_CONFIG: RrAllConfig = {
 };
 
 function RewardsPage() {
-  const { user, token } = useAuth();
+  const { user, token, updateProfile } = useAuth();
   const rrBalance = Math.round(user?.rrBalance ?? 0);
   const cashValue = (rrBalance / 100).toFixed(2);
 
@@ -68,6 +74,11 @@ function RewardsPage() {
   const [claims, setClaims] = useState<RrClaim[]>([]);
   const [streak, setStreak] = useState<RrUserStreak>({ id: 0, userId: 0, current: 0, longest: 0, lastDay: "", claimedMilestones: [] });
   const [redeemOpen, setRedeemOpen] = useState<RedeemKind | null>(null);
+  const [purchaseCatalog, setPurchaseCatalog] = useState<RrPurchaseCatalog | null>(null);
+  const [buyingPackageId, setBuyingPackageId] = useState<string | null>(null);
+  const [customAmount, setCustomAmount] = useState("");
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [customBuying, setCustomBuying] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -83,6 +94,14 @@ function RewardsPage() {
       if (claimsRes.status === "fulfilled" && claimsRes.value.payload) setClaims(claimsRes.value.payload.page);
       if (streakRes.status === "fulfilled" && streakRes.value.payload) setStreak(streakRes.value.payload);
     } catch {}
+
+    try {
+      const catalog = await fetchRrPurchaseCatalog();
+      setPurchaseCatalog(catalog);
+      setPurchaseError(null);
+    } catch (error) {
+      setPurchaseError(error instanceof Error ? error.message : "Could not load RR purchase options");
+    }
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
@@ -92,6 +111,47 @@ function RewardsPage() {
   const nextMilestone = streakCfg.milestones
     .filter((m) => m.enabled && m.days > streak.current)
     .sort((a, b) => a.days - b.days)[0];
+
+  const pricing = purchaseCatalog?.pricing;
+  const walletSnapshot = purchaseCatalog?.wallet;
+  const rrPackages = purchaseCatalog?.packages ?? [];
+
+  async function handlePackagePurchase(pkg: RrPurchasePackage) {
+    if (!pkg.id) return;
+    setBuyingPackageId(pkg.id);
+    setPurchaseError(null);
+    try {
+      const payload = await buyRr({ packageId: Number(pkg.id) });
+      setPurchaseCatalog(payload.catalog);
+      updateProfile({ rrBalance: payload.user.rrBalance });
+    } catch (error) {
+      setPurchaseError(error instanceof Error ? error.message : "Unable to complete RR purchase");
+    } finally {
+      setBuyingPackageId(null);
+    }
+  }
+
+  async function handleCustomPurchase() {
+    if (!pricing) return;
+    const amount = Number(customAmount);
+    if (!amount) {
+      setPurchaseError("Enter how many RR you want to buy.");
+      return;
+    }
+
+    setCustomBuying(true);
+    setPurchaseError(null);
+    try {
+      const payload = await buyRr({ amountRr: amount });
+      setPurchaseCatalog(payload.catalog);
+      updateProfile({ rrBalance: payload.user.rrBalance });
+      setCustomAmount("");
+    } catch (error) {
+      setPurchaseError(error instanceof Error ? error.message : "Unable to complete RR purchase");
+    } finally {
+      setCustomBuying(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -205,6 +265,140 @@ function RewardsPage() {
               </button>
             );
           })}
+        </div>
+      </Panel>
+
+      <Panel title="Buy RR" action={pricing ? <Pill tone={pricing.salesActive ? "success" : "destructive"}>{pricing.salesActive ? "Purchases open" : "Paused"}</Pill> : null}>
+        <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StatCard
+                label="USD Wallet"
+                value={`$${Number(walletSnapshot?.usdBalance ?? 0).toFixed(2)}`}
+                hint="Used to fund RR purchases"
+                accent="success"
+              />
+              <StatCard
+                label="Price Per RR"
+                value={pricing ? `$${pricing.pricePerRr.toFixed(2)}` : "--"}
+                hint="Global live price"
+                accent="primary"
+              />
+              <StatCard
+                label="RR In Wallet"
+                value={String(Math.round(walletSnapshot?.rrBalance ?? rrBalance))}
+                hint="Ready to spend"
+                accent="warning"
+              />
+            </div>
+
+            {purchaseError ? (
+              <div className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {purchaseError}
+              </div>
+            ) : null}
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              {rrPackages.map((pkg) => (
+                <div key={pkg.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 ring-1 ring-white/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{pkg.name}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {pkg.amountRr.toLocaleString()} RR
+                        {pkg.bonusRr > 0 ? ` + ${pkg.bonusRr.toLocaleString()} bonus` : ""}
+                      </div>
+                    </div>
+                    {pkg.badge ? <Pill tone="primary">{pkg.badge}</Pill> : null}
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total RR</div>
+                      <div className="mt-1 font-semibold text-amber-300">{Number(pkg.totalRr ?? pkg.amountRr).toLocaleString()}</div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Cost</div>
+                      <div className="mt-1 font-semibold text-emerald-300">${Number(pkg.amountUsd ?? 0).toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!pricing?.salesActive || buyingPackageId === pkg.id}
+                    onClick={() => void handlePackagePurchase(pkg)}
+                    className="mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {buyingPackageId === pkg.id ? "Processing..." : "Buy now"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 ring-1 ring-white/5">
+              <div className="text-sm font-semibold text-white">Custom RR top-up</div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Buy any RR amount within the live limits set by superadmin. The cost is deducted from your USD wallet instantly.
+              </p>
+              <div className="mt-4">
+                <Field label={`RR amount${pricing ? ` (${pricing.minPurchaseRr} - ${pricing.maxPurchaseRr})` : ""}`}>
+                  <input
+                    type="number"
+                    min={pricing?.minPurchaseRr ?? 0}
+                    max={pricing?.maxPurchaseRr ?? 0}
+                    value={customAmount}
+                    onChange={(event) => setCustomAmount(event.target.value)}
+                    className="input"
+                    placeholder="Enter RR amount"
+                  />
+                </Field>
+              </div>
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/10 px-3 py-3 text-xs">
+                <Row
+                  label="Estimated cost"
+                  value={pricing && customAmount ? `$${(Number(customAmount || 0) * pricing.pricePerRr).toFixed(2)}` : "--"}
+                  bold
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!pricing?.salesActive || customBuying}
+                onClick={() => void handleCustomPurchase()}
+                className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {customBuying ? "Processing..." : "Buy custom amount"}
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 ring-1 ring-white/5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-white">Recent RR purchases</div>
+                <Pill tone="default">{purchaseCatalog?.purchases.length ?? 0}</Pill>
+              </div>
+              <div className="mt-3 space-y-2">
+                {(purchaseCatalog?.purchases ?? []).length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 bg-black/10 px-3 py-5 text-center text-xs text-muted-foreground">
+                    Your RR top-ups will appear here.
+                  </div>
+                ) : (
+                  (purchaseCatalog?.purchases ?? []).slice(0, 5).map((purchase) => (
+                    <div key={purchase.id} className="rounded-xl border border-white/10 bg-black/10 px-3 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-semibold text-white">{purchase.rrAmount.toLocaleString()} RR</div>
+                        <Pill tone={purchase.status === "successful" ? "success" : purchase.status === "pending" ? "warning" : "destructive"}>
+                          {purchase.status}
+                        </Pill>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                        <span>${purchase.amountUsd.toFixed(2)}</span>
+                        <span>{new Date(purchase.when).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </Panel>
 

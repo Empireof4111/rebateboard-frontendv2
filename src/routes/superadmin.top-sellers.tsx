@@ -2,32 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { EyeOff, Pin, Sparkles, Trophy, Zap } from "lucide-react";
 import { DataTable, PageHeader, Panel, Pill, StatCard, StatusPill } from "@/components/superadmin/AdminUI";
-import { fetchAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
+import {
+  fetchTopSellerBoard,
+  updateTopSellerOverride,
+  type SellerCategory,
+  type TimeRange,
+  type TopSellerBoardRecord,
+  type TopSellerRowRecord,
+} from "@/lib/top-sellers-api";
 import { toast } from "@/components/superadmin/AdminActions";
 
 export const Route = createFileRoute("/superadmin/top-sellers")({
   component: TopSellersPage,
 });
-
-type SellerCategory =
-  | "Futures Prop Firm"
-  | "Crypto Prop Firm"
-  | "Prop Firm"
-  | "Forex Broker"
-  | "Crypto Exchange"
-  | "Trading Software"
-  | "Education Provider";
-
-type TimeRange = "Last 30 days" | "This month" | "This quarter" | "This year" | "All time";
-
-type SellerOverride = {
-  pinned?: boolean;
-  featured?: boolean;
-  hidden?: boolean;
-  boost?: number;
-};
-
-const OVERRIDES_KEY = "rb.top-sellers.overrides";
 
 const CATEGORY_TABS: SellerCategory[] = [
   "Futures Prop Firm",
@@ -57,124 +44,74 @@ const TIME_RANGES: TimeRange[] = [
   "All time",
 ];
 
-function readOverrides() {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(OVERRIDES_KEY) || "{}") as Record<string, SellerOverride>;
-  } catch {
-    return {};
-  }
-}
-
-function persistOverrides(next: Record<string, SellerOverride>) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(OVERRIDES_KEY, JSON.stringify(next));
-}
-
 function TopSellersPage() {
-  const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
+  const [board, setBoard] = useState<TopSellerBoardRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingBrandId, setSavingBrandId] = useState<string>("");
   const [category, setCategory] = useState<SellerCategory>("Futures Prop Firm");
   const [range, setRange] = useState<TimeRange>("This month");
-  const [overrides, setOverrides] = useState<Record<string, SellerOverride>>(() => readOverrides());
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const rows = await fetchAdminBrands();
-        if (!cancelled) setBrands(rows);
+        const payload = await fetchTopSellerBoard(category, range);
+        if (!cancelled) setBoard(payload);
       } catch (error) {
         if (!cancelled) {
-          toast.error(error instanceof Error ? error.message : "Unable to load seller brands");
+          toast.error(error instanceof Error ? error.message : "Unable to load top sellers");
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
+    setLoading(true);
     void load();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [category, range]);
 
-  const visibleBrands = useMemo(() => {
-    return brands
-      .filter((brand) => brand.category === category)
-      .filter((brand) => !overrides[brand.id]?.hidden)
-      .map((brand, index) => {
-        const brandOverride = overrides[brand.id] ?? {};
-        const baseScore = Number(brand.rankOverride ?? brand.tbi ?? 0);
-        const boost = Number(brandOverride.boost ?? 0);
-        const score = baseScore + boost;
+  const visibleBrands = board?.rows ?? [];
+  const hiddenCount = board?.summary.hiddenCount ?? 0;
+  const overrideCount = board?.summary.overrideCount ?? 0;
+  const pinnedCount = board?.summary.pinnedCount ?? 0;
+  const featuredCount = board?.summary.featuredCount ?? 0;
 
-        return {
-          brand,
-          score,
-          boost,
-          override: brandOverride,
-          baseIndex: index,
-        };
-      })
-      .sort((a, b) => {
-        if (Boolean(a.override.pinned) !== Boolean(b.override.pinned)) {
-          return a.override.pinned ? -1 : 1;
-        }
-        if (b.score !== a.score) return b.score - a.score;
-        return a.baseIndex - b.baseIndex;
+  async function patchOverride(brandId: string, patch: Partial<TopSellerRowRecord["override"]>) {
+    try {
+      setSavingBrandId(brandId);
+      const payload = await updateTopSellerOverride(brandId, {
+        category,
+        timeRange: range,
+        ...patch,
       });
-  }, [brands, category, overrides]);
-
-  const hiddenCount = useMemo(
-    () => brands.filter((brand) => brand.category === category && overrides[brand.id]?.hidden).length,
-    [brands, category, overrides],
-  );
-
-  const overrideCount = useMemo(
-    () =>
-      visibleBrands.filter(
-        (row) => row.override.pinned || row.override.featured || row.override.hidden || row.boost > 0,
-      ).length + hiddenCount,
-    [hiddenCount, visibleBrands],
-  );
-
-  const pinnedCount = useMemo(
-    () => visibleBrands.filter((row) => row.override.pinned).length,
-    [visibleBrands],
-  );
-
-  const featuredCount = useMemo(
-    () => visibleBrands.filter((row) => row.override.featured).length,
-    [visibleBrands],
-  );
-
-  function patchOverride(brandId: string, patch: Partial<SellerOverride>) {
-    setOverrides((current) => {
-      const next = {
-        ...current,
-        [brandId]: {
-          ...(current[brandId] ?? {}),
-          ...patch,
-        },
-      };
-      persistOverrides(next);
-      return next;
-    });
+      setBoard(payload);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update top seller override");
+    } finally {
+      setSavingBrandId("");
+    }
   }
+
+  const headerPills = useMemo(
+    () => (
+      <div className="flex flex-wrap items-center gap-2">
+        <Pill tone="neutral">{visibleBrands.length} visible</Pill>
+        <Pill tone="good">{overrideCount} overrides</Pill>
+      </div>
+    ),
+    [overrideCount, visibleBrands.length],
+  );
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Top Sellers"
         subtitle="Auto-ranked by finalized challenge purchases per category. Pin, feature, hide, or boost any brand to override the ranking."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Pill tone="neutral">{visibleBrands.length} visible</Pill>
-            <Pill tone="good">{overrideCount} overrides</Pill>
-          </div>
-        }
+        actions={headerPills}
       />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -208,7 +145,7 @@ function TopSellersPage() {
 
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="text-xs text-muted-foreground">
-            {visibleBrands.length} brands · {overrideCount} overrides
+            {visibleBrands.length} brands · {overrideCount} overrides · {hiddenCount} hidden
           </div>
           <div className="flex flex-wrap gap-2">
             {TIME_RANGES.map((option) => (
@@ -255,19 +192,13 @@ function TopSellersPage() {
                 </td>
               </tr>
             ) : (
-              visibleBrands.map((row, index) => {
-                const { brand, override, boost, score } = row;
-                const status = override.featured
-                  ? "approved"
-                  : override.pinned
-                    ? "scheduled"
-                    : brand.visibility === "published"
-                      ? "active"
-                      : "draft";
+              visibleBrands.map((row) => {
+                const { brand, override, score, sales, gmv } = row;
+                const isSaving = savingBrandId === brand.id;
 
                 return (
                   <tr key={brand.id}>
-                    <td className="text-lg font-semibold text-white">{index + 1}</td>
+                    <td className="text-lg font-semibold text-white">{row.rank}</td>
                     <td>
                       <div className="flex items-center gap-3">
                         {brand.thumbnail ? (
@@ -287,39 +218,43 @@ function TopSellersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="text-sm text-white/75">—</td>
-                    <td className="text-sm text-white/75">—</td>
+                    <td className="text-sm text-white/75">{sales.toLocaleString()}</td>
+                    <td className="text-sm text-white/75">${Number(gmv || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="text-sm font-semibold text-fuchsia-300">{score}</td>
                     <td>
-                      <StatusPill status={status} />
+                      <StatusPill status={row.status} />
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-2">
                         <ActionChip
                           active={Boolean(override.pinned)}
+                          disabled={isSaving}
                           icon={<Pin className="h-3 w-3" />}
                           label="Pin"
-                          onClick={() => patchOverride(brand.id, { pinned: !override.pinned })}
+                          onClick={() => void patchOverride(brand.id, { pinned: !override.pinned })}
                         />
                         <ActionChip
                           active={Boolean(override.featured)}
+                          disabled={isSaving}
                           icon={<Sparkles className="h-3 w-3" />}
                           label="Feature"
-                          onClick={() => patchOverride(brand.id, { featured: !override.featured })}
+                          onClick={() => void patchOverride(brand.id, { featured: !override.featured })}
                         />
                         <ActionChip
                           active={Boolean(override.hidden)}
+                          disabled={isSaving}
                           icon={<EyeOff className="h-3 w-3" />}
                           label="Hide"
-                          onClick={() => patchOverride(brand.id, { hidden: !override.hidden })}
+                          onClick={() => void patchOverride(brand.id, { hidden: !override.hidden })}
                         />
                         <button
                           type="button"
-                          onClick={() => patchOverride(brand.id, { boost: boost + 50 })}
-                          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/15"
+                          disabled={isSaving}
+                          onClick={() => void patchOverride(brand.id, { boost: override.boost + 50 })}
+                          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
                         >
                           <Zap className="h-3 w-3" />
-                          {boost > 0 ? boost : 0}
+                          {override.boost > 0 ? override.boost : 0}
                         </button>
                       </div>
                     </td>
@@ -334,7 +269,7 @@ function TopSellersPage() {
           <div className="flex items-center gap-2">
             <Trophy className="h-3.5 w-3.5 text-fuchsia-300" />
             <span>
-              Sales come from the Challenge Purchases store. Recorded mock purchases are not connected yet, so ranking currently follows brand score plus local overrides.
+              Ranking now pulls real tracked purchase volume from the cashback ledger for the selected category and date range. Pin, feature, hide, and boost still work as admin overrides on top of the live revenue order.
             </span>
           </div>
         </div>
@@ -345,11 +280,13 @@ function TopSellersPage() {
 
 function ActionChip({
   active,
+  disabled,
   icon,
   label,
   onClick,
 }: {
   active?: boolean;
+  disabled?: boolean;
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
@@ -357,8 +294,9 @@ function ActionChip({
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-60 ${
         active
           ? "bg-fuchsia-500/20 text-white ring-1 ring-fuchsia-400/30"
           : "bg-white/10 text-white hover:bg-white/15"

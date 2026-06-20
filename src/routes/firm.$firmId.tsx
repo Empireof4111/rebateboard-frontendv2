@@ -654,7 +654,12 @@ function FirmDetailsPage() {
         {topTab === "Reviews" ? (
           <div className="mt-4"><FirmReviews firmName={name} firmSlug={firmId} /></div>
         ) : topTab === "Challenges" ? (
-          <div className="mt-4"><FirmChallenges firmName={name} /></div>
+          <div className="mt-4">
+            <FirmChallenges
+              firmName={name}
+              checkoutLink={brand?.cashback?.affiliateLink || brand?.website}
+            />
+          </div>
         ) : topTab === "Complaints" ? (
           <div className="mt-4"><FirmComplaints firmName={name} firmSlug={firmId} /></div>
         ) : topTab === "Payouts" ? (

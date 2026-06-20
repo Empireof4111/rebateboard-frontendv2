@@ -1,81 +1,162 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Coins, RefreshCcw, Save, ShoppingCart, Trash2, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Coins, Plus, RefreshCcw, Save, ShoppingCart, Trash2, Users } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
+import {
+  deleteRrPurchasePackage,
+  fetchRrPurchaseAdminBoard,
+  saveRrPurchaseConfig,
+  saveRrPurchasePackage,
+  type RrPurchaseAdminBoard,
+  type RrPurchasePackage,
+} from "@/lib/rr-purchase-api";
 
 export const Route = createFileRoute("/superadmin/rr-purchases")({
   component: RrPurchasesPage,
 });
 
-type PurchasePackage = {
-  id: string;
-  name: string;
-  amountRr: number;
-  bonusRr: number;
-  badge: string;
-  enabled: boolean;
-};
-
-type PurchaseLog = {
-  id: string;
-  buyer: string;
-  rrAmount: number;
-  amountUsd: number;
-  status: "successful" | "pending" | "failed";
-  when: string;
-};
-
-const DEFAULT_PRICING = {
-  pricePerRr: 0.01,
-  minPurchaseRr: 50,
-  maxPurchaseRr: 100000,
-};
-
-const DEFAULT_PACKAGES: PurchasePackage[] = [
-  { id: "pkg-1", name: "Starter", amountRr: 100, bonusRr: 0, badge: "badge", enabled: true },
-  { id: "pkg-2", name: "Growth", amountRr: 500, bonusRr: 25, badge: "popular", enabled: true },
-  { id: "pkg-3", name: "Pro", amountRr: 1000, bonusRr: 75, badge: "best value", enabled: true },
-  { id: "pkg-4", name: "Whale", amountRr: 5000, bonusRr: 500, badge: "vip", enabled: false },
-];
-
-const DEFAULT_LOGS: PurchaseLog[] = [];
-
 function RrPurchasesPage() {
-  const [pricing, setPricing] = useState(DEFAULT_PRICING);
-  const [packages, setPackages] = useState<PurchasePackage[]>(DEFAULT_PACKAGES);
-  const [logs] = useState<PurchaseLog[]>(DEFAULT_LOGS);
+  const [board, setBoard] = useState<RrPurchaseAdminBoard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const metrics = useMemo(() => {
-    const totalPurchases = logs.length;
-    const rrSold = logs.reduce((sum, log) => sum + log.rrAmount, 0);
-    const gmv = logs.reduce((sum, log) => sum + log.amountUsd, 0);
-    const buyers = new Set(logs.map((log) => log.buyer)).size;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const payload = await fetchRrPurchaseAdminBoard();
+        if (!cancelled) setBoard(payload);
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : "Failed to load RR purchases");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    return { totalPurchases, rrSold, gmv, buyers };
-  }, [logs]);
+  const pricing = board?.pricing ?? {
+    pricePerRr: 0.01,
+    minPurchaseRr: 50,
+    maxPurchaseRr: 100000,
+    salesActive: true,
+  };
+  const packages = board?.packages ?? [];
+  const logs = board?.logs ?? [];
+  const metrics = board?.stats ?? {
+    totalPurchases: 0,
+    rrSold: 0,
+    gmv: 0,
+    buyers: 0,
+  };
 
-  function updatePackage<K extends keyof PurchasePackage>(id: string, key: K, value: PurchasePackage[K]) {
-    setPackages((current) =>
-      current.map((item) => (item.id === id ? { ...item, [key]: value } : item)),
+  function patchPricing<K extends keyof typeof pricing>(key: K, value: (typeof pricing)[K]) {
+    setBoard((current) => current ? { ...current, pricing: { ...current.pricing, [key]: value } } : current);
+  }
+
+  function updatePackage<K extends keyof RrPurchasePackage>(id: string, key: K, value: RrPurchasePackage[K]) {
+    setBoard((current) =>
+      current
+        ? { ...current, packages: current.packages.map((item) => (item.id === id ? { ...item, [key]: value } : item)) }
+        : current,
     );
   }
 
-  function removePackage(id: string) {
-    setPackages((current) => current.filter((item) => item.id !== id));
+  function addPackage() {
+    setBoard((current) =>
+      current
+        ? {
+            ...current,
+            packages: [
+              ...current.packages,
+              {
+                id: `draft-${Date.now()}`,
+                name: "",
+                amountRr: 100,
+                bonusRr: 0,
+                badge: "",
+                enabled: true,
+                displayOrder: current.packages.length,
+              },
+            ],
+          }
+        : current,
+    );
   }
 
-  function resetPricing() {
-    setPricing(DEFAULT_PRICING);
-    toast.success("RR pricing reset to defaults");
+  async function removePackage(id: string) {
+    if (id.startsWith("draft-")) {
+      setBoard((current) =>
+        current ? { ...current, packages: current.packages.filter((item) => item.id !== id) } : current,
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = await deleteRrPurchasePackage(id);
+      setBoard(payload);
+      toast.success("Package removed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to delete package");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function savePricing() {
-    toast.success("RR pricing saved");
+  async function persistPackage(item: RrPurchasePackage) {
+    try {
+      setSaving(true);
+      const payload = await saveRrPurchasePackage({
+        ...(item.id.startsWith("draft-") ? {} : { id: Number(item.id) }),
+        name: item.name,
+        amountRr: item.amountRr,
+        bonusRr: item.bonusRr,
+        badge: item.badge,
+        enabled: item.enabled,
+        displayOrder: item.displayOrder,
+      });
+      setBoard(payload);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save RR package");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function savePackages() {
-    toast.success("Quick-buy packages saved");
+  async function resetPricing() {
+    try {
+      setSaving(true);
+      const payload = await saveRrPurchaseConfig({
+        pricePerRr: 0.01,
+        minPurchaseRr: 50,
+        maxPurchaseRr: 100000,
+        salesActive: true,
+      });
+      setBoard(payload);
+      toast.success("RR pricing reset to defaults");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to reset RR pricing");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function savePricing() {
+    try {
+      setSaving(true);
+      const payload = await saveRrPurchaseConfig(pricing);
+      setBoard(payload);
+      toast.success("RR pricing saved");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save RR pricing");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -83,12 +164,12 @@ function RrPurchasesPage() {
       <PageHeader
         title="RR Purchases"
         subtitle="Set the RR price, manage quick-buy packages, and review every top-up."
-        actions={<Pill tone="good">Sales active</Pill>}
+        actions={<Pill tone={pricing.salesActive ? "good" : "warn"}>{pricing.salesActive ? "Sales active" : "Sales paused"}</Pill>}
       />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total Purchases" value={String(metrics.totalPurchases)} delta="Recorded top-ups" tone="flat" />
-        <StatCard label="RR Sold" value={String(metrics.rrSold)} delta="Across all packages" tone="flat" />
+        <StatCard label="RR Sold" value={String(metrics.rrSold)} delta="Base + bonus RR delivered" tone="flat" />
         <StatCard label="GMV" value={`$${metrics.gmv.toFixed(2)}`} delta="Gross merchant value" tone="flat" />
         <StatCard label="Buyers" value={String(metrics.buyers)} delta="Unique users" tone="flat" />
       </div>
@@ -111,24 +192,35 @@ function RrPurchasesPage() {
             label="Price per 1 RR ($)"
             value={pricing.pricePerRr}
             step={0.01}
-            onChange={(value) => setPricing((current) => ({ ...current, pricePerRr: value }))}
+            onChange={(value) => patchPricing("pricePerRr", value)}
           />
           <MetricInput
             label="Min purchase (RR)"
             value={pricing.minPurchaseRr}
-            onChange={(value) => setPricing((current) => ({ ...current, minPurchaseRr: value }))}
+            onChange={(value) => patchPricing("minPurchaseRr", value)}
           />
           <MetricInput
             label="Max purchase (RR)"
             value={pricing.maxPurchaseRr}
-            onChange={(value) => setPricing((current) => ({ ...current, maxPurchaseRr: value }))}
+            onChange={(value) => patchPricing("maxPurchaseRr", value)}
           />
         </div>
+
+        <label className="mt-4 inline-flex items-center gap-2 text-sm text-white">
+          <input
+            type="checkbox"
+            checked={pricing.salesActive}
+            onChange={(event) => patchPricing("salesActive", event.target.checked)}
+            className="h-4 w-4 rounded border-white/20 bg-white/10 accent-sky-500"
+          />
+          Sales active
+        </label>
 
         <div className="mt-4">
           <button
             type="button"
             onClick={savePricing}
+            disabled={saving}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
           >
             <Save className="h-3.5 w-3.5" />
@@ -139,9 +231,26 @@ function RrPurchasesPage() {
 
       <Panel
         title="Quick-buy packages"
-        action={<Pill tone="neutral">{packages.length} packages</Pill>}
+        action={
+          <div className="flex items-center gap-2">
+            <Pill tone="neutral">{packages.length} packages</Pill>
+            <button
+              type="button"
+              onClick={addPackage}
+              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add package
+            </button>
+          </div>
+        }
       >
         <div className="space-y-3">
+          {loading && packages.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-muted-foreground">
+              Loading RR packages...
+            </div>
+          ) : null}
           {packages.map((item) => (
             <div
               key={item.id}
@@ -151,6 +260,7 @@ function RrPurchasesPage() {
                 <input
                   value={item.name}
                   onChange={(event) => updatePackage(item.id, "name", event.target.value)}
+                  onBlur={() => void persistPackage(item)}
                   className={fieldClassName}
                   placeholder="Package name"
                 />
@@ -163,6 +273,7 @@ function RrPurchasesPage() {
                     min={0}
                     value={item.amountRr}
                     onChange={(event) => updatePackage(item.id, "amountRr", Number(event.target.value) || 0)}
+                    onBlur={() => void persistPackage(item)}
                     className={`${fieldClassName} pl-10`}
                     placeholder="Amount"
                   />
@@ -176,6 +287,7 @@ function RrPurchasesPage() {
                     min={0}
                     value={item.bonusRr}
                     onChange={(event) => updatePackage(item.id, "bonusRr", Number(event.target.value) || 0)}
+                    onBlur={() => void persistPackage(item)}
                     className={`${fieldClassName} pl-10`}
                     placeholder="Bonus"
                   />
@@ -183,6 +295,7 @@ function RrPurchasesPage() {
                 <input
                   value={item.badge}
                   onChange={(event) => updatePackage(item.id, "badge", event.target.value)}
+                  onBlur={() => void persistPackage(item)}
                   className={fieldClassName}
                   placeholder="Badge"
                 />
@@ -191,7 +304,10 @@ function RrPurchasesPage() {
                     <input
                       type="checkbox"
                       checked={item.enabled}
-                      onChange={(event) => updatePackage(item.id, "enabled", event.target.checked)}
+                      onChange={(event) => {
+                        updatePackage(item.id, "enabled", event.target.checked);
+                        void persistPackage({ ...item, enabled: event.target.checked });
+                      }}
                       className="h-4 w-4 rounded border-white/20 bg-white/10 accent-sky-500"
                     />
                     <span className={`text-xs font-semibold ${item.enabled ? "text-sky-300" : "text-muted-foreground"}`}>
@@ -201,6 +317,7 @@ function RrPurchasesPage() {
                   <button
                     type="button"
                     onClick={() => removePackage(item.id)}
+                    disabled={saving}
                     className="grid h-7 w-7 place-items-center rounded-full bg-rose-500/10 text-rose-300 transition hover:bg-rose-500/20"
                     aria-label={`Delete ${item.name}`}
                   >
@@ -212,15 +329,8 @@ function RrPurchasesPage() {
           ))}
         </div>
 
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={savePackages}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
-          >
-            <Save className="h-3.5 w-3.5" />
-            Save packages
-          </button>
+        <div className="mt-4 text-xs text-muted-foreground">
+          Package edits save back to the live RR purchase engine and immediately affect the user-side catalog.
         </div>
       </Panel>
 
@@ -243,7 +353,38 @@ function RrPurchasesPage() {
               text="Unique buyers and their latest top-up activity will appear in this panel."
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="pb-3">Buyer</th>
+                  <th className="pb-3">RR</th>
+                  <th className="pb-3">GMV</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">Reference</th>
+                  <th className="pb-3">When</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {logs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="py-3 text-white">{log.buyer}</td>
+                    <td className="py-3 text-amber-300">{log.rrAmount}</td>
+                    <td className="py-3 text-white">${log.amountUsd.toFixed(2)}</td>
+                    <td className="py-3">
+                      <Pill tone={log.status === "successful" ? "good" : log.status === "pending" ? "warn" : "neutral"}>
+                        {log.status}
+                      </Pill>
+                    </td>
+                    <td className="py-3 font-mono text-xs text-muted-foreground">{log.reference}</td>
+                    <td className="py-3 text-muted-foreground">{new Date(log.when).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Panel>
     </div>
   );

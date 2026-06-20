@@ -15,7 +15,7 @@ function BrandChallenges() {
         <h1 className="text-2xl font-bold text-white">Challenges & products</h1>
         <p className="mt-1 text-sm text-muted-foreground">Manage the challenge plans traders see on your profile.</p>
       </div>
-      <FirmChallenges firmName={brand.name} />
+      <FirmChallenges firmName={brand.name} checkoutLink={`https://${brand.website}`} />
     </div>
   );
 }

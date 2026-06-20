@@ -1,41 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import {
-  CircleDollarSign,
-  ClipboardCheck,
-  Coins,
-  Download,
-  Funnel,
-  Search,
-  ShoppingCart,
-  Sparkles,
-  Trophy,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Coins, Download, Funnel, Search, Sparkles, Trophy } from "lucide-react";
 import { DataTable, PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
-import { adminBrands } from "@/lib/admin-data";
 import { toast } from "@/components/superadmin/AdminActions";
+import {
+  fetchChallengePurchaseAdminBoard,
+  type ChallengePurchaseAdminBoard,
+  type ChallengePurchaseStep,
+} from "@/lib/challenge-purchases-api";
 
 export const Route = createFileRoute("/superadmin/challenge-purchases")({
   component: ChallengePurchasesPage,
 });
 
-type FunnelStep = "buy_click" | "checkout" | "finalized" | "reward_chosen" | "claim_guide_viewed";
-
-type PurchaseRow = {
-  id: string;
-  buyerEmail: string;
-  firm: string;
-  program: string;
-  step: FunnelStep;
-  amountUsd: number;
-  rrPoints: number;
-  rewardPreference: "cashback" | "rr" | "mixed";
-  when: string;
-};
-
-const MOCK_ROWS: PurchaseRow[] = [];
-
-const FUNNEL_LABELS: Record<FunnelStep, string> = {
+const FUNNEL_LABELS: Record<ChallengePurchaseStep, string> = {
   buy_click: "Buy click",
   checkout: "Checkout",
   finalized: "Finalized",
@@ -43,7 +21,7 @@ const FUNNEL_LABELS: Record<FunnelStep, string> = {
   claim_guide_viewed: "Claim guide viewed",
 };
 
-const STEP_OPTIONS: Array<{ value: FunnelStep | "all"; label: string }> = [
+const STEP_OPTIONS: Array<{ value: ChallengePurchaseStep | "all"; label: string }> = [
   { value: "all", label: "All steps" },
   { value: "buy_click", label: "Buy click" },
   { value: "checkout", label: "Checkout" },
@@ -53,10 +31,33 @@ const STEP_OPTIONS: Array<{ value: FunnelStep | "all"; label: string }> = [
 ];
 
 function ChallengePurchasesPage() {
+  const [board, setBoard] = useState<ChallengePurchaseAdminBoard | null>(null);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [firmFilter, setFirmFilter] = useState<string>("all");
-  const [stepFilter, setStepFilter] = useState<FunnelStep | "all">("all");
-  const rows = MOCK_ROWS;
+  const [stepFilter, setStepFilter] = useState<ChallengePurchaseStep | "all">("all");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const payload = await fetchChallengePurchaseAdminBoard();
+        if (!cancelled) setBoard(payload);
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : "Failed to load challenge purchases");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rows = board?.rows ?? [];
 
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -64,7 +65,7 @@ function ChallengePurchasesPage() {
     return rows.filter((row) => {
       const matchesTerm =
         !term ||
-        row.buyerEmail.toLowerCase().includes(term) ||
+        (row.buyerEmail ?? "").toLowerCase().includes(term) ||
         row.firm.toLowerCase().includes(term) ||
         row.program.toLowerCase().includes(term);
 
@@ -75,81 +76,27 @@ function ChallengePurchasesPage() {
     });
   }, [firmFilter, query, rows, stepFilter]);
 
-  const metrics = useMemo(() => {
-    const totalBuyClicks = rows.filter((row) => row.step === "buy_click").length;
-    const finalizedPurchases = rows.filter((row) => row.step === "finalized").length;
-    const gmvTracked = rows.reduce((sum, row) => sum + row.amountUsd, 0);
-    const rrPointsEmitted = rows.reduce((sum, row) => sum + row.rrPoints, 0);
+  const metrics = board?.summary ?? {
+    totalBuyClicks: 0,
+    finalizedPurchases: 0,
+    gmvTracked: 0,
+    rrPointsEmitted: 0,
+    conversionRate: 0,
+  };
 
-    return {
-      totalBuyClicks,
-      finalizedPurchases,
-      gmvTracked,
-      rrPointsEmitted,
-      conversionRate: totalBuyClicks > 0 ? Math.round((finalizedPurchases / totalBuyClicks) * 100) : 0,
-    };
-  }, [rows]);
-
-  const topFirms = useMemo(() => {
-    const totals = new Map<string, number>();
-
-    rows.forEach((row) => {
-      totals.set(row.firm, (totals.get(row.firm) ?? 0) + row.amountUsd);
-    });
-
-    return [...totals.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }, [rows]);
-
-  const rewardMix = useMemo(() => {
-    const totals = {
-      cashback: 0,
-      rr: 0,
-      mixed: 0,
-    };
-
-    rows.forEach((row) => {
-      totals[row.rewardPreference] += 1;
-    });
-
-    return totals;
-  }, [rows]);
-
-  const funnelStats = useMemo(() => {
-    const total = rows.length;
-
-    return [
-      { label: "Buy click", count: rows.filter((row) => row.step === "buy_click").length },
-      { label: "Checkout", count: rows.filter((row) => row.step === "checkout").length },
-      { label: "Finalized", count: rows.filter((row) => row.step === "finalized").length },
-      { label: "Reward chosen", count: rows.filter((row) => row.step === "reward_chosen").length },
-      { label: "Claim guide viewed", count: rows.filter((row) => row.step === "claim_guide_viewed").length },
-    ].map((item) => ({
-      ...item,
-      pct: total > 0 ? Math.round((item.count / total) * 100) : item.label === "Buy click" ? 100 : 0,
-    }));
-  }, [rows]);
-
-  const firmOptions = useMemo(() => {
-    const relevant = adminBrands
-      .filter((brand) =>
-        brand.category === "Prop Firm" ||
-        brand.category === "Futures Prop Firm" ||
-        brand.category === "Crypto Prop Firm" ||
-        brand.category === "Stock Prop Firm" ||
-        brand.category === "DEX Prop Firm",
-      )
-      .map((brand) => brand.name);
-
-    return ["all", ...relevant];
-  }, []);
+  const topFirms = board?.topFirms ?? [];
+  const rewardMix = board?.rewardMix ?? { cashback: 0, rr: 0, mixed: 0 };
+  const funnelStats = board?.funnel ?? [];
+  const firmOptions = useMemo(
+    () => ["all", ...Array.from(new Set(rows.map((row) => row.firm)))],
+    [rows],
+  );
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Challenge Purchases"
-        subtitle='Live funnel from "Buy" click to claimed cashback â€” synced from every entry point.'
+        subtitle='Live funnel from "Buy" click to claimed cashback — synced from challenge checkout events and prop-firm cashback claims.'
         actions={<Pill tone="good">Tracking live</Pill>}
       />
 
@@ -166,7 +113,7 @@ function ChallengePurchasesPage() {
             <EmptyPanelText />
           ) : (
             <div className="space-y-3">
-              {topFirms.map(([firm, value], index) => (
+              {topFirms.map(({ firm, gmv }, index) => (
                 <div key={firm} className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-3 ring-1 ring-white/10">
                   <div className="flex items-center gap-3">
                     <div className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-xs font-bold text-white">
@@ -174,7 +121,7 @@ function ChallengePurchasesPage() {
                     </div>
                     <div className="text-sm font-semibold text-white">{firm}</div>
                   </div>
-                  <div className="text-sm font-bold text-fuchsia-300">${value.toFixed(2)}</div>
+                  <div className="text-sm font-bold text-fuchsia-300">${gmv.toFixed(2)}</div>
                 </div>
               ))}
             </div>
@@ -196,17 +143,17 @@ function ChallengePurchasesPage() {
         <Panel title="Funnel" action={<Funnel className="h-3.5 w-3.5 text-fuchsia-300" />}>
           <div className="space-y-3">
             {funnelStats.map((item) => (
-              <div key={item.label}>
+              <div key={item.step}>
                 <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-white">{item.label}</span>
+                  <span className="font-semibold text-white">{FUNNEL_LABELS[item.step]}</span>
                   <span className="text-muted-foreground">
-                    {item.count} Â· {item.pct}%
+                    {item.count} · {item.pct}%
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-white/10">
                   <div
                     className="h-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500"
-                    style={{ width: `${Math.max(item.pct, item.label === "Buy click" ? 100 : 0)}%` }}
+                    style={{ width: `${Math.max(item.pct, item.step === "buy_click" ? 100 : 0)}%` }}
                   />
                 </div>
               </div>
@@ -242,7 +189,7 @@ function ChallengePurchasesPage() {
 
             <select
               value={stepFilter}
-              onChange={(event) => setStepFilter(event.target.value as FunnelStep | "all")}
+              onChange={(event) => setStepFilter(event.target.value as ChallengePurchaseStep | "all")}
               className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
             >
               {STEP_OPTIONS.map((option) => (
@@ -280,13 +227,13 @@ function ChallengePurchasesPage() {
           {filteredRows.length === 0 ? (
             <tr>
               <td colSpan={8} className="text-center text-sm text-muted-foreground">
-                No challenge purchase records yet.
+                {loading ? "Loading challenge purchase records..." : "No challenge purchase records yet."}
               </td>
             </tr>
           ) : (
             filteredRows.map((row) => (
               <tr key={row.id}>
-                <td className="font-mono text-xs">{row.buyerEmail}</td>
+                <td className="font-mono text-xs">{row.buyerEmail ?? "-"}</td>
                 <td className="font-semibold text-white">{row.firm}</td>
                 <td className="text-white/80">{row.program}</td>
                 <td><Pill tone="neutral">{FUNNEL_LABELS[row.step]}</Pill></td>
@@ -295,7 +242,7 @@ function ChallengePurchasesPage() {
                 <td>
                   <div className="capitalize text-white/80">{row.rewardPreference}</div>
                 </td>
-                <td className="text-xs text-muted-foreground">{row.when}</td>
+                <td className="text-xs text-muted-foreground">{new Date(row.when).toLocaleString()}</td>
               </tr>
             ))
           )}

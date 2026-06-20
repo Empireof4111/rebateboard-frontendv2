@@ -15,6 +15,7 @@ import { Logo } from "@/components/Logo";
 import { ToastViewport, toast } from "./AdminActions";
 import { GlobalSearch } from "./GlobalSearch";
 import { useAdminPermissions } from "@/lib/admin-permissions";
+import { fetchAdminBugBountyStats } from "@/lib/bug-bounty-api";
 
 type Item = { to: string; label: string; icon: typeof Users; badge?: string; exact?: boolean };
 type Group = { id: string; label: string; items: Item[] };
@@ -93,7 +94,7 @@ const groups: Group[] = [
       { to: "/superadmin/flags", label: "Feature Flags", icon: Flag },
       { to: "/superadmin/notifications", label: "Notifications", icon: Bell },
       { to: "/superadmin/api-keys", label: "API Keys", icon: KeyRound },
-      { to: "/superadmin/Bug-bounty", label: "Bug Bounty", icon: Bug, badge: "NEW" },
+      { to: "/superadmin/Bug-bounty", label: "Bug Bounty", icon: Bug },
       { to: "/superadmin/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -104,6 +105,7 @@ export function SuperadminLayout() {
   const { canRoute, roles, activeRoleId, setActiveRoleId, activeRole } = useAdminPermissions();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [bugBountyOpenCount, setBugBountyOpenCount] = useState<string>("");
   const [open, setOpen] = useState<Record<string, boolean>>({
     core: true, brands: true, finance: true, content: true, system: true,
   });
@@ -124,6 +126,28 @@ export function SuperadminLayout() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBugBountyCount() {
+      try {
+        const stats = await fetchAdminBugBountyStats();
+        if (!cancelled) {
+          setBugBountyOpenCount(stats.open > 0 ? String(stats.open) : "");
+        }
+      } catch {
+        if (!cancelled) {
+          setBugBountyOpenCount("");
+        }
+      }
+    }
+
+    void loadBugBountyCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   return (
     <div className="relative min-h-screen">
@@ -187,9 +211,9 @@ export function SuperadminLayout() {
                           {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" aria-hidden />}
                           <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-fuchsia-400" : "group-hover:text-white/90"}`} />
                           <span className="flex-1 truncate">{item.label}</span>
-                          {item.badge && (
+                          {(item.to === "/superadmin/Bug-bounty" ? bugBountyOpenCount : item.badge) && (
                             <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/10">
-                              {item.badge}
+                              {item.to === "/superadmin/Bug-bounty" ? bugBountyOpenCount : item.badge}
                             </span>
                           )}
                         </Link>

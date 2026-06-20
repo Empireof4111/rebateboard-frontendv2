@@ -5,6 +5,7 @@ import { ClaimDetailDrawer } from "@/components/dashboard/ClaimDetailDrawer";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type CashbackClaim } from "@/lib/finance-api";
 import { ApiError } from "@/lib/api";
+import { fetchMyChallengePurchases, type ChallengePurchaseRow } from "@/lib/challenge-purchases-api";
 
 export const Route = createFileRoute("/dashboard/claims")({
   head: () => ({
@@ -75,6 +76,7 @@ function ClaimsPage() {
   const { token } = useAuth();
   const [rawClaims, setRawClaims] = useState<CashbackClaim[]>([]);
   const [loading, setLoading] = useState(true);
+  const [challengeRows, setChallengeRows] = useState<ChallengePurchaseRow[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | UIClaimStatus>("all");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -85,11 +87,17 @@ function ClaimsPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await financeApi.getMyClaims(token, { page: pageNum, size: 30 });
-      if (res.payload) {
-        setRawClaims(pageNum === 0 ? res.payload.page : (prev) => [...prev, ...res.payload!.page]);
-        setTotalPages(res.payload.totalPages);
+      const [claimsRes, challengeRes] = await Promise.all([
+        financeApi.getMyClaims(token, { page: pageNum, size: 30 }),
+        pageNum === 0 ? fetchMyChallengePurchases() : Promise.resolve(null),
+      ]);
+      if (claimsRes.payload) {
+        setRawClaims(pageNum === 0 ? claimsRes.payload.page : (prev) => [...prev, ...claimsRes.payload!.page]);
+        setTotalPages(claimsRes.payload.totalPages);
         setPage(pageNum);
+      }
+      if (pageNum === 0 && challengeRes?.rows) {
+        setChallengeRows(challengeRes.rows);
       }
     } catch (e) {
       console.error("Claims load failed", e instanceof ApiError ? e.message : e);
@@ -146,6 +154,36 @@ function ClaimsPage() {
         <Stat label="Approved (awaiting)" value={`$${totals.approved.toFixed(2)}`} tone="sky" />
         <Stat label="Paid" value={`$${totals.paid.toFixed(2)}`} tone="emerald" />
         <Stat label="Rejected" value={`${totals.rejected}`} tone="rose" />
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-white">Challenge purchase journey</div>
+            <p className="mt-1 text-xs text-white/50">Recent prop-firm buy clicks, reward choices, and claim milestones tracked from your challenge flow.</p>
+          </div>
+          <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">{challengeRows.length} events</div>
+        </div>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          {challengeRows.slice(0, 6).map((row) => (
+            <div key={row.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-white">{row.firm}</div>
+                <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] uppercase text-fuchsia-200">{row.step.replaceAll("_", " ")}</span>
+              </div>
+              <div className="mt-1 text-xs text-white/60">{row.program}</div>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-amber-300">${row.amountUsd.toFixed(2)}</span>
+                <span className="text-white/50">{new Date(row.when).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
+          {challengeRows.length === 0 && (
+            <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-sm text-white/45 md:col-span-3">
+              Challenge purchase activity will start appearing here after you interact with a prop-firm checkout or submit a challenge cashback claim.
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">

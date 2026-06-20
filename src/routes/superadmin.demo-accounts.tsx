@@ -14,9 +14,10 @@ import {
 } from "lucide-react";
 import { DataTable, PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
+import { DemoAccountsAdminPage } from "@/components/superadmin/DemoAccountsAdminPage";
 
 export const Route = createFileRoute("/superadmin/demo-accounts")({
-  component: DemoAccountsPage,
+  component: DemoAccountsAdminPage,
 });
 
 type DemoPlatform = "MT4" | "MT5" | "cTrader" | "DXtrade" | "TradingView";
