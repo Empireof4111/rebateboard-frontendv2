@@ -43,6 +43,32 @@ export type DailyTaskAdminBoard = {
     rrAwardedToday: number;
     totalCompletions: number;
   };
+  analytics: {
+    dailyTrend: {
+      label: string;
+      completions: number;
+      users: number;
+      rrAwarded: number;
+    }[];
+    topTasks: {
+      taskId: string;
+      title: string;
+      completions: number;
+      uniqueUsers: number;
+      rrAwarded: number;
+      enabled: boolean;
+    }[];
+    recentCompletions: {
+      id: string;
+      taskTitle: string;
+      userName: string;
+      rrAwarded: number;
+      completionDate: string;
+      createdAt: string;
+      status: string;
+    }[];
+    windowStartedAt: string;
+  };
 };
 
 export type DailyTaskUserBoard = {
@@ -54,6 +80,27 @@ export type DailyTaskUserBoard = {
     rrClaimedToday: number;
   };
 };
+
+function normalizeTaskPayload(
+  task: Partial<DailyTaskRecord> & {
+    title: string;
+    description: string;
+    action: string;
+    category: string;
+  },
+) {
+  const { id, ...rest } = task;
+  const normalized: Record<string, unknown> = { ...rest };
+
+  if (id && !String(id).startsWith("draft-")) {
+    const parsedId = Number(id);
+    if (Number.isInteger(parsedId)) {
+      normalized.id = parsedId;
+    }
+  }
+
+  return normalized;
+}
 
 export async function fetchDailyTaskAdminBoard() {
   const response = await apiRequest<DailyTaskAdminBoard>("/daily-task/admin/list", {
@@ -73,7 +120,7 @@ export async function saveDailyTask(task: Partial<DailyTaskRecord> & {
   const response = await apiRequest<DailyTaskAdminBoard>("/daily-task/admin", {
     method: "POST",
     token: readToken(),
-    body: task,
+    body: normalizeTaskPayload(task),
   });
   if (!response.payload) throw new Error("Missing daily tasks payload");
   return response.payload;
@@ -88,7 +135,7 @@ export async function updateDailyTask(taskId: string, task: Partial<DailyTaskRec
   const response = await apiRequest<DailyTaskAdminBoard>(`/daily-task/admin/${taskId}`, {
     method: "PUT",
     token: readToken(),
-    body: task,
+    body: normalizeTaskPayload(task),
   });
   if (!response.payload) throw new Error("Missing daily tasks payload");
   return response.payload;

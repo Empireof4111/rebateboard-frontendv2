@@ -6,6 +6,15 @@ export type PaginatedResult<T> = {
   size: number;
   currentPage: number;
   totalPages: number;
+  totalItems?: number;
+  stats?: {
+    totalUsers: number;
+    activeUsers: number;
+    verifiedUsers: number;
+    pendingUsers: number;
+    suspendedUsers: number;
+    adminUsers: number;
+  };
 };
 
 // ─── Blog ──────────────────────────────────────────────────────────────────
@@ -292,13 +301,37 @@ function mapUser(raw: any): AdminUser {
 }
 
 export const userAdminApi = {
-  async list(token: string, page = 0, size = 50): Promise<ApiResponse<PaginatedResult<AdminUser>>> {
-    const res = await apiRequest<any>(`/user/list?page=${page}&size=${size}`, { token });
+  async list(
+    token: string,
+    page = 0,
+    size = 50,
+    filters?: { status?: string; verified?: number },
+  ): Promise<ApiResponse<PaginatedResult<AdminUser>>> {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(size),
+    });
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.verified !== undefined) params.set("verified", String(filters.verified));
+    const res = await apiRequest<any>(`/user/list?${params.toString()}`, { token });
     if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapUser) };
     return res as any;
   },
-  async search(token: string, q: string, page = 0, size = 50): Promise<ApiResponse<PaginatedResult<AdminUser>>> {
-    const res = await apiRequest<any>(`/user/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`, { token });
+  async search(
+    token: string,
+    q: string,
+    page = 0,
+    size = 50,
+    filters?: { status?: string; verified?: number },
+  ): Promise<ApiResponse<PaginatedResult<AdminUser>>> {
+    const params = new URLSearchParams({
+      q: q,
+      page: String(page),
+      size: String(size),
+    });
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.verified !== undefined) params.set("verified", String(filters.verified));
+    const res = await apiRequest<any>(`/user/search?${params.toString()}`, { token });
     if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapUser) };
     return res as any;
   },
@@ -452,5 +485,85 @@ export const advertApi = {
   },
   async remove(token: string, id: string): Promise<ApiResponse<void>> {
     return apiRequest(`/advert/${id}`, { method: "DELETE", token });
+  },
+};
+
+// Users support / inbox messages
+export type AdminInboxMessage = {
+  id: string;
+  userId?: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  subject: string;
+  preview: string;
+  message: string;
+  status: string;
+  received: string;
+  updatedAt: string;
+  replyCount: number;
+  lastReply?: {
+    subject: string;
+    message: string;
+  } | null;
+};
+
+function mapInboxMessage(raw: any): AdminInboxMessage {
+  const replies = Array.isArray(raw.replies) ? raw.replies : [];
+  const lastReply = replies.length ? replies[replies.length - 1] : null;
+  return {
+    id: String(raw.id),
+    userId: raw.userId ? String(raw.userId) : undefined,
+    name: raw.name ?? "Unknown sender",
+    email: raw.emailAddress ?? "",
+    phoneNumber: raw.phoneNumber ?? "",
+    subject: raw.subject ?? "",
+    preview: raw.message ?? "",
+    message: raw.message ?? "",
+    status: raw.status ?? "PENDING",
+    received: raw.createdAt ?? "",
+    updatedAt: raw.updatedAt ?? raw.createdAt ?? "",
+    replyCount: replies.length,
+    lastReply: lastReply
+      ? {
+          subject: lastReply.subject ?? "",
+          message: lastReply.message ?? "",
+        }
+      : null,
+  };
+}
+
+export type AdminInboxStats = {
+  total: number;
+  pending: number;
+  open: number;
+  replied: number;
+  closed: number;
+};
+
+export const inboxAdminApi = {
+  async list(token: string, page = 0, size = 50): Promise<ApiResponse<PaginatedResult<AdminInboxMessage> & { stats?: AdminInboxStats }>> {
+    const res = await apiRequest<any>(`/message/list?page=${page}&size=${size}`, { token });
+    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapInboxMessage) };
+    return res as any;
+  },
+  async search(token: string, q: string, page = 0, size = 50): Promise<ApiResponse<PaginatedResult<AdminInboxMessage> & { stats?: AdminInboxStats }>> {
+    const res = await apiRequest<any>(`/message/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`, { token });
+    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapInboxMessage) };
+    return res as any;
+  },
+  async updateStatus(token: string, messageId: string, status: string): Promise<ApiResponse<AdminInboxMessage>> {
+    const res = await apiRequest<any>(`/message/${messageId}?status=${encodeURIComponent(status)}`, { method: "POST", token });
+    if (res.payload) res.payload = mapInboxMessage(res.payload);
+    return res as any;
+  },
+  async reply(token: string, messageId: string, subject: string, message: string): Promise<ApiResponse<AdminInboxMessage>> {
+    const res = await apiRequest<any>(`/message/reply/${messageId}`, {
+      method: "POST",
+      token,
+      body: { subject, message },
+    });
+    if (res.payload) res.payload = mapInboxMessage(res.payload);
+    return res as any;
   },
 };

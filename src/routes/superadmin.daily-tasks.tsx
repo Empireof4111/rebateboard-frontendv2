@@ -4,6 +4,18 @@ import { Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
 import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  Tooltip,
+  XAxis,
+  YAxis,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
+import {
   deleteDailyTask,
   fetchDailyTaskAdminBoard,
   resetDailyTasks,
@@ -49,6 +61,8 @@ const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
   { value: "conversion", label: "conversion" },
 ];
 
+const CHART_COLORS = ["#d946ef", "#a855f7", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
+
 function DailyTasksPage() {
   const [board, setBoard] = useState<DailyTaskAdminBoard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,6 +76,12 @@ function DailyTasksPage() {
     completionsToday: 0,
     rrAwardedToday: 0,
     totalCompletions: 0,
+  };
+  const analytics = board?.analytics ?? {
+    dailyTrend: [],
+    topTasks: [],
+    recentCompletions: [],
+    windowStartedAt: "",
   };
 
   useEffect(() => {
@@ -85,6 +105,8 @@ function DailyTasksPage() {
   }, []);
 
   async function persistTask(task: DailyTaskRecord) {
+    if (savingId === task.id) return;
+
     try {
       setSavingId(task.id);
       const payload = task.id.startsWith("draft-")
@@ -109,26 +131,26 @@ function DailyTasksPage() {
   }
 
   async function addTask() {
-    const newTask: DailyTaskRecord = {
-      id: `draft-${Date.now()}`,
-      title: "",
-      description: "",
-      action: "like_post",
-      category: "social",
-      quantity: 1,
-      rrReward: 0,
-      url: "",
-      enabled: true,
-      displayOrder: tasks.length,
-    };
-    setBoard((current) => ({
-      ...(current ?? { tasks: [], stats: metrics }),
-      tasks: [...(current?.tasks ?? []), newTask],
-      stats: {
-        ...(current?.stats ?? metrics),
-        configuredTasks: (current?.stats.configuredTasks ?? tasks.length) + 1,
-      },
-    }));
+    try {
+      setSavingId("new-task");
+      const payload = await saveDailyTask({
+        title: `New task ${tasks.length + 1}`,
+        description: "Describe the action users need to complete.",
+        action: "like_post",
+        category: "social",
+        quantity: 1,
+        rrReward: 0,
+        url: "",
+        enabled: true,
+        displayOrder: tasks.length,
+      });
+      setBoard(payload);
+      toast.success("New task added");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to add task");
+    } finally {
+      setSavingId("");
+    }
   }
 
   async function resetDefaults() {
@@ -199,6 +221,116 @@ function DailyTasksPage() {
         <StatCard label="Users Today" value={String(metrics.usersToday)} delta="Completed at least one task" tone="flat" />
         <StatCard label="Completions Today" value={String(metrics.completionsToday)} delta="All submitted actions" tone="flat" />
         <StatCard label="RR Awarded Today" value={String(metrics.rrAwardedToday)} delta="Rewarded from daily tasks" tone="flat" />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+        <Panel title="Completion trend" action={<Pill tone="neutral">Last 7 days</Pill>}>
+          {analytics.dailyTrend.length ? (
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics.dailyTrend} margin={{ top: 10, right: 16, left: -16, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="taskCompletions" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.55} />
+                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="taskUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.45} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                  <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" fontSize={11} />
+                  <YAxis yAxisId="left" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
+                  <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }} />
+                  <Area yAxisId="left" type="monotone" dataKey="completions" stroke="#d946ef" strokeWidth={2} fill="url(#taskCompletions)" name="Completions" />
+                  <Area yAxisId="right" type="monotone" dataKey="users" stroke="#06b6d4" strokeWidth={2} fill="url(#taskUsers)" name="Users" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
+              No completion analytics yet.
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Top performing tasks" action={<Pill tone="good">{analytics.topTasks.length} ranked</Pill>}>
+          {analytics.topTasks.length ? (
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.topTasks} layout="vertical" margin={{ top: 6, right: 16, left: 4, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
+                  <YAxis type="category" dataKey="title" stroke="rgba(255,255,255,0.6)" fontSize={11} width={130} />
+                  <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }} />
+                  <Bar dataKey="completions" radius={[0, 10, 10, 0]} name="Completions">
+                    {analytics.topTasks.map((_, index) => (
+                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
+              Task rankings will appear once users start completing actions.
+            </div>
+          )}
+        </Panel>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <Panel title="Top task breakdown">
+          {analytics.topTasks.length ? (
+            <div className="space-y-3">
+              {analytics.topTasks.map((task) => (
+                <div key={task.taskId} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{task.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {task.uniqueUsers} users · {task.rrAwarded} RR awarded
+                      </div>
+                    </div>
+                    <Pill tone={task.enabled ? "good" : "neutral"}>
+                      {task.completions} completions
+                    </Pill>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
+              No task breakdown available yet.
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Recent completions">
+          {analytics.recentCompletions.length ? (
+            <div className="space-y-3">
+              {analytics.recentCompletions.map((completion) => (
+                <div key={completion.id} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{completion.taskTitle}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {completion.userName} · {completion.completionDate}
+                      </div>
+                    </div>
+                    <Pill tone="good">{completion.rrAwarded} RR</Pill>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
+              Recent task completions will show here once users start claiming them.
+            </div>
+          )}
+        </Panel>
       </div>
 
       <Panel title="Tasks" action={<Pill tone="good">Task engine</Pill>}>
