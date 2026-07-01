@@ -39,7 +39,7 @@ const groups: NavGroup[] = [
       { to: "/dashboard/economic-calendar", label: "Economic Calendar", icon: Globe2, badge: "NEW" },
       { to: "/dashboard/accounts", label: "ROI Tracker", icon: Wallet, badge: "TRT" },
       { to: "/dashboard/risk", label: "Risk Guardrails", icon: ShieldAlert },
-      { to: "/dashboard/ai-coach", label: "AI Coach", icon: Bot },
+      { to: "/dashboard/ai-coach", label: "Rebeta", icon: Bot },
       { to: "/dashboard/tools", label: "Tools", icon: Calculator },
       { to: "/dashboard/brands", label: "Programs", icon: Layers },
     ],
@@ -224,7 +224,7 @@ export function DashboardLayout() {
                 <Plus className="h-4 w-4" />
               </button>
               <Link to={"/dashboard/ai-coach" as string} className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
-                <Sparkles className="h-3.5 w-3.5 text-accent" /> Ask AI
+                <Sparkles className="h-3.5 w-3.5 text-accent" /> Ask Rebeta
               </Link>
               <button className="glass-pill grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10" aria-label="Notifications">
                 <Bell className="h-4 w-4" />

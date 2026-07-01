@@ -75,7 +75,7 @@ function LoginPage() {
               Track ROI across every prop firm, broker, and exchange. Get AI insights, earn Rebate Rewards, and dominate the leaderboards.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              {["AI Coach", "True ROI Engine", "Risk Guardrails", "RR Rewards"].map((t) => (
+              {["Rebeta", "True ROI Engine", "Risk Guardrails", "RR Rewards"].map((t) => (
                 <span key={t} className="glass-pill rounded-full px-3 py-1.5 text-xs text-white/90">
                   <Sparkles className="mr-1 inline h-3 w-3 text-accent" />
                   {t}

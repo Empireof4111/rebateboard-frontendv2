@@ -87,7 +87,7 @@ function DashboardHome() {
               <Plus className="h-3.5 w-3.5" /> Add Trade
             </button>
             <Link to={"/dashboard/ai-coach" as string} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
-              Ask AI
+              Ask Rebeta
             </Link>
           </>
         }
@@ -221,12 +221,12 @@ function DashboardHome() {
           </div>
         </Panel>
 
-        {/* Section 3 — AI Snapshot */}
+        {/* Section 3 — Rebeta Snapshot */}
         <Panel
-          title="AI Snapshot"
+          title="Rebeta Snapshot"
           action={
             <Link to={"/dashboard/ai-coach" as string} className="text-[11px] text-accent hover:underline">
-              Open coach →
+              Open Rebeta →
             </Link>
           }
         >
@@ -373,7 +373,7 @@ function DashboardHome() {
             { to: "/dashboard/reviews", icon: Star, label: "Write Review" },
             { to: "/dashboard/brands", icon: Building2, label: "Explore Firms" },
             { to: "/bug-bounty", icon: Bug, label: "Report Bug" },
-            { to: "/dashboard/ai-coach", icon: Bot, label: "Ask AI" },
+            { to: "/dashboard/ai-coach", icon: Bot, label: "Ask Rebeta" },
           ].map((q) => {
             const Icon = q.icon;
             const cls = "group flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-primary/40 hover:bg-white/[0.06]";

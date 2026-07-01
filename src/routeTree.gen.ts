@@ -97,6 +97,7 @@ import { Route as DashboardRiskRouteImport } from './routes/dashboard.risk'
 import { Route as DashboardRewardsRouteImport } from './routes/dashboard.rewards'
 import { Route as DashboardReviewsRouteImport } from './routes/dashboard.reviews'
 import { Route as DashboardReferralsRouteImport } from './routes/dashboard.referrals'
+import { Route as DashboardRebetaRouteImport } from './routes/dashboard.rebeta'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardOffersRouteImport } from './routes/dashboard.offers'
 import { Route as DashboardLeaderboardsRouteImport } from './routes/dashboard.leaderboards'
@@ -571,6 +572,11 @@ const DashboardReferralsRoute = DashboardReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardRebetaRoute = DashboardRebetaRouteImport.update({
+  id: '/rebeta',
+  path: '/rebeta',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardProfileRoute = DashboardProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -766,6 +772,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/leaderboards': typeof DashboardLeaderboardsRoute
   '/dashboard/offers': typeof DashboardOffersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/rebeta': typeof DashboardRebetaRoute
   '/dashboard/referrals': typeof DashboardReferralsRoute
   '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/rewards': typeof DashboardRewardsRoute
@@ -881,6 +888,7 @@ export interface FileRoutesByTo {
   '/dashboard/leaderboards': typeof DashboardLeaderboardsRoute
   '/dashboard/offers': typeof DashboardOffersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/rebeta': typeof DashboardRebetaRoute
   '/dashboard/referrals': typeof DashboardReferralsRoute
   '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/rewards': typeof DashboardRewardsRoute
@@ -1001,6 +1009,7 @@ export interface FileRoutesById {
   '/dashboard/leaderboards': typeof DashboardLeaderboardsRoute
   '/dashboard/offers': typeof DashboardOffersRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/rebeta': typeof DashboardRebetaRoute
   '/dashboard/referrals': typeof DashboardReferralsRoute
   '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/rewards': typeof DashboardRewardsRoute
@@ -1122,6 +1131,7 @@ export interface FileRouteTypes {
     | '/dashboard/leaderboards'
     | '/dashboard/offers'
     | '/dashboard/profile'
+    | '/dashboard/rebeta'
     | '/dashboard/referrals'
     | '/dashboard/reviews'
     | '/dashboard/rewards'
@@ -1237,6 +1247,7 @@ export interface FileRouteTypes {
     | '/dashboard/leaderboards'
     | '/dashboard/offers'
     | '/dashboard/profile'
+    | '/dashboard/rebeta'
     | '/dashboard/referrals'
     | '/dashboard/reviews'
     | '/dashboard/rewards'
@@ -1356,6 +1367,7 @@ export interface FileRouteTypes {
     | '/dashboard/leaderboards'
     | '/dashboard/offers'
     | '/dashboard/profile'
+    | '/dashboard/rebeta'
     | '/dashboard/referrals'
     | '/dashboard/reviews'
     | '/dashboard/rewards'
@@ -2082,6 +2094,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardReferralsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/rebeta': {
+      id: '/dashboard/rebeta'
+      path: '/rebeta'
+      fullPath: '/dashboard/rebeta'
+      preLoaderRoute: typeof DashboardRebetaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/profile': {
       id: '/dashboard/profile'
       path: '/profile'
@@ -2329,6 +2348,7 @@ interface DashboardRouteChildren {
   DashboardLeaderboardsRoute: typeof DashboardLeaderboardsRoute
   DashboardOffersRoute: typeof DashboardOffersRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardRebetaRoute: typeof DashboardRebetaRoute
   DashboardReferralsRoute: typeof DashboardReferralsRoute
   DashboardReviewsRoute: typeof DashboardReviewsRoute
   DashboardRewardsRoute: typeof DashboardRewardsRoute
@@ -2357,6 +2377,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardLeaderboardsRoute: DashboardLeaderboardsRoute,
   DashboardOffersRoute: DashboardOffersRoute,
   DashboardProfileRoute: DashboardProfileRoute,
+  DashboardRebetaRoute: DashboardRebetaRoute,
   DashboardReferralsRoute: DashboardReferralsRoute,
   DashboardReviewsRoute: DashboardReviewsRoute,
   DashboardRewardsRoute: DashboardRewardsRoute,

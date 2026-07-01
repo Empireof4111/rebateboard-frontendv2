@@ -230,7 +230,7 @@ export const auditLog = [
 
 export const featureFlags = [
   { key: "tbi_v2_engine", label: "TBI v2 Trust Engine", enabled: true, rollout: "100%" },
-  { key: "ai_coach_pro", label: "AI Coach Pro tier", enabled: true, rollout: "25%" },
+  { key: "ai_coach_pro", label: "Rebeta Pro tier", enabled: true, rollout: "25%" },
   { key: "wallet_swap", label: "Wallet swap (TRC20↔ERC20)", enabled: false, rollout: "0%" },
   { key: "academy_certs", label: "Academy certifications", enabled: true, rollout: "100%" },
   { key: "social_login_apple", label: "Sign in with Apple", enabled: false, rollout: "0%" },
