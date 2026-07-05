@@ -19,7 +19,13 @@ function readToken() {
   }
 }
 
-export type ComplaintStatus = "pending" | "posted" | "reviewing" | "responded" | "resolved" | "rejected";
+export type ComplaintStatus =
+  | "pending"
+  | "posted"
+  | "reviewing"
+  | "responded"
+  | "resolved"
+  | "rejected";
 export type ComplaintSeverity = "low" | "medium" | "high";
 
 export type ComplaintTimelineEntry = {
@@ -76,10 +82,14 @@ export async function fetchPublicComplaints(brandSlug?: string) {
   const path = brandSlug
     ? `/report/public-list?brandSlug=${encodeURIComponent(brandSlug)}`
     : "/report/public-list";
-  const response = await apiRequest<ComplaintRecord[]>(path, {
-    method: "GET",
-  });
-  return response.payload ?? [];
+  try {
+    const response = await apiRequest<ComplaintRecord[]>(path, {
+      method: "GET",
+    });
+    return response.payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function submitComplaint(input: {

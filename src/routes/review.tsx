@@ -43,7 +43,7 @@ function ReviewPage() {
   return (
     <div className="relative min-h-screen pt-20">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="container-app max-w-6xl py-8 sm:py-10">
         <div className="mb-6 text-center">
           <h1 className="text-gradient text-3xl font-bold sm:text-4xl">Drop a Review</h1>
           <p className="mt-2 text-sm text-muted-foreground">Your verified review feeds directly into the brand's TBI score.</p>

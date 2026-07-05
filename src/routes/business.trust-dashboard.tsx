@@ -2,6 +2,7 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMemo, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   TrustScoreCard, TrustBreakdownCard, UnlockProgressCard, ImprovementSuggestions, InfoNoteCard,
 } from "@/components/tbi/OnboardingPrimitives";
@@ -38,7 +39,7 @@ function TrustDashboardPage() {
     return (
       <div className="min-h-screen bg-[#0b0418] text-foreground">
         <SiteHeader />
-        <main className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <main className="container-app max-w-2xl py-16 text-center sm:py-20">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white/5">
             <Mail className="h-7 w-7 text-fuchsia-300" />
           </div>
@@ -50,6 +51,7 @@ function TrustDashboardPage() {
             Start a new application →
           </Link>
         </main>
+        <SiteFooter />
       </div>
     );
   }
@@ -64,7 +66,7 @@ function TrustDashboardPage() {
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="container-app py-6 sm:py-8">
         {/* Header */}
         <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-6 md:p-8">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
@@ -203,6 +205,7 @@ function TrustDashboardPage() {
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

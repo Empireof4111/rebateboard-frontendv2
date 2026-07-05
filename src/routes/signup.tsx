@@ -102,10 +102,9 @@ function SignupPage() {
       <div className="glow-orb left-[-10%] top-[10%] h-[400px] w-[400px]" />
       <div className="glow-orb right-[-10%] bottom-[5%] h-[500px] w-[500px]" />
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-4 py-10">
+      <div className="container-app relative z-10 flex min-h-screen max-w-3xl flex-col items-center justify-center py-10">
         <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="RebateBoard home">
           <Logo heightClass="h-10" />
-          <span className="text-xs text-muted-foreground">every trade pays</span>
         </Link>
 
         <Stepper step={step} />

@@ -19,6 +19,10 @@ function readToken() {
   }
 }
 
+function requestToken(token?: string | null) {
+  return token === undefined ? readToken() : token;
+}
+
 export type AdminBrandStatus = "verified" | "review" | "flagged" | "draft";
 export type AdminBrandCategory =
   | "Prop Firm"
@@ -63,6 +67,9 @@ export type AdminBrandRecord = {
   trust?: Record<string, unknown>;
   seo?: Record<string, unknown>;
   flags?: Record<string, unknown>;
+  followersCount?: number;
+  reviewsCount?: number;
+  isFollowing?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -73,6 +80,55 @@ export async function fetchAdminBrands() {
     token: readToken(),
   });
   return response.payload ?? [];
+}
+
+export async function fetchPublicAdminBrand(slug: string, token?: string | null) {
+  try {
+    const response = await apiRequest<AdminBrandRecord>(
+      `/admin-brand/public/${encodeURIComponent(slug)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        token: requestToken(token),
+      },
+    );
+    const brand = response.payload ?? null;
+    return brand?.visibility === "published" ? brand : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchPublicAdminBrands(category?: AdminBrandCategory, token?: string | null) {
+  const query = category ? `?category=${encodeURIComponent(category)}` : "";
+  try {
+    const response = await apiRequest<AdminBrandRecord[]>(`/admin-brand/public-list${query}`, {
+      method: "GET",
+      cache: "no-store",
+      token: requestToken(token),
+    });
+    return (response.payload ?? []).filter((brand) => brand.visibility === "published");
+  } catch {
+    return [];
+  }
+}
+
+export async function followAdminBrand(id: string, token?: string | null) {
+  const response = await apiRequest<AdminBrandRecord>(`/admin-brand/${id}/follow`, {
+    method: "POST",
+    token: requestToken(token),
+  });
+  if (!response.payload) throw new Error("Missing brand payload");
+  return response.payload;
+}
+
+export async function unfollowAdminBrand(id: string, token?: string | null) {
+  const response = await apiRequest<AdminBrandRecord>(`/admin-brand/${id}/follow`, {
+    method: "DELETE",
+    token: requestToken(token),
+  });
+  if (!response.payload) throw new Error("Missing brand payload");
+  return response.payload;
 }
 
 export async function createAdminBrand(input: Partial<AdminBrandRecord>) {

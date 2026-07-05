@@ -116,18 +116,39 @@ export type TbiAdminPatch = Partial<{
 }>;
 
 export async function fetchTbiTop() {
-  const response = await apiRequest<TbiProfile[]>("/tbi/top", { method: "GET" });
-  return response.payload ?? [];
+  try {
+    const response = await apiRequest<TbiProfile[]>("/tbi/top", {
+      method: "GET",
+      cache: "no-store",
+    });
+    return response.payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchTbiExplore() {
-  const response = await apiRequest<TbiProfile[]>("/tbi/explore", { method: "GET" });
-  return response.payload ?? [];
+  try {
+    const response = await apiRequest<TbiProfile[]>("/tbi/explore", {
+      method: "GET",
+      cache: "no-store",
+    });
+    return response.payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchTbiBrand(slug: string) {
-  const response = await apiRequest<TbiProfile>(`/tbi/brand/${slug}`, { method: "GET" });
-  return response.payload ?? null;
+  try {
+    const response = await apiRequest<TbiProfile>(`/tbi/brand/${slug}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    return response.payload ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchAdminTbiProfiles() {

@@ -61,6 +61,17 @@ export type DemoAccountsBoard = {
   };
 };
 
+const EMPTY_PUBLIC_DEMO_ACCOUNTS: DemoAccountsBoard = {
+  rows: [],
+  stats: {
+    total: 0,
+    verified: 0,
+    platforms: 0,
+    hot: 0,
+    published: 0,
+  },
+};
+
 export async function fetchAdminDemoAccountsBoard() {
   const response = await apiRequest<DemoAccountsBoard>("/demo-account/admin/board", {
     method: "GET",
@@ -70,13 +81,15 @@ export async function fetchAdminDemoAccountsBoard() {
   return response.payload;
 }
 
-export async function saveDemoAccount(input: Partial<DemoAccountRecord> & {
-  brandId?: string;
-  brand?: string;
-  plan: string;
-  platform: string;
-  accountId: string;
-}) {
+export async function saveDemoAccount(
+  input: Partial<DemoAccountRecord> & {
+    brandId?: string;
+    brand?: string;
+    plan: string;
+    platform: string;
+    accountId: string;
+  },
+) {
   const response = await apiRequest<DemoAccountsBoard>("/demo-account/admin", {
     method: "POST",
     token: readToken(),
@@ -113,11 +126,14 @@ export async function updateDemoAccount(
   return response.payload;
 }
 
-export async function rotateDemoAccount(recordId: string, input?: {
-  password?: string;
-  investorPassword?: string;
-  note?: string;
-}) {
+export async function rotateDemoAccount(
+  recordId: string,
+  input?: {
+    password?: string;
+    investorPassword?: string;
+    note?: string;
+  },
+) {
   const response = await apiRequest<DemoAccountsBoard>(`/demo-account/admin/${recordId}/rotate`, {
     method: "POST",
     token: readToken(),
@@ -142,9 +158,12 @@ export async function fetchPublicDemoAccounts(query = "", platform = "") {
   if (platform.trim() && platform !== "all") params.set("platform", platform.trim());
   const suffix = params.toString() ? `?${params.toString()}` : "";
 
-  const response = await apiRequest<DemoAccountsBoard>(`/demo-account/public-list${suffix}`, {
-    method: "GET",
-  });
-  if (!response.payload) throw new Error("Missing demo accounts payload");
-  return response.payload;
+  try {
+    const response = await apiRequest<DemoAccountsBoard>(`/demo-account/public-list${suffix}`, {
+      method: "GET",
+    });
+    return response.payload ?? EMPTY_PUBLIC_DEMO_ACCOUNTS;
+  } catch {
+    return EMPTY_PUBLIC_DEMO_ACCOUNTS;
+  }
 }

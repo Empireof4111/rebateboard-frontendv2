@@ -19,10 +19,12 @@ export const Route = createFileRoute("/payouts/$brandSlug/transaction/$txId")({
   }),
   notFoundComponent: () => (
     <div className="min-h-screen bg-[#0c0418] text-white"><SiteHeader />
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+      <div className="container-app max-w-2xl py-16 text-center sm:py-20">
         <h1 className="text-3xl font-bold">Transaction not found</h1>
         <Link to="/payouts" className="mt-4 inline-block text-fuchsia-300">← Back to Payouts</Link>
-      </div></div>
+      </div>
+      <SiteFooter />
+    </div>
   ),
   errorComponent: ({ error }) => <div className="min-h-screen bg-[#0c0418] text-white p-8">{error.message}</div>,
   component: TxPage,
@@ -52,7 +54,7 @@ function TxPage() {
   return (
     <div className="min-h-screen bg-[#0c0418] text-white">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+      <main className="container-app max-w-3xl space-y-6 py-6 sm:py-8">
         <div className="text-xs text-muted-foreground">
           <Link to="/payouts" className="hover:text-white">Payouts</Link> <ChevronRight className="inline h-3 w-3" />{" "}
           <Link to="/payouts/$brandSlug" params={{ brandSlug: brand.slug }} className="hover:text-white">{brand.name}</Link>{" "}

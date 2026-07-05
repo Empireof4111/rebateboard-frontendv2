@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, notFound, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   StepProgressBar, StepTitleBlock, TrustScoreCard, TrustBreakdownCard, ImprovementSuggestions,
   InfoNoteCard, FieldShell, TextField, TextAreaField, SelectField, NumericStepperField,
@@ -91,7 +92,7 @@ function OnboardingFlow() {
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="container-app py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
@@ -194,6 +195,7 @@ function OnboardingFlow() {
           </aside>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
@@ -556,7 +558,7 @@ function SuccessScreen({ brandName, magicLink, onGoToDashboard }: { brandName: s
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 py-16">
+      <main className="container-app max-w-3xl py-12 sm:py-16">
         <div className="rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-teal-500/5 p-10 text-center backdrop-blur-xl">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-[0_0_30px_rgba(45,212,180,0.6)]">
             <Check className="h-8 w-8" />
@@ -588,6 +590,7 @@ function SuccessScreen({ brandName, magicLink, onGoToDashboard }: { brandName: s
           </button>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

@@ -71,7 +71,7 @@ function TBIPage() {
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="container-app py-6 sm:py-8">
         <section className="glass relative overflow-hidden rounded-3xl p-8 md:p-10">
           <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
           <div className="absolute -left-10 bottom-0 h-60 w-60 rounded-full bg-violet-500/20 blur-3xl" />
@@ -187,7 +187,7 @@ function TBIPage() {
 
                   <div className="mt-5 flex items-end justify-between">
                     <div>
-                      <div className="text-3xl font-bold tracking-tight">
+                      <div className="text-3xl font-bold">
                         {brand.finalScore.toFixed(1)}
                         <span className="text-sm text-muted-foreground">/10</span>
                       </div>

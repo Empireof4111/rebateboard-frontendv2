@@ -1,231 +1,428 @@
-import { Flame, Copy, Check, Calendar, Gift, Sparkles, ExternalLink } from "lucide-react";
+import {
+  ArrowUpRight,
+  Calendar,
+  Check,
+  Copy,
+  ExternalLink,
+  Flame,
+  Gift,
+  Image as ImageIcon,
+  Sparkles,
+  Tag,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import type { AdminOffer } from "@/lib/admin-data";
+import type { OfferBrandFields } from "@/lib/offer-brand-assets";
+
+type DisplayOffer = AdminOffer & OfferBrandFields;
 
 const tagStyles: Record<string, string> = {
-  exclusive: "bg-fuchsia-500/15 text-fuchsia-200 ring-fuchsia-400/30",
-  new: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30",
-  limited: "bg-amber-500/15 text-amber-200 ring-amber-400/30",
-  trending: "bg-sky-500/15 text-sky-200 ring-sky-400/30",
-  "free-account": "bg-yellow-500/15 text-yellow-200 ring-yellow-400/30",
+  exclusive: "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/30",
+  new: "bg-emerald-500/15 text-emerald-100 ring-emerald-400/30",
+  limited: "bg-amber-500/15 text-amber-100 ring-amber-400/30",
+  trending: "bg-sky-500/15 text-sky-100 ring-sky-400/30",
+  "free-account": "bg-yellow-500/15 text-yellow-100 ring-yellow-400/30",
 };
 
 const tagLabel: Record<string, string> = {
-  exclusive: "EXCLUSIVE",
-  new: "+ NEW OFFER",
-  limited: "LIMITED",
-  trending: "🔥 TRENDING",
-  "free-account": "🎁 + FREE ACCOUNT",
+  exclusive: "Exclusive",
+  new: "New",
+  limited: "Limited",
+  trending: "Trending",
+  "free-account": "Free account",
 };
 
 function brandInitial(name: string) {
   return name
     .split(" ")
-    .map((w) => w[0])
+    .map((word) => word[0])
+    .filter(Boolean)
     .slice(0, 2)
     .join("")
     .toUpperCase();
 }
 
-export function OfferCard({ offer, onOpen }: { offer: AdminOffer; onOpen?: (o: AdminOffer) => void }) {
-  const [copied, setCopied] = useState(false);
-  const from = offer.accentFrom ?? "#a855f7";
+function BrandLogo({
+  offer,
+  className = "h-11 w-11 rounded-2xl",
+}: {
+  offer: DisplayOffer;
+  className?: string;
+}) {
+  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#a855f7";
   const to = offer.accentTo ?? "#ec4899";
 
-  const copy = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  return (
+    <div
+      className={`grid shrink-0 place-items-center overflow-hidden bg-white/[0.06] text-[10px] font-black text-white shadow-lg ring-1 ring-white/10 ${className}`}
+      style={
+        !offer.brandLogo ? { background: `linear-gradient(135deg, ${from}, ${to})` } : undefined
+      }
+    >
+      {offer.brandLogo ? (
+        <img
+          src={offer.brandLogo}
+          alt={`${offer.brand} logo`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <span className="text-white">{brandInitial(offer.brand)}</span>
+      )}
+    </div>
+  );
+}
+
+function OfferTag({ tag }: { tag: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${tagStyles[tag] ?? "bg-white/10 text-white/70 ring-white/15"}`}
+    >
+      {tag === "free-account" && <Gift className="h-3 w-3" />}
+      {tagLabel[tag] ?? tag}
+    </span>
+  );
+}
+
+function hasExpiry(offer: DisplayOffer) {
+  return Boolean(offer.expires && offer.expires !== "—");
+}
+
+function offerDiscount(offer: DisplayOffer) {
+  return offer.discount && offer.discount !== "—" ? offer.discount : "Exclusive Deal";
+}
+
+function openOffer(offer: DisplayOffer, onOpen?: (o: DisplayOffer) => void) {
+  if (offer.ctaUrl) {
+    window.open(offer.ctaUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+  onOpen?.(offer);
+}
+
+export function OfferCard({
+  offer,
+  onOpen,
+}: {
+  offer: DisplayOffer;
+  onOpen?: (o: DisplayOffer) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#a855f7";
+  const to = offer.accentTo ?? "#ec4899";
+  const isFlyer = offer.mode === "flyer" && Boolean(offer.flyerUrl);
+  const discount = offerDiscount(offer);
+
+  const copy = (event: React.MouseEvent) => {
+    event.stopPropagation();
     if (!offer.code) return;
-    navigator.clipboard?.writeText(offer.code);
+    void navigator.clipboard?.writeText(offer.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
-
-  if (offer.mode === "flyer" && offer.flyerUrl) {
-    return (
-      <button
-        onClick={() => onOpen?.(offer)}
-        className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-left transition hover:border-white/20"
-      >
-        <div className="aspect-[4/3] w-full overflow-hidden">
-          <img src={offer.flyerUrl} alt={offer.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3">
-          <div className="text-xs text-white/70">{offer.brand}</div>
-          <div className="text-sm font-semibold text-white">{offer.title}</div>
-        </div>
-        {offer.tags?.[0] && (
-          <span className={`absolute left-3 top-3 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${tagStyles[offer.tags[0]] ?? ""}`}>
-            {tagLabel[offer.tags[0]] ?? offer.tags[0]}
-          </span>
-        )}
-      </button>
-    );
-  }
 
   return (
     <article
       onClick={() => onOpen?.(offer)}
-      className="group relative grid cursor-pointer grid-cols-12 items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20 sm:p-4"
+      className="group relative flex h-full min-h-[360px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0618]/85 text-left shadow-[0_18px_50px_rgba(5,1,14,0.28)] transition hover:border-fuchsia-300/30 hover:bg-[#120821]/90 hover:shadow-[0_22px_70px_rgba(168,85,247,0.18)]"
     >
-      {/* Discount block */}
       <div
-        className="col-span-12 flex items-center justify-center gap-3 rounded-xl p-4 sm:col-span-3 sm:flex-col sm:gap-2"
-        style={{ backgroundImage: `linear-gradient(135deg, ${from}33, ${to}33)`, boxShadow: `inset 0 0 0 1px ${from}40` }}
+        className="relative aspect-[16/9] overflow-hidden bg-white/[0.035]"
+        style={{
+          backgroundImage: isFlyer
+            ? `linear-gradient(135deg, ${from}18, ${to}18)`
+            : `radial-gradient(circle at 22% 24%, ${from}66, transparent 32%), radial-gradient(circle at 86% 18%, ${to}66, transparent 30%), linear-gradient(135deg, ${from}24, ${to}24)`,
+        }}
       >
-        <Flame className="h-5 w-5 text-fuchsia-300 sm:absolute sm:left-2 sm:top-2" />
-        <div className="text-2xl font-extrabold text-white sm:text-3xl">{offer.discount ?? "OFFER"}</div>
-        {offer.tags?.includes("free-account") && (
-          <div className="hidden rounded-full bg-yellow-500/20 px-2 py-0.5 text-[10px] font-bold text-yellow-200 ring-1 ring-yellow-400/30 sm:inline-flex">
-            <Gift className="mr-1 h-3 w-3" /> + FREE ACCOUNT
-          </div>
-        )}
-      </div>
-
-      {/* Brand + content */}
-      <div className="col-span-12 sm:col-span-6">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-white shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
-          >
-            {brandInitial(offer.brand)}
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate text-sm font-bold text-white">{offer.brand}</h3>
-              {offer.tags?.map((t) => (
-                <span key={t} className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ring-1 ${tagStyles[t] ?? ""}`}>
-                  {tagLabel[t] ?? t}
-                </span>
-              ))}
+        {isFlyer && offer.flyerUrl ? (
+          <img
+            src={offer.flyerUrl}
+            alt={offer.title}
+            className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-between gap-4 p-4">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 text-[10px] font-semibold text-white/80 ring-1 ring-white/12">
+                <Flame className="h-3 w-3 text-fuchsia-200" />
+                Featured promo
+              </div>
+              <div className="mt-3 max-w-[12rem] text-3xl font-black leading-none text-white sm:text-4xl">
+                {discount}
+              </div>
+              {offer.code && (
+                <div className="mt-2 inline-flex rounded-full bg-black/25 px-2.5 py-1 font-mono text-[11px] font-bold text-white ring-1 ring-white/15">
+                  {offer.code}
+                </div>
+              )}
             </div>
-            <p className="mt-0.5 line-clamp-2 text-xs text-white/70">{offer.description ?? offer.title}</p>
+            <BrandLogo offer={offer} className="h-16 w-16 rounded-3xl sm:h-20 sm:w-20" />
+          </div>
+        )}
+
+        <div className="absolute left-3 top-3 flex max-w-[70%] flex-wrap gap-1.5">
+          {offer.tags?.slice(0, 2).map((tag) => (
+            <OfferTag key={tag} tag={tag} />
+          ))}
+        </div>
+
+        <span className="absolute bottom-3 right-3 rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-white/85 ring-1 ring-white/15 backdrop-blur">
+          {offer.category}
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-start gap-3">
+          <BrandLogo offer={offer} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="truncate text-base font-bold text-white">{offer.brand}</h3>
+              <span className="shrink-0 text-xs font-black text-white">{discount}</span>
+            </div>
+            <p className="mt-1 line-clamp-2 text-sm leading-snug text-white/72">{offer.title}</p>
+          </div>
+        </div>
+
+        {offer.description && (
+          <p className="mt-4 line-clamp-3 text-xs leading-relaxed text-white/58">
+            {offer.description}
+          </p>
+        )}
+
+        <div className="mt-auto pt-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            {offer.code ? (
+              <button
+                type="button"
+                onClick={copy}
+                className="flex min-w-0 items-center justify-between gap-2 overflow-hidden rounded-2xl bg-white/[0.055] px-3 py-2 text-left ring-1 ring-white/10 transition hover:bg-white/[0.08]"
+              >
+                <span className="min-w-0">
+                  <span className="block text-[9px] font-semibold uppercase tracking-wider text-white/45">
+                    Promo code
+                  </span>
+                  <span className="block truncate font-mono text-sm font-black text-white">
+                    {offer.code}
+                  </span>
+                </span>
+                {copied ? (
+                  <Check className="h-4 w-4 shrink-0 text-emerald-300" />
+                ) : (
+                  <Copy className="h-4 w-4 shrink-0 text-fuchsia-200" />
+                )}
+              </button>
+            ) : (
+              <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.045] px-3 py-2 ring-1 ring-white/10">
+                <Tag className="h-4 w-4 shrink-0 text-fuchsia-200" />
+                <span className="truncate text-sm font-semibold text-white">{discount}</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                openOffer(offer, onOpen);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white px-4 py-2 text-sm font-black text-[#13051f] transition hover:scale-[1.02]"
+            >
+              Claim
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-white/45">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                {hasExpiry(offer) ? `Ends ${offer.expires}` : "Open ended"}
+              </span>
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-fuchsia-200/80">
+              <Sparkles className="h-3.5 w-3.5" />
+              Verified
+            </span>
           </div>
         </div>
       </div>
-
-      {/* Code + CTA */}
-      <div className="col-span-12 flex items-center justify-end gap-2 sm:col-span-3">
-        {offer.code && (
-          <button
-            onClick={copy}
-            className="group/code flex items-center overflow-hidden rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 text-xs font-semibold text-fuchsia-200 transition hover:border-fuchsia-400/60"
-          >
-            <span className="px-2 py-1.5">Code</span>
-            <span className="border-l border-fuchsia-400/30 bg-fuchsia-500/15 px-2 py-1.5 font-mono">{offer.code}</span>
-            <span className="px-2 py-1.5">{copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}</span>
-          </button>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); if (offer.ctaUrl) window.open(offer.ctaUrl, "_blank"); else onOpen?.(offer); }}
-          className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg shadow-fuchsia-500/30 transition hover:scale-105"
-        >
-          Apply
-        </button>
-      </div>
-
-      {offer.expires && offer.expires !== "—" && (
-        <div className="col-span-12 -mt-1 flex items-center justify-end gap-1 text-[10px] text-white/50 sm:col-span-12">
-          <Calendar className="h-3 w-3" /> Ends: {offer.expires}
-        </div>
-      )}
     </article>
   );
 }
 
-export function OfferDetailModal({ offer, onClose }: { offer: AdminOffer | null; onClose: () => void }) {
+export function OfferDetailModal({
+  offer,
+  onClose,
+}: {
+  offer: DisplayOffer | null;
+  onClose: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   if (!offer) return null;
-  const from = offer.accentFrom ?? "#a855f7";
+
+  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#a855f7";
   const to = offer.accentTo ?? "#ec4899";
+  const isFlyer = offer.mode === "flyer" && Boolean(offer.flyerUrl);
+  const discount = offerDiscount(offer);
 
   const copy = () => {
     if (!offer.code) return;
-    navigator.clipboard?.writeText(offer.code);
+    void navigator.clipboard?.writeText(offer.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4 backdrop-blur"
+      onClick={onClose}
+    >
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-[#0a0418] shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="relative grid max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[#090414] shadow-2xl lg:grid-cols-[1.05fr_0.95fr]"
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="relative h-40 overflow-hidden" style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}>
-          {offer.mode === "flyer" && offer.flyerUrl ? (
-            <img src={offer.flyerUrl} alt={offer.title} className="h-full w-full object-cover" />
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white ring-1 ring-white/15 backdrop-blur transition hover:bg-white/10"
+          aria-label="Close offer"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div
+          className="relative min-h-[280px] overflow-hidden"
+          style={{
+            backgroundImage: isFlyer
+              ? `linear-gradient(135deg, ${from}18, ${to}18)`
+              : `radial-gradient(circle at 22% 20%, ${from}70, transparent 34%), radial-gradient(circle at 82% 16%, ${to}70, transparent 32%), linear-gradient(135deg, ${from}26, ${to}26)`,
+          }}
+        >
+          {isFlyer && offer.flyerUrl ? (
+            <img src={offer.flyerUrl} alt={offer.title} className="h-full w-full object-contain" />
           ) : (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-5xl font-extrabold text-white drop-shadow">{offer.discount ?? "OFFER"}</div>
+            <div className="flex h-full min-h-[340px] flex-col justify-between p-6">
+              <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-black/25 px-3 py-1 text-[11px] font-semibold text-white/80 ring-1 ring-white/15">
+                <ImageIcon className="h-3.5 w-3.5" />
+                RebateBoard offer
+              </div>
+              <div>
+                <BrandLogo offer={offer} className="h-20 w-20 rounded-3xl" />
+                <div className="mt-5 max-w-sm text-5xl font-black leading-none text-white">
+                  {discount}
+                </div>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-white/70">{offer.title}</p>
+              </div>
             </div>
           )}
-          <button onClick={onClose} className="absolute right-3 top-3 rounded-full bg-black/40 px-2 py-1 text-xs text-white">✕</button>
+
+          <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-2xl bg-black/40 p-2.5 pr-4 ring-1 ring-white/15 backdrop-blur">
+            <BrandLogo offer={offer} className="h-11 w-11 rounded-2xl" />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-bold text-white">{offer.brand}</div>
+              <div className="truncate text-[11px] text-white/55">
+                {offer.brandCategory ?? offer.category}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4 p-6">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-fuchsia-300">{offer.category}</div>
-            <h2 className="mt-1 text-2xl font-bold text-white">{offer.brand}</h2>
-            <p className="text-sm text-white/70">{offer.title}</p>
+        <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-6">
+          <div className="flex flex-wrap gap-1.5">
+            <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-bold text-white/70 ring-1 ring-white/10">
+              {offer.category}
+            </span>
+            {offer.tags?.map((tag) => (
+              <OfferTag key={tag} tag={tag} />
+            ))}
           </div>
 
-          <p className="text-sm leading-relaxed text-white/80">{offer.description}</p>
+          <div className="mt-4">
+            <h2 className="text-2xl font-black text-white sm:text-3xl">{offer.brand}</h2>
+            <p className="mt-1 text-sm font-semibold text-fuchsia-100">{offer.title}</p>
+          </div>
 
-          {offer.tags && offer.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {offer.tags.map((t) => (
-                <span key={t} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${tagStyles[t] ?? ""}`}>
-                  {tagLabel[t] ?? t}
-                </span>
-              ))}
+          {offer.description && (
+            <p className="mt-4 text-sm leading-relaxed text-white/72">{offer.description}</p>
+          )}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-white/[0.045] p-4 ring-1 ring-white/10">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
+                Discount
+              </div>
+              <div className="mt-1 text-xl font-black text-white">{discount}</div>
+            </div>
+            <div className="rounded-2xl bg-white/[0.045] p-4 ring-1 ring-white/10">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
+                Expires
+              </div>
+              <div className="mt-1 text-xl font-black text-white">
+                {hasExpiry(offer) ? offer.expires : "Open ended"}
+              </div>
+            </div>
+          </div>
+
+          {offer.startDate && (
+            <div className="mt-3 rounded-2xl bg-white/[0.035] p-3 text-xs text-white/65 ring-1 ring-white/10">
+              Started {offer.startDate}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            {offer.startDate && (
-              <div className="rounded-xl bg-white/5 p-3">
-                <div className="text-white/50">Started</div>
-                <div className="font-semibold text-white">{offer.startDate}</div>
-              </div>
-            )}
-            <div className="rounded-xl bg-white/5 p-3">
-              <div className="text-white/50">Expires</div>
-              <div className="font-semibold text-white">{offer.expires}</div>
-            </div>
-          </div>
-
           {offer.terms && (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
-              <div className="mb-1 font-semibold text-white/90">Terms & conditions</div>
+            <div className="mt-4 rounded-2xl bg-white/[0.04] p-4 text-xs leading-relaxed text-white/65 ring-1 ring-white/10">
+              <div className="mb-1 font-semibold text-white/90">Terms and conditions</div>
               {offer.terms}
             </div>
           )}
 
-          <div className="flex items-center gap-2 pt-2">
+          <div className="mt-5 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
             {offer.code && (
               <button
+                type="button"
                 onClick={copy}
-                className="flex flex-1 items-center justify-between overflow-hidden rounded-full border-2 border-dashed border-fuchsia-400/40 bg-fuchsia-500/10 px-4 py-2.5 text-sm font-bold text-fuchsia-200"
+                className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-dashed border-fuchsia-300/35 bg-fuchsia-500/10 px-4 py-3 text-left text-fuchsia-100"
               >
-                <span className="text-xs uppercase tracking-wider text-fuchsia-300/70">Code</span>
-                <span className="font-mono text-base">{offer.code}</span>
-                <span>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-fuchsia-200/70">
+                    Promo code
+                  </span>
+                  <span className="block truncate font-mono text-lg font-black">{offer.code}</span>
+                </span>
+                {copied ? (
+                  <Check className="h-5 w-5 shrink-0" />
+                ) : (
+                  <Copy className="h-5 w-5 shrink-0" />
+                )}
               </button>
             )}
-            <a
-              href={offer.ctaUrl ?? "#"}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/30"
-            >
-              Apply <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 border-t border-white/10 bg-white/5 px-6 py-3 text-[11px] text-white/50">
-          <Sparkles className="h-3 w-3 text-fuchsia-400" /> Verified offer from RebateBoard
+            {offer.ctaUrl ? (
+              <a
+                href={offer.ctaUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#13051f] transition hover:scale-[1.02]"
+              >
+                Claim offer
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center justify-center rounded-2xl bg-white/10 px-5 py-3 text-sm font-bold text-white ring-1 ring-white/15"
+              >
+                Close
+              </button>
+            )}
+          </div>
+
+          <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white/[0.035] px-4 py-3 text-[11px] text-white/50 ring-1 ring-white/10">
+            <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />
+            Verified offer from RebateBoard
+          </div>
         </div>
       </div>
     </div>

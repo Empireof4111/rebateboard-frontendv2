@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Star, ChevronDown, CheckCircle2, MessageSquare, Send, ShieldCheck } from "lucide-react";
-import { useReviews } from "@/lib/reviews-store";
+import { fetchPublicReviews } from "@/lib/reviews-api";
+import { type ReviewRecord, useReviews } from "@/lib/reviews-store";
 
 type Review = {
   id: string;
@@ -16,12 +17,18 @@ type Review = {
   overall: number;
   weight: "low" | "medium" | "high" | null;
   body: string;
-  scores: { customerCare: number; paymentSpeed: number; tradingCondition: number; userFriendliness: number; payoutSpeed: number };
+  scores: {
+    customerCare: number;
+    paymentSpeed: number;
+    tradingCondition: number;
+    userFriendliness: number;
+    payoutSpeed: number;
+  };
   likedMost: string;
   comments: { user: string; date: string; body: string }[];
 };
 
-const REVIEWS: Review[] = [
+const FALLBACK_REVIEWS: Review[] = [
   {
     id: "r1",
     user: "Basiru YY",
@@ -34,12 +41,26 @@ const REVIEWS: Review[] = [
     overall: 4,
     weight: null,
     body: "Solid firm with consistent payouts. Dashboard is clean and onboarding was quick. The 1-step program suited my style and reaching payout was straightforward once I followed the rules. Customer support replied within hours.",
-    scores: { customerCare: 5, paymentSpeed: 5, tradingCondition: 4, userFriendliness: 5, payoutSpeed: 5 },
+    scores: {
+      customerCare: 5,
+      paymentSpeed: 5,
+      tradingCondition: 4,
+      userFriendliness: 5,
+      payoutSpeed: 5,
+    },
     likedMost:
       "The platform feels mature — quick withdrawals, transparent rules, and a real dashboard. I never had to chase support to get paid, and the payout proof gallery in the community gave me confidence before joining.",
     comments: [
-      { user: "Ahmed K.", date: "11:30am · 23 March, 2026", body: "Same experience here. Got my first payout in under 24 hours after request." },
-      { user: "Sara L.", date: "12:02pm · 23 March, 2026", body: "Their support team is genuinely responsive. Big plus for new traders." },
+      {
+        user: "Ahmed K.",
+        date: "11:30am · 23 March, 2026",
+        body: "Same experience here. Got my first payout in under 24 hours after request.",
+      },
+      {
+        user: "Sara L.",
+        date: "12:02pm · 23 March, 2026",
+        body: "Their support team is genuinely responsive. Big plus for new traders.",
+      },
     ],
   },
   {
@@ -54,9 +75,22 @@ const REVIEWS: Review[] = [
     overall: 5,
     weight: "high",
     body: "Top-tier prop firm. Passed both phases in 9 days. Spreads are tight and execution is fast. Payout in crypto landed within 6 hours.",
-    scores: { customerCare: 5, paymentSpeed: 5, tradingCondition: 5, userFriendliness: 4, payoutSpeed: 5 },
-    likedMost: "Speed of payout and the quality of the trading conditions. No tricks, no hidden rules.",
-    comments: [{ user: "Liam P.", date: "09:11am · 22 March, 2026", body: "Confirmed — fastest payout I've seen from any prop firm." }],
+    scores: {
+      customerCare: 5,
+      paymentSpeed: 5,
+      tradingCondition: 5,
+      userFriendliness: 4,
+      payoutSpeed: 5,
+    },
+    likedMost:
+      "Speed of payout and the quality of the trading conditions. No tricks, no hidden rules.",
+    comments: [
+      {
+        user: "Liam P.",
+        date: "09:11am · 22 March, 2026",
+        body: "Confirmed — fastest payout I've seen from any prop firm.",
+      },
+    ],
   },
   {
     id: "r3",
@@ -70,7 +104,13 @@ const REVIEWS: Review[] = [
     overall: 3,
     weight: "medium",
     body: "Good for beginners but the instant funded plan has tight daily loss limits. Be careful with news trading.",
-    scores: { customerCare: 4, paymentSpeed: 4, tradingCondition: 3, userFriendliness: 4, payoutSpeed: 4 },
+    scores: {
+      customerCare: 4,
+      paymentSpeed: 4,
+      tradingCondition: 3,
+      userFriendliness: 4,
+      payoutSpeed: 4,
+    },
     likedMost: "Onboarding is smooth and you can start trading the same day.",
     comments: [],
   },
@@ -82,7 +122,10 @@ function StarRow({ value, total = 5 }: { value: number; total?: number }) {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: total }).map((_, i) => (
-        <Star key={i} className={`h-3.5 w-3.5 ${i < value ? "fill-fuchsia-400 text-fuchsia-400" : "text-white/15"}`} />
+        <Star
+          key={i}
+          className={`h-3.5 w-3.5 ${i < value ? "fill-fuchsia-400 text-fuchsia-400" : "text-white/15"}`}
+        />
       ))}
     </div>
   );
@@ -101,44 +144,85 @@ function ScoreCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
       <div className="text-xs font-semibold text-white">{label}</div>
-      <div className="mt-2"><StarRow value={value} /></div>
+      <div className="mt-2">
+        <StarRow value={value} />
+      </div>
       <div className="mt-1 text-[11px] text-muted-foreground">{value}/5</div>
     </div>
   );
 }
 
 export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug?: string }) {
-  const [filter, setFilter] = useState<typeof ratings[number]>("All Rating");
+  const [filter, setFilter] = useState<(typeof ratings)[number]>("All Rating");
   const [openFilter, setOpenFilter] = useState(false);
   const [comment, setComment] = useState("");
+  const [remoteReviews, setRemoteReviews] = useState<ReviewRecord[] | null>(null);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
 
-  // approved user-submitted reviews from the store, mapped to display shape
-  const userReviews = useReviews(firmSlug ? { brandSlug: firmSlug, status: "approved" } : undefined);
-  const submitted: Review[] = useMemo(() => userReviews.map((r) => ({
-    id: r.id,
-    user: r.userName,
-    flag: r.country ?? "🌍",
-    date: new Date(r.submittedAt).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", day: "numeric", month: "short", year: "numeric" }),
-    accountSize: r.accountSize,
-    program: r.evaluationSteps ?? "—",
-    reachPayout: r.evaluationSteps ?? "—",
-    proofUrl: r.proofs[0]?.dataUrl,
-    experience: r.experience,
-    overall: r.ratings.overall,
-    weight: r.proofs.length > 0 ? "high" : null,
-    body: r.body,
-    scores: {
-      customerCare: r.ratings.customerCare,
-      paymentSpeed: r.ratings.paymentSpeed,
-      tradingCondition: r.ratings.tradingConditions,
-      userFriendliness: r.ratings.userFriendliness,
-      payoutSpeed: r.ratings.payoutSpeed,
-    },
-    likedMost: r.likedMost ?? "",
-    comments: [],
-  })), [userReviews]);
+  const userReviews = useReviews(
+    firmSlug ? { brandSlug: firmSlug, status: "approved" } : undefined,
+  );
 
-  const allReviews = useMemo(() => [...submitted, ...REVIEWS], [submitted]);
+  useEffect(() => {
+    let active = true;
+    setRemoteLoaded(false);
+    fetchPublicReviews(firmSlug)
+      .then((reviews) => {
+        if (!active) return;
+        setRemoteReviews(reviews);
+      })
+      .catch(() => {
+        if (!active) return;
+        setRemoteReviews(null);
+      })
+      .finally(() => {
+        if (active) setRemoteLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [firmSlug]);
+
+  const reviewSource = remoteReviews ?? userReviews;
+  const submitted: Review[] = useMemo(
+    () =>
+      reviewSource.map((r) => ({
+        id: r.id,
+        user: r.userName,
+        flag: r.country ?? "🌍",
+        date: new Date(r.submittedAt).toLocaleString(undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        accountSize: r.accountSize,
+        program: r.evaluationSteps ?? "—",
+        reachPayout: r.evaluationSteps ?? "—",
+        proofUrl: r.proofs[0]?.dataUrl,
+        experience: r.experience,
+        overall: r.ratings.overall,
+        weight: r.proofs.length > 0 ? "high" : null,
+        body: r.body,
+        scores: {
+          customerCare: r.ratings.customerCare,
+          paymentSpeed: r.ratings.paymentSpeed,
+          tradingCondition: r.ratings.tradingConditions,
+          userFriendliness: r.ratings.userFriendliness,
+          payoutSpeed: r.ratings.payoutSpeed,
+        },
+        likedMost: r.likedMost ?? "",
+        comments: [],
+      })),
+    [reviewSource],
+  );
+
+  const allReviews = useMemo(() => {
+    if (firmSlug || submitted.length || remoteLoaded) return submitted;
+    return FALLBACK_REVIEWS;
+  }, [firmSlug, remoteLoaded, submitted]);
 
   const list = useMemo(() => {
     if (filter === "All Rating") return allReviews;
@@ -151,7 +235,7 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm font-semibold text-white">
-          Total Reviews <span className="ml-1 text-fuchsia-300">{REVIEWS.length * 113 + submitted.length}</span>
+          Total Reviews <span className="ml-1 text-fuchsia-300">{allReviews.length}</span>
         </div>
         <div className="flex items-center gap-2">
           {firmSlug && (
@@ -175,7 +259,10 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
                 {ratings.map((r) => (
                   <button
                     key={r}
-                    onClick={() => { setFilter(r); setOpenFilter(false); }}
+                    onClick={() => {
+                      setFilter(r);
+                      setOpenFilter(false);
+                    }}
                     className={`block w-full px-3 py-2 text-left text-xs hover:bg-white/10 ${filter === r ? "text-fuchsia-300" : "text-white"}`}
                   >
                     {r}
@@ -188,7 +275,10 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
       </div>
 
       {list.map((r) => (
-        <article key={r.id} className="glass relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10">
+        <article
+          key={r.id}
+          className="glass relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10"
+        >
           {/* glow */}
           <div className="pointer-events-none absolute -inset-x-10 -top-20 h-40 bg-fuchsia-500/10 blur-3xl" />
 
@@ -197,7 +287,11 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600 text-sm font-bold text-white">
-                  {r.user.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                  {r.user
+                    .split(" ")
+                    .map((s) => s[0])
+                    .join("")
+                    .slice(0, 2)}
                 </div>
                 <CheckCircle2 className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#1a0b2e] text-fuchsia-400" />
               </div>
@@ -225,7 +319,9 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
                 </div>
                 <div className="mt-1 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
                   Review weight
-                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.weight === null ? "bg-white/10 text-muted-foreground" : r.weight === "high" ? "bg-emerald-500/20 text-emerald-300" : r.weight === "medium" ? "bg-amber-500/20 text-amber-300" : "bg-fuchsia-500/20 text-fuchsia-300"}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.weight === null ? "bg-white/10 text-muted-foreground" : r.weight === "high" ? "bg-emerald-500/20 text-emerald-300" : r.weight === "medium" ? "bg-amber-500/20 text-amber-300" : "bg-fuchsia-500/20 text-fuchsia-300"}`}
+                  >
                     {r.weight ?? "null"}
                   </span>
                 </div>
@@ -259,7 +355,9 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-2 text-sm font-semibold text-white">
                   <MessageSquare className="h-4 w-4" /> Comments
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-muted-foreground">{r.comments.length}</span>
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-muted-foreground">
+                    {r.comments.length}
+                  </span>
                 </div>
                 <button className="rounded-full bg-fuchsia-500/30 px-3 py-1 text-[10px] font-semibold text-white ring-1 ring-fuchsia-300/30 hover:bg-fuchsia-500/50">
                   Drop Comment
@@ -276,14 +374,20 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
                   <div key={i} className="rounded-lg bg-white/[0.04] p-3">
                     <div className="flex items-center gap-2">
                       <div className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600 text-[10px] font-bold text-white">
-                        {c.user.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                        {c.user
+                          .split(" ")
+                          .map((s) => s[0])
+                          .join("")
+                          .slice(0, 2)}
                       </div>
                       <div>
                         <div className="text-[11px] font-semibold text-white">{c.user}</div>
                         <div className="text-[9px] text-muted-foreground">{c.date}</div>
                       </div>
                     </div>
-                    <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{c.body}</p>
+                    <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                      {c.body}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -303,6 +407,12 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
           </div>
         </article>
       ))}
+
+      {remoteLoaded && !list.length ? (
+        <div className="glass rounded-2xl p-8 text-center text-sm text-muted-foreground ring-1 ring-white/10">
+          No approved reviews are available for this brand yet.
+        </div>
+      ) : null}
     </div>
   );
 }

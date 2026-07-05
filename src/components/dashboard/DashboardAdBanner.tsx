@@ -9,6 +9,7 @@ import {
   type DashboardAd,
   type AdSlide,
 } from "@/lib/dashboard-ads";
+import { fetchPublicAdverts } from "@/lib/public-adverts-api";
 
 /**
  * Top-of-dashboard ad banner. Renders the highest-priority active ad picked
@@ -22,14 +23,40 @@ export function DashboardAdBanner({ pathname }: { pathname: string }) {
 
   // re-pick on route change so every page can show the freshest banner
   useEffect(() => {
-    setAd(pickActiveAd());
+    let active = true;
+    const fallback = pickActiveAd();
+    setAd(fallback);
+
+    fetchPublicAdverts("dashboard").then((ads) => {
+      if (!active) return;
+      setAd(ads.find((item) => item.active) ?? fallback);
+    });
+
+    return () => {
+      active = false;
+    };
   }, [pathname]);
 
   // listen for live admin updates
   useEffect(() => {
-    const onChange = () => setAd(pickActiveAd());
+    let active = true;
+    const resolveAd = () => {
+      const fallback = pickActiveAd();
+      setAd(fallback);
+
+      fetchPublicAdverts("dashboard").then((ads) => {
+        if (!active) return;
+        setAd(ads.find((item) => item.active) ?? fallback);
+      });
+    };
+    const onChange = () => resolveAd();
+
+    resolveAd();
     window.addEventListener("rb:dashboard-ads", onChange);
-    return () => window.removeEventListener("rb:dashboard-ads", onChange);
+    return () => {
+      active = false;
+      window.removeEventListener("rb:dashboard-ads", onChange);
+    };
   }, []);
 
   // record impression once per ad id per mount cycle

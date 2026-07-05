@@ -52,7 +52,7 @@ function CategoryReviews() {
   return (
     <div className="relative min-h-screen pt-20">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="container-app py-8 sm:py-10">
         <Link to="/reviews" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-white">
           <ChevronLeft className="h-3.5 w-3.5" /> All categories
         </Link>

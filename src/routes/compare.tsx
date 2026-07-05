@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Search, ChevronDown, Star, Plus, X, Check, XCircle, Info, Eye, ShoppingCart, Clock,
 } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({
@@ -121,7 +122,8 @@ function ComparePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <SiteHeader />
+      <div className="container-app py-6 sm:py-8">
         {/* Top bar */}
         <div className="mb-4 flex items-center justify-between text-xs">
           <Link to="/" className="text-muted-foreground hover:text-white">← Back to home</Link>

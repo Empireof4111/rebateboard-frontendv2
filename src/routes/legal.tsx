@@ -26,9 +26,9 @@ function LegalLayout() {
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(217,70,239,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(124,58,237,0.18),_transparent_50%)]"
       />
-      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
-        <SiteHeader />
+      <SiteHeader />
 
+      <div className="container-app pt-6">
         <div className="mt-6">
           <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white">
             <ArrowLeft className="h-3 w-3" /> Back to home

@@ -7,12 +7,34 @@ export type RebetaChatMessage = {
   content: string;
 };
 
+export type RebetaAttachment = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  kind: "image" | "text" | "file";
+  data?: string;
+  text?: string;
+};
+
+export type RebetaAction = {
+  label: string;
+  command: string;
+  module?: string;
+};
+
 export type RebetaChatResponse = {
   reply: string;
   provider: "gemini" | "groq" | "mock";
   model: string;
   suggestions: string[];
   disclaimer: string;
+  intent?: string;
+  module?: string;
+  insights?: string[];
+  warnings?: string[];
+  predictions?: string[];
+  actions?: RebetaAction[];
 };
 
 export async function sendRebetaMessage(
@@ -23,6 +45,7 @@ export async function sendRebetaMessage(
     mode?: string;
     language?: string;
     context?: Record<string, unknown>;
+    attachments?: RebetaAttachment[];
   },
 ) {
   if (!token) throw new Error("You need to be signed in to use Rebeta.");

@@ -46,7 +46,7 @@ function BrokersPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
       <SiteHeader />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-6">
+      <div className="container-app relative py-6">
         <div className="glow-orb h-[500px] w-[500px] left-1/3 top-20 opacity-50" />
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -21,8 +21,12 @@ function token(): string | null {
 // ─── Curriculum (full tree, public) ────────────────────────────────────────
 
 export async function fetchCurriculum(): Promise<Faculty[]> {
-  const res = await apiRequest<Faculty[]>("/academy/curriculum");
-  return res.payload ?? [];
+  try {
+    const res = await apiRequest<Faculty[]>("/academy/curriculum");
+    return res.payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 // ─── Faculties ──────────────────────────────────────────────────────────────
@@ -32,14 +36,27 @@ export async function apiFaculties() {
 }
 
 export async function apiCreateFaculty(dto: {
-  slug: string; title: string; emoji?: string; tagline?: string; color?: string;
+  slug: string;
+  title: string;
+  emoji?: string;
+  tagline?: string;
+  color?: string;
 }) {
   return apiRequest("/academy/faculties", { method: "POST", body: dto, token: token() });
 }
 
-export async function apiUpdateFaculty(id: number, dto: Partial<{
-  slug: string; title: string; emoji: string; tagline: string; color: string; orderIndex: number; status: string;
-}>) {
+export async function apiUpdateFaculty(
+  id: number,
+  dto: Partial<{
+    slug: string;
+    title: string;
+    emoji: string;
+    tagline: string;
+    color: string;
+    orderIndex: number;
+    status: string;
+  }>,
+) {
   return apiRequest(`/academy/faculties/${id}`, { method: "PUT", body: dto, token: token() });
 }
 
@@ -50,14 +67,25 @@ export async function apiDeleteFaculty(id: number) {
 // ─── Programs ───────────────────────────────────────────────────────────────
 
 export async function apiCreateProgram(dto: {
-  facultyId: number; title: string; level?: string; summary?: string;
+  facultyId: number;
+  title: string;
+  level?: string;
+  summary?: string;
 }) {
   return apiRequest("/academy/programs", { method: "POST", body: dto, token: token() });
 }
 
-export async function apiUpdateProgram(id: number, dto: Partial<{
-  facultyId: number; title: string; level: string; summary: string; orderIndex: number; status: string;
-}>) {
+export async function apiUpdateProgram(
+  id: number,
+  dto: Partial<{
+    facultyId: number;
+    title: string;
+    level: string;
+    summary: string;
+    orderIndex: number;
+    status: string;
+  }>,
+) {
   return apiRequest(`/academy/programs/${id}`, { method: "PUT", body: dto, token: token() });
 }
 
@@ -68,9 +96,21 @@ export async function apiDeleteProgram(id: number) {
 // ─── Courses ─────────────────────────────────────────────────────────────────
 
 export async function apiCreateCourse(dto: {
-  programId: number; title: string; tagline?: string; cover?: string; coverImage?: string;
-  level?: string; access?: string; priceUsd?: number; priceRr?: number; rrReward?: number;
-  estHours?: number; rating?: number; enrolled?: number; authors?: string[]; outcomes?: string[];
+  programId: number;
+  title: string;
+  tagline?: string;
+  cover?: string;
+  coverImage?: string;
+  level?: string;
+  access?: string;
+  priceUsd?: number;
+  priceRr?: number;
+  rrReward?: number;
+  estHours?: number;
+  rating?: number;
+  enrolled?: number;
+  authors?: string[];
+  outcomes?: string[];
 }) {
   return apiRequest("/academy/courses", { method: "POST", body: dto, token: token() });
 }
@@ -100,7 +140,10 @@ export async function apiSyncCourse(dbId: number, course: Course) {
 // ─── Modules ─────────────────────────────────────────────────────────────────
 
 export async function apiCreateModule(dto: {
-  courseId: number; title: string; summary?: string; orderIndex?: number;
+  courseId: number;
+  title: string;
+  summary?: string;
+  orderIndex?: number;
 }) {
   return apiRequest("/academy/modules", { method: "POST", body: dto, token: token() });
 }
@@ -116,8 +159,14 @@ export async function apiDeleteModule(id: number) {
 // ─── Lessons ─────────────────────────────────────────────────────────────────
 
 export async function apiCreateLesson(dto: {
-  moduleId: number; title: string; durationMin?: number; summary?: string;
-  body?: string; videoUrl?: string; screenshot?: string; images?: string[];
+  moduleId: number;
+  title: string;
+  durationMin?: number;
+  summary?: string;
+  body?: string;
+  videoUrl?: string;
+  screenshot?: string;
+  images?: string[];
 }) {
   return apiRequest("/academy/lessons", { method: "POST", body: dto, token: token() });
 }
@@ -133,8 +182,13 @@ export async function apiDeleteLesson(id: number) {
 // ─── Quiz Questions ───────────────────────────────────────────────────────────
 
 export async function apiCreateQuizQuestion(dto: {
-  type?: string; moduleId?: number; courseId?: number;
-  question: string; options: string[]; correctIndex: number; explain?: string;
+  type?: string;
+  moduleId?: number;
+  courseId?: number;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explain?: string;
 }) {
   return apiRequest("/academy/quiz-questions", { method: "POST", body: dto, token: token() });
 }
@@ -167,13 +221,17 @@ export async function apiCompleteLesson(lessonId: number) {
 
 export async function apiSubmitModuleQuiz(moduleId: number, answers: number[]) {
   return apiRequest(`/academy/modules/${moduleId}/quiz/submit`, {
-    method: "POST", body: { answers }, token: token(),
+    method: "POST",
+    body: { answers },
+    token: token(),
   });
 }
 
 export async function apiSubmitFinalExam(courseId: number, answers: number[]) {
   return apiRequest(`/academy/courses/${courseId}/exam/submit`, {
-    method: "POST", body: { answers }, token: token(),
+    method: "POST",
+    body: { answers },
+    token: token(),
   });
 }
 

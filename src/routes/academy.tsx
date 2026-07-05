@@ -19,7 +19,7 @@ function PublicAcademy() {
   return (
     <div className="min-h-screen bg-[#0a0418] text-white">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="container-app py-6 sm:py-8">
         <AcademyShell preview loginHref="/login" />
       </main>
     <SiteFooter />

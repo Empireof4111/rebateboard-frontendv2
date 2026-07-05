@@ -1,17 +1,43 @@
 import { Megaphone, ArrowUpRight, Calendar, Sparkles, Bell, Clock } from "lucide-react";
-import { useAdminCollection } from "@/lib/admin-store";
-import { announcements as seed, type Announcement } from "@/lib/admin-data";
+import { useEffect, useMemo, useState } from "react";
+import { fetchPublicAnnouncements, type Announcement } from "@/lib/admin-api";
 
 export function FirmAnnouncements({ firmName }: { firmName: string }) {
-  const { items } = useAdminCollection<Announcement>("announcements", seed);
+  const [items, setItems] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAnnouncements() {
+      setLoading(true);
+      try {
+        const rows = await fetchPublicAnnouncements();
+        if (!cancelled) setItems(rows);
+      } catch {
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadAnnouncements();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const normalized = firmName.trim().toLowerCase();
-  const list = items.filter(
-    (a) =>
-      a.category === "Brand" &&
-      a.approval === "approved" &&
-      a.status !== "expired" &&
-      a.brandName?.trim().toLowerCase() === normalized,
+  const list = useMemo(
+    () =>
+      items.filter(
+        (a) =>
+          a.category === "Brand" &&
+          a.approval === "approved" &&
+          a.status !== "expired" &&
+          a.brandName?.trim().toLowerCase() === normalized,
+      ),
+    [items, normalized],
   );
 
   // Sort: active first, then scheduled
@@ -61,26 +87,31 @@ export function FirmAnnouncements({ firmName }: { firmName: string }) {
       </div>
 
       {/* Empty state */}
-      {sorted.length === 0 && (
+      {loading && (
+        <div className="glass rounded-3xl p-12 text-center text-sm text-muted-foreground ring-1 ring-white/10">
+          Loading announcements...
+        </div>
+      )}
+      {!loading && sorted.length === 0 && (
         <div className="glass rounded-3xl p-12 text-center ring-1 ring-white/10">
           <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-violet-600/20 ring-1 ring-fuchsia-300/20">
             <Megaphone className="h-7 w-7 text-fuchsia-300" />
           </div>
           <div className="text-base font-bold text-white">No announcements yet</div>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            {firmName} hasn't posted any active announcements. Follow the brand to be notified
-            when new offers go live.
+            {firmName} hasn't posted any active announcements. Follow the brand to be notified when
+            new offers go live.
           </p>
         </div>
       )}
 
       {/* Featured first announcement (if any active) */}
-      {sorted.length > 0 && sorted[0].status === "active" && (
+      {!loading && sorted.length > 0 && sorted[0].status === "active" && (
         <FeaturedCard a={sorted[0]} firmName={firmName} />
       )}
 
       {/* Grid for the rest */}
-      {sorted.length > 1 && (
+      {!loading && sorted.length > 1 && (
         <div className="grid gap-3 sm:grid-cols-2">
           {sorted.slice(sorted[0].status === "active" ? 1 : 0).map((a) => (
             <AnnouncementCard key={a.id} a={a} firmName={firmName} />
@@ -91,7 +122,7 @@ export function FirmAnnouncements({ firmName }: { firmName: string }) {
           )}
         </div>
       )}
-      {sorted.length === 1 && sorted[0].status !== "active" && (
+      {!loading && sorted.length === 1 && sorted[0].status !== "active" && (
         <div className="grid gap-3 sm:grid-cols-2">
           <AnnouncementCard a={sorted[0]} firmName={firmName} />
         </div>
@@ -123,9 +154,7 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
           </span>
         </div>
 
-        <h3 className="mt-4 text-xl font-bold leading-tight text-white sm:text-2xl">
-          {a.message}
-        </h3>
+        <h3 className="mt-4 text-xl font-bold leading-tight text-white sm:text-2xl">{a.message}</h3>
 
         <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">

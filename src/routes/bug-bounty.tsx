@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { uploadMediaFiles } from "@/lib/media-api";
 import { fetchMyBugBountyReports, submitBugBountyReport, type BugBountyReportRecord, type BugBountySeverity } from "@/lib/bug-bounty-api";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/bug-bounty")({
   component: BugBountyPage,
@@ -87,22 +89,29 @@ function BugBountyPage() {
   }
 
   if (loading) {
-    return <div className="mx-auto max-w-6xl px-4 py-12 text-sm text-muted-foreground">Loading bug bounty page...</div>;
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <main className="container-app py-10 text-sm text-muted-foreground">Loading bug bounty page...</main>
+        <SiteFooter />
+      </div>
+    );
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      <SiteHeader />
       <div className="glow-orb left-[-8%] top-[6%] h-[420px] w-[420px]" />
       <div className="glow-orb right-[-12%] bottom-[0%] h-[460px] w-[460px]" />
 
-      <div className="relative z-10 mx-auto max-w-6xl space-y-6 px-4 py-10">
+      <main className="container-app relative z-10 space-y-6 py-8 sm:py-10">
         <div className="glass-strong rounded-3xl p-6 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white ring-1 ring-white/10">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> RebateBoard Bug Bounty
               </div>
-              <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Report real bugs. Help secure the platform. Earn RR.</h1>
+              <h1 className="text-3xl font-bold text-white md:text-4xl">Report real bugs. Help secure the platform. Earn RR.</h1>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 Submit product bugs, broken flows, security issues, payout anomalies, or trust-impacting problems with clear proof.
                 Accepted reports can earn RR directly into your account.
@@ -350,7 +359,8 @@ function BugBountyPage() {
             </div>
           </div>
         )}
-      </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }

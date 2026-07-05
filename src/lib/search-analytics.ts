@@ -32,7 +32,15 @@ export type TrendingConfig = {
 const DEFAULT_CONFIG: TrendingConfig = {
   searches: {
     mode: "auto",
-    items: ["FTMO", "Binance", "MyForexFunds", "ICMarkets", "Bybit", "Payouts today", "Best rebates"],
+    items: [
+      "FTMO",
+      "Binance",
+      "MyForexFunds",
+      "ICMarkets",
+      "Bybit",
+      "Payouts today",
+      "Best rebates",
+    ],
     resolved: [],
   },
   brands: { mode: "auto", items: [], resolved: [] },
@@ -44,7 +52,9 @@ export function readSearchEvents(): SearchEvent[] {
   try {
     const raw = localStorage.getItem(EVENTS_KEY);
     if (raw) return JSON.parse(raw) as SearchEvent[];
-  } catch {}
+  } catch {
+    // localStorage can be unavailable in private or restricted browser contexts.
+  }
   return [];
 }
 
@@ -52,10 +62,14 @@ function writeEvents(events: SearchEvent[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(EVENTS_KEY, JSON.stringify(events.slice(0, MAX_EVENTS)));
-  } catch {}
+  } catch {
+    // Search analytics are best-effort and should not block the UI.
+  }
   try {
     window.dispatchEvent(new CustomEvent("rb:search-events"));
-  } catch {}
+  } catch {
+    // Event dispatch is best-effort for non-browser/test environments.
+  }
 }
 
 function readSearchSessionId() {
@@ -153,7 +167,11 @@ export function dailyTrend(events: SearchEvent[], days = 30) {
     const date = new Date();
     date.setDate(date.getDate() - offset);
     const key = date.toISOString().slice(0, 10);
-    out.push({ date: date.toLocaleDateString("en-US", { month: "short", day: "2-digit" }), searches: 0, clicks: 0 });
+    out.push({
+      date: date.toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
+      searches: 0,
+      clicks: 0,
+    });
     index.set(key, out.length - 1);
   }
   events.forEach((event) => {
@@ -171,7 +189,9 @@ export function readTrendingConfig(): TrendingConfig {
   try {
     const raw = localStorage.getItem(TRENDING_KEY);
     if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) } as TrendingConfig;
-  } catch {}
+  } catch {
+    // localStorage can be unavailable in private or restricted browser contexts.
+  }
   return DEFAULT_CONFIG;
 }
 
@@ -179,18 +199,25 @@ export function writeTrendingConfig(cfg: TrendingConfig) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(TRENDING_KEY, JSON.stringify(cfg));
-  } catch {}
+  } catch {
+    // Trending config persistence is best-effort.
+  }
   try {
     window.dispatchEvent(new CustomEvent("rb:trending-config"));
-  } catch {}
+  } catch {
+    // Event dispatch is best-effort for non-browser/test environments.
+  }
 }
 
 export async function fetchPublicSearchTrending() {
-  const response = await apiRequest<TrendingConfig>("/search-analytics/public/trending", {
-    method: "GET",
-  });
-  if (!response.payload) throw new Error("Missing public search trending payload");
-  return response.payload;
+  try {
+    const response = await apiRequest<TrendingConfig>("/search-analytics/public/trending", {
+      method: "GET",
+    });
+    return response.payload ?? DEFAULT_CONFIG;
+  } catch {
+    return DEFAULT_CONFIG;
+  }
 }
 
 export function resolveTrendingSearches(limit = 8): string[] {

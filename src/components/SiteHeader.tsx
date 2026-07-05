@@ -1,12 +1,27 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Search, ChevronDown, LayoutDashboard, LogOut, User as UserIcon, Sparkles } from "lucide-react";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
+  Check,
+  Search,
+  ChevronDown,
+  Globe2,
+  LayoutDashboard,
+  LayoutGrid,
+  LogOut,
+  User as UserIcon,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 import { GlobalSearchModal } from "@/components/GlobalSearchModal";
+import { useI18n, type LanguageCode, type TranslationKey } from "@/lib/i18n";
 
 function truncateName(name: string, maxWords = 2): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -23,6 +38,7 @@ function initialsOf(name: string): string {
 
 function UserPill() {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   if (!user) return null;
   const display = truncateName(user.fullName || user.name);
   const initials = initialsOf(user.fullName || user.name);
@@ -34,25 +50,38 @@ function UserPill() {
           {initials}
         </span>
         <span className="hidden flex-col leading-tight sm:flex">
-          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Hi, welcome back</span>
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+            {t("header.welcome")}
+          </span>
           <span className="text-xs font-semibold text-white">{display}</span>
         </span>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition group-hover:text-white" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="glass-strong w-56 border-2 border-white/40 backdrop-blur-3xl text-foreground shadow-2xl">
+      <DropdownMenuContent
+        align="end"
+        className="glass-strong w-56 border-2 border-white/40 backdrop-blur-3xl text-foreground shadow-2xl"
+      >
         <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
-          <span className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">Signed in as</span>
+          <span className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
+            {t("common.signedInAs")}
+          </span>
           <span className="truncate text-xs font-semibold text-white">{user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-white/10" />
-        <DropdownMenuItem asChild className="cursor-pointer text-xs text-foreground/95 focus:bg-white/15 focus:text-white">
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer text-xs text-foreground/95 focus:bg-white/15 focus:text-white"
+        >
           <Link to={dashboardHref}>
-            <LayoutDashboard className="mr-2 h-3.5 w-3.5 text-accent" /> Go to Dashboard
+            <LayoutDashboard className="mr-2 h-3.5 w-3.5 text-accent" /> {t("common.dashboard")}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer text-xs text-foreground/95 focus:bg-white/15 focus:text-white">
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer text-xs text-foreground/95 focus:bg-white/15 focus:text-white"
+        >
           <Link to="/dashboard/profile">
-            <UserIcon className="mr-2 h-3.5 w-3.5" /> Profile
+            <UserIcon className="mr-2 h-3.5 w-3.5" /> {t("common.profile")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-white/10" />
@@ -60,7 +89,7 @@ function UserPill() {
           onClick={() => logout()}
           className="cursor-pointer text-xs text-rose-300 focus:bg-rose-500/15 focus:text-rose-200"
         >
-          <LogOut className="mr-2 h-3.5 w-3.5" /> Log out
+          <LogOut className="mr-2 h-3.5 w-3.5" /> {t("common.logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -68,33 +97,147 @@ function UserPill() {
 }
 
 function GuestActions() {
+  const { t } = useI18n();
+
   return (
     <>
-      <Link to="/login" className="glass-pill flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white">
-        <span className="h-2 w-2 rounded-full bg-success" /> Login
+      <Link
+        to="/login"
+        className="glass-pill flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white"
+      >
+        <span className="h-2 w-2 rounded-full bg-success" /> {t("common.login")}
       </Link>
-      <Link to="/signup" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.5)]">
-        Sign Up
+      <Link
+        to="/signup"
+        className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.5)]"
+      >
+        {t("common.signUp")}
       </Link>
     </>
   );
 }
 
-const navItems: { label: string; items: { label: string; to?: string }[] }[] = [
-  { label: "Prop Firms", items: [{ label: "All Prop Firms", to: "/programs" }, { label: "Top Rated", to: "/programs" }, { label: "New Listings", to: "/programs" }, { label: "Featured Promos", to: "/programs" }] },
-  { label: "Brokers", items: [{ label: "All Brokers", to: "/brokers" }, { label: "Top Rated", to: "/brokers" }, { label: "New Listings", to: "/brokers" }, { label: "Regulated Only", to: "/brokers" }] },
-  { label: "Crypto Exchanges", items: [{ label: "All Exchanges", to: "/exchanges" }, { label: "Top Rated", to: "/exchanges" }, { label: "Lowest Fees", to: "/exchanges" }, { label: "Regulated Only", to: "/exchanges" }] },
-  { label: "Payouts", items: [{ label: "Payout Tracker", to: "/payouts" }, { label: "Live Feed", to: "/payouts" }, { label: "Top Payers", to: "/payouts" }, { label: "Submit Payout", to: "/payouts" }] },
-  { label: "TBI", items: [{ label: "Top 10 Trusted", to: "/tbi" }, { label: "Explore All Brands", to: "/tbi/explore" }, { label: "How TBI Works", to: "/tbi" }, { label: "Submit Review", to: "/tbi/explore" }] },
-  { label: "Rebates", items: [{ label: "Forex Rebates" }, { label: "Crypto Rebates" }, { label: "Stocks Rebates" }, { label: "Calculator" }] },
-  { label: "Comparisons", items: [{ label: "Broker vs Broker", to: "/compare" }, { label: "Fees Compare" }, { label: "Spreads Compare" }, { label: "Leverage" }] },
-  { label: "Tools", items: [{ label: "Economic Calendar", to: "/economic-calendar" }, { label: "Pip Calculator" }, { label: "Margin Calculator" }, { label: "Profit Calculator" }, { label: "Converter" }] },
-  { label: "About Us", items: [{ label: "Our Story" }, { label: "Team" }, { label: "Careers" }, { label: "Press" }] },
-  { label: "Blogs", items: [{ label: "Latest Posts", to: "/blog" }, { label: "Trading Tips", to: "/blog" }, { label: "Guides", to: "/blog" }, { label: "Tutorials", to: "/blog" }] },
+type HeaderNavItem = {
+  labelKey: TranslationKey;
+  to?: string;
+  items?: { labelKey: TranslationKey; to?: string }[];
+};
+
+const navItems: HeaderNavItem[] = [
+  {
+    labelKey: "nav.propFirms",
+    to: "/programs",
+    items: [
+      { labelKey: "nav.allPropFirms", to: "/programs" },
+      { labelKey: "nav.forexPropFirms", to: "/programs" },
+      { labelKey: "nav.futuresPropFirms", to: "/programs" },
+      { labelKey: "nav.cryptoPropFirms", to: "/programs" },
+    ],
+  },
+  { labelKey: "nav.brokers", to: "/brokers" },
+  { labelKey: "nav.cryptoExchanges", to: "/exchanges" },
+  { labelKey: "nav.payouts", to: "/payouts" },
+  { labelKey: "nav.tbi", to: "/tbi" },
+  { labelKey: "nav.topSellers", to: "/offers" },
+  { labelKey: "nav.rebates", to: "/offers" },
+  { labelKey: "nav.comparisons", to: "/compare" },
+  {
+    labelKey: "nav.tools",
+    to: "/dashboard/tools",
+    items: [
+      { labelKey: "nav.economicCalendar", to: "/economic-calendar" },
+      { labelKey: "nav.tradingAcademy", to: "/academy" },
+      { labelKey: "nav.aiBacktest", to: "/dashboard/backtest" },
+      { labelKey: "nav.tradingPlan", to: "/dashboard/trading-plan" },
+    ],
+  },
+  {
+    labelKey: "nav.aboutUs",
+    items: [
+      { labelKey: "nav.company", to: "/business/join" },
+      { labelKey: "nav.trustDashboard", to: "/business/trust-dashboard" },
+      { labelKey: "nav.faq", to: "/faqs" },
+      { labelKey: "nav.legal", to: "/legal" },
+    ],
+  },
+  { labelKey: "nav.blogs", to: "/blog" },
 ];
+
+function HeaderNavPill({ item }: { item: HeaderNavItem }) {
+  const { t } = useI18n();
+  const baseClass =
+    "flex h-8 shrink-0 items-center gap-1 rounded-full px-3.5 text-[12px] font-medium text-muted-foreground outline-none transition hover:bg-white/[0.075] hover:text-foreground focus-visible:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring";
+
+  if (item.items?.length) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger className={baseClass}>
+          {t(item.labelKey)} <ChevronDown className="h-3 w-3" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="glass-strong border-2 border-white/40 text-xs backdrop-blur-3xl text-foreground shadow-2xl">
+          {item.items.map((sub) => (
+            <DropdownMenuItem
+              key={sub.labelKey}
+              asChild={!!sub.to}
+              className="cursor-pointer text-xs text-foreground/95 focus:bg-white/15 focus:text-white"
+            >
+              {sub.to ? <Link to={sub.to}>{t(sub.labelKey)}</Link> : <span>{t(sub.labelKey)}</span>}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  return (
+    <Link to={item.to ?? "/"} className={baseClass}>
+      {t(item.labelKey)}
+    </Link>
+  );
+}
+
+function LanguageSelector() {
+  const { language, languageMeta, languages, setLanguage, t } = useI18n();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={t("common.language")}
+        className="flex h-9 items-center gap-1 rounded-full bg-white/[0.045] px-2 text-xs font-semibold text-white outline-none ring-1 ring-white/10 transition hover:bg-white/[0.08] sm:px-3"
+      >
+        <Globe2 className="h-3.5 w-3.5 text-fuchsia-200" />
+        <span className="hidden sm:inline">{languageMeta.code.toUpperCase()}</span>
+        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="glass-strong w-48 border-2 border-white/40 backdrop-blur-3xl text-foreground shadow-2xl"
+      >
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {t("common.language")}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-white/10" />
+        {languages.map((item) => (
+          <DropdownMenuItem
+            key={item.code}
+            onClick={() => setLanguage(item.code as LanguageCode)}
+            className="flex cursor-pointer items-center justify-between gap-3 text-xs text-foreground/95 focus:bg-white/15 focus:text-white"
+          >
+            <span>
+              <span className="font-semibold">{item.nativeLabel}</span>
+              <span className="ml-1 text-muted-foreground">({item.code.toUpperCase()})</span>
+            </span>
+            {language === item.code && <Check className="h-3.5 w-3.5 text-fuchsia-200" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function SiteHeader() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -102,7 +245,11 @@ export function SiteHeader() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen(true);
-      } else if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+      } else if (
+        e.key === "/" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
         e.preventDefault();
         setSearchOpen(true);
       }
@@ -112,66 +259,69 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <div className="sticky top-0 z-40 backdrop-blur-xl bg-[#150829]/80 border-b border-white/5">
-      <span className="hidden" aria-hidden>{user ? "auth" : "guest"}</span>
-      <div className="mx-auto max-w-7xl px-3 sm:px-4 py-3">
-        <nav className="glass flex items-center justify-between rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
-          <Link to="/" className="flex items-center gap-2 shrink-0" aria-label="RebateBoard home">
-            <Logo heightClass="h-8 sm:h-9" />
-            <span className="sr-only">RebateBoard — every trade pays</span>
-            <span className="hidden text-[10px] text-muted-foreground sm:inline">every trade pays</span>
-          </Link>
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 bg-[#10051f]/16 pt-2 backdrop-blur-xl supports-[backdrop-filter]:bg-[#10051f]/10">
+        <span className="hidden" aria-hidden>
+          {user ? "auth" : "guest"}
+        </span>
+        <div className="container-app">
+          <div className="liquid-glass rounded-[1.35rem] px-3 py-2.5 shadow-[0_18px_55px_rgba(9,4,18,0.32)] sm:px-4">
+            <nav className="flex items-center justify-between gap-3">
+              <Link
+                to="/"
+                className="flex min-w-0 shrink-0 items-center gap-3"
+                aria-label="RebateBoard home"
+              >
+                <Logo heightClass="h-8 sm:h-9" className="shrink-0" />
+                <span className="sr-only">RebateBoard</span>
+              </Link>
 
-          <div className="hidden flex-1 max-w-md mx-6 lg:block">
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="glass flex w-full items-center gap-2 rounded-full px-4 py-2 text-left transition hover:border-fuchsia-400/30"
-            >
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <span className="flex-1 text-sm text-muted-foreground">Find a broker, coin, or program</span>
-              <kbd className="hidden rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌘K</kbd>
-            </button>
-          </div>
+              <div className="mx-3 hidden max-w-lg flex-1 lg:block xl:mx-6">
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className="flex h-9 w-full items-center gap-3 rounded-full bg-white/[0.04] px-4 text-left transition hover:bg-white/[0.08]"
+                >
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 text-sm text-muted-foreground">{t("common.search")}</span>
+                </button>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Open search"
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white transition hover:border-fuchsia-400/30 hover:bg-white/[0.08] lg:hidden"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-            {user ? <UserPill /> : <GuestActions />}
-          </div>
-        </nav>
+              <div className="flex shrink-0 items-center gap-2">
+                <LanguageSelector />
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  aria-label="Open search"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.055] text-white transition hover:bg-white/[0.08] lg:hidden"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+                {user ? <UserPill /> : <GuestActions />}
+                <Link
+                  to="/dashboard"
+                  aria-label="Open dashboard"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/[0.045] text-white transition hover:bg-white/[0.08]"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Link>
+              </div>
+            </nav>
 
-        {/* Secondary nav: horizontal scroll on mobile, wrap on desktop */}
-        <div className="mt-3 -mx-3 sm:-mx-4 lg:mx-0 overflow-x-auto no-scrollbar lg:overflow-visible">
-          <div className="flex items-center gap-2 px-3 sm:px-4 lg:px-0 lg:flex-wrap">
-            {navItems.map((item) => (
-              <DropdownMenu key={item.label}>
-                <DropdownMenuTrigger className="glass-pill shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  {item.label} <ChevronDown className="h-3 w-3" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass-strong border-2 border-white/40 text-xs backdrop-blur-3xl text-foreground shadow-2xl">
-                  {item.items.map((sub) => (
-                    <DropdownMenuItem
-                      key={sub.label}
-                      asChild={!!sub.to}
-                      className="text-xs cursor-pointer text-foreground/95 focus:bg-white/15 focus:text-white"
-                    >
-                      {sub.to ? <Link to={sub.to}>{sub.label}</Link> : <span>{sub.label}</span>}
-                    </DropdownMenuItem>
+            <div className="mt-2">
+              <div className="overflow-x-auto no-scrollbar lg:overflow-visible">
+                <div className="flex items-center justify-center gap-1.5 lg:min-w-max xl:min-w-0">
+                  {navItems.map((item) => (
+                    <HeaderNavPill key={item.labelKey} item={item} />
                   ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </div>
+        <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      </header>
+      <div className="h-[8.7rem] sm:h-[8.85rem]" aria-hidden />
+    </>
   );
 }

@@ -31,10 +31,14 @@ export async function fetchAdminOffers() {
 }
 
 export async function fetchPublicOffers() {
-  const response = await apiRequest<AdminOffer[]>("/admin-offer/public-list", {
-    method: "GET",
-  });
-  return response.payload ?? [];
+  try {
+    const response = await apiRequest<AdminOffer[]>("/admin-offer/public-list", {
+      method: "GET",
+    });
+    return response.payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function createAdminOffer(input: Partial<AdminOffer>) {

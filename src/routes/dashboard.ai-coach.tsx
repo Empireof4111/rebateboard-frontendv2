@@ -4,17 +4,24 @@ import {
   Bot,
   Brain,
   CircleAlert,
+  FileText,
+  Image as ImageIcon,
   Languages,
   Loader2,
+  Paperclip,
+  Plus,
   Send,
   ShieldCheck,
   Sparkles,
   Target,
+  X,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
 import { useAuth } from "@/lib/auth";
 import {
   sendRebetaMessage,
+  type RebetaAction,
+  type RebetaAttachment,
   type RebetaChatMessage,
   type RebetaChatResponse,
 } from "@/lib/rebeta-api";
@@ -27,7 +34,14 @@ type RebetaMessage = RebetaChatMessage & {
   id: string;
   error?: boolean;
   suggestions?: string[];
+  attachments?: AttachmentPreview[];
+  insights?: string[];
+  warnings?: string[];
+  predictions?: string[];
+  actions?: RebetaAction[];
 };
+
+type AttachmentPreview = Pick<RebetaAttachment, "id" | "name" | "mimeType" | "size" | "kind">;
 
 type StoredRebetaChat = {
   messages?: RebetaMessage[];
@@ -65,6 +79,11 @@ const LANGUAGE_OPTIONS = [
   "Igbo",
 ];
 
+const MAX_ATTACHMENTS = 4;
+const MAX_ATTACHMENT_BYTES = 1_500_000;
+const MAX_IMAGE_SOURCE_BYTES = 5_000_000;
+const MAX_TEXT_CHARS = 12000;
+
 const ACTION_PROMPTS = [
   {
     title: "Rebate clarity",
@@ -93,8 +112,11 @@ function RebetaPage() {
   const [suggestions, setSuggestions] = useState(DEFAULT_PROMPTS);
   const [lastResponse, setLastResponse] = useState<RebetaChatResponse | null>(null);
   const [preferredLanguage, setPreferredLanguage] = useState("English");
+  const [attachments, setAttachments] = useState<RebetaAttachment[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const storageKey = `rebeta-chat:${user?.id || "guest"}`;
 
   useEffect(() => {
@@ -131,9 +153,11 @@ function RebetaPage() {
     window.localStorage.setItem(storageKey, JSON.stringify(payload));
   }, [historyLoaded, lastResponse, messages, preferredLanguage, storageKey, suggestions]);
 
-  async function submitPrompt(rawPrompt = input) {
-    const prompt = rawPrompt.trim();
-    if (!prompt || sending) return;
+  async function submitPrompt(rawPrompt = input, outgoingAttachments = attachments) {
+    const typedPrompt = rawPrompt.trim();
+    const hasAttachments = outgoingAttachments.length > 0;
+    const prompt = typedPrompt || (hasAttachments ? "Analyze the attached file or image." : "");
+    if ((!prompt && !hasAttachments) || sending) return;
 
     const history = messages
       .filter((message) => !message.error)
@@ -143,11 +167,14 @@ function RebetaPage() {
     const userMessage: RebetaMessage = {
       id: makeId("user"),
       role: "user",
-      content: prompt,
+      content: displayPrompt(prompt, outgoingAttachments),
+      attachments: outgoingAttachments.map(toAttachmentPreview),
     };
 
     setMessages((current) => [...current, userMessage]);
     setInput("");
+    setAttachments([]);
+    setAttachmentError(null);
     setSending(true);
     setError(null);
 
@@ -157,8 +184,10 @@ function RebetaPage() {
         messages: history,
         mode: "rebeta-workspace",
         language: preferredLanguage,
+        attachments: outgoingAttachments,
         context: {
           surface: "dashboard.ai-coach",
+          attachments: outgoingAttachments.map(toContextAttachment),
           user: user
             ? {
                 id: user.id,
@@ -172,6 +201,7 @@ function RebetaPage() {
 
       const cleanedReply = cleanRebetaOutput(response.reply);
       const nextSuggestions = cleanSuggestionList(response.suggestions, DEFAULT_PROMPTS);
+      const structured = sanitizeStructuredResponse(response);
 
       setMessages((current) => [
         ...current,
@@ -180,10 +210,14 @@ function RebetaPage() {
           role: "assistant",
           content: cleanedReply,
           suggestions: nextSuggestions,
+          insights: structured.insights,
+          warnings: structured.warnings,
+          predictions: structured.predictions,
+          actions: structured.actions,
         },
       ]);
       setSuggestions(nextSuggestions);
-      setLastResponse({ ...response, reply: cleanedReply, suggestions: nextSuggestions });
+      setLastResponse({ ...structured, reply: cleanedReply, suggestions: nextSuggestions });
     } catch (ex) {
       const message = ex instanceof Error ? ex.message : "Rebeta could not answer right now.";
       setError(message);
@@ -208,7 +242,37 @@ function RebetaPage() {
 
   function sendSuggestion(prompt: string) {
     setTab("chat");
-    void submitPrompt(prompt);
+    void submitPrompt(prompt, []);
+  }
+
+  async function handleFileSelection(fileList: FileList | null) {
+    if (!fileList?.length) return;
+
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+    const selected = Array.from(fileList).slice(0, Math.max(remaining, 0));
+    if (!selected.length) {
+      setAttachmentError(`You can attach up to ${MAX_ATTACHMENTS} files at a time.`);
+      return;
+    }
+
+    setAttachmentError(null);
+    const next: RebetaAttachment[] = [];
+
+    for (const file of selected) {
+      try {
+        next.push(await prepareAttachment(file));
+      } catch (error) {
+        setAttachmentError(error instanceof Error ? error.message : "Unable to attach that file.");
+      }
+    }
+
+    if (next.length) {
+      setAttachments((current) => [...current, ...next].slice(0, MAX_ATTACHMENTS));
+    }
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((current) => current.filter((attachment) => attachment.id !== id));
   }
 
   return (
@@ -221,21 +285,6 @@ function RebetaPage() {
             <Pill tone={lastResponse?.provider === "mock" ? "warning" : "primary"}>
               {lastResponse ? `${lastResponse.provider} / ${lastResponse.model}` : "Ready"}
             </Pill>
-            <label className="inline-flex h-8 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs text-white/85">
-              <Languages className="h-3.5 w-3.5 text-accent" />
-              <select
-                value={preferredLanguage}
-                onChange={(event) => setPreferredLanguage(event.target.value)}
-                className="max-w-[130px] bg-transparent text-xs text-white outline-none [color-scheme:dark]"
-                aria-label="Rebeta response language"
-              >
-                {LANGUAGE_OPTIONS.map((language) => (
-                  <option key={language} value={language}>
-                    {language}
-                  </option>
-                ))}
-              </select>
-            </label>
             <div className="flex gap-1 rounded-full bg-white/5 p-1">
               <button
                 type="button"
@@ -308,7 +357,26 @@ function RebetaPage() {
                 </div>
               )}
 
-              <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
+              {attachmentError && (
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                  <CircleAlert className="h-4 w-4 shrink-0" />
+                  {attachmentError}
+                </div>
+              )}
+
+              <form onSubmit={onSubmit} className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2 focus-within:border-primary/60">
+                {attachments.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {attachments.map((attachment) => (
+                      <AttachmentChip
+                        key={attachment.id}
+                        attachment={attachment}
+                        onRemove={() => removeAttachment(attachment.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -318,18 +386,60 @@ function RebetaPage() {
                       void submitPrompt();
                     }
                   }}
-                  placeholder="Ask Rebeta about rebates, trades, TBI, brokers, risk, or strategy..."
+                  placeholder="Ask Rebeta about rebates, trades, TBI, brokers, risk, strategy, or an uploaded chart..."
                   rows={2}
-                  className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-muted-foreground outline-none focus:border-primary/60"
+                  className="max-h-32 min-h-[54px] w-full resize-none bg-transparent px-2 py-2 text-sm text-white placeholder:text-muted-foreground outline-none"
                 />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || sending || !token}
-                  aria-label="Send message"
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_24px_rgba(192,132,252,0.38)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </button>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,.csv,.txt,.json,.md,.log,.pdf"
+                      className="hidden"
+                      onChange={(event) => {
+                        void handleFileSelection(event.currentTarget.files);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sending || attachments.length >= MAX_ATTACHMENTS}
+                      aria-label="Attach file"
+                      title="Attach image, CSV, or text file"
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    <label className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 text-xs text-white/85">
+                      <Languages className="h-3.5 w-3.5 text-accent" />
+                      <select
+                        value={preferredLanguage}
+                        onChange={(event) => setPreferredLanguage(event.target.value)}
+                        className="max-w-[132px] bg-transparent text-xs text-white outline-none [color-scheme:dark]"
+                        aria-label="Rebeta response language"
+                      >
+                        {LANGUAGE_OPTIONS.map((language) => (
+                          <option key={language} value={language}>
+                            {language}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={(!input.trim() && attachments.length === 0) || sending || !token}
+                    aria-label="Send message"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_24px_rgba(192,132,252,0.38)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </button>
+                </div>
               </form>
             </div>
           </Panel>
@@ -421,23 +531,68 @@ function ChatBubble({
 }) {
   const isUser = message.role === "user";
   const showSuggestions = !isUser && !message.error && Boolean(message.suggestions?.length);
+  const hasStructuredBlocks =
+    !isUser &&
+    !message.error &&
+    Boolean(message.insights?.length || message.warnings?.length || message.predictions?.length || message.actions?.length);
 
   return (
     <div className={`space-y-2 ${isUser ? "flex flex-col items-end" : ""}`}>
       <div className={`flex gap-2 ${isUser ? "justify-end" : ""}`}>
         {!isUser && <CoachAvatar error={message.error} />}
-        <div
-          className={`max-w-[82%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-xs leading-relaxed sm:text-sm ${
-            isUser
-              ? "bg-primary/30 text-white"
-              : message.error
-                ? "border border-red-500/30 bg-red-500/10 text-red-100"
-                : "bg-white/5 text-white/90"
-          }`}
-        >
-          {message.content}
+        <div className={`max-w-[82%] space-y-2 ${isUser ? "items-end" : ""}`}>
+          <div
+            className={`whitespace-pre-wrap rounded-2xl px-3 py-2 text-xs leading-relaxed sm:text-sm ${
+              isUser
+                ? "bg-primary/30 text-white"
+                : message.error
+                  ? "border border-red-500/30 bg-red-500/10 text-red-100"
+                  : "bg-white/5 text-white/90"
+            }`}
+          >
+            {message.content}
+          </div>
+          {Boolean(message.attachments?.length) && (
+            <div className={`flex flex-wrap gap-1.5 ${isUser ? "justify-end" : ""}`}>
+              {message.attachments?.map((attachment) => (
+                <span
+                  key={attachment.id}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] text-white/70"
+                >
+                  {attachment.kind === "image" ? <ImageIcon className="h-3 w-3" /> : <Paperclip className="h-3 w-3" />}
+                  <span className="truncate">{attachment.name}</span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {hasStructuredBlocks && (
+        <div className="ml-10 grid max-w-[82%] gap-2 md:grid-cols-2">
+          <StructuredList title="Insights" items={message.insights} tone="primary" />
+          <StructuredList title="Warnings" items={message.warnings} tone="warning" />
+          <StructuredList title="Predictions" items={message.predictions} tone="default" />
+          {Boolean(message.actions?.length) && (
+            <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
+              <div className="mb-2 text-[11px] font-semibold text-white">Actions</div>
+              <div className="flex flex-wrap gap-2">
+                {message.actions?.map((action) => (
+                  <button
+                    key={`${action.label}-${action.command}`}
+                    type="button"
+                    onClick={() => onSuggestion(action.command)}
+                    disabled={disabled}
+                    className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/[0.08] px-2.5 py-1.5 text-left text-[10px] text-white/85 transition hover:border-fuchsia-300/45 hover:bg-fuchsia-300/[0.13] disabled:opacity-50"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showSuggestions && (
         <div className="ml-10 flex max-w-[82%] flex-wrap gap-2">
@@ -473,8 +628,215 @@ function CoachAvatar({ error = false }: { error?: boolean }) {
   );
 }
 
+function AttachmentChip({
+  attachment,
+  onRemove,
+}: {
+  attachment: RebetaAttachment;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] text-white/80">
+      {attachment.kind === "image" ? (
+        <ImageIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
+      ) : attachment.kind === "text" ? (
+        <FileText className="h-3.5 w-3.5 shrink-0 text-accent" />
+      ) : (
+        <Paperclip className="h-3.5 w-3.5 shrink-0 text-accent" />
+      )}
+      <span className="min-w-0 max-w-[180px] truncate">{attachment.name}</span>
+      <span className="text-white/35">{formatBytes(attachment.size)}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${attachment.name}`}
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-white/50 transition hover:bg-white/10 hover:text-white"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
+function StructuredList({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items?: string[];
+  tone: "primary" | "warning" | "default";
+}) {
+  if (!items?.length) return null;
+  const toneClass =
+    tone === "warning"
+      ? "border-amber-400/20 bg-amber-400/[0.06] text-amber-100"
+      : tone === "primary"
+        ? "border-fuchsia-300/20 bg-fuchsia-300/[0.06] text-white/85"
+        : "border-white/10 bg-white/[0.035] text-white/75";
+
+  return (
+    <div className={`rounded-xl border p-3 ${toneClass}`}>
+      <div className="mb-1.5 text-[11px] font-semibold text-white">{title}</div>
+      <ul className="space-y-1 text-[11px] leading-relaxed">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function prepareAttachment(file: File): Promise<RebetaAttachment> {
+  const mimeType = file.type || guessMimeType(file.name);
+  const isImage = mimeType.startsWith("image/");
+  const isText = isTextLikeFile(file, mimeType);
+
+  if (isImage) {
+    if (file.size > MAX_IMAGE_SOURCE_BYTES) {
+      throw new Error(`${file.name} is too large. Use an image under ${formatBytes(MAX_IMAGE_SOURCE_BYTES)}.`);
+    }
+
+    const data = await readCompressedImage(file);
+    const size = estimateBase64Bytes(data);
+    if (size > MAX_ATTACHMENT_BYTES) {
+      throw new Error(`${file.name} is still too large after compression. Try a smaller screenshot.`);
+    }
+
+    return {
+      id: makeId("attachment"),
+      name: file.name,
+      mimeType: "image/jpeg",
+      size,
+      kind: "image",
+      data,
+    };
+  }
+
+  if (isText) {
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      throw new Error(`${file.name} is too large. Use a text or CSV file under ${formatBytes(MAX_ATTACHMENT_BYTES)}.`);
+    }
+
+    const text = (await readFileAsText(file)).slice(0, MAX_TEXT_CHARS);
+    return {
+      id: makeId("attachment"),
+      name: file.name,
+      mimeType,
+      size: file.size,
+      kind: "text",
+      text,
+    };
+  }
+
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error(`${file.name} is too large. Use a file under ${formatBytes(MAX_ATTACHMENT_BYTES)}.`);
+  }
+
+  return {
+    id: makeId("attachment"),
+    name: file.name,
+    mimeType,
+    size: file.size,
+    kind: "file",
+  };
+}
+
+function readFileAsText(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.readAsText(file);
+  });
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readCompressedImage(file: File) {
+  const dataUrl = await readFileAsDataUrl(file);
+  if (typeof document === "undefined") return dataUrl;
+
+  return new Promise<string>((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const maxSide = 1100;
+      const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * ratio));
+      canvas.height = Math.max(1, Math.round(image.height * ratio));
+      const context = canvas.getContext("2d");
+      if (!context) {
+        resolve(dataUrl);
+        return;
+      }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
+  });
+}
+
+function isTextLikeFile(file: File, mimeType: string) {
+  const name = file.name.toLowerCase();
+  return (
+    mimeType.startsWith("text/") ||
+    mimeType.includes("json") ||
+    name.endsWith(".csv") ||
+    name.endsWith(".json") ||
+    name.endsWith(".md") ||
+    name.endsWith(".log") ||
+    name.endsWith(".txt")
+  );
+}
+
+function guessMimeType(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".csv")) return "text/csv";
+  if (lower.endsWith(".json")) return "application/json";
+  if (lower.endsWith(".md")) return "text/markdown";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  return "application/octet-stream";
+}
+
+function estimateBase64Bytes(dataUrl: string) {
+  const base64 = dataUrl.includes(",") ? dataUrl.split(",").pop() || "" : dataUrl;
+  return Math.ceil((base64.length * 3) / 4);
+}
+
+function toAttachmentPreview(attachment: RebetaAttachment): AttachmentPreview {
+  const { id, name, mimeType, size, kind } = attachment;
+  return { id, name, mimeType, size, kind };
+}
+
+function toContextAttachment(attachment: RebetaAttachment) {
+  const { id, name, mimeType, size, kind, text } = attachment;
+  return { id, name, mimeType, size, kind, text };
+}
+
+function displayPrompt(prompt: string, attachments: RebetaAttachment[]) {
+  if (!attachments.length) return prompt;
+  const names = attachments.map((attachment) => attachment.name).join(", ");
+  return `${prompt}\n\nAttached: ${names}`;
+}
+
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function cleanRebetaOutput(text: string) {
@@ -489,6 +851,52 @@ function cleanSuggestionList(suggestions: string[] = [], fallback = DEFAULT_PROM
     .filter((suggestion) => {
       const key = suggestion.toLowerCase();
       if (!suggestion || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 3);
+}
+
+function sanitizeStructuredResponse(response: RebetaChatResponse): RebetaChatResponse {
+  return {
+    ...response,
+    reply: cleanRebetaOutput(response.reply),
+    suggestions: cleanSuggestionList(response.suggestions || DEFAULT_PROMPTS, DEFAULT_PROMPTS),
+    insights: cleanStringList(response.insights, 4),
+    warnings: cleanStringList(response.warnings, 3),
+    predictions: cleanStringList(response.predictions, 3),
+    actions: cleanActionList(response.actions),
+  };
+}
+
+function cleanStringList(items: unknown, limit: number) {
+  if (!Array.isArray(items)) return [];
+  const seen = new Set<string>();
+
+  return items
+    .map((item) => cleanRebetaOutput(String(item || "")).trim())
+    .filter((item) => {
+      const key = item.toLowerCase();
+      if (!item || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
+}
+
+function cleanActionList(actions: unknown) {
+  if (!Array.isArray(actions)) return [];
+  const seen = new Set<string>();
+
+  return actions
+    .map((action) => ({
+      label: cleanRebetaOutput(String(action?.label || "")).trim(),
+      command: cleanRebetaOutput(String(action?.command || "")).trim(),
+      module: typeof action?.module === "string" ? action.module : undefined,
+    }))
+    .filter((action) => {
+      const key = `${action.label}:${action.command}`.toLowerCase();
+      if (!action.label || !action.command || seen.has(key)) return false;
       seen.add(key);
       return true;
     })
@@ -533,12 +941,31 @@ function sanitizeStoredMessages(messages: StoredRebetaChat["messages"]) {
       role: message.role,
       content: cleanRebetaOutput(message.content),
       error: Boolean(message.error),
+      attachments: sanitizeStoredAttachments(message.attachments),
       suggestions:
         message.role === "assistant" && !message.error
           ? cleanSuggestionList(message.suggestions || [], [])
           : undefined,
+      insights: cleanStringList(message.insights, 4),
+      warnings: cleanStringList(message.warnings, 3),
+      predictions: cleanStringList(message.predictions, 3),
+      actions: cleanActionList(message.actions),
     }))
     .slice(-80);
+}
+
+function sanitizeStoredAttachments(attachments: RebetaMessage["attachments"]) {
+  if (!Array.isArray(attachments)) return undefined;
+  return attachments
+    .filter((attachment) => attachment?.name && attachment?.id)
+    .map((attachment) => ({
+      id: String(attachment.id),
+      name: String(attachment.name),
+      mimeType: String(attachment.mimeType || "application/octet-stream"),
+      size: Number(attachment.size || 0),
+      kind: attachment.kind === "image" || attachment.kind === "text" ? attachment.kind : "file",
+    }))
+    .slice(0, MAX_ATTACHMENTS);
 }
 
 function sanitizeStoredResponse(response: StoredRebetaChat["lastResponse"]) {
@@ -550,6 +977,12 @@ function sanitizeStoredResponse(response: StoredRebetaChat["lastResponse"]) {
     model: response.model,
     suggestions: cleanSuggestionList(response.suggestions || DEFAULT_PROMPTS, DEFAULT_PROMPTS),
     disclaimer: response.disclaimer,
+    intent: response.intent,
+    module: response.module,
+    insights: cleanStringList(response.insights, 4),
+    warnings: cleanStringList(response.warnings, 3),
+    predictions: cleanStringList(response.predictions, 3),
+    actions: cleanActionList(response.actions),
   } satisfies RebetaChatResponse;
 }
 

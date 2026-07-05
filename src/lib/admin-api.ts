@@ -81,7 +81,9 @@ export const blogApi = {
     return res as any;
   },
   async search(token: string, q: string): Promise<ApiResponse<PaginatedResult<BlogPost>>> {
-    const res = await apiRequest<any>(`/blog/search?q=${encodeURIComponent(q)}&size=100`, { token });
+    const res = await apiRequest<any>(`/blog/search?q=${encodeURIComponent(q)}&size=100`, {
+      token,
+    });
     if (res.payload) {
       res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapBlog) };
     }
@@ -93,7 +95,11 @@ export const blogApi = {
     return res as any;
   },
   async update(token: string, id: string, data: Partial<BlogPost>): Promise<ApiResponse<BlogPost>> {
-    const res = await apiRequest<any>(`/blog/${id}`, { method: "PUT", token, body: { ...blogToDto(data), status: data.status === "published" ? "ACTIVE" : "INACTIVE" } });
+    const res = await apiRequest<any>(`/blog/${id}`, {
+      method: "PUT",
+      token,
+      body: { ...blogToDto(data), status: data.status === "published" ? "ACTIVE" : "INACTIVE" },
+    });
     if (res.payload) res.payload = mapBlog(res.payload);
     return res as any;
   },
@@ -101,6 +107,38 @@ export const blogApi = {
     return apiRequest(`/blog/${id}`, { method: "DELETE", token });
   },
 };
+
+export function articleRouteId(post: Pick<BlogPost, "id" | "urlSlug">) {
+  return post.urlSlug?.trim() || post.id;
+}
+
+export async function fetchPublicBlogPosts(page = 0, size = 100): Promise<BlogPost[]> {
+  try {
+    const res = await apiRequest<PaginatedResult<any>>(`/blog/list?page=${page}&size=${size}`, {
+      cache: "no-store",
+    });
+    return (res.payload?.page ?? []).map(mapBlog).filter((post) => post.status === "published");
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchPublicBlogPost(idOrSlug: string): Promise<BlogPost | null> {
+  const lookup = idOrSlug.trim();
+
+  if (/^\d+$/.test(lookup)) {
+    try {
+      const res = await apiRequest<any>(`/blog/detail/${lookup}`, { cache: "no-store" });
+      const post = res.payload ? mapBlog(res.payload) : null;
+      if (post?.status === "published") return post;
+    } catch {
+      // Fall back to the public list below so slug and stale detail paths both work.
+    }
+  }
+
+  const posts = await fetchPublicBlogPosts();
+  return posts.find((post) => post.id === lookup || post.urlSlug === lookup) ?? null;
+}
 
 // ─── News ──────────────────────────────────────────────────────────────────
 export type NewsItem = {
@@ -130,12 +168,28 @@ export const newsApi = {
     return res as any;
   },
   async create(token: string, data: Partial<NewsItem>): Promise<ApiResponse<NewsItem>> {
-    const res = await apiRequest<any>("/news/", { method: "POST", token, body: { title: data.title, description: data.excerpt, status: data.status === "published" ? "ACTIVE" : "INACTIVE" } });
+    const res = await apiRequest<any>("/news/", {
+      method: "POST",
+      token,
+      body: {
+        title: data.title,
+        description: data.excerpt,
+        status: data.status === "published" ? "ACTIVE" : "INACTIVE",
+      },
+    });
     if (res.payload) res.payload = mapNews(res.payload);
     return res as any;
   },
   async update(token: string, id: string, data: Partial<NewsItem>): Promise<ApiResponse<NewsItem>> {
-    const res = await apiRequest<any>(`/news/${id}`, { method: "PUT", token, body: { title: data.title, description: data.excerpt, status: data.status === "published" ? "ACTIVE" : "INACTIVE" } });
+    const res = await apiRequest<any>(`/news/${id}`, {
+      method: "PUT",
+      token,
+      body: {
+        title: data.title,
+        description: data.excerpt,
+        status: data.status === "published" ? "ACTIVE" : "INACTIVE",
+      },
+    });
     if (res.payload) res.payload = mapNews(res.payload);
     return res as any;
   },
@@ -179,12 +233,30 @@ export const faqApi = {
     return res as any;
   },
   async create(token: string, data: Partial<Faq>): Promise<ApiResponse<Faq>> {
-    const res = await apiRequest<any>("/faq/", { method: "POST", token, body: { title: data.question, description: data.answer, category: data.category } });
+    const res = await apiRequest<any>("/faq/", {
+      method: "POST",
+      token,
+      body: {
+        title: data.question,
+        description: data.answer,
+        category: data.category,
+        status: data.status === "published" ? "ACTIVE" : "INACTIVE",
+      },
+    });
     if (res.payload) res.payload = mapFaq(res.payload);
     return res as any;
   },
   async update(token: string, id: string, data: Partial<Faq>): Promise<ApiResponse<Faq>> {
-    const res = await apiRequest<any>(`/faq/${id}`, { method: "PUT", token, body: { title: data.question, description: data.answer, category: data.category, status: data.status === "published" ? "ACTIVE" : "INACTIVE" } });
+    const res = await apiRequest<any>(`/faq/${id}`, {
+      method: "PUT",
+      token,
+      body: {
+        title: data.question,
+        description: data.answer,
+        category: data.category,
+        status: data.status === "published" ? "ACTIVE" : "INACTIVE",
+      },
+    });
     if (res.payload) res.payload = mapFaq(res.payload);
     return res as any;
   },
@@ -192,6 +264,17 @@ export const faqApi = {
     return apiRequest(`/faq/${id}`, { method: "DELETE", token });
   },
 };
+
+export async function fetchPublicFaqs(page = 0, size = 200): Promise<Faq[]> {
+  try {
+    const res = await apiRequest<PaginatedResult<any>>(`/faq/list?page=${page}&size=${size}`, {
+      cache: "no-store",
+    });
+    return (res.payload?.page ?? []).map(mapFaq).filter((faq) => faq.status === "published");
+  } catch {
+    return [];
+  }
+}
 
 // ─── Announcement ──────────────────────────────────────────────────────────
 export type Announcement = {
@@ -213,7 +296,10 @@ export type Announcement = {
 
 function mapAnnouncement(raw: any): Announcement {
   const statusMap: Record<string, Announcement["status"]> = {
-    ACTIVE: "active", INACTIVE: "scheduled", REVOKED: "expired", DELETED: "expired",
+    ACTIVE: "active",
+    INACTIVE: "scheduled",
+    REVOKED: "expired",
+    DELETED: "expired",
   };
   return {
     id: String(raw.id),
@@ -234,7 +320,11 @@ function mapAnnouncement(raw: any): Announcement {
 }
 
 function announcementToDto(data: Partial<Announcement>) {
-  const statusMap: Record<string, string> = { active: "ACTIVE", scheduled: "INACTIVE", expired: "REVOKED" };
+  const statusMap: Record<string, string> = {
+    active: "ACTIVE",
+    scheduled: "INACTIVE",
+    expired: "REVOKED",
+  };
   return {
     title: data.message?.slice(0, 80) ?? "Announcement",
     description: data.message,
@@ -253,18 +343,35 @@ function announcementToDto(data: Partial<Announcement>) {
 }
 
 export const announcementApi = {
-  async list(token: string, page = 0, size = 200): Promise<ApiResponse<PaginatedResult<Announcement>>> {
+  async list(
+    token: string,
+    page = 0,
+    size = 200,
+  ): Promise<ApiResponse<PaginatedResult<Announcement>>> {
     const res = await apiRequest<any>(`/announcement/list?page=${page}&size=${size}`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapAnnouncement) };
+    if (res.payload)
+      res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapAnnouncement) };
     return res as any;
   },
   async create(token: string, data: Partial<Announcement>): Promise<ApiResponse<Announcement>> {
-    const res = await apiRequest<any>("/announcement/", { method: "POST", token, body: announcementToDto(data) });
+    const res = await apiRequest<any>("/announcement/", {
+      method: "POST",
+      token,
+      body: announcementToDto(data),
+    });
     if (res.payload) res.payload = mapAnnouncement(res.payload);
     return res as any;
   },
-  async update(token: string, id: string, data: Partial<Announcement>): Promise<ApiResponse<Announcement>> {
-    const res = await apiRequest<any>(`/announcement/${id}`, { method: "PUT", token, body: announcementToDto(data) });
+  async update(
+    token: string,
+    id: string,
+    data: Partial<Announcement>,
+  ): Promise<ApiResponse<Announcement>> {
+    const res = await apiRequest<any>(`/announcement/${id}`, {
+      method: "PUT",
+      token,
+      body: announcementToDto(data),
+    });
     if (res.payload) res.payload = mapAnnouncement(res.payload);
     return res as any;
   },
@@ -272,6 +379,20 @@ export const announcementApi = {
     return apiRequest(`/announcement/${id}`, { method: "DELETE", token });
   },
 };
+
+export async function fetchPublicAnnouncements(page = 0, size = 200): Promise<Announcement[]> {
+  try {
+    const res = await apiRequest<PaginatedResult<any>>(
+      `/announcement/list?page=${page}&size=${size}`,
+      { cache: "no-store" },
+    );
+    return (res.payload?.page ?? [])
+      .map(mapAnnouncement)
+      .filter((announcement) => announcement.status === "active");
+  } catch {
+    return [];
+  }
+}
 
 // ─── Users (Admin) ─────────────────────────────────────────────────────────
 export type AdminUser = {
@@ -335,13 +456,29 @@ export const userAdminApi = {
     if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapUser) };
     return res as any;
   },
-  async updateStatus(token: string, userId: string, status: string): Promise<ApiResponse<AdminUser>> {
-    const res = await apiRequest<any>(`/user/status-change/${userId}`, { method: "PUT", token, body: { status } });
+  async updateStatus(
+    token: string,
+    userId: string,
+    status: string,
+  ): Promise<ApiResponse<AdminUser>> {
+    const res = await apiRequest<any>(`/user/status-change/${userId}`, {
+      method: "PUT",
+      token,
+      body: { status },
+    });
     if (res.payload) res.payload = mapUser(res.payload);
     return res as any;
   },
-  async update(token: string, userId: string, data: Partial<AdminUser>): Promise<ApiResponse<AdminUser>> {
-    const res = await apiRequest<any>(`/user/${userId}`, { method: "PUT", token, body: { name: data.name, emailAddress: data.email, country: data.country } });
+  async update(
+    token: string,
+    userId: string,
+    data: Partial<AdminUser>,
+  ): Promise<ApiResponse<AdminUser>> {
+    const res = await apiRequest<any>(`/user/${userId}`, {
+      method: "PUT",
+      token,
+      body: { name: data.name, emailAddress: data.email, country: data.country },
+    });
     if (res.payload) res.payload = mapUser(res.payload);
     return res as any;
   },
@@ -362,7 +499,9 @@ export type Subscriber = {
 
 function mapSubscriber(raw: any): Subscriber {
   const statusMap: Record<string, Subscriber["status"]> = {
-    ACTIVE: "active", INACTIVE: "unsubscribed", BLOCKED: "bounced",
+    ACTIVE: "active",
+    INACTIVE: "unsubscribed",
+    BLOCKED: "bounced",
   };
   return {
     id: String(raw.id),
@@ -375,18 +514,38 @@ function mapSubscriber(raw: any): Subscriber {
 }
 
 export const subscriberApi = {
-  async list(token: string, page = 0, size = 200): Promise<ApiResponse<PaginatedResult<Subscriber>>> {
-    const res = await apiRequest<any>(`/news/subscription/list?page=${page}&size=${size}`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapSubscriber) };
+  async list(
+    token: string,
+    page = 0,
+    size = 200,
+  ): Promise<ApiResponse<PaginatedResult<Subscriber>>> {
+    const res = await apiRequest<any>(`/news/subscription/list?page=${page}&size=${size}`, {
+      token,
+    });
+    if (res.payload)
+      res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapSubscriber) };
     return res as any;
   },
   async search(token: string, q: string): Promise<ApiResponse<PaginatedResult<Subscriber>>> {
-    const res = await apiRequest<any>(`/news/subscription/search?q=${encodeURIComponent(q)}&size=200`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapSubscriber) };
+    const res = await apiRequest<any>(
+      `/news/subscription/search?q=${encodeURIComponent(q)}&size=200`,
+      { token },
+    );
+    if (res.payload)
+      res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapSubscriber) };
     return res as any;
   },
-  async add(token: string, email: string, name?: string, source?: string): Promise<ApiResponse<Subscriber>> {
-    const res = await apiRequest<any>("/news/subscribe", { method: "POST", token, body: { emailAddress: email, name, source } });
+  async add(
+    token: string,
+    email: string,
+    name?: string,
+    source?: string,
+  ): Promise<ApiResponse<Subscriber>> {
+    const res = await apiRequest<any>("/news/subscribe", {
+      method: "POST",
+      token,
+      body: { emailAddress: email, name, source },
+    });
     if (res.payload) res.payload = mapSubscriber(res.payload);
     return res as any;
   },
@@ -468,18 +627,35 @@ function advertToDto(data: Partial<DashboardAd>) {
 }
 
 export const advertApi = {
-  async list(token: string, page = 0, size = 100): Promise<ApiResponse<PaginatedResult<DashboardAd>>> {
+  async list(
+    token: string,
+    page = 0,
+    size = 100,
+  ): Promise<ApiResponse<PaginatedResult<DashboardAd>>> {
     const res = await apiRequest<any>(`/advert/list?page=${page}&size=${size}`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapAdvert) };
+    if (res.payload)
+      res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapAdvert) };
     return res as any;
   },
   async create(token: string, data: Partial<DashboardAd>): Promise<ApiResponse<DashboardAd>> {
-    const res = await apiRequest<any>("/advert/", { method: "POST", token, body: advertToDto(data) });
+    const res = await apiRequest<any>("/advert/", {
+      method: "POST",
+      token,
+      body: advertToDto(data),
+    });
     if (res.payload) res.payload = mapAdvert(res.payload);
     return res as any;
   },
-  async update(token: string, id: string, data: Partial<DashboardAd>): Promise<ApiResponse<DashboardAd>> {
-    const res = await apiRequest<any>(`/advert/${id}`, { method: "PUT", token, body: advertToDto(data) });
+  async update(
+    token: string,
+    id: string,
+    data: Partial<DashboardAd>,
+  ): Promise<ApiResponse<DashboardAd>> {
+    const res = await apiRequest<any>(`/advert/${id}`, {
+      method: "PUT",
+      token,
+      body: advertToDto(data),
+    });
     if (res.payload) res.payload = mapAdvert(res.payload);
     return res as any;
   },
@@ -542,22 +718,48 @@ export type AdminInboxStats = {
 };
 
 export const inboxAdminApi = {
-  async list(token: string, page = 0, size = 50): Promise<ApiResponse<PaginatedResult<AdminInboxMessage> & { stats?: AdminInboxStats }>> {
+  async list(
+    token: string,
+    page = 0,
+    size = 50,
+  ): Promise<ApiResponse<PaginatedResult<AdminInboxMessage> & { stats?: AdminInboxStats }>> {
     const res = await apiRequest<any>(`/message/list?page=${page}&size=${size}`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapInboxMessage) };
+    if (res.payload)
+      res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapInboxMessage) };
     return res as any;
   },
-  async search(token: string, q: string, page = 0, size = 50): Promise<ApiResponse<PaginatedResult<AdminInboxMessage> & { stats?: AdminInboxStats }>> {
-    const res = await apiRequest<any>(`/message/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`, { token });
-    if (res.payload) res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapInboxMessage) };
+  async search(
+    token: string,
+    q: string,
+    page = 0,
+    size = 50,
+  ): Promise<ApiResponse<PaginatedResult<AdminInboxMessage> & { stats?: AdminInboxStats }>> {
+    const res = await apiRequest<any>(
+      `/message/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`,
+      { token },
+    );
+    if (res.payload)
+      res.payload = { ...res.payload, page: (res.payload.page ?? []).map(mapInboxMessage) };
     return res as any;
   },
-  async updateStatus(token: string, messageId: string, status: string): Promise<ApiResponse<AdminInboxMessage>> {
-    const res = await apiRequest<any>(`/message/${messageId}?status=${encodeURIComponent(status)}`, { method: "POST", token });
+  async updateStatus(
+    token: string,
+    messageId: string,
+    status: string,
+  ): Promise<ApiResponse<AdminInboxMessage>> {
+    const res = await apiRequest<any>(
+      `/message/${messageId}?status=${encodeURIComponent(status)}`,
+      { method: "POST", token },
+    );
     if (res.payload) res.payload = mapInboxMessage(res.payload);
     return res as any;
   },
-  async reply(token: string, messageId: string, subject: string, message: string): Promise<ApiResponse<AdminInboxMessage>> {
+  async reply(
+    token: string,
+    messageId: string,
+    subject: string,
+    message: string,
+  ): Promise<ApiResponse<AdminInboxMessage>> {
     const res = await apiRequest<any>(`/message/reply/${messageId}`, {
       method: "POST",
       token,

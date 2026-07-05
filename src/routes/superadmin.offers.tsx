@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, Pill } from "@/components/superadmin/AdminUI";
-import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
+import {
+  Modal,
+  ConfirmDialog,
+  Field,
+  fieldCls,
+  selectCls,
+  ThumbnailUploader,
+  toast,
+} from "@/components/superadmin/AdminActions";
 import { fetchAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import {
   createAdminOffer,
@@ -12,7 +20,23 @@ import {
 import { uploadMediaFile } from "@/lib/media-api";
 import { type AdminOffer, type OfferCategory, type OfferTag } from "@/lib/admin-data";
 import { OfferCard, OfferDetailModal } from "@/components/offers/OfferCard";
-import { Plus, Edit3, Trash2, Search, Image as ImageIcon, FileText, Sparkles, Pin } from "lucide-react";
+import {
+  enrichOfferWithBrandAsset,
+  enrichOffersWithBrandAssets,
+  stripOfferBrandAssetFields,
+  type OfferBrandAsset,
+} from "@/lib/offer-brand-assets";
+import { VerificationBadge } from "@/components/VerificationBadge";
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Search,
+  Image as ImageIcon,
+  FileText,
+  Sparkles,
+  Pin,
+} from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/offers")({
   component: OffersAdmin,
@@ -79,7 +103,7 @@ function normalizeOffer(offer: AdminOffer): AdminOffer {
   };
 }
 
-type LiveBrand = Pick<AdminBrandRecord, "id" | "name" | "category">;
+type LiveBrand = OfferBrandAsset & Pick<AdminBrandRecord, "id" | "name" | "category">;
 
 function BrandPicker({
   brands,
@@ -89,7 +113,7 @@ function BrandPicker({
 }: {
   brands: LiveBrand[];
   value: string;
-  onPick: (brand: { name: string; id?: string; category?: string }) => void;
+  onPick: (brand: LiveBrand | { name: string; id?: string; category?: string }) => void;
   category?: OfferCategory;
 }) {
   const [q, setQ] = useState(value);
@@ -140,10 +164,22 @@ function BrandPicker({
                 onPick({ name: brand.name, id: brand.id, category: brand.category });
                 setOpen(false);
               }}
-              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs text-white hover:bg-white/10"
+              className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-xs text-white hover:bg-white/10"
             >
-              <span className="font-semibold">{brand.name}</span>
-              <span className="text-white/40">{brand.category}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-white text-[9px] font-black text-violet-800 ring-1 ring-white/10">
+                  {brand.thumbnail ? (
+                    <img src={brand.thumbnail} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    brand.name.slice(0, 2).toUpperCase()
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{brand.name}</span>
+                  <span className="block truncate text-[10px] text-white/40">{brand.category}</span>
+                </span>
+              </span>
+              {brand.status === "verified" && <VerificationBadge size="inline" />}
             </button>
           ))}
         </div>
@@ -167,17 +203,21 @@ function OffersAdmin() {
 
     async function load() {
       try {
-        const [offers, liveBrands] = await Promise.all([
-          fetchAdminOffers(),
-          fetchAdminBrands(),
-        ]);
+        const [offers, liveBrands] = await Promise.all([fetchAdminOffers(), fetchAdminBrands()]);
         if (cancelled) return;
         setItems(offers.map(normalizeOffer));
-        setBrands(liveBrands.map((brand) => ({
-          id: brand.id,
-          name: brand.name,
-          category: brand.category,
-        })));
+        setBrands(
+          liveBrands.map((brand) => ({
+            id: brand.id,
+            name: brand.name,
+            category: brand.category,
+            slug: brand.slug,
+            status: brand.status,
+            thumbnail: brand.thumbnail,
+            cover: brand.cover,
+            primaryColor: brand.primaryColor,
+          })),
+        );
       } catch (ex) {
         if (!cancelled) {
           toast.error(ex instanceof Error ? ex.message : "Unable to load offers");
@@ -193,7 +233,10 @@ function OffersAdmin() {
     };
   }, []);
 
-  const filtered = filter === "all" ? items : items.filter((offer) => offer.category === filter);
+  const displayItems = useMemo(() => enrichOffersWithBrandAssets(items, brands), [brands, items]);
+  const filtered =
+    filter === "all" ? displayItems : displayItems.filter((offer) => offer.category === filter);
+  const previewOffer = editing ? enrichOfferWithBrandAsset(editing, brands) : null;
   const isLimitedOffer = Boolean(editing?.limitedTime || editing?.tags?.includes("limited"));
 
   const toggleTag = (tag: OfferTag) => {
@@ -203,7 +246,10 @@ function OffersAdmin() {
     setEditing({
       ...editing,
       tags: nextTags,
-      limitedTime: tag === "limited" ? nextTags.includes("limited") || editing.limitedTime : editing.limitedTime,
+      limitedTime:
+        tag === "limited"
+          ? nextTags.includes("limited") || editing.limitedTime
+          : editing.limitedTime,
       expires:
         tag === "limited" && !nextTags.includes("limited") && !editing.limitedTime
           ? ""
@@ -232,8 +278,9 @@ function OffersAdmin() {
 
     setSaving(true);
     try {
+      const cleanEditing = stripOfferBrandAssetFields(editing);
       const payload: Partial<AdminOffer> = {
-        ...editing,
+        ...cleanEditing,
         limitedTime: isLimitedOffer,
         expires: isLimitedOffer ? editing.expires : "",
         createdAt: editing.createdAt || new Date().toISOString().slice(0, 10),
@@ -285,31 +332,68 @@ function OffersAdmin() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
-        <button onClick={() => setFilter("all")} className={`rounded-full px-3 py-1 text-xs font-semibold ${filter === "all" ? "bg-white/15 text-white" : "bg-white/5 text-white/60"}`}>All ({items.length})</button>
+        <button
+          onClick={() => setFilter("all")}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${filter === "all" ? "bg-white/15 text-white" : "bg-white/5 text-white/60"}`}
+        >
+          All ({items.length})
+        </button>
         {CATEGORIES.map((category) => (
-          <button key={category} onClick={() => setFilter(category)} className={`rounded-full px-3 py-1 text-xs font-semibold ${filter === category ? "bg-white/15 text-white" : "bg-white/5 text-white/60"}`}>
+          <button
+            key={category}
+            onClick={() => setFilter(category)}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${filter === category ? "bg-white/15 text-white" : "bg-white/5 text-white/60"}`}
+          >
             {category} ({items.filter((offer) => offer.category === category).length})
           </button>
         ))}
       </div>
 
       <Panel title={`Offers - ${filtered.length}`}>
-        <DataTable head={<><th>Brand</th><th>Title</th><th>Category</th><th>Mode</th><th>Code</th><th>Uses</th><th>Status</th><th>Expires</th><th></th></>}>
+        <DataTable
+          head={
+            <>
+              <th>Brand</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Mode</th>
+              <th>Code</th>
+              <th>Uses</th>
+              <th>Status</th>
+              <th>Expires</th>
+              <th></th>
+            </>
+          }
+        >
           {filtered.map((offer) => (
             <tr key={offer.id}>
               <td className="font-semibold">
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-white text-[9px] font-black text-violet-800 ring-1 ring-white/10">
+                    {offer.brandLogo ? (
+                      <img src={offer.brandLogo} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      offer.brand.slice(0, 2).toUpperCase()
+                    )}
+                  </span>
                   {offer.pinned && <Pin className="h-3 w-3 text-amber-300" />}
-                  {offer.brand}
+                  <span>{offer.brand}</span>
+                  {offer.brandStatus === "verified" && <VerificationBadge size="inline" />}
                 </span>
               </td>
               <td>{offer.title}</td>
-              <td><Pill tone="neutral">{offer.category}</Pill></td>
+              <td>
+                <Pill tone="neutral">{offer.category}</Pill>
+              </td>
               <td>
                 {offer.mode === "flyer" ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-cyan-300"><ImageIcon className="h-3 w-3" /> Flyer</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-cyan-300">
+                    <ImageIcon className="h-3 w-3" /> Flyer
+                  </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs text-fuchsia-300"><FileText className="h-3 w-3" /> Card</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-fuchsia-300">
+                    <FileText className="h-3 w-3" /> Card
+                  </span>
                 )}
               </td>
               <td className="font-mono text-xs text-fuchsia-300">{offer.code || "-"}</td>
@@ -322,15 +406,42 @@ function OffersAdmin() {
               <td className="text-xs text-muted-foreground">{offer.expires || "-"}</td>
               <td className="text-right">
                 <div className="flex justify-end gap-1">
-                  <button onClick={() => setPreviewing(normalizeOffer(offer))} className="rounded-md bg-cyan-500/15 px-2 py-1 text-xs font-bold text-cyan-200">Preview</button>
-                  <button onClick={() => setEditing(normalizeOffer(offer))} className="rounded-md bg-white/10 px-2 py-1"><Edit3 className="h-3 w-3 text-white" /></button>
-                  <button onClick={() => setDeleting(offer)} className="rounded-md bg-rose-500/15 px-2 py-1"><Trash2 className="h-3 w-3 text-rose-300" /></button>
+                  <button
+                    onClick={() => setPreviewing(offer)}
+                    className="rounded-md bg-cyan-500/15 px-2 py-1 text-xs font-bold text-cyan-200"
+                  >
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => setEditing(normalizeOffer(stripOfferBrandAssetFields(offer)))}
+                    className="rounded-md bg-white/10 px-2 py-1"
+                  >
+                    <Edit3 className="h-3 w-3 text-white" />
+                  </button>
+                  <button
+                    onClick={() => setDeleting(stripOfferBrandAssetFields(offer))}
+                    className="rounded-md bg-rose-500/15 px-2 py-1"
+                  >
+                    <Trash2 className="h-3 w-3 text-rose-300" />
+                  </button>
                 </div>
               </td>
             </tr>
           ))}
-          {loading && <tr><td colSpan={9} className="py-8 text-center text-sm text-muted-foreground">Loading offers...</td></tr>}
-          {!loading && filtered.length === 0 && <tr><td colSpan={9} className="py-8 text-center text-sm text-muted-foreground">No offers in this category yet.</td></tr>}
+          {loading && (
+            <tr>
+              <td colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                Loading offers...
+              </td>
+            </tr>
+          )}
+          {!loading && filtered.length === 0 && (
+            <tr>
+              <td colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                No offers in this category yet.
+              </td>
+            </tr>
+          )}
         </DataTable>
       </Panel>
 
@@ -342,9 +453,23 @@ function OffersAdmin() {
           size="lg"
           footer={
             <>
-              <button onClick={() => setEditing(null)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-              <button onClick={() => setPreviewing(editing)} className="rounded-xl bg-cyan-500/20 px-4 py-2 text-xs font-bold text-cyan-200">Preview</button>
-              <button onClick={() => void saveOffer()} disabled={saving} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60">
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setPreviewing(editing)}
+                className="rounded-xl bg-cyan-500/20 px-4 py-2 text-xs font-bold text-cyan-200"
+              >
+                Preview
+              </button>
+              <button
+                onClick={() => void saveOffer()}
+                disabled={saving}
+                className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+              >
                 {saving ? "Saving..." : "Save & sync"}
               </button>
             </>
@@ -352,18 +477,26 @@ function OffersAdmin() {
         >
           <div className="space-y-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <label className="mb-2 block text-[10px] uppercase tracking-wider text-white/50">Posting mode</label>
+              <label className="mb-2 block text-[10px] uppercase tracking-wider text-white/50">
+                Posting mode
+              </label>
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setEditing({ ...editing, mode: "form" })}
-                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${editing.mode === "form" ? "border-fuchsia-400/60 bg-fuchsia-500/10 text-white" : "border-white/10 bg-white/0 text-white/60"}`}>
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...editing, mode: "form" })}
+                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${editing.mode === "form" ? "border-fuchsia-400/60 bg-fuchsia-500/10 text-white" : "border-white/10 bg-white/0 text-white/60"}`}
+                >
                   <FileText className="h-4 w-4" />
                   <div>
                     <div className="font-bold">Structured card</div>
                     <div className="text-[10px] text-white/50">Auto-styled, branded card</div>
                   </div>
                 </button>
-                <button type="button" onClick={() => setEditing({ ...editing, mode: "flyer" })}
-                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${editing.mode === "flyer" ? "border-cyan-400/60 bg-cyan-500/10 text-white" : "border-white/10 bg-white/0 text-white/60"}`}>
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...editing, mode: "flyer" })}
+                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${editing.mode === "flyer" ? "border-cyan-400/60 bg-cyan-500/10 text-white" : "border-white/10 bg-white/0 text-white/60"}`}
+                >
                   <ImageIcon className="h-4 w-4" />
                   <div>
                     <div className="font-bold">Flyer image</div>
@@ -384,20 +517,44 @@ function OffersAdmin() {
                       ...editing,
                       brand: name,
                       brandId: id,
-                      category: category ? mapBrandCategoryToOfferCategory(category) : editing.category,
-                    })}
+                      category: category
+                        ? mapBrandCategoryToOfferCategory(category)
+                        : editing.category,
+                    })
+                  }
                 />
               </Field>
               <Field label="Category">
-                <select className={selectCls} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value as OfferCategory })}>
-                  {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                <select
+                  className={selectCls}
+                  value={editing.category}
+                  onChange={(e) =>
+                    setEditing({ ...editing, category: e.target.value as OfferCategory })
+                  }
+                >
+                  {CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Offer title" span={2}>
-                <input className={fieldCls} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="20% OFF all accounts" />
+                <input
+                  className={fieldCls}
+                  value={editing.title}
+                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                  placeholder="20% OFF all accounts"
+                />
               </Field>
               <Field label="Description" span={2}>
-                <textarea rows={3} className={fieldCls} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Short description users will see..." />
+                <textarea
+                  rows={3}
+                  className={fieldCls}
+                  value={editing.description ?? ""}
+                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                  placeholder="Short description users will see..."
+                />
               </Field>
 
               {editing.mode === "flyer" ? (
@@ -413,17 +570,34 @@ function OffersAdmin() {
               ) : (
                 <>
                   <Field label="Discount label">
-                    <input className={fieldCls} value={editing.discount ?? ""} onChange={(e) => setEditing({ ...editing, discount: e.target.value })} placeholder="20% OFF" />
+                    <input
+                      className={fieldCls}
+                      value={editing.discount ?? ""}
+                      onChange={(e) => setEditing({ ...editing, discount: e.target.value })}
+                      placeholder="20% OFF"
+                    />
                   </Field>
                   <Field label="Promo code">
-                    <input className={fieldCls} value={editing.code ?? ""} onChange={(e) => setEditing({ ...editing, code: e.target.value })} placeholder="MATCH" />
+                    <input
+                      className={fieldCls}
+                      value={editing.code ?? ""}
+                      onChange={(e) => setEditing({ ...editing, code: e.target.value })}
+                      placeholder="MATCH"
+                    />
                   </Field>
                   <Field label="Card accent" span={2}>
                     <div className="flex flex-wrap gap-1.5">
                       {ACCENT_PRESETS.map((preset) => (
-                        <button key={preset.name} type="button" onClick={() => setEditing({ ...editing, accentFrom: preset.from, accentTo: preset.to })}
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() =>
+                            setEditing({ ...editing, accentFrom: preset.from, accentTo: preset.to })
+                          }
                           className={`h-8 w-8 rounded-lg ring-2 ${editing.accentFrom === preset.from ? "ring-white" : "ring-transparent"}`}
-                          style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                          style={{
+                            background: `linear-gradient(135deg, ${preset.from}, ${preset.to})`,
+                          }}
                           title={preset.name}
                         />
                       ))}
@@ -433,11 +607,21 @@ function OffersAdmin() {
               )}
 
               <Field label="Apply / CTA URL" span={2}>
-                <input className={fieldCls} value={editing.ctaUrl ?? ""} onChange={(e) => setEditing({ ...editing, ctaUrl: e.target.value })} placeholder="https://brand.com/?ref=rebateboard" />
+                <input
+                  className={fieldCls}
+                  value={editing.ctaUrl ?? ""}
+                  onChange={(e) => setEditing({ ...editing, ctaUrl: e.target.value })}
+                  placeholder="https://brand.com/?ref=rebateboard"
+                />
               </Field>
 
               <Field label="Start date">
-                <input type="date" className={fieldCls} value={editing.startDate ?? ""} onChange={(e) => setEditing({ ...editing, startDate: e.target.value })} />
+                <input
+                  type="date"
+                  className={fieldCls}
+                  value={editing.startDate ?? ""}
+                  onChange={(e) => setEditing({ ...editing, startDate: e.target.value })}
+                />
               </Field>
               <Field label="Offer duration">
                 <label className="flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white">
@@ -448,7 +632,10 @@ function OffersAdmin() {
                       setEditing({
                         ...editing,
                         limitedTime: e.target.checked,
-                        expires: e.target.checked || editing.tags?.includes("limited") ? editing.expires : "",
+                        expires:
+                          e.target.checked || editing.tags?.includes("limited")
+                            ? editing.expires
+                            : "",
                       })
                     }
                   />
@@ -467,7 +654,13 @@ function OffersAdmin() {
               )}
 
               <Field label="Status">
-                <select className={selectCls} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as AdminOffer["status"] })}>
+                <select
+                  className={selectCls}
+                  value={editing.status}
+                  onChange={(e) =>
+                    setEditing({ ...editing, status: e.target.value as AdminOffer["status"] })
+                  }
+                >
                   <option value="active">active</option>
                   <option value="paused">paused</option>
                   <option value="expired">expired</option>
@@ -475,7 +668,11 @@ function OffersAdmin() {
               </Field>
               <Field label="Pin to top">
                 <label className="flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white">
-                  <input type="checkbox" checked={!!editing.pinned} onChange={(e) => setEditing({ ...editing, pinned: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    checked={!!editing.pinned}
+                    onChange={(e) => setEditing({ ...editing, pinned: e.target.checked })}
+                  />
                   Featured / pinned
                 </label>
               </Field>
@@ -485,8 +682,12 @@ function OffersAdmin() {
                   {TAGS.map((tag) => {
                     const active = editing.tags?.includes(tag);
                     return (
-                      <button key={tag} type="button" onClick={() => toggleTag(tag)}
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${active ? "bg-fuchsia-500/30 text-fuchsia-100 ring-1 ring-fuchsia-400/50" : "bg-white/5 text-white/60"}`}>
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${active ? "bg-fuchsia-500/30 text-fuchsia-100 ring-1 ring-fuchsia-400/50" : "bg-white/5 text-white/60"}`}
+                      >
                         {tag}
                       </button>
                     );
@@ -495,7 +696,13 @@ function OffersAdmin() {
               </Field>
 
               <Field label="Terms & conditions" span={2}>
-                <textarea rows={2} className={fieldCls} value={editing.terms ?? ""} onChange={(e) => setEditing({ ...editing, terms: e.target.value })} placeholder="First order only, new accounts, etc." />
+                <textarea
+                  rows={2}
+                  className={fieldCls}
+                  value={editing.terms ?? ""}
+                  onChange={(e) => setEditing({ ...editing, terms: e.target.value })}
+                  placeholder="First order only, new accounts, etc."
+                />
               </Field>
             </div>
 
@@ -503,7 +710,7 @@ function OffersAdmin() {
               <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/50">
                 <Sparkles className="h-3 w-3 text-fuchsia-400" /> Live preview
               </div>
-              <OfferCard offer={editing} />
+              {previewOffer && <OfferCard offer={previewOffer} />}
             </div>
           </div>
         </Modal>

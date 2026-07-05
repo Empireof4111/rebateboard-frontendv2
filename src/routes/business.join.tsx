@@ -28,7 +28,7 @@ function BusinessJoinPage() {
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-10">
+      <main className="container-app py-8 sm:py-10">
         {/* HERO */}
         <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-8 md:p-12">
           <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />

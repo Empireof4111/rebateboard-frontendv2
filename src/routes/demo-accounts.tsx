@@ -18,6 +18,8 @@ import {
   type DemoAccountRecord,
 } from "@/lib/demo-accounts-api";
 import { toast } from "@/components/superadmin/AdminActions";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/demo-accounts")({
   component: PublicDemoAccountsPage,
@@ -86,15 +88,16 @@ function PublicDemoAccountsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] px-4 py-10 text-white">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+      <SiteHeader />
+      <main className="container-app space-y-6 py-8 sm:py-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-fuchsia-200 ring-1 ring-white/10">
               <Monitor className="h-3.5 w-3.5" />
               Live Demo Access
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-white md:text-5xl">
+            <h1 className="mt-4 text-3xl font-bold text-white md:text-5xl">
               Public Demo Accounts
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70">
@@ -254,7 +257,8 @@ function PublicDemoAccountsPage() {
             ))}
           </div>
         )}
-      </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }
@@ -263,7 +267,7 @@ function PublicStat({ label, value, hint }: { label: string; value: string; hint
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl">
       <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">{label}</div>
-      <div className="mt-2 text-3xl font-bold tracking-tight text-white">{value}</div>
+      <div className="mt-2 text-3xl font-bold text-white">{value}</div>
       <div className="mt-2 text-xs text-white/55">{hint}</div>
     </div>
   );

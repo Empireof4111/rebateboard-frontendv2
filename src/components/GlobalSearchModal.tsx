@@ -1,26 +1,43 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  Search,
-  X,
   ArrowRight,
-  TrendingUp,
-  Clock,
-  Sparkles,
-  Flame,
-  Building2,
-  Coins,
+  BadgePercent,
   BarChart3,
-  Calculator,
-  Calendar,
-  Wallet,
   BookOpen,
-  Trophy,
+  Building2,
+  Calendar,
+  Calculator,
+  Clock,
+  Coins,
+  Flame,
+  HelpCircle,
+  Newspaper,
+  Search,
+  Sparkles,
   Trash2,
+  Trophy,
+  Wallet,
+  X,
 } from "lucide-react";
-import { TBI_BRANDS } from "@/lib/tbi-data";
-import { fetchPublicSearchTrending, logSearchEvent } from "@/lib/search-analytics";
+import {
+  fetchPublicAdminBrands,
+  type AdminBrandRecord,
+} from "@/lib/admin-brands-api";
+import { fetchPublicOffers, type AdminOffer } from "@/lib/offers-api";
+import {
+  articleRouteId,
+  fetchPublicBlogPosts,
+  fetchPublicFaqs,
+  type BlogPost,
+  type Faq,
+} from "@/lib/admin-api";
+import { fetchTbiExplore, type TbiProfile } from "@/lib/tbi-api";
+import { resolveCountryDisplay } from "@/lib/country-format";
+import { isPublishedBrand } from "@/lib/public-brand";
+
+type SearchIcon = typeof Search;
 
 type Hit = {
   id: string;
@@ -28,18 +45,24 @@ type Hit = {
   sub: string;
   group: string;
   to: string;
-  icon?: typeof Search;
+  icon?: SearchIcon;
+  logo?: string;
+  tbi?: number;
+  country?: string;
+  countryFlag?: string;
+  brandName?: string;
+  terms?: string[];
 };
 
 const QUICK_LINKS: Hit[] = [
-  { id: "ql-brokers", label: "Brokers", sub: "Browse all brokers", group: "Quick links", to: "/brokers", icon: Building2 },
-  { id: "ql-prop", label: "Prop Firms", sub: "Top rated programs", group: "Quick links", to: "/programs", icon: Trophy },
-  { id: "ql-ex", label: "Crypto Exchanges", sub: "Lowest fees, regulated", group: "Quick links", to: "/exchanges", icon: Coins },
-  { id: "ql-pay", label: "Payouts", sub: "Live payout tracker", group: "Quick links", to: "/payouts", icon: Wallet },
-  { id: "ql-tbi", label: "TBI Explorer", sub: "Trust Brand Index", group: "Quick links", to: "/tbi/explore", icon: BarChart3 },
-  { id: "ql-cal", label: "Economic Calendar", sub: "Macro events & releases", group: "Quick links", to: "/economic-calendar", icon: Calendar },
-  { id: "ql-acad", label: "Academy", sub: "Lessons & certifications", group: "Quick links", to: "/academy", icon: BookOpen },
-  { id: "ql-comp", label: "Compare", sub: "Broker vs broker", group: "Quick links", to: "/compare", icon: Calculator },
+  { id: "ql-brokers", label: "Brokers", sub: "Browse public broker rankings", group: "Jump to", to: "/brokers", icon: Building2 },
+  { id: "ql-prop", label: "Prop Firms", sub: "Funding programs and challenges", group: "Jump to", to: "/programs", icon: Trophy },
+  { id: "ql-ex", label: "Crypto Exchanges", sub: "Crypto platforms and fee rebates", group: "Jump to", to: "/exchanges", icon: Coins },
+  { id: "ql-pay", label: "Payouts", sub: "Verified payout tracker", group: "Jump to", to: "/payouts", icon: Wallet },
+  { id: "ql-tbi", label: "TBI Explorer", sub: "Trust Brand Index", group: "Jump to", to: "/tbi/explore", icon: BarChart3 },
+  { id: "ql-cal", label: "Economic Calendar", sub: "Macro events and releases", group: "Jump to", to: "/economic-calendar", icon: Calendar },
+  { id: "ql-acad", label: "Academy", sub: "Trading lessons and guides", group: "Jump to", to: "/academy", icon: BookOpen },
+  { id: "ql-comp", label: "Compare", sub: "Compare brands side by side", group: "Jump to", to: "/compare", icon: Calculator },
 ];
 
 const HISTORY_KEY = "rb_global_search_history";
@@ -58,67 +81,203 @@ function readHistory(): string[] {
 function writeHistory(items: string[]) {
   try {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, MAX_HISTORY)));
-  } catch {}
+  } catch {
+    /* localStorage may be unavailable */
+  }
 }
 
-function buildBrandHits(): Hit[] {
-  return TBI_BRANDS.map((brand) => ({
-    id: `brand-${brand.slug}`,
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function initials(value: string) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function normalizeScore(value: unknown) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return undefined;
+  return num > 10 ? num / 10 : num;
+}
+
+function formatTbi(value?: number) {
+  if (!value) return "";
+  return value.toFixed(1).replace(/\.0$/, "");
+}
+
+function brandGroup(category: string) {
+  if (/broker/i.test(category)) return "Brokers";
+  if (/exchange/i.test(category)) return "Exchanges";
+  if (/prop/i.test(category)) return "Prop Firms";
+  if (/tool|software|education/i.test(category)) return "Tools";
+  return "Brands";
+}
+
+function brandRoute(brand: Pick<AdminBrandRecord, "slug">) {
+  return `/firm/${brand.slug}`;
+}
+
+function resolveBrandCountry(brand: AdminBrandRecord) {
+  const identity = asRecord(brand.identity);
+  const profile = asRecord(brand.profile);
+  return resolveCountryDisplay(identity.country, identity.hq, profile.country);
+}
+
+function buildBrandHit(brand: AdminBrandRecord, tbi?: TbiProfile): Hit {
+  const country = resolveBrandCountry(brand);
+  const score = normalizeScore(
+    tbi?.finalScore ||
+      tbi?.preliminaryScore ||
+      tbi?.rawScore ||
+      brand.trust?.tbiScore100 ||
+      brand.trust?.tbiScore ||
+      brand.tbi,
+  );
+
+  return {
+    id: `brand-${brand.id}`,
     label: brand.name,
-    sub: `${brand.category} | TBI ${brand.score}/${brand.maxScore} | ${brand.country}`,
-    group:
-      brand.category === "Prop Firm"
-        ? "Prop Firms"
-        : brand.category === "Broker"
-          ? "Brokers"
-          : brand.category === "Exchange"
-            ? "Exchanges"
-            : "Tools",
-    to: `/tbi/brand/${brand.slug}`,
-  }));
+    sub: `${brand.category}${score ? ` | TBI ${formatTbi(score)}` : ""}${
+      country.label ? ` | ${country.label}` : ""
+    }`,
+    group: brandGroup(brand.category),
+    to: brandRoute(brand),
+    logo: brand.thumbnail,
+    tbi: score,
+    country: country.label,
+    countryFlag: country.flag,
+    terms: [
+      brand.name,
+      brand.slug,
+      brand.category,
+      text(brand.identity?.tagline),
+      text(brand.identity?.description),
+      text(brand.website),
+      text(country.label),
+    ],
+  };
+}
+
+function buildOfferHit(offer: AdminOffer, brand?: Hit): Hit {
+  return {
+    id: `offer-${offer.id}`,
+    label: `${offer.brand} - ${offer.discount || offer.title}`,
+    sub: `${offer.category} | ${offer.title}${offer.code ? ` | Code ${offer.code}` : ""}`,
+    group: "Offers",
+    to: "/offers",
+    icon: BadgePercent,
+    logo: brand?.logo,
+    tbi: brand?.tbi,
+    country: brand?.country,
+    countryFlag: brand?.countryFlag,
+    brandName: offer.brand,
+    terms: [offer.brand, offer.title, offer.description, offer.discount, offer.code, offer.category],
+  };
+}
+
+function buildBlogHit(post: BlogPost): Hit {
+  return {
+    id: `blog-${post.id}`,
+    label: post.title,
+    sub: `${post.tag || "Blog"}${post.readTime ? ` | ${post.readTime}` : ""}`,
+    group: "Articles",
+    to: `/articles/${articleRouteId(post)}`,
+    icon: Newspaper,
+    logo: post.cover,
+    terms: [post.title, post.excerpt, post.tag, post.tags?.join(" ")],
+  };
+}
+
+function buildFaqHit(faq: Faq): Hit {
+  return {
+    id: `faq-${faq.id}`,
+    label: faq.question,
+    sub: `${faq.category || "FAQ"} | Help center`,
+    group: "FAQs",
+    to: "/faqs",
+    icon: HelpCircle,
+    terms: [faq.question, faq.answer, faq.category],
+  };
+}
+
+function matches(hit: Hit, term: string) {
+  const haystack = [hit.label, hit.sub, hit.group, hit.brandName, ...(hit.terms ?? [])]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(term);
 }
 
 export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [history, setHistory] = useState<string[]>([]);
-  const [trendingTerms, setTrendingTerms] = useState<string[]>([]);
-  const [trendingBrands, setTrendingBrands] = useState<Hit[]>([]);
+  const [brandHits, setBrandHits] = useState<Hit[]>([]);
+  const [contentHits, setContentHits] = useState<Hit[]>([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const brandHits = useMemo(buildBrandHits, []);
-  const allHits = useMemo(() => [...brandHits, ...QUICK_LINKS], [brandHits]);
-
   useEffect(() => {
+    if (!open) return;
+
     let active = true;
-    const byLabel = new Map(brandHits.map((brand) => [brand.label.toLowerCase(), brand]));
+    setLoading(true);
 
-    const loadTrending = async () => {
-      try {
-        const payload = await fetchPublicSearchTrending();
-        if (!active) return;
-        const resolvedTerms = payload.searches.resolved ?? payload.searches.items ?? [];
-        const resolvedBrandLabels = payload.brands.resolved ?? payload.brands.items ?? [];
-        setTrendingTerms(resolvedTerms.slice(0, 8));
-        const resolvedBrands = resolvedBrandLabels
-          .map((label) => byLabel.get(label.toLowerCase()))
-          .filter((item): item is Hit => Boolean(item));
-        setTrendingBrands(resolvedBrands.length ? resolvedBrands : brandHits.slice(0, 6));
-      } catch {
-        if (!active) return;
-        setTrendingTerms(["FTMO", "Binance", "IC Markets", "Bybit", "Best rebates"]);
-        setTrendingBrands(brandHits.slice(0, 6));
-      }
-    };
+    async function loadSearchData() {
+      const [brands, offers, posts, faqs, tbiProfiles] = await Promise.all([
+        fetchPublicAdminBrands(),
+        fetchPublicOffers(),
+        fetchPublicBlogPosts(0, 80),
+        fetchPublicFaqs(0, 80),
+        fetchTbiExplore(),
+      ]);
 
-    if (open) {
-      void loadTrending();
+      if (!active) return;
+
+      const tbiBySlug = new Map(tbiProfiles.map((profile) => [profile.slug, profile]));
+      const nextBrands = brands
+        .filter(isPublishedBrand)
+        .map((brand) => buildBrandHit(brand, tbiBySlug.get(brand.slug)))
+        .sort((a, b) => (b.tbi ?? 0) - (a.tbi ?? 0));
+      const byBrandName = new Map(nextBrands.map((hit) => [hit.label.toLowerCase(), hit]));
+
+      const nextContent = [
+        ...offers
+          .filter((offer) => offer.status === "active")
+          .map((offer) => buildOfferHit(offer, byBrandName.get(offer.brand.toLowerCase()))),
+        ...posts.map(buildBlogHit),
+        ...faqs.map(buildFaqHit),
+        ...QUICK_LINKS,
+      ];
+
+      setBrandHits(nextBrands);
+      setContentHits(nextContent);
+      setLoading(false);
     }
+
+    void loadSearchData().catch(() => {
+      if (!active) return;
+      setBrandHits([]);
+      setContentHits(QUICK_LINKS);
+      setLoading(false);
+    });
 
     return () => {
       active = false;
     };
-  }, [brandHits, open]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -137,17 +296,18 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
     };
   }, [open, onClose]);
 
+  const allHits = useMemo(() => [...brandHits, ...contentHits], [brandHits, contentHits]);
+
+  const trendingBrands = useMemo(() => brandHits.slice(0, 6), [brandHits]);
+  const trendingSearches = useMemo(() => {
+    const offerHits = contentHits.filter((hit) => hit.group === "Offers").slice(0, 3);
+    return [...brandHits.slice(0, 3), ...offerHits].slice(0, 6);
+  }, [brandHits, contentHits]);
+
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return [];
-    return allHits
-      .filter(
-        (hit) =>
-          hit.label.toLowerCase().includes(term) ||
-          hit.sub.toLowerCase().includes(term) ||
-          hit.group.toLowerCase().includes(term),
-      )
-      .slice(0, 30);
+    return allHits.filter((hit) => matches(hit, term)).slice(0, 36);
   }, [q, allHits]);
 
   const grouped = useMemo(() => {
@@ -161,57 +321,41 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
   function pushHistory(term: string) {
     const nextTerm = term.trim();
     if (!nextTerm) return;
-    const next = [nextTerm, ...history.filter((item) => item.toLowerCase() !== nextTerm.toLowerCase())].slice(0, MAX_HISTORY);
+    const next = [
+      nextTerm,
+      ...history.filter((item) => item.toLowerCase() !== nextTerm.toLowerCase()),
+    ].slice(0, MAX_HISTORY);
     setHistory(next);
     writeHistory(next);
   }
 
-  function go(to: string, term?: string, hit?: Hit) {
-    if (term) pushHistory(term);
-    if (hit) {
-      logSearchEvent({
-        type: "click",
-        term: term ?? hit.label,
-        resultLabel: hit.label,
-        resultGroup: hit.group,
-        to: hit.to,
-        surface: "landing",
-      });
-    }
+  function go(hit: Hit, term?: string) {
+    pushHistory(term ?? hit.label);
     onClose();
-    navigate({ to });
+    navigate({ to: hit.to });
   }
 
   function submitFreeText() {
     const term = q.trim();
     if (!term) return;
     pushHistory(term);
-    if (results[0]) {
-      logSearchEvent({ type: "search", term, surface: "landing" });
-      go(results[0].to, term, results[0]);
-    } else {
-      logSearchEvent({ type: "no_results", term, surface: "landing" });
-      onClose();
-      navigate({ to: "/tbi/explore" });
-    }
+    if (results[0]) go(results[0], term);
   }
 
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[#0a0418]/85 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[#090313]/82 p-4 backdrop-blur-md"
       onClick={onClose}
     >
-      <div className="pointer-events-none absolute left-1/2 top-32 h-[420px] w-[680px] -translate-x-1/2 rounded-full bg-fuchsia-500/25 blur-3xl" />
-      <div className="pointer-events-none absolute left-1/2 top-48 h-[320px] w-[520px] -translate-x-1/2 rounded-full bg-violet-500/20 blur-3xl" />
-
+      <div className="pointer-events-none absolute left-1/2 top-20 h-[460px] w-[720px] -translate-x-1/2 rounded-full bg-fuchsia-500/18 blur-3xl" />
       <div
         onClick={(event) => event.stopPropagation()}
-        className="relative mt-24 w-full max-w-2xl overflow-hidden rounded-3xl border-2 border-fuchsia-400/30 bg-gradient-to-b from-[#1f0e44] to-[#160933] shadow-[0_30px_80px_-20px_rgba(192,132,252,0.55)] ring-1 ring-white/10"
+        className="relative mt-20 w-full max-w-4xl overflow-hidden rounded-[2rem] bg-[#12051f]/96 ring-1 ring-fuchsia-300/20"
       >
-        <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
-          <Search className="h-4 w-4 text-fuchsia-300" />
+        <div className="flex items-center gap-3 border-b border-white/8 px-5 py-4">
+          <Search className="h-4 w-4 text-fuchsia-200" />
           <input
             ref={inputRef}
             value={q}
@@ -219,63 +363,59 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
             onKeyDown={(event) => {
               if (event.key === "Enter") submitFreeText();
             }}
-            placeholder="Search brokers, prop firms, exchanges, payouts, tools..."
-            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-muted-foreground"
+            placeholder="Search brands, offers, articles, FAQs, payouts, tools..."
+            className="w-full bg-transparent text-base text-white outline-none placeholder:text-white/38"
           />
           <button
             onClick={onClose}
-            className="grid h-7 w-7 place-items-center rounded-full bg-white/5 text-white hover:bg-white/10"
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.045] text-white/70 transition hover:bg-white/[0.09] hover:text-white"
             aria-label="Close search"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="max-h-[65vh] overflow-y-auto p-3">
-          {q.trim().length === 0 && (
-            <div className="space-y-5">
+        <div className="max-h-[68vh] overflow-y-auto p-4 sm:p-5">
+          {q.trim().length === 0 ? (
+            <div className="space-y-6">
               <section>
                 <SectionHeader icon={Flame} label="Trending searches" />
-                <div className="flex flex-wrap gap-2 px-1">
-                  {trendingTerms.map((term) => (
-                    <button
-                      key={term}
-                      onClick={() => setQ(term)}
-                      className="glass-pill rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white hover:border-fuchsia-400/40 hover:bg-fuchsia-500/10"
-                    >
-                      <TrendingUp className="mr-1 inline h-3 w-3 text-fuchsia-300" />
-                      {term}
-                    </button>
-                  ))}
-                </div>
+                {loading ? (
+                  <LoadingRows />
+                ) : trendingSearches.length ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {trendingSearches.map((hit) => (
+                      <SuggestionCard key={hit.id} hit={hit} onClick={() => go(hit)} />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState label="Published brands and offers will appear here." />
+                )}
               </section>
 
               {history.length > 0 && (
                 <section>
-                  <div className="flex items-center justify-between px-1">
-                    <SectionHeader icon={Clock} label="Recent searches" inline />
+                  <div className="flex items-center justify-between">
+                    <SectionHeader icon={Clock} label="Recent searches" compact />
                     <button
                       onClick={() => {
                         setHistory([]);
                         writeHistory([]);
                       }}
-                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-white"
+                      className="flex items-center gap-1 text-[10px] text-white/42 transition hover:text-white"
                     >
                       <Trash2 className="h-3 w-3" /> Clear
                     </button>
                   </div>
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {history.map((item) => (
                       <button
                         key={item}
                         onClick={() => setQ(item)}
-                        className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-white hover:bg-white/5"
+                        className="inline-flex items-center gap-2 rounded-full bg-white/[0.045] px-3 py-1.5 text-xs text-white/78 transition hover:bg-white/[0.08] hover:text-white"
                       >
-                        <span className="flex items-center gap-2 truncate">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                          {item}
-                        </span>
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Clock className="h-3 w-3 text-white/38" />
+                        {item}
                       </button>
                     ))}
                   </div>
@@ -284,81 +424,48 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
 
               <section>
                 <SectionHeader icon={Sparkles} label="Trending brands" />
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-                  {trendingBrands.map((brand) => (
-                    <button
-                      key={brand.id}
-                      onClick={() => go(brand.to, brand.label, brand)}
-                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/5"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{brand.label}</div>
-                        <div className="truncate text-[11px] text-muted-foreground">{brand.sub}</div>
-                      </div>
-                      <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                    </button>
-                  ))}
-                </div>
+                {loading ? (
+                  <LoadingRows />
+                ) : trendingBrands.length ? (
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {trendingBrands.map((brand) => (
+                      <BrandSearchCard key={brand.id} hit={brand} onClick={() => go(brand)} />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState label="No published brands are available yet." />
+                )}
               </section>
 
               <section>
                 <SectionHeader icon={ArrowRight} label="Jump to" />
-                <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
-                  {QUICK_LINKS.map((link) => {
-                    const Icon = link.icon ?? ArrowRight;
-                    return (
-                      <button
-                        key={link.id}
-                        onClick={() => go(link.to, link.label, link)}
-                        className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-left text-xs text-white hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10"
-                      >
-                        <Icon className="h-3.5 w-3.5 text-fuchsia-300" />
-                        <span className="truncate">{link.label}</span>
-                      </button>
-                    );
-                  })}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {QUICK_LINKS.map((link) => (
+                    <QuickLinkButton key={link.id} hit={link} onClick={() => go(link)} />
+                  ))}
                 </div>
               </section>
             </div>
-          )}
-
-          {q.trim().length > 0 && (
+          ) : (
             <div>
               {Object.entries(grouped).length === 0 ? (
-                <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-                  No matches for <span className="text-white">"{q}"</span>. Press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> to explore.
+                <div className="px-4 py-14 text-center text-sm text-white/50">
+                  No matches for <span className="text-white">"{q}"</span>.
                 </div>
               ) : (
                 Object.entries(grouped).map(([group, hits]) => (
-                  <div key={group} className="mb-2">
-                    <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{group}</div>
-                    {hits.map((hit) => (
-                      <button
-                        key={hit.id}
-                        onClick={() => {
-                          logSearchEvent({ type: "search", term: q.trim(), surface: "landing" });
-                          go(hit.to, hit.label, hit);
-                        }}
-                        className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/5"
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{hit.label}</div>
-                          <div className="truncate text-[11px] text-muted-foreground">{hit.sub}</div>
-                        </div>
-                        <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                      </button>
-                    ))}
+                  <div key={group} className="mb-5 last:mb-0">
+                    <SectionHeader icon={groupIcon(group)} label={group} />
+                    <div className="space-y-1">
+                      {hits.map((hit) => (
+                        <ResultRow key={hit.id} hit={hit} onClick={() => go(hit, q.trim())} />
+                      ))}
+                    </div>
                   </div>
                 ))
               )}
             </div>
           )}
-        </div>
-
-        <div className="border-t border-white/5 px-4 py-2 text-[10px] text-muted-foreground">
-          <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono">Ctrl K</kbd> to open |
-          <kbd className="ml-1 rounded bg-white/10 px-1.5 py-0.5 font-mono">Enter</kbd> to go |
-          <kbd className="ml-1 rounded bg-white/10 px-1.5 py-0.5 font-mono">Esc</kbd> to close
         </div>
       </div>
     </div>,
@@ -366,10 +473,148 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
   );
 }
 
-function SectionHeader({ icon: Icon, label, inline }: { icon: typeof Search; label: string; inline?: boolean }) {
+function groupIcon(group: string): SearchIcon {
+  if (group === "Brokers") return Building2;
+  if (group === "Prop Firms") return Trophy;
+  if (group === "Exchanges") return Coins;
+  if (group === "Offers") return BadgePercent;
+  if (group === "Articles") return Newspaper;
+  if (group === "FAQs") return HelpCircle;
+  if (group === "Tools") return Calculator;
+  return Search;
+}
+
+function SectionHeader({
+  icon: Icon,
+  label,
+  compact,
+}: {
+  icon: SearchIcon;
+  label: string;
+  compact?: boolean;
+}) {
   return (
-    <div className={`flex items-center gap-1.5 px-1 ${inline ? "" : "pb-2"} text-[10px] font-semibold uppercase tracking-wider text-muted-foreground`}>
-      <Icon className="h-3 w-3 text-fuchsia-300" />
+    <div
+      className={`flex items-center gap-1.5 ${
+        compact ? "" : "mb-2"
+      } text-[10px] font-bold uppercase tracking-[0.18em] text-white/48`}
+    >
+      <Icon className="h-3.5 w-3.5 text-fuchsia-300" />
+      {label}
+    </div>
+  );
+}
+
+function BrandAvatar({ hit, className = "h-10 w-10" }: { hit: Hit; className?: string }) {
+  const Icon = hit.icon;
+  return (
+    <span
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-xl bg-white/[0.055] text-xs font-black text-white ring-1 ring-white/8 ${className}`}
+    >
+      {hit.logo ? (
+        <img src={hit.logo} alt="" className="h-full w-full object-cover" loading="lazy" />
+      ) : Icon ? (
+        <Icon className="h-4 w-4 text-fuchsia-200" />
+      ) : (
+        initials(hit.label)
+      )}
+    </span>
+  );
+}
+
+function TbiBadge({ value }: { value?: number }) {
+  if (!value) return null;
+  return (
+    <span className="rounded-full bg-fuchsia-400/12 px-2 py-0.5 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-300/18">
+      TBI {formatTbi(value)}
+    </span>
+  );
+}
+
+function SuggestionCard({ hit, onClick }: { hit: Hit; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex min-w-0 items-center gap-3 rounded-2xl bg-white/[0.035] p-3 text-left transition hover:bg-white/[0.07]"
+    >
+      <BrandAvatar hit={hit} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-white">{hit.label}</span>
+        <span className="mt-0.5 block truncate text-[11px] text-white/45">{hit.sub}</span>
+      </span>
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/32 transition group-hover:text-white" />
+    </button>
+  );
+}
+
+function BrandSearchCard({ hit, onClick }: { hit: Hit; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex min-w-0 items-center gap-3 rounded-2xl bg-white/[0.035] p-3 text-left transition hover:bg-white/[0.07]"
+    >
+      <BrandAvatar hit={hit} className="h-12 w-12" />
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-bold text-white">{hit.label}</span>
+          <TbiBadge value={hit.tbi} />
+        </span>
+        <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-white/45">
+          {hit.countryFlag ? <span className="text-sm leading-none">{hit.countryFlag}</span> : null}
+          <span className="truncate">{hit.group}</span>
+          {hit.country ? <span className="truncate">| {hit.country}</span> : null}
+        </span>
+      </span>
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/32 transition group-hover:text-white" />
+    </button>
+  );
+}
+
+function QuickLinkButton({ hit, onClick }: { hit: Hit; onClick: () => void }) {
+  const Icon = hit.icon ?? ArrowRight;
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-2xl bg-white/[0.035] px-3 py-2.5 text-left text-xs text-white/82 transition hover:bg-white/[0.075] hover:text-white"
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+      <span className="truncate">{hit.label}</span>
+    </button>
+  );
+}
+
+function ResultRow({ hit, onClick }: { hit: Hit; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex w-full min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-white/[0.06]"
+    >
+      <BrandAvatar hit={hit} />
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-semibold text-white">{hit.label}</span>
+          <TbiBadge value={hit.tbi} />
+        </span>
+        <span className="mt-0.5 block truncate text-[11px] text-white/45">{hit.sub}</span>
+      </span>
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/32 transition group-hover:text-white" />
+    </button>
+  );
+}
+
+function LoadingRows() {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {[0, 1, 2, 3].map((index) => (
+        <div key={index} className="h-16 animate-pulse rounded-2xl bg-white/[0.035]" />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.03] p-5 text-center text-xs text-white/42">
       {label}
     </div>
   );

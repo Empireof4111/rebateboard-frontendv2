@@ -1,47 +1,50 @@
-import logoSrc from "@/assets/logo.jpg";
+import logoMarkSrc from "@/assets/rebateboard-mark.png";
 
 type LogoProps = {
   className?: string;
-  /** Show only the icon mark (cropped). Default false shows full wordmark. */
+  /** Show only the icon mark. Default false shows icon + wordmark. */
   iconOnly?: boolean;
   /** Tailwind height class, e.g. "h-9". Width auto-adjusts. */
   heightClass?: string;
+  /** Deprecated: kept for callers that still pass width classes. */
+  widthClass?: string;
   alt?: string;
 };
 
-/**
- * RebateBoard logo. The source asset has generous white padding around the
- * mark, so we render it on a white rounded chip to keep the brand readable
- * on the dark UI without distortion.
- */
 export function Logo({
   className = "",
   iconOnly = false,
   heightClass = "h-9",
+  widthClass: _widthClass = "",
   alt = "RebateBoard",
 }: LogoProps) {
+  const mark = (
+    <span className={`inline-flex ${heightClass} aspect-square shrink-0 items-center justify-center`} aria-hidden>
+      <img
+        src={logoMarkSrc}
+        alt=""
+        className="h-[128%] w-[128%] max-w-none object-contain"
+      />
+    </span>
+  );
+
   if (iconOnly) {
-    // Crop to the icon portion (~ left third of the wordmark image)
     return (
-      <div
-        className={`relative ${heightClass} aspect-square overflow-hidden rounded-xl bg-white ${className}`}
-        aria-label={alt}
-      >
-        <img
-          src={logoSrc}
-          alt={alt}
-          className="absolute left-0 top-1/2 h-[170%] -translate-y-1/2 max-w-none"
-          style={{ width: "auto" }}
-        />
-      </div>
+      <span className={`inline-flex ${className}`} aria-label={alt}>
+        {mark}
+      </span>
     );
   }
 
   return (
-    <img
-      src={logoSrc}
-      alt={alt}
-      className={`${heightClass} w-auto rounded-md bg-white px-2 py-1 ${className}`}
-    />
+    <span
+      className={`inline-flex items-center gap-2 ${className}`}
+      aria-label={alt}
+    >
+      {mark}
+      <span className="whitespace-nowrap text-[1.42rem] font-black leading-none text-white sm:text-[1.58rem]">
+        RebateBoard
+      </span>
+    </span>
   );
 }

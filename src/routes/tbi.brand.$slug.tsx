@@ -86,7 +86,7 @@ function BrandPage() {
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="container-app py-6 sm:py-8">
         <Link to="/tbi/explore" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3 w-3" /> Back to Explore
         </Link>

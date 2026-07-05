@@ -1,16 +1,64 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft, Star, Play, Check, X, ChevronLeft, ChevronRight,
-  Headphones, Building2, FileText, Eye, MessageSquare,
+  ArrowLeft,
+  Play,
+  ChevronDown,
+  Headphones,
+  WalletCards,
+  ClipboardCheck,
+  LineChart,
+  CircleDollarSign,
+  ReceiptText,
+  Gauge,
+  MonitorCog,
+  BookOpen,
+  ShieldCheck,
+  Ban,
+  ThumbsUp,
+  ListChecks,
+  BadgeCheck,
+  Camera,
+  Copy,
+  Linkedin,
+  Mail,
+  UserCheck,
+  UserPlus,
+  Rocket,
+  Info,
+  type LucideIcon,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { VerificationBadge } from "@/components/VerificationBadge";
 import { FirmReviews } from "@/components/firm/FirmReviews";
 import { FirmChallenges } from "@/components/firm/FirmChallenges";
 import { FirmComplaints } from "@/components/firm/FirmComplaints";
 import { FirmPayouts } from "@/components/firm/FirmPayouts";
 import { FirmAnnouncements } from "@/components/firm/FirmAnnouncements";
+import {
+  fetchPublicAdminBrand,
+  followAdminBrand,
+  unfollowAdminBrand,
+  updateAdminBrand,
+} from "@/lib/admin-brands-api";
+import { API_BASE_URL } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { resolveCountryDisplay } from "@/lib/country-format";
+import { uploadMediaFile } from "@/lib/media-api";
+import {
+  normalizePropFirmProfile,
+  type NormalizedPropFirmProfile,
+  type ProfileCard,
+  type ProfileCountry,
+  type ProfileLogoItem,
+  type ProfileRow,
+  type ProfileRule,
+} from "@/lib/prop-firm-profile";
+import { TBI_BRANDS } from "@/lib/tbi-data";
+import { fetchTbiBrand, type TbiProfile } from "@/lib/tbi-api";
+import { fetchPublicOffers, type AdminOffer } from "@/lib/offers-api";
+import { resolveBrandTbiState } from "@/lib/public-brand";
 
 export const Route = createFileRoute("/firm/$firmId")({
   head: ({ params }) => {
@@ -18,9 +66,15 @@ export const Route = createFileRoute("/firm/$firmId")({
     return {
       meta: [
         { title: `${name} — Firm Details · RebateBoard` },
-        { name: "description", content: `Full breakdown of ${name}: funding program, account options, trading rules, scaling plan, payouts, fees, and more.` },
+        {
+          name: "description",
+          content: `Full breakdown of ${name}: funding program, account options, trading rules, scaling plan, payouts, fees, and more.`,
+        },
         { property: "og:title", content: `${name} — Firm Details` },
-        { property: "og:description", content: `Full breakdown of ${name}: funding, rules, payouts, fees, and more.` },
+        {
+          property: "og:description",
+          content: `Full breakdown of ${name}: funding, rules, payouts, fees, and more.`,
+        },
       ],
     };
   },
@@ -28,518 +82,1360 @@ export const Route = createFileRoute("/firm/$firmId")({
 });
 
 const sideTabs = [
-  "Overview", "Funding Program", "Account Option", "Trading Rules", "Scaling Plan",
-  "Profit Split & Payout", "Fees and Pricing", "Supported Instrument & Leverage",
-  "Platform & Technology", "Community & Education", "Regulation and Trust",
-  "Customer Support", "Restricted Countries", "Pros & Cons",
-];
+  { id: "overview", label: "Overview" },
+  { id: "trading-rules", label: "Trading Rules" },
+  { id: "scaling-plan", label: "Scaling Plan" },
+  { id: "profit-payout", label: "Profit Split & Payout" },
+  { id: "cashback-rebate", label: "Cashback / Rebate" },
+  { id: "fees-pricing", label: "Fees and Pricing" },
+  { id: "instruments-leverage", label: "Supported Instrument & Leverage" },
+  { id: "platform-technology", label: "Platform & Technology" },
+  { id: "community-education", label: "Community & Education" },
+  { id: "regulation-trust", label: "Regulation and Trust" },
+  { id: "customer-support", label: "Customer Support" },
+  { id: "restricted-countries", label: "Restricted Countries" },
+  { id: "pros-cons", label: "Pros & Cons" },
+] as const;
+
+type SideSectionId = (typeof sideTabs)[number]["id"];
 
 /* ================================================================
  * Saved-brand lookup (mirrors the admin "rb-admin:brands" payload)
  * ================================================================ */
 type SavedBrand = {
+  id?: string;
   name: string;
   slug?: string;
   category?: string;
   thumbnail?: string;
   cover?: string;
+  website?: string;
   primaryColor?: string;
-  identity?: { founded?: string; hq?: string; tagline?: string; description?: string; supportEmail?: string; editorial?: string };
+  visibility?: "draft" | "published" | "hidden" | "archived";
+  status?: string;
+  identity?: {
+    founded?: string;
+    hq?: string;
+    country?: string;
+    location?: string;
+    tagline?: string;
+    description?: string;
+    supportEmail?: string;
+    editorial?: string;
+    website?: string;
+  };
   founder?: { ceo?: string; founderLi?: string; founderX?: string; yt?: string; tags?: string };
   broker?: Record<string, string>;
   prop?: Record<string, string>;
   exchange?: Record<string, string>;
   tool?: Record<string, string>;
-  editorial?: { keyFeatures?: string; tradingConditions?: string; pros?: string; cons?: string; bestFor?: string; verdict?: string };
-  profile?: {
-    leverageOverall?: string; leverageByAsset?: string; timeLimit?: string; overnightHolding?: string;
-    community?: string; supportChannels?: string; supportResponse?: string; supportCommunity?: string;
-    restrictedCountries?: string; legalEntity?: string; transparencyNote?: string; publicFeedback?: string;
+  editorial?: {
+    keyFeatures?: string;
+    tradingConditions?: string;
+    pros?: string;
+    cons?: string;
+    bestFor?: string;
+    verdict?: string;
   };
-  cashback?: { defaultPct?: number; maxPct?: number; type?: string; terms?: string; affiliateLink?: string };
-  challenges?: Array<{ price?: number; originalPrice?: number; program?: string; size?: string }>;
-  trust?: { tbi?: number; licenseNo?: string; legalEntity?: string; transparencyNote?: string; publicFeedback?: string };
+  profile?: {
+    leverageOverall?: string;
+    leverageByAsset?: string;
+    timeLimit?: string;
+    overnightHolding?: string;
+    community?: string;
+    supportChannels?: string;
+    supportResponse?: string;
+    supportCommunity?: string;
+    restrictedCountries?: string;
+    country?: string;
+    legalEntity?: string;
+    transparencyNote?: string;
+    publicFeedback?: string;
+  };
+  cashback?: {
+    defaultPct?: number;
+    maxPct?: number;
+    type?: string;
+    terms?: string;
+    affiliateLink?: string;
+    howTraderEarns?: string;
+    note?: string;
+  };
+  challenges?: Array<{
+    price?: number;
+    originalPrice?: number;
+    program?: string;
+    size?: string;
+    discountCode?: string;
+  }>;
+  trust?: {
+    tbi?: number;
+    licenseNo?: string;
+    legalEntity?: string;
+    transparencyNote?: string;
+    publicFeedback?: string;
+  };
+  complaints?: number;
+  followersCount?: number;
+  reviewsCount?: number;
+  isFollowing?: boolean;
   tbi?: number;
 };
 
-function useSavedBrand(slugOrName: string): SavedBrand | null {
+type ProfileAssets = {
+  avatar?: string;
+  banner?: string;
+};
+
+const profileAssetsKey = (firmId: string) => `rb-firm-profile-assets:${firmId}`;
+const brandSessionKey = "rb_brand_session_v1";
+const publicForexPropFirmCacheKey = "rb_public_forex_prop_firms_v4";
+
+type BrandOwnerSession = {
+  slug?: string;
+  role?: string;
+};
+
+function readBrandOwnerSession(): BrandOwnerSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(brandSessionKey);
+    return raw ? (JSON.parse(raw) as BrandOwnerSession) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isAdminRole(role?: string | null) {
+  return String(role || "").toUpperCase() === "ADMIN";
+}
+
+function socialUrl(value?: string, network?: "x" | "linkedin") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const handle = raw.replace(/^@/, "");
+  if (network === "x") return `https://x.com/${handle}`;
+  if (network === "linkedin")
+    return raw.includes("/") ? `https://${raw}` : `https://www.linkedin.com/in/${handle}`;
+  return raw;
+}
+
+function meaningfulText(value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (!raw || /^(null|none|n\/a|na|undefined|false)$/i.test(raw)) return "";
+  return raw;
+}
+
+function numberFromValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const text = meaningfulText(value);
+  if (!text) return 0;
+  const match = text.match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+}
+
+function firstMeaningful(...values: unknown[]) {
+  for (const value of values) {
+    const text = meaningfulText(value);
+    if (text) return text;
+  }
+  return "";
+}
+
+function externalUrl(value?: string) {
+  const raw = meaningfulText(value);
+  if (!raw) return "";
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw.replace(/^\/+/, "")}`;
+}
+
+function youtubeVideoId(value?: string) {
+  const raw = meaningfulText(value);
+  if (!raw) return "";
+
+  try {
+    const parsed = new URL(externalUrl(raw));
+    if (parsed.hostname.includes("youtu.be")) return parsed.pathname.replace(/^\/+/, "").split("/")[0];
+    if (parsed.searchParams.get("v")) return parsed.searchParams.get("v") || "";
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const marker = parts.findIndex((part) => ["embed", "shorts", "live"].includes(part));
+    if (marker >= 0) return parts[marker + 1] || "";
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function youtubeThumbnailUrl(value?: string) {
+  const videoId = youtubeVideoId(value);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+}
+
+function resolveMediaUrl(...values: unknown[]) {
+  const value = firstMeaningful(...values);
+  if (!value) return "";
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+
+  const apiOrigin = API_BASE_URL.replace(/\/api\/v1$/i, "");
+  if (value.startsWith("/api/v1/")) return `${apiOrigin}${value}`;
+  if (value.startsWith("/file/")) return `${API_BASE_URL}${value}`;
+  if (value.startsWith("/")) return `${apiOrigin}${value}`;
+
+  return `${API_BASE_URL}/file/view?key=${encodeURIComponent(value)}`;
+}
+
+function discountInfo(brand: SavedBrand | null) {
+  const prop = (brand?.prop ?? {}) as Record<string, unknown>;
+  const cashback = (brand?.cashback ?? {}) as Record<string, unknown>;
+  const challengeCode = brand?.challenges
+    ?.map((challenge) => meaningfulText(challenge.discountCode))
+    .find(Boolean);
+  const percent =
+    [
+      prop.discountPercentage,
+      prop.discountPct,
+      prop.discount,
+      prop.cashbackPct,
+      cashback.maxPct,
+      cashback.defaultPct,
+    ]
+      .map(numberFromValue)
+      .find((value) => value > 0) ?? 0;
+  const code = firstMeaningful(prop.discountCode, prop.promoCode, prop.couponCode, challengeCode);
+  const cashbackEligible =
+    /^(yes|true|eligible)$/i.test(meaningfulText(cashback.eligible)) || percent > 0;
+  return {
+    percent,
+    code,
+    hasOffer: cashbackEligible || Boolean(code),
+    offerLabel: percent ? `${percent}% OFF` : cashbackEligible ? "Cashback available" : "",
+    description: firstMeaningful(
+      cashback.terms,
+      cashback.howTraderEarns,
+      cashback.type,
+      cashback.note,
+    ),
+  };
+}
+
+type ProfileOfferInfo = {
+  hasOffer: boolean;
+  discountLabel: string;
+  code: string;
+  description: string;
+  terms: string;
+  ctaUrl: string;
+  accentFrom: string;
+  accentTo: string;
+};
+
+function profileOfferInfo(brand: SavedBrand | null, offer: AdminOffer | null): ProfileOfferInfo {
+  const brandDiscount = discountInfo(brand);
+  const discountLabel = firstMeaningful(offer?.discount, brandDiscount.offerLabel);
+  const code = firstMeaningful(offer?.code, brandDiscount.code);
+  const description = firstMeaningful(
+    offer?.description,
+    offer?.title,
+    brandDiscount.description,
+    brandDiscount.hasOffer ? "All users: challenge type dependent." : "",
+  );
+  const terms = firstMeaningful(offer?.terms, brandDiscount.description);
+  const ctaUrl = externalUrl(
+    firstMeaningful(
+      offer?.ctaUrl,
+      brand?.cashback?.affiliateLink,
+      brand?.website,
+      brand?.identity?.website,
+    ),
+  );
+
+  return {
+    hasOffer: Boolean(offer || brandDiscount.hasOffer || discountLabel || code),
+    discountLabel: discountLabel || "Offer live",
+    code,
+    description,
+    terms,
+    ctaUrl,
+    accentFrom: offer?.accentFrom || "#f59e0b",
+    accentTo: offer?.accentTo || "#fbbf24",
+  };
+}
+
+function readStoredProfileAssets(firmId: string): ProfileAssets {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(profileAssetsKey(firmId));
+    return raw ? (JSON.parse(raw) as ProfileAssets) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredProfileAssets(firmId: string, assets: ProfileAssets) {
+  if (typeof window === "undefined") return;
+  try {
+    if (assets.avatar || assets.banner) {
+      localStorage.setItem(profileAssetsKey(firmId), JSON.stringify(assets));
+    } else {
+      localStorage.removeItem(profileAssetsKey(firmId));
+    }
+  } catch {
+    // Large local images can exceed browser storage. The preview still works for the current session.
+  }
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function normalizeTbiScore(value?: number) {
+  if (!value || Number.isNaN(value)) return 7.3;
+  // Backend TBI profiles are 0-10. Admin-brand TBI values are stored as 0-100.
+  if (value > 100) return 10;
+  return value > 10 ? value / 10 : value;
+}
+
+function compactCount(value: number) {
+  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K`;
+  return value.toLocaleString();
+}
+
+type TbiMetric = {
+  key: keyof TbiProfile["components"];
+  label: string;
+  short: string;
+  value: number;
+  weight: number;
+};
+
+const tbiMetricMeta: Array<Omit<TbiMetric, "value">> = [
+  { key: "ut", label: "User Trust", short: "UT", weight: 30 },
+  { key: "pr", label: "Payout Reliability", short: "PR", weight: 25 },
+  { key: "ts", label: "Transparency", short: "TS", weight: 15 },
+  { key: "rc", label: "Regulation & Compliance", short: "RC", weight: 10 },
+  { key: "tc", label: "Trading Conditions", short: "TC", weight: 10 },
+  { key: "cx", label: "Customer Experience", short: "CX", weight: 10 },
+];
+
+function clampScore(value: unknown, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(10, Math.max(0, numeric));
+}
+
+function scoreFromTextPresence(value: unknown, score: number, fallback: number) {
+  return meaningfulText(value) ? score : fallback;
+}
+
+function derivedTbiMetricValue(key: TbiMetric["key"], brand: SavedBrand | null, score: number) {
+  const trust = (brand?.trust ?? {}) as Record<string, unknown>;
+  const prop = (brand?.prop ?? {}) as Record<string, unknown>;
+  const profile = (brand?.profile ?? {}) as Record<string, unknown>;
+  const editorial = (brand?.editorial ?? {}) as Record<string, unknown>;
+  const base = clampScore(score, 0);
+
+  switch (key) {
+    case "ut":
+      return clampScore(trust.userTrust ?? trust.ut ?? trust.rating, base);
+    case "pr":
+      return clampScore(
+        trust.payoutReliability ?? trust.pr,
+        scoreFromTextPresence(
+          prop.payoutSchedule || prop.payoutFreq || brand?.payouts,
+          Math.max(base, 6.5),
+          Math.max(base - 1, 0),
+        ),
+      );
+    case "ts":
+      return clampScore(
+        trust.transparency ?? trust.ts,
+        scoreFromTextPresence(
+          profile.transparencyNote || editorial.verdict || editorial.keyFeatures,
+          Math.max(base - 0.2, 0),
+          Math.max(base - 1.3, 0),
+        ),
+      );
+    case "rc":
+      return clampScore(
+        trust.regulationCompliance ?? trust.regulation ?? trust.rc,
+        scoreFromTextPresence(
+          trust.licenseNo || trust.legalEntity || profile.legalEntity,
+          Math.max(base - 0.5, 0),
+          Math.min(base, 5),
+        ),
+      );
+    case "tc":
+      return clampScore(
+        trust.tradingConditionsScore ?? trust.tc,
+        scoreFromTextPresence(
+          prop.profitSplit || prop.maxAllocation || prop.rules,
+          Math.max(base - 0.4, 0),
+          Math.max(base - 1.1, 0),
+        ),
+      );
+    case "cx":
+      return clampScore(
+        trust.customerExperienceScore ?? trust.cx,
+        scoreFromTextPresence(
+          brand?.identity?.supportEmail || profile.supportChannels || profile.supportResponse,
+          Math.max(base - 0.3, 0),
+          Math.max(base - 1.2, 0),
+        ),
+      );
+    default:
+      return base;
+  }
+}
+
+function tbiMetricsForProfile(
+  brand: SavedBrand | null,
+  profile: TbiProfile | null,
+  score: number,
+): TbiMetric[] {
+  return tbiMetricMeta.map((metric) => ({
+    ...metric,
+    value: clampScore(
+      profile?.components?.[metric.key],
+      derivedTbiMetricValue(metric.key, brand, score),
+    ),
+  }));
+}
+
+function scoreOutOf100(score: number) {
+  return Math.round(clampScore(score) * 1000) / 100;
+}
+
+function polygonPoints(count: number, radius: number, center = 128) {
+  return Array.from({ length: count })
+    .map((_, index) => {
+      const angle = -Math.PI / 2 + (index * 2 * Math.PI) / count;
+      return `${center + Math.cos(angle) * radius},${center + Math.sin(angle) * radius}`;
+    })
+    .join(" ");
+}
+
+function valuePolygonPoints(metrics: TbiMetric[], radius = 72, center = 128) {
+  return metrics
+    .map((metric, index) => {
+      const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
+      const distance = radius * (metric.value / 10);
+      return `${center + Math.cos(angle) * distance},${center + Math.sin(angle) * distance}`;
+    })
+    .join(" ");
+}
+
+function tbiStageTheme(stage?: TbiProfile["state"]) {
+  if (stage === "full") {
+    return {
+      label: "Fully Unlocked",
+      caption: "Gold trust engine",
+      background:
+        "radial-gradient(circle at 88% 12%, rgba(255, 226, 137, 0.45), transparent 28%), radial-gradient(circle at 12% 86%, rgba(168, 85, 247, 0.28), transparent 36%), linear-gradient(145deg, #4a310c 0%, #171019 52%, #0f0b10 100%)",
+      ring: "ring-amber-200/35",
+      glow: "bg-amber-200/25",
+      badge: "from-amber-100 via-yellow-300 to-orange-400 text-[#2d1800]",
+      radarA: "#fde68a",
+      radarB: "#f59e0b",
+      radarFillA: "#fde68a",
+      radarFillB: "#a855f7",
+      bar: "from-amber-200 via-yellow-300 to-orange-400",
+      chip: "bg-amber-200/20 text-amber-50 ring-amber-100/30",
+    };
+  }
+
+  if (stage === "partial") {
+    return {
+      label: "Partial Unlock",
+      caption: "Bronze trust engine",
+      background:
+        "radial-gradient(circle at 88% 12%, rgba(251, 146, 60, 0.35), transparent 28%), radial-gradient(circle at 16% 84%, rgba(217, 70, 239, 0.22), transparent 36%), linear-gradient(145deg, #3f2013 0%, #201122 54%, #120a19 100%)",
+      ring: "ring-orange-200/30",
+      glow: "bg-orange-300/20",
+      badge: "from-orange-200 via-amber-400 to-rose-400 text-[#2b1306]",
+      radarA: "#fdba74",
+      radarB: "#f472b6",
+      radarFillA: "#fdba74",
+      radarFillB: "#d946ef",
+      bar: "from-orange-200 via-amber-300 to-fuchsia-400",
+      chip: "bg-orange-200/20 text-orange-50 ring-orange-100/30",
+    };
+  }
+
+  return {
+    label: "Preliminary",
+    caption: "Silver trust engine",
+    background:
+      "radial-gradient(circle at 88% 12%, rgba(226, 232, 240, 0.38), transparent 28%), radial-gradient(circle at 14% 84%, rgba(147, 197, 253, 0.22), transparent 36%), linear-gradient(145deg, #394150 0%, #171522 54%, #0f0b18 100%)",
+    ring: "ring-slate-100/30",
+    glow: "bg-slate-200/20",
+    badge: "from-slate-100 via-slate-300 to-sky-300 text-[#111827]",
+    radarA: "#e2e8f0",
+    radarB: "#93c5fd",
+    radarFillA: "#e2e8f0",
+    radarFillB: "#60a5fa",
+    bar: "from-slate-200 via-sky-300 to-violet-300",
+    chip: "bg-slate-100/15 text-slate-50 ring-slate-100/25",
+  };
+}
+
+function TbiScoreCard({
+  brand,
+  profile,
+  score,
+}: {
+  brand: SavedBrand | null;
+  profile: TbiProfile | null;
+  score: number;
+}) {
+  const metrics = tbiMetricsForProfile(brand, profile, score);
+  const score100 = scoreOutOf100(score);
+  const center = 128;
+  const radarRadius = 72;
+  const stage = brand ? resolveBrandTbiState(brand, profile) : (profile?.state ?? "preliminary");
+  const theme = tbiStageTheme(stage);
+  const trustLabel = profile?.trustLabel || "Trust intelligence review";
+
+  return (
+    <aside
+      className={`relative flex h-full flex-col overflow-hidden rounded-3xl p-5 text-white shadow-2xl shadow-black/25 ring-1 ${theme.ring}`}
+      style={{ background: theme.background }}
+    >
+      <div className={`absolute -right-20 -top-20 h-56 w-56 rounded-full ${theme.glow} blur-3xl`} />
+      <div className="absolute inset-x-6 top-0 h-px bg-white/25" />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+              TBI Score
+            </div>
+            <span
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ring-1 ${theme.chip}`}
+            >
+              {theme.label}
+            </span>
+          </div>
+          <div className="mt-5 flex items-end gap-2">
+            <span className="text-5xl font-black leading-none text-white">
+              {score100.toFixed(2)}
+            </span>
+            <span className="pb-1 text-xl text-white/65">/100</span>
+          </div>
+          <div className="mt-2 text-xs text-white/70">
+            {trustLabel} · {theme.caption}
+          </div>
+        </div>
+        <div
+          className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br ${theme.badge} ring-1 ring-white/30`}
+        >
+          <BadgeCheck className="h-5 w-5" />
+        </div>
+      </div>
+
+      <div className="relative mt-5 overflow-hidden rounded-3xl bg-black/[0.12] ring-1 ring-white/10">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:32px_32px] opacity-30" />
+        <svg
+          viewBox="0 0 256 256"
+          role="img"
+          aria-label={`${brand?.name ?? "Brand"} TBI component radar`}
+          className="mx-auto h-60 w-full max-w-[340px] sm:h-64"
+        >
+          <defs>
+            <radialGradient id="tbiRadarGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={theme.radarFillA} stopOpacity="0.92" />
+              <stop offset="100%" stopColor={theme.radarFillB} stopOpacity="0.25" />
+            </radialGradient>
+            <linearGradient id="tbiRadarStroke" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stopColor={theme.radarA} />
+              <stop offset="100%" stopColor={theme.radarB} />
+            </linearGradient>
+          </defs>
+
+          {[0.25, 0.5, 0.75, 1].map((step) => (
+            <polygon
+              key={step}
+              points={polygonPoints(metrics.length, radarRadius * step, center)}
+              fill="none"
+              stroke="rgba(255,255,255,0.18)"
+              strokeWidth="1"
+            />
+          ))}
+          {metrics.map((metric, index) => {
+            const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
+            return (
+              <line
+                key={metric.key}
+                x1={center}
+                y1={center}
+                x2={center + Math.cos(angle) * radarRadius}
+                y2={center + Math.sin(angle) * radarRadius}
+                stroke="rgba(255,255,255,0.16)"
+                strokeWidth="1"
+              />
+            );
+          })}
+          <polygon
+            points={valuePolygonPoints(metrics, radarRadius, center)}
+            fill="url(#tbiRadarGlow)"
+            stroke="url(#tbiRadarStroke)"
+            strokeWidth="2"
+          />
+          {metrics.map((metric, index) => {
+            const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
+            const dotRadius = radarRadius * (metric.value / 10);
+            const labelRadius = 108;
+            const labelX = center + Math.cos(angle) * labelRadius;
+            const labelY = center + Math.sin(angle) * labelRadius;
+            return (
+              <g key={metric.key}>
+                <title>{`${metric.label}: ${metric.value.toFixed(1)}/10`}</title>
+                <circle
+                  cx={center + Math.cos(angle) * dotRadius}
+                  cy={center + Math.sin(angle) * dotRadius}
+                  r="3"
+                  fill={theme.radarA}
+                  stroke="#ffffff"
+                  strokeWidth="1"
+                />
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor={
+                    labelX > center + 12 ? "start" : labelX < center - 12 ? "end" : "middle"
+                  }
+                  dominantBaseline="middle"
+                  fill="rgba(255,255,255,0.72)"
+                  fontSize="10"
+                  fontWeight="600"
+                >
+                  {metric.short}
+                </text>
+              </g>
+            );
+          })}
+          <circle cx={center} cy={center} r="6" fill={theme.radarA} stroke="#fff" strokeWidth="2" />
+        </svg>
+      </div>
+
+      <div className="mt-auto grid gap-2 pt-4">
+        {metrics.map((metric) => (
+          <div
+            key={metric.key}
+            className="grid grid-cols-[minmax(132px,1fr)_96px_42px] items-center gap-2 text-[11px] text-white/65"
+          >
+            <span
+              className="min-w-0 truncate font-semibold text-white/75"
+              title={`${metric.short} - ${metric.label}`}
+            >
+              <span className="mr-1 rounded bg-white/10 px-1.5 py-0.5 text-[9px] text-white">
+                {metric.short}
+              </span>
+              {metric.label}
+            </span>
+            <span className="h-1.5 overflow-hidden rounded-full bg-white/10">
+              <span
+                className={`block h-full rounded-full bg-gradient-to-r ${theme.bar}`}
+                style={{ width: `${metric.value * 10}%` }}
+              />
+            </span>
+            <span className="text-right font-semibold text-white">{metric.value.toFixed(1)}</span>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function slugifyLookup(value: string) {
+  return safeDecode(value)
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function brandLookupCandidates(slugOrName: string) {
+  const decoded = safeDecode(slugOrName).trim();
+  const slug = slugifyLookup(decoded);
+  const displayName = decoded.replace(/-/g, " ").trim();
+  const stripped = slug
+    .replace(/-(pro|broker|exchange)$/i, "")
+    .replace(/-(stellar|standard|classic|challenge)$/i, "")
+    .replace(/-trader-funding$/i, "");
+
+  return Array.from(
+    new Set(
+      [slug, stripped, slugOrName, decoded, displayName, slugifyLookup(displayName)]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+const FALLBACK_REBATE_PCT: Record<string, number> = {
+  exness: 60,
+  "ic-markets": 55,
+  pepperstone: 50,
+  fundingpips: 60,
+  ftmo: 80,
+  the5ers: 40,
+  myforexfunds: 35,
+  bybit: 40,
+  binance: 35,
+  okx: 30,
+  apex: 45,
+};
+
+function fallbackBrandFromStaticData(candidates: string[]): SavedBrand | null {
+  const targets = new Set(candidates.map((candidate) => slugifyLookup(candidate)));
+  const tbiBrand = TBI_BRANDS.find(
+    (candidate) =>
+      targets.has(candidate.slug) ||
+      targets.has(slugifyLookup(candidate.name)) ||
+      candidate.slug.split("-").some((part) => targets.has(part)),
+  );
+
+  if (!tbiBrand) return null;
+
+  return {
+    name: tbiBrand.name,
+    slug: tbiBrand.slug,
+    category: tbiBrand.category,
+    website: `https://${tbiBrand.website}`,
+    tbi: tbiBrand.score,
+    identity: {
+      hq: tbiBrand.country,
+      tagline: tbiBrand.tag,
+    },
+    cashback: FALLBACK_REBATE_PCT[tbiBrand.slug]
+      ? { maxPct: FALLBACK_REBATE_PCT[tbiBrand.slug] }
+      : undefined,
+  };
+}
+
+function useSavedBrand(slugOrName: string, token?: string | null): SavedBrand | null {
   const [brand, setBrand] = useState<SavedBrand | null>(null);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = sessionStorage.getItem("rb-admin:brands");
-      if (!raw) return;
-      const list: SavedBrand[] = JSON.parse(raw);
-      const target = slugOrName.trim().toLowerCase();
-      const found = list.find((b) =>
-        (b.slug && b.slug.toLowerCase() === target) ||
-        (b.name && b.name.trim().toLowerCase() === target.replace(/-/g, " ")) ||
-        (b.name && b.name.trim().toLowerCase().replace(/\s+/g, "-") === target),
-      );
-      setBrand(found ?? null);
-    } catch { setBrand(null); }
-  }, [slugOrName]);
+    let active = true;
+    const candidates = brandLookupCandidates(slugOrName);
+    const targets = new Set(candidates.map((candidate) => candidate.trim().toLowerCase()));
+    const findCachedBrand = () => {
+      if (typeof window === "undefined") return null;
+      try {
+        const adminRaw = sessionStorage.getItem("rb-admin:brands");
+        const publicRaw = localStorage.getItem(publicForexPropFirmCacheKey);
+        const adminList: SavedBrand[] = adminRaw ? JSON.parse(adminRaw) : [];
+        const publicList: SavedBrand[] = publicRaw ? JSON.parse(publicRaw) : [];
+        const list = [...publicList, ...adminList].filter(
+          (brand) => !brand.visibility || brand.visibility === "published",
+        );
+        return (
+          list.find(
+            (b) =>
+              (b.slug && targets.has(b.slug.toLowerCase())) ||
+              (b.name && targets.has(b.name.trim().toLowerCase())) ||
+              (b.name && targets.has(slugifyLookup(b.name))),
+          ) ?? null
+        );
+      } catch {
+        return null;
+      }
+    };
+    const fallbackBrand = () => fallbackBrandFromStaticData(candidates);
+
+    setBrand(findCachedBrand() ?? fallbackBrand());
+    async function fetchBrand() {
+      for (const candidate of candidates) {
+        try {
+          const payload = await fetchPublicAdminBrand(candidate, token);
+          if (active && payload) {
+            setBrand(payload as unknown as SavedBrand);
+            return;
+          }
+        } catch {
+          // Try the next reasonable slug/name variant before falling back to cached data.
+        }
+      }
+
+      if (active) setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+    }
+
+    fetchBrand().catch(() => {
+      if (active) setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [slugOrName, token]);
   return brand;
 }
 
-/* ================================================================
- * Helpers — split free text into list items
- * ================================================================ */
-const splitLines = (s?: string): string[] =>
-  (s ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-const splitCsv = (s?: string): string[] =>
-  (s ?? "").split(",").map((l) => l.trim()).filter(Boolean);
+function offerMatchesBrand(offer: AdminOffer, brand: SavedBrand | null, slugOrName: string) {
+  if (brand?.id && offer.brandId && String(offer.brandId) === String(brand.id)) return true;
 
-/* ================================================================
- * Default fallback content (used when no saved brand exists)
- * ================================================================ */
-const defaultFundingSteps = [
-  { n: 1, lines: ["Profit Target: 10%", "Time Limit: None", "Min Days: 5", "Max Loss: 5%"] },
-  { n: 2, lines: ["Profit Target: 5%", "Time Limit: None", "Min Days: 5", "Max Loss: 5%"] },
-  { n: 3, lines: ["Profit Split: 80%", "Scaling: Yes", "First Payout: 14d", "Refundable: Yes"] },
-  { n: 4, lines: ["Instant Funded", "Bi-Weekly Payout", "Up to $4M scale", "VIP perks"] },
-];
+  const targets = new Set(
+    [...brandLookupCandidates(slugOrName), brand?.slug, brand?.name]
+      .map((value) => slugifyLookup(String(value || "")))
+      .filter(Boolean),
+  );
 
-const defaultPros = ["Generous profit splits", "No time limits, no scaling caps", "Reliable payouts each week"];
-const defaultCons = ["Premium pricing on challenges", "No swing-only accounts", "Restricted in some countries"];
+  return targets.has(slugifyLookup(offer.brand));
+}
 
-const defaultCommunity = [
-  { n: 1, title: "VIP Trading", body: "Community-driven trading challenges" },
-  { n: 2, title: "Academy", body: "Weekly webinars & courses" },
-  { n: 3, title: "Discord", body: "Active Discord with mentors" },
-  { n: 4, title: "Trader Dashboard", body: "Free tools for funded traders" },
-];
-
-const platformItemsDefault = [
-  { n: 1, title: "Platforms", body: "MT4, MT5, cTrader" },
-  { n: 2, title: "Execution", body: "Low-latency execution" },
-  { n: 3, title: "Tools", body: "Risk dashboard, analytics" },
-  { n: 4, title: "Mobile", body: "iOS & Android apps" },
-];
-
-/* ================================================================ */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function pickBrandOffer(offers: AdminOffer[], brand: SavedBrand | null, slugOrName: string) {
   return (
-    <section className="glass rounded-2xl p-5 ring-1 ring-violet-400/20">
-      <h3 className="mb-3 text-base font-bold">{title}</h3>
+    offers
+      .filter((offer) => offer.status === "active" && offerMatchesBrand(offer, brand, slugOrName))
+      .sort((a, b) => {
+        if (Boolean(a.pinned) !== Boolean(b.pinned))
+          return Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+        return String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+      })[0] ?? null
+  );
+}
+
+function usePublicBrandOffer(brand: SavedBrand | null, slugOrName: string) {
+  const [offer, setOffer] = useState<AdminOffer | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setOffer(null);
+
+    fetchPublicOffers()
+      .then((offers) => {
+        if (active) setOffer(pickBrandOffer(offers, brand, slugOrName));
+      })
+      .catch(() => {
+        if (active) setOffer(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [brand, slugOrName]);
+
+  return offer;
+}
+
+const sectionIconMap: Record<string, LucideIcon> = {
+  Overview: Info,
+  "Trading Rules": ClipboardCheck,
+  "Scaling Plan": LineChart,
+  "Profit Split & Payout": CircleDollarSign,
+  "Cashback / Rebate": WalletCards,
+  "Fees and Pricing": ReceiptText,
+  "Supported Instrument & Leverage": Gauge,
+  "Platform & Technology": MonitorCog,
+  "Community & Education": BookOpen,
+  "Regulation and Trust": ShieldCheck,
+  "Customer Support": Headphones,
+  "Restricted Countries": Ban,
+  "Pros & Cons": ThumbsUp,
+  "TBI Index": ListChecks,
+};
+
+function FormattedText({ value, className = "" }: { value: string; className?: string }) {
+  const raw = String(value || "");
+  const shouldSplitInline =
+    !/^https?:\/\//i.test(raw.trim()) && /(?:\r?\n|;|\s\|\s)/.test(raw);
+  const lines = raw
+    .split(shouldSplitInline ? /\r?\n|;|\s\|\s/ : /\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length <= 1) return <span className={className}>{raw}</span>;
+
+  return (
+    <div className={`space-y-1.5 ${className}`}>
+      {lines.map((line, index) => {
+        const withoutBullet = line.replace(/^[-•*]\s*/, "");
+        const isBullet = withoutBullet !== line || /^\d+[.)]\s+/.test(line);
+
+        if (!isBullet) return <p key={`${line}-${index}`}>{line}</p>;
+
+        return (
+          <div key={`${line}-${index}`} className="flex gap-2">
+            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-fuchsia-300" />
+            <span>{withoutBullet}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const Icon = sectionIconMap[title] ?? ListChecks;
+
+  return (
+    <section className="border-b border-white/10 py-8 first:pt-0 last:border-b-0 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-fuchsia-500/12 text-fuchsia-200 ring-1 ring-fuchsia-300/25">
+          <Icon className="h-4 w-4" />
+        </span>
+        <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{title}</h3>
+      </div>
       {children}
     </section>
   );
 }
 
-function FragmentRow({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
+function EmptyBlock({ children = "Not available" }: { children?: React.ReactNode }) {
   return (
-    <>
-      <dt className="text-muted-foreground">{label}:</dt>
-      <dd>{value}</dd>
-    </>
-  );
-}
-
-function NumCard({ n, title, body }: { n: number; title: string; body: string }) {
-  return (
-    <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-      <div className="flex items-center gap-2">
-        <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-[10px] font-bold text-violet-700">{n}</span>
-        <span className="text-[11px] font-semibold">{title}</span>
-      </div>
-      <div className="mt-1 text-[10px] text-muted-foreground">{body}</div>
-      <Star className="mt-1 h-3 w-3 text-yellow-400" />
+    <div className="rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 text-center text-[11px] text-muted-foreground">
+      {children}
     </div>
   );
 }
 
-function renderSection(idx: number, name: string, brand: SavedBrand | null): React.ReactNode {
-  const prop = brand?.prop ?? {};
-  const broker = brand?.broker ?? {};
-  const exch = brand?.exchange ?? {};
-  const profile = brand?.profile ?? {};
-  const ed = brand?.editorial ?? {};
-  const trust = brand?.trust ?? {};
-  const identity = brand?.identity ?? {};
+function VideoReviewCard({ name, url }: { name: string; url: string }) {
+  const thumbnail = youtubeThumbnailUrl(url);
+  const hasVideo = Boolean(url);
+  const inner = (
+    <div className="group relative aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-fuchsia-500/25 via-violet-600/20 to-sky-500/15 ring-1 ring-white/10">
+      {thumbnail ? (
+        <img
+          src={thumbnail}
+          alt={`${name} video review thumbnail`}
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          loading="lazy"
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#12061f]/80 via-[#12061f]/10 to-transparent" />
+      <div className="absolute inset-0 grid place-items-center">
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[#1a0b2e] shadow-[0_0_32px_rgba(255,255,255,0.25)] transition group-hover:scale-105">
+          <Play className="ml-0.5 h-6 w-6 fill-current" />
+        </span>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 p-4">
+        <div className="text-xs font-semibold text-white">
+          {hasVideo ? "Watch video review" : "Video review coming soon"}
+        </div>
+      </div>
+    </div>
+  );
 
-  switch (idx) {
-    case 0: {
-      const desc = identity.description || identity.editorial ||
-        `Overview of ${name}: a quick summary of the firm, who it serves, the asset classes covered, and what sets the program apart.`;
-      const yt = brand?.founder?.yt;
-      return (
-        <section className="glass rounded-2xl p-5 ring-1 ring-violet-400/20">
-          <h2 className="text-lg font-bold">{brand?.name ?? name}</h2>
-          {identity.tagline && <p className="mt-1 text-xs text-fuchsia-300">{identity.tagline}</p>}
-          <div className="mt-3 grid gap-4 md:grid-cols-[1fr_220px]">
-            <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 p-3 ring-1 ring-fuchsia-300/30">
-              <div className="grid h-24 place-items-center">
-                {yt ? (
-                  <a href={yt} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-white/20 ring-1 ring-white/30 backdrop-blur">
-                    <Play className="h-4 w-4 fill-white text-white" />
-                  </a>
-                ) : (
-                  <button className="grid h-10 w-10 place-items-center rounded-full bg-white/20 ring-1 ring-white/30 backdrop-blur">
-                    <Play className="h-4 w-4 fill-white text-white" />
-                  </button>
-                )}
-              </div>
-              <div className="text-center text-[10px] font-semibold">{yt ? "Watch review" : "Video coming soon"}</div>
+  if (!hasVideo) return inner;
+
+  return (
+    <a href={url} target="_blank" rel="noreferrer" aria-label={`Watch ${name} video review`}>
+      {inner}
+    </a>
+  );
+}
+
+function InfoRows({ rows }: { rows: ProfileRow[] }) {
+  if (!rows.length) return <EmptyBlock />;
+
+  return (
+    <div className="overflow-hidden border-y border-white/10">
+      <dl className="divide-y divide-white/10 text-sm">
+        {rows.map((row) => (
+          <div
+            key={`${row.label}-${row.value}`}
+            className="grid gap-2 py-3 sm:grid-cols-[190px_1fr]"
+          >
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+              {row.label}
+            </dt>
+            <dd className="min-w-0 break-words font-medium leading-relaxed text-white/86">
+              <FormattedText value={row.value} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function DataCard({ card, index }: { card: ProfileCard; index: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 transition duration-300 hover:border-fuchsia-300/30 hover:bg-white/[0.04]">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-fuchsia-500/12 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+          {index + 1}
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-white">{card.title}</div>
+          <div className="mt-1 text-xs leading-relaxed text-white/68">
+            <FormattedText value={card.body} />
+          </div>
+          {card.meta ? (
+            <div className="mt-3 inline-flex rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+              {card.meta}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardGrid({
+  cards,
+  columns = "lg:grid-cols-4",
+}: {
+  cards: ProfileCard[];
+  columns?: string;
+}) {
+  if (!cards.length) return <EmptyBlock />;
+
+  return (
+    <div className={`grid gap-3 sm:grid-cols-2 ${columns}`}>
+      {cards.map((card, index) => (
+        <DataCard key={`${card.title}-${index}`} card={card} index={index} />
+      ))}
+    </div>
+  );
+}
+
+function CardRows({ cards }: { cards: ProfileCard[] }) {
+  return (
+    <InfoRows
+      rows={cards.map((card) => ({
+        label: card.title,
+        value: card.meta ? `${card.body}; ${card.meta}` : card.body,
+      }))}
+    />
+  );
+}
+
+function LogoChip({ item }: { item: ProfileLogoItem }) {
+  const [failed, setFailed] = useState(false);
+  const initials = item.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <span className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-white/85 ring-1 ring-white/10">
+      {item.logo && !failed ? (
+        <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/[0.06] ring-1 ring-white/10">
+          <img
+            src={item.logo}
+            alt=""
+            className="h-6 w-6 object-contain"
+            loading="lazy"
+            onError={() => setFailed(true)}
+          />
+        </span>
+      ) : (
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-fuchsia-500/20 text-[10px] font-black text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+          {initials || "RB"}
+        </span>
+      )}
+      <span className="min-w-0 truncate">{item.name}</span>
+    </span>
+  );
+}
+
+function LogoChipList({ title, items }: { title: string; items: ProfileLogoItem[] }) {
+  return (
+    <div>
+      <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+        {title}
+      </div>
+      {items.length ? (
+        <div className="flex flex-wrap gap-2">
+          {items.map((item) => (
+            <LogoChip key={item.id} item={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-[11px] text-muted-foreground">Not provided</div>
+      )}
+    </div>
+  );
+}
+
+function CountryChip({ country }: { country: ProfileCountry }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.045] px-3 py-1.5 text-xs font-semibold text-white/86 ring-1 ring-white/10">
+      {country.flag ? <span className="text-base leading-none">{country.flag}</span> : null}
+      <span>{country.name}</span>
+    </span>
+  );
+}
+
+function RuleList({ rules }: { rules: ProfileRule[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+
+  if (!rules.length) return null;
+
+  return (
+    <div className="mt-6 divide-y divide-white/10 border-y border-white/10">
+      {rules.map((rule, index) => {
+        const id = `${rule.question}-${index}`;
+        const isOpen = open === id || (open === rule.question && index === 0);
+        return (
+        <div
+          key={id}
+          className="transition-colors hover:bg-white/[0.025]"
+        >
+          <button
+            type="button"
+            onClick={() => setOpen(isOpen ? null : id)}
+            className="flex w-full items-center justify-between gap-4 py-4 text-left"
+            aria-expanded={isOpen}
+          >
+            <span className="text-sm font-semibold text-white">{rule.question}</span>
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/[0.04] text-white/70 ring-1 ring-white/10">
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-300 ${
+                  isOpen ? "rotate-180 text-fuchsia-200" : ""
+                }`}
+              />
+            </span>
+          </button>
+          <div
+            className={`grid transition-all duration-300 ease-out ${
+              isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <p className="pb-4 pr-12 text-xs leading-relaxed text-white/68">{rule.answer}</p>
             </div>
           </div>
-          {(identity.founded || identity.hq || identity.supportEmail) && (
-            <dl className="mt-4 grid grid-cols-[140px_1fr] gap-y-2 text-[11px]">
-              <FragmentRow label="Founded" value={identity.founded ?? ""} />
-              <FragmentRow label="HQ" value={identity.hq ?? ""} />
-              <FragmentRow label="Support" value={identity.supportEmail ?? ""} />
-            </dl>
-          )}
-        </section>
-      );
-    }
+        </div>
+        );
+      })}
+    </div>
+  );
+}
 
-    case 1: {
-      // Funding Program — derive from prop.* or fall back
-      const steps = brand?.prop ? [
-        { n: 1, lines: [
-          prop.profitTarget ? `Profit Target: ${prop.profitTarget}` : "",
-          prop.minDays ? `Min Days: ${prop.minDays}` : "",
-          prop.dailyDD ? `Daily DD: ${prop.dailyDD}` : "",
-          prop.maxDD ? `Max Loss: ${prop.maxDD}` : "",
-        ].filter(Boolean) },
-        { n: 2, lines: [
-          prop.evalType ? `Evaluation: ${prop.evalType}` : "",
-          prop.profitSplit ? `Profit Split: ${prop.profitSplit}` : "",
-          prop.scaling ? `Scaling: ${prop.scaling}` : "",
-          prop.maxAlloc ? `Max Allocation: ${prop.maxAlloc}` : "",
-        ].filter(Boolean) },
-      ].filter((s) => s.lines.length) : defaultFundingSteps;
+function ProsConsList({
+  label,
+  tone,
+  items,
+}: {
+  label: string;
+  tone: "pro" | "con";
+  items: string[];
+}) {
+  const isPro = tone === "pro";
 
-      const list = steps.length ? steps : defaultFundingSteps;
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
+      <div
+        className={`mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold ring-1 ${
+          isPro
+            ? "bg-emerald-500/20 text-emerald-50 ring-emerald-400/30"
+            : "bg-rose-500/20 text-rose-50 ring-rose-400/30"
+        }`}
+      >
+        {isPro ? <BadgeCheck className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
+        {label}
+      </div>
+      {items.length ? (
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <li
+              key={item}
+              className="flex gap-2 text-xs leading-relaxed text-white/75"
+            >
+              {isPro ? (
+                <BadgeCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
+              ) : (
+                <Ban className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-300" />
+              )}
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="text-[11px] text-muted-foreground">Not provided</div>
+      )}
+    </div>
+  );
+}
 
-      return (
-        <Section title="Funding Program">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {list.map((s) => (
-              <div key={s.n} className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-                <div className="text-xs font-bold">Step {s.n}</div>
-                <ul className="mt-2 space-y-1 text-[10px] text-muted-foreground">
-                  {s.lines.map((l) => <li key={l}>{l}</li>)}
-                </ul>
+function TbiIndexContent({
+  brand,
+  profile,
+  score,
+}: {
+  brand: SavedBrand | null;
+  profile: TbiProfile | null;
+  score: number;
+}) {
+  const metrics = tbiMetricsForProfile(brand, profile, score);
+
+  return (
+    <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px]">
+      <Section title="TBI Index">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {metrics.map((metric) => (
+            <div key={metric.key} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold text-white">{metric.label}</div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    {metric.short} · {metric.weight}% weight
+                  </div>
+                </div>
+                <div className="text-lg font-black">{metric.value.toFixed(1)}</div>
               </div>
-            ))}
-          </div>
-          <div className="mt-3 flex items-center justify-center gap-2">
-            <button className="grid h-7 w-7 place-items-center rounded-full bg-white/10 ring-1 ring-white/15"><ChevronLeft className="h-3 w-3" /></button>
-            <button className="grid h-7 w-7 place-items-center rounded-full bg-white/10 ring-1 ring-white/15"><ChevronRight className="h-3 w-3" /></button>
-          </div>
-        </Section>
-      );
-    }
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <span
+                  className="block h-full rounded-full bg-gradient-to-r from-slate-200 via-sky-300 to-violet-300"
+                  style={{ width: `${metric.value * 10}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+      <TbiScoreCard brand={brand} profile={profile} score={score} />
+    </div>
+  );
+}
 
-    case 2: {
-      // Account Option
-      const sizes = prop.sizes || broker.accountTypes || exch.supportedAssets || "$2,500, $5,000, $10,000, $25,000, $50,000, $100,000";
-      const platform = prop.platform || broker.platforms || "MetaTrader 5 (MT5)";
-      const instruments = prop.instruments || broker.assets || "Forex, Indices, Commodities, Stocks, CFDs";
-      const leverage = profile.leverageOverall || broker.maxLeverage || "1:30";
+function profileSectionDomId(id: SideSectionId) {
+  return `firm-profile-section-${id}`;
+}
+
+function renderSection(
+  sectionId: SideSectionId,
+  profile: NormalizedPropFirmProfile,
+): React.ReactNode {
+  switch (sectionId) {
+    case "overview":
       return (
-        <Section title="Account Option">
-          <div className="rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10">
-            <dl className="grid grid-cols-[140px_1fr] gap-y-2 text-[11px]">
-              <FragmentRow label="Sizes Available" value={sizes} />
-              <FragmentRow label="Leverage" value={leverage} />
-              <FragmentRow label="Platform" value={platform} />
-              <FragmentRow label="Instruments" value={instruments} />
-            </dl>
+        <Section title="Overview">
+          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_360px] md:items-start">
+            <p className="max-w-3xl text-sm leading-7 text-white/74 sm:text-base sm:leading-8">
+              {profile.overview.description}
+            </p>
+            <VideoReviewCard name={profile.name} url={profile.overview.videoReviewUrl} />
           </div>
         </Section>
       );
-    }
 
-    case 3: {
-      // Trading Rules
-      const rules = [
-        { label: "Time Limit", value: profile.timeLimit || "None" },
-        { label: "Minimum Trading Days", value: prop.minDays || "3 per phase" },
-        { label: "News Trading", value: prop.news || broker.scalping || "Allowed" },
-        { label: "Weekend Holding", value: prop.weekend || "Allowed" },
-        { label: "Overnight Holding", value: profile.overnightHolding || "Allowed" },
-        { label: "Expert Advisors (EAs)", value: prop.ea || "Allowed" },
-        { label: "Copy Trading", value: prop.copyTrading || broker.copyTrading || exch.copyTrading || "" },
-        { label: "Hedging", value: broker.hedging || "" },
-      ];
+    case "trading-rules":
       return (
         <Section title="Trading Rules">
-          <div className="rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10">
-            <dl className="grid grid-cols-[180px_1fr] gap-y-3 text-[11px]">
-              {rules.map((r) => (<FragmentRow key={r.label} label={r.label} value={r.value} />))}
-            </dl>
-            {(prop.consistency || prop.prohibited) && (
-              <ul className="mt-4 list-disc space-y-1 pl-5 text-[10px] text-muted-foreground">
-                {prop.consistency && <li>Consistency Rule: {prop.consistency}</li>}
-                {prop.prohibited && <li>Prohibited: {prop.prohibited}</li>}
-              </ul>
-            )}
-          </div>
+          <InfoRows rows={profile.tradingRules} />
+          <RuleList rules={profile.customRules} />
         </Section>
       );
-    }
 
-    case 4: {
-      // Scaling Plan
-      const items = (prop.scaling || prop.maxAlloc) ? [
-        prop.scaling && { title: "Scaling Plan", body: prop.scaling },
-        prop.maxAlloc && { title: "Max Allocation", body: prop.maxAlloc },
-        prop.profitSplit && { title: "Profit Split", body: prop.profitSplit },
-      ].filter(Boolean) as { title: string; body: string }[] : [
-        { title: "Scaling Potential", body: "Up to $4 million" },
-        { title: "Tier Conditions", body: "Higher splits as you grow" },
-        { title: "VIP Tiers", body: "Tier-based perks at scale" },
-      ];
+    case "scaling-plan":
       return (
         <Section title="Scaling Plan">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {items.map((s, i) => (
-              <div key={i} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-                <div className="text-[11px] font-semibold">{s.title}</div>
-                <div className="mt-1 text-[10px] text-muted-foreground">{s.body}</div>
-              </div>
-            ))}
-          </div>
+          <CardGrid cards={profile.scalingCards} columns="lg:grid-cols-3" />
         </Section>
       );
-    }
 
-    case 5: {
-      // Profit Split & Payout
-      const cards = [
-        prop.profitSplit && `Base Split: ${prop.profitSplit}`,
-        brand?.cashback?.maxPct && `Max Cashback: ${brand.cashback.maxPct}%`,
-        prop.payoutSchedule && `Payout Frequency: ${prop.payoutSchedule}`,
-        prop.payoutMethods && `Withdrawal Methods: ${prop.payoutMethods}`,
-        broker.withdrawals && `Withdrawal Methods: ${broker.withdrawals}`,
-        broker.withdrawalSpeed && `Withdrawal Speed: ${broker.withdrawalSpeed}`,
-        exch.withdrawals && `Withdrawals: ${exch.withdrawals}`,
-      ].filter(Boolean) as string[];
-      const list = cards.length ? cards : [
-        "Base Split: 80%", "Max Split: 100% for VIP", "First Payout: After 7 days",
-        "Payout Frequency: Weekly", "Withdrawal Methods: Crypto, Bank Transfer, Wise",
-      ];
+    case "profit-payout":
       return (
         <Section title="Profit Split & Payout">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((p, i) => (
-              <div key={i} className="rounded-xl bg-white/[0.04] p-3 text-[10px] ring-1 ring-white/10">{p}</div>
-            ))}
+          <CardGrid cards={profile.payoutCards} columns="lg:grid-cols-3" />
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <LogoChipList title="Payout Methods" items={profile.payoutMethods} />
+            <LogoChipList title="Withdrawal Methods" items={profile.withdrawalMethods} />
           </div>
         </Section>
       );
-    }
 
-    case 6: {
-      // Fees & Pricing
-      const items: { title: string; body: string }[] = [];
-      if (prop.pricing) items.push({ title: "Challenge Pricing", body: prop.pricing });
-      if (prop.discountCode) items.push({ title: "Discount Code", body: prop.discountCode });
-      if (broker.commission) items.push({ title: "Commission", body: broker.commission });
-      if (broker.spreads) items.push({ title: "Spreads", body: broker.spreads });
-      if (exch.fees) items.push({ title: "Trading Fees", body: exch.fees });
-      if (brand?.challenges?.length) {
-        const min = Math.min(...brand.challenges.map((c) => c.price ?? Infinity));
-        if (Number.isFinite(min)) items.push({ title: "Starting From", body: `$${min}` });
-      }
-      const list = items.length ? items : [
-        { title: "1-Step / 2-Step Challenge", body: "Starting from $39" },
-        { title: "Instant Funding", body: "Starting from $59" },
-        { title: "Reset Fee", body: "Auto-drop on restart" },
-        { title: "Reset Discounts", body: "10% on resets, weekly" },
-      ];
+    case "cashback-rebate":
+      return (
+        <Section title="Cashback / Rebate">
+          <CardGrid cards={profile.cashbackCards} columns="lg:grid-cols-4" />
+          <div className="mt-6">
+            <InfoRows rows={profile.cashbackRows} />
+          </div>
+        </Section>
+      );
+
+    case "fees-pricing":
       return (
         <Section title="Fees and Pricing">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {list.map((f, i) => (
-              <div key={i} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-                <div className="text-[11px] font-semibold">{f.title}</div>
-                <div className="mt-1 text-[10px] text-muted-foreground">{f.body}</div>
-              </div>
-            ))}
-          </div>
+          <CardGrid cards={profile.pricingCards} />
         </Section>
       );
-    }
 
-    case 7: {
-      // Supported Instrument & Leverage
-      const byAsset = profile.leverageByAsset;
-      const entries: { label: string; value: string }[] = [];
-      if (byAsset) {
-        byAsset.split(",").map((p) => p.trim()).filter(Boolean).forEach((p) => {
-          const [label, ...rest] = p.split(/[:\s]/);
-          entries.push({ label, value: rest.join(" ").trim() || p });
-        });
-      } else {
-        if (prop.instruments || broker.assets) entries.push({ label: "Instruments", value: prop.instruments || broker.assets || "" });
-        if (broker.maxLeverage || profile.leverageOverall) entries.push({ label: "Leverage", value: profile.leverageOverall || broker.maxLeverage || "" });
-      }
-      const list = entries.length ? entries : [
-        { label: "Forex", value: "Majors, Minors, Exotics" },
-        { label: "Indices", value: "US30, NAS100, S&P500" },
-        { label: "Commodities", value: "Gold, Oil" },
-        { label: "Stocks & CFDs", value: "Select assets" },
-        { label: "Leverage", value: "1:30 (across all instruments)" },
-      ];
+    case "instruments-leverage":
       return (
         <Section title="Supported Instrument & Leverage">
-          <div className="rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10">
-            <dl className="grid grid-cols-[140px_1fr] gap-y-2 text-[11px]">
-              {list.map((r) => (<FragmentRow key={r.label} label={r.label} value={r.value} />))}
-            </dl>
-          </div>
+          <InfoRows rows={profile.instrumentRows} />
         </Section>
       );
-    }
 
-    case 8: {
-      // Platform & Technology
-      const platforms = prop.platform || broker.platforms;
-      const items = platforms ? [
-        { n: 1, title: "Platforms", body: platforms },
-        broker.execution && { n: 2, title: "Execution", body: broker.execution },
-        exch.security && { n: 3, title: "Security", body: exch.security },
-        (brand?.tool?.integrations) && { n: 4, title: "Integrations", body: brand!.tool!.integrations },
-      ].filter(Boolean) as typeof platformItemsDefault : platformItemsDefault;
+    case "platform-technology":
       return (
         <Section title="Platform & Technology">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {items.map((p) => (<NumCard key={p.n} {...p} />))}
+          <div className="grid gap-6 md:grid-cols-2">
+            <LogoChipList title="Trading Platforms" items={profile.tradingPlatforms} />
+            <LogoChipList title="Payment Gateways" items={profile.paymentMethods} />
+          </div>
+          <div className="mt-6">
+            <CardGrid cards={profile.platformCards} />
           </div>
         </Section>
       );
-    }
 
-    case 9: {
-      // Community & Education
-      const lines = splitLines(profile.community);
-      const items = lines.length
-        ? lines.slice(0, 4).map((l, i) => {
-            const [title, ...rest] = l.split("|");
-            return { n: i + 1, title: (title ?? "").trim(), body: rest.join("|").trim() };
-          })
-        : defaultCommunity;
+    case "community-education":
       return (
         <Section title="Community & Education">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {items.map((p) => (<NumCard key={p.n} {...p} />))}
-          </div>
+          <CardRows cards={profile.communityCards} />
         </Section>
       );
-    }
 
-    case 10: {
-      // Regulation and Trust
-      const legal = trust.legalEntity || profile.legalEntity;
-      const license = trust.licenseNo || broker.regulations || exch.licenses;
-      const transparency = trust.transparencyNote || profile.transparencyNote || "Terms and FAQs well-documented";
-      const feedback = trust.publicFeedback || profile.publicFeedback || "Positive Trustpilot and Discord scores";
-      const items = [
-        { icon: Building2, title: "Legal Entity", body: legal || "—" },
-        { icon: FileText, title: "License", body: license || "International Brokerage License" },
-        { icon: Eye, title: "Transparency", body: transparency },
-        { icon: MessageSquare, title: "Public Feedback", body: feedback },
-      ];
+    case "regulation-trust":
       return (
         <Section title="Regulation and Trust">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {items.map((t) => (
-              <div key={t.title} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                  <t.icon className="h-4 w-4" />
-                </div>
-                <div className="mt-2 text-[11px] font-semibold">{t.title}</div>
-                <div className="mt-1 text-[10px] text-muted-foreground">{t.body}</div>
-              </div>
-            ))}
-          </div>
+          <CardRows cards={profile.regulationCards} />
         </Section>
       );
-    }
 
-    case 11: {
-      // Customer Support
-      const channels = profile.supportChannels || "Email, Helpdesk, Discord";
-      const response = profile.supportResponse || "Fast (typically <24h)";
-      const community = profile.supportCommunity || "Active Discord group with staff engagement";
+    case "customer-support":
       return (
         <Section title="Customer Support">
-          <div className="flex items-start gap-4 rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-fuchsia-500/30 ring-1 ring-fuchsia-300/30">
-              <Headphones className="h-5 w-5" />
-            </div>
-            <div className="flex-1 space-y-2 text-[11px]">
-              <div className="rounded-md bg-white/[0.04] px-3 py-1.5 ring-1 ring-white/10">Channels: {channels}</div>
-              <div className="rounded-md bg-white/[0.04] px-3 py-1.5 ring-1 ring-white/10">Response Time: {response}</div>
-              <div className="rounded-md bg-white/[0.04] px-3 py-1.5 ring-1 ring-white/10">Community Support: {community}</div>
-              {identity.supportEmail && (
-                <div className="rounded-md bg-white/[0.04] px-3 py-1.5 ring-1 ring-white/10">Email: {identity.supportEmail}</div>
-              )}
-            </div>
-          </div>
+          <InfoRows rows={profile.supportRows} />
         </Section>
       );
-    }
 
-    case 12: {
-      // Restricted Countries
-      const list = splitCsv(profile.restrictedCountries || broker.restrictedCountries);
+    case "restricted-countries":
       return (
         <Section title="Restricted Countries">
-          {list.length ? (
+          {profile.restrictedCountries.length ? (
             <div className="flex flex-wrap gap-2">
-              {list.map((c) => (
-                <span key={c} className="rounded-full bg-rose-500/15 px-3 py-1 text-[11px] font-semibold ring-1 ring-rose-400/30">{c}</span>
+              {profile.restrictedCountries.map((country) => (
+                <CountryChip key={`${country.code}-${country.name}`} country={country} />
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 text-center text-[11px] text-muted-foreground">
-              No country restrictions on file.
-            </div>
+            <EmptyBlock>No country restrictions on file.</EmptyBlock>
           )}
         </Section>
       );
-    }
 
-    case 13: {
-      // Pros & Cons
-      const pros = splitLines(ed.pros);
-      const cons = splitLines(ed.cons);
-      const proList = pros.length ? pros : defaultPros;
-      const conList = cons.length ? cons : defaultCons;
+    case "pros-cons":
       return (
         <Section title="Pros & Cons">
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/10">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-semibold ring-1 ring-emerald-400/30">
-                <Check className="h-3 w-3" /> Pros
-              </div>
-              <ul className="space-y-2">
-                {proList.map((p) => (
-                  <li key={p} className="rounded-full bg-fuchsia-500/15 px-3 py-1.5 text-[11px] ring-1 ring-fuchsia-300/20">{p}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/10">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-rose-500/20 px-3 py-1 text-[11px] font-semibold ring-1 ring-rose-400/30">
-                <X className="h-3 w-3" /> Cons
-              </div>
-              <ul className="space-y-2">
-                {conList.map((p) => (
-                  <li key={p} className="rounded-full bg-fuchsia-500/15 px-3 py-1.5 text-[11px] ring-1 ring-fuchsia-300/20">{p}</li>
-                ))}
-              </ul>
-            </div>
+            <ProsConsList label="Pros" tone="pro" items={profile.pros} />
+            <ProsConsList label="Cons" tone="con" items={profile.cons} />
           </div>
         </Section>
       );
-    }
 
     default:
       return null;
@@ -549,17 +1445,222 @@ function renderSection(idx: number, name: string, brand: SavedBrand | null): Rea
 function FirmDetailsPage() {
   const { firmId } = Route.useParams();
   const navigate = useNavigate();
-  const brand = useSavedBrand(firmId);
+  const { user, token } = useAuth();
+  const brand = useSavedBrand(firmId, token);
+  const publishedOffer = usePublicBrandOffer(brand, firmId);
   const name = brand?.name ?? decodeURIComponent(firmId).replace(/-/g, " ");
+  const profileData = normalizePropFirmProfile(brand, name);
   const [activeIdx, setActiveIdx] = useState(0);
-  const topTabs = ["Overview", "Reviews", "Challenges", "Complaints", "Payouts", "Announcement", "TBI index"] as const;
-  const [topTab, setTopTab] = useState<typeof topTabs[number]>("Overview");
-
-  const tags = useMemo(
-    () => (brand?.founder?.tags ? brand.founder.tags.split(",").map((t) => t.trim()).filter(Boolean) : []),
-    [brand],
+  const topTabs = [
+    "Overview",
+    "Reviews",
+    "Funding Programs",
+    "Complaints",
+    "Payouts",
+    "Announcement",
+    "TBI Index",
+  ] as const;
+  const [topTab, setTopTab] = useState<(typeof topTabs)[number]>("Overview");
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [profileAssets, setProfileAssets] = useState<ProfileAssets>(() =>
+    readStoredProfileAssets(firmId),
   );
-  const logoInitials = (brand?.name ?? name).split(/\s+/).map((w) => w[0]).join("").slice(0, 3).toUpperCase();
+  const [assetOverrides, setAssetOverrides] = useState<ProfileAssets>({});
+  const [profileAssetsFor, setProfileAssetsFor] = useState(firmId);
+  const [followState, setFollowState] = useState({ followersCount: 0, isFollowing: false });
+  const [followBusy, setFollowBusy] = useState(false);
+  const [brandOwnerSession, setBrandOwnerSession] = useState<BrandOwnerSession | null>(() =>
+    readBrandOwnerSession(),
+  );
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState<keyof ProfileAssets | null>(null);
+  const [tbiProfile, setTbiProfile] = useState<TbiProfile | null>(null);
+
+  const logoInitials = (brand?.name ?? name)
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+  const displayAvatar = resolveMediaUrl(
+    assetOverrides.avatar,
+    brand?.thumbnail,
+    profileAssets.avatar,
+  );
+  const displayBanner = resolveMediaUrl(assetOverrides.banner, brand?.cover, profileAssets.banner);
+  const handle = `@${(brand?.slug || firmId).replace(/[^a-z0-9_-]/gi, "").toLowerCase()}`;
+  const supportEmail = brand?.identity?.supportEmail || "";
+  const profileOffer = profileOfferInfo(brand, publishedOffer);
+  const signupUrl =
+    profileOffer.ctaUrl ||
+    externalUrl(
+      firstMeaningful(brand?.cashback?.affiliateLink, brand?.website, brand?.identity?.website),
+    );
+  const brandTbiScore = normalizeTbiScore(
+    Number(
+      brand?.trust?.tbiScore100 ?? brand?.trust?.tbiScore ?? brand?.trust?.tbi ?? brand?.tbi ?? 73,
+    ),
+  );
+  const tbiScore = tbiProfile
+    ? normalizeTbiScore(Number(tbiProfile.finalScore || tbiProfile.preliminaryScore || 0))
+    : brandTbiScore;
+  const country = resolveCountryDisplay(
+    brand?.identity?.country,
+    brand?.identity?.hq,
+    brand?.profile?.country,
+  );
+  const xUrl = socialUrl(brand?.founder?.founderX, "x");
+  const linkedInUrl = socialUrl(brand?.founder?.founderLi, "linkedin");
+  const brandSlug = brand?.slug || firmId;
+  const isAdmin = isAdminRole(user?.role);
+  const isBrandOwner = brandOwnerSession?.slug?.toLowerCase() === brandSlug.toLowerCase();
+  const canEditProfile = isAdmin || isBrandOwner;
+  const followerCount = compactCount(followState.followersCount);
+
+  useEffect(() => {
+    setProfileAssets(readStoredProfileAssets(firmId));
+    setAssetOverrides({});
+    setProfileAssetsFor(firmId);
+    setFollowState({ followersCount: 0, isFollowing: false });
+    setBrandOwnerSession(readBrandOwnerSession());
+  }, [firmId]);
+
+  useEffect(() => {
+    setFollowState({
+      followersCount: Number(brand?.followersCount ?? 0),
+      isFollowing: Boolean(brand?.isFollowing),
+    });
+  }, [brand?.id, brand?.followersCount, brand?.isFollowing]);
+
+  useEffect(() => {
+    if (profileAssetsFor === firmId) writeStoredProfileAssets(firmId, profileAssets);
+  }, [firmId, profileAssets, profileAssetsFor]);
+
+  useEffect(() => {
+    let active = true;
+    const slug = brand?.slug || firmId;
+    setTbiProfile(null);
+
+    fetchTbiBrand(slug)
+      .then((profile) => {
+        if (active) setTbiProfile(profile);
+      })
+      .catch(() => {
+        if (active) setTbiProfile(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [brand?.slug, firmId]);
+
+  useEffect(() => {
+    if (topTab !== "Overview" || typeof window === "undefined") return;
+
+    let frame = 0;
+    const updateActiveSection = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const marker = window.scrollY + 190;
+        let nextIndex = 0;
+
+        sideTabs.forEach((section, index) => {
+          const node = document.getElementById(profileSectionDomId(section.id));
+          if (node && node.offsetTop <= marker) nextIndex = index;
+        });
+
+        setActiveIdx(nextIndex);
+      });
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, [topTab]);
+
+  function scrollToProfileSection(section: (typeof sideTabs)[number], index: number) {
+    setActiveIdx(index);
+    const node = document.getElementById(profileSectionDomId(section.id));
+    if (!node || typeof window === "undefined") return;
+    const top = node.getBoundingClientRect().top + window.scrollY - 170;
+    window.scrollTo({ top, behavior: "smooth" });
+  }
+
+  async function handleAssetFile(kind: keyof ProfileAssets, file?: File | null) {
+    if (!file || !file.type.startsWith("image/")) return;
+    if (!canEditProfile) return;
+
+    setUploadingAsset(kind);
+    try {
+      if (isAdmin && brand?.id) {
+        const uploaded = await uploadMediaFile(file, {
+          folder: kind === "banner" ? "brands/covers" : "brands/logos",
+          prefix: brandSlug || name,
+        });
+        await updateAdminBrand(
+          brand.id,
+          kind === "banner" ? { cover: uploaded.url } : { thumbnail: uploaded.url },
+        );
+        setAssetOverrides((current) => ({ ...current, [kind]: uploaded.url }));
+        setProfileAssets((current) => ({ ...current, [kind]: uploaded.url }));
+        return;
+      }
+
+      const dataUrl = await fileToDataUrl(file);
+      setAssetOverrides((current) => ({ ...current, [kind]: dataUrl }));
+      setProfileAssets((current) => ({ ...current, [kind]: dataUrl }));
+    } finally {
+      setUploadingAsset(null);
+    }
+  }
+
+  async function copyDiscountCode(code: string) {
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(true);
+      window.setTimeout(() => setCopiedCode(false), 1400);
+    } catch {
+      setCopiedCode(false);
+    }
+  }
+
+  async function toggleFollow() {
+    if (!brand?.id) return;
+    if (!token) {
+      void navigate({ to: "/login" });
+      return;
+    }
+
+    setFollowBusy(true);
+    const previous = followState;
+    const next = {
+      followersCount: Math.max(0, followState.followersCount + (followState.isFollowing ? -1 : 1)),
+      isFollowing: !followState.isFollowing,
+    };
+    setFollowState(next);
+
+    try {
+      const updated = followState.isFollowing
+        ? await unfollowAdminBrand(brand.id, token)
+        : await followAdminBrand(brand.id, token);
+      setFollowState({
+        followersCount: Number(updated.followersCount ?? next.followersCount),
+        isFollowing: Boolean(updated.isFollowing ?? next.isFollowing),
+      });
+    } catch {
+      setFollowState(previous);
+    } finally {
+      setFollowBusy(false);
+    }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
@@ -567,139 +1668,392 @@ function FirmDetailsPage() {
       <div className="glow-orb h-[600px] w-[600px] -left-40 top-20" />
       <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-60" />
 
-      <div className="relative mx-auto max-w-[1100px] px-4 py-6">
-        <button
-          onClick={() => navigate({ to: "/" })}
-          className="glass-pill mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back
-        </button>
-
-        <div className="glass-strong rounded-3xl bg-gradient-to-br from-violet-900/40 via-fuchsia-900/20 to-transparent p-5 ring-1 ring-violet-400/20">
-          <div className="grid gap-5 md:grid-cols-[1fr_180px_180px]">
-            <div className="flex items-start gap-4">
-              {brand?.thumbnail ? (
-                <img src={brand.thumbnail} alt={name} className="h-16 w-16 rounded-2xl object-contain bg-white p-1" />
+      <div className="container-app relative pb-6 pt-3 sm:pt-4">
+        <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
+          <div className="glass-strong h-full overflow-hidden rounded-3xl bg-[#130824]/90 ring-1 ring-violet-400/20">
+            <div className="relative h-48 overflow-hidden bg-[#07131f] sm:h-56 lg:h-[260px] xl:h-[270px]">
+              {displayBanner ? (
+                <img
+                  src={displayBanner}
+                  alt={`${name} banner`}
+                  className="h-full w-full object-cover object-center"
+                />
               ) : (
-                <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white text-xs font-bold text-violet-700">{logoInitials || "ACY"}</div>
+                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(217,70,239,0.34),transparent_30%),linear-gradient(135deg,#1a0b2e_0%,#39126b_48%,#130824_100%)]">
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#130824] to-transparent" />
+                  <div className="absolute left-8 top-12 h-px w-[70%] rotate-[-8deg] bg-fuchsia-300/40 shadow-[0_0_30px_rgba(217,70,239,0.8)]" />
+                  <div className="absolute bottom-10 right-10 h-px w-[45%] rotate-[-14deg] bg-violet-200/45 shadow-[0_0_24px_rgba(196,181,253,0.7)]" />
+                </div>
               )}
-              <div className="flex-1">
-                <div className="text-lg font-bold">{name}</div>
-                <div className="text-[11px] text-muted-foreground">By: {brand?.founder?.ceo ?? "—"}</div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-[11px]">
-                  <div>
-                    <div className="text-muted-foreground">Country</div>
-                    <div className="font-semibold">{brand?.identity?.hq ?? "—"}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Year</div>
-                    <div className="font-semibold">{brand?.identity?.founded ?? "—"}</div>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {tags.length ? tags.slice(0, 4).map((t) => (
-                    <span key={t} className="rounded-full bg-fuchsia-500/30 px-3 py-1 text-[10px] font-semibold ring-1 ring-fuchsia-300/40">{t.toUpperCase()}</span>
-                  )) : (
-                    <>
-                      <span className="rounded-full bg-fuchsia-500/30 px-3 py-1 text-[10px] font-semibold ring-1 ring-fuchsia-300/40">30% OFF</span>
-                      <span className="rounded-full bg-fuchsia-500/30 px-3 py-1 text-[10px] font-semibold ring-1 ring-fuchsia-300/40">REBATE20</span>
-                    </>
-                  )}
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-black/[0.02] to-black/15" />
+              <button
+                onClick={() => navigate({ to: "/" })}
+                className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full bg-[#130824]/72 px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/18 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:bg-[#1f0d3d]/86 hover:ring-white/28"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Back
+              </button>
+              {canEditProfile ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => bannerInputRef.current?.click()}
+                    className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full bg-black/45 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20 backdrop-blur hover:bg-black/60"
+                  >
+                    <Camera className="h-3.5 w-3.5" />{" "}
+                    {uploadingAsset === "banner" ? "Saving..." : "Banner"}
+                  </button>
+                  <input
+                    ref={bannerInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      void handleAssetFile("banner", event.currentTarget.files?.[0]);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </>
+              ) : null}
             </div>
 
-            <div className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-              <div className="text-[10px] text-muted-foreground">Rating</div>
-              <div className="mt-1 text-2xl font-bold">
-                {(((brand?.tbi ?? brand?.trust?.tbi ?? 73) / 10) || 7.3).toFixed(1)}
-                <span className="text-sm text-muted-foreground">/10</span>
-              </div>
-              <div className="mt-1 text-[10px] text-muted-foreground">TBI Score</div>
-              <div className="mt-2 text-[10px] text-muted-foreground">Avg App Rating</div>
-              <div className="text-sm font-bold">4.2</div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {["Credibility & Transparency", "Payout Predictability"].map((t) => (
-                <div key={t} className="rounded-2xl bg-white/[0.04] p-2 ring-1 ring-white/10">
-                  <div className="grid h-16 place-items-center">
-                    <div className="h-12 w-12 rotate-45 bg-gradient-to-br from-fuchsia-400/60 to-violet-600/60 ring-1 ring-fuchsia-300/30" />
+            <div className="px-5 pb-5 sm:px-6">
+              <div className="min-w-0">
+                <div className="-mt-14 flex items-end justify-between gap-3 sm:-mt-16">
+                  <div className="relative h-28 w-28 shrink-0 rounded-[28px] border-4 border-[#130824] bg-white shadow-2xl sm:h-32 sm:w-32 sm:border-[5px]">
+                    {displayAvatar ? (
+                      <img
+                        src={displayAvatar}
+                        alt={name}
+                        className="h-full w-full rounded-[21px] object-contain p-1.5 sm:rounded-[22px]"
+                      />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center rounded-[21px] bg-white text-2xl font-bold text-violet-700 sm:rounded-[22px]">
+                        {logoInitials || "RB"}
+                      </div>
+                    )}
+                    {canEditProfile ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          className="absolute bottom-1.5 right-1.5 grid h-8 w-8 place-items-center rounded-full bg-[#1a0b2e] text-white ring-2 ring-white/70 hover:bg-violet-700"
+                          aria-label="Change profile image"
+                        >
+                          <Camera className="h-3.5 w-3.5" />
+                        </button>
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(event) => {
+                            void handleAssetFile("avatar", event.currentTarget.files?.[0]);
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                      </>
+                    ) : null}
                   </div>
-                  <div className="mt-1 text-center text-[9px] text-muted-foreground leading-tight">{t}</div>
-                  <div className="text-center text-xs font-bold">6.5</div>
+
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <a
+                      href={
+                        supportEmail
+                          ? `mailto:${supportEmail}?subject=Message for ${encodeURIComponent(name)}`
+                          : undefined
+                      }
+                      onClick={(event) => {
+                        if (!supportEmail) event.preventDefault();
+                      }}
+                      aria-disabled={!supportEmail}
+                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold ring-1 ${
+                        supportEmail
+                          ? "bg-white/10 text-white ring-white/15 hover:bg-white/15"
+                          : "cursor-not-allowed bg-white/5 text-white/35 ring-white/10"
+                      }`}
+                    >
+                      <Mail className="h-3.5 w-3.5" /> Message
+                    </a>
+                    <a
+                      href={signupUrl || undefined}
+                      target={signupUrl ? "_blank" : undefined}
+                      rel={signupUrl ? "noreferrer" : undefined}
+                      onClick={(event) => {
+                        if (!signupUrl) event.preventDefault();
+                      }}
+                      aria-disabled={!signupUrl}
+                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ring-1 transition ${
+                        signupUrl
+                          ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40 hover:brightness-110"
+                          : "cursor-not-allowed bg-white/5 text-white/35 ring-white/10"
+                      }`}
+                    >
+                      <Rocket className="h-3.5 w-3.5" /> Sign Up
+                    </a>
+                    <button
+                      type="button"
+                      disabled={followBusy || !brand?.id}
+                      onClick={() => void toggleFollow()}
+                      className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold ring-1 transition ${
+                        followState.isFollowing
+                          ? "bg-white text-[#1a0b2e] ring-white/70 hover:bg-rose-50 hover:text-rose-700"
+                          : "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40 hover:brightness-110"
+                      } ${followBusy || !brand?.id ? "opacity-60" : ""}`}
+                    >
+                      {followState.isFollowing ? (
+                        <UserCheck className="h-3.5 w-3.5" />
+                      ) : (
+                        <UserPlus className="h-3.5 w-3.5" />
+                      )}
+                      {followBusy ? "Updating..." : followState.isFollowing ? "Unfollow" : "Follow"}
+                    </button>
+                  </div>
                 </div>
-              ))}
+
+                <div className="mt-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-2xl font-bold leading-tight sm:text-4xl">{name}</h1>
+                    <VerificationBadge />
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <span>{handle}</span>
+                    {brand?.founder?.ceo ? (
+                      <>
+                        <span className="text-white/25">·</span>
+                        <span>
+                          CEO <b className="font-semibold text-white">{brand.founder.ceo}</b>
+                        </span>
+                      </>
+                    ) : null}
+                    {xUrl ? (
+                      <a
+                        href={xUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="grid h-7 w-7 place-items-center rounded-full bg-black text-xs font-black text-white ring-1 ring-white/15 hover:bg-white hover:text-black"
+                        aria-label={`${name} on X`}
+                      >
+                        X
+                      </a>
+                    ) : null}
+                    {linkedInUrl ? (
+                      <a
+                        href={linkedInUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="grid h-7 w-7 place-items-center rounded-full bg-[#0a66c2] text-white ring-1 ring-white/15 hover:brightness-110"
+                        aria-label={`${name} on LinkedIn`}
+                      >
+                        <Linkedin className="h-4 w-4" />
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/80">
+                  {brand?.identity?.tagline ||
+                    brand?.identity?.description ||
+                    `Trading profile for ${name}, including funding details, payout behavior, reviews, complaints, and trust signals.`}
+                </p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+                  <span>
+                    <b className="font-semibold text-white">{followerCount}</b> Followers
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    {country.flag ? (
+                      <span className="text-base leading-none">{country.flag}</span>
+                    ) : null}
+                    <b className="font-semibold text-white">{country.label}</b> Country
+                  </span>
+                  <span>
+                    <b className="font-semibold text-white">{brand?.identity?.founded ?? "—"}</b>{" "}
+                    Year
+                  </span>
+                </div>
+
+                {profileOffer.hasOffer ? (
+                  <div className="mt-5 max-w-3xl">
+                    <div
+                      className="overflow-hidden rounded-[24px] bg-[#101018] text-white ring-1 ring-white/10"
+                      style={{ boxShadow: `0 0 34px ${profileOffer.accentFrom}38` }}
+                    >
+                      <div className="grid sm:grid-cols-[minmax(0,1fr)_190px]">
+                        <div className="relative px-5 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70 ring-1 ring-white/10">
+                              Offer
+                            </span>
+                            {profileOffer.terms ? (
+                              <span
+                                title={profileOffer.terms}
+                                className="grid h-5 w-5 place-items-center rounded-full bg-white/15 text-white/70"
+                              >
+                                <Info className="h-3 w-3" />
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-2 text-3xl font-black leading-none sm:text-4xl">
+                            {profileOffer.discountLabel}
+                          </div>
+                          <p className="mt-2 line-clamp-2 max-w-xl text-sm font-medium leading-relaxed text-white/62">
+                            {profileOffer.description ||
+                              "Verified RebateBoard offer for this brand."}
+                          </p>
+                        </div>
+
+                        <div
+                          className="flex flex-col justify-center gap-2 border-t border-white/10 px-5 py-4 text-[#120814] sm:border-l sm:border-t-0"
+                          style={{
+                            backgroundImage: `linear-gradient(135deg, ${profileOffer.accentFrom}, ${profileOffer.accentTo})`,
+                          }}
+                        >
+                          <div className="text-center text-sm font-black">Use Code</div>
+                          {profileOffer.code ? (
+                            <button
+                              type="button"
+                              onClick={() => void copyDiscountCode(profileOffer.code)}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111018] px-4 py-2.5 text-sm font-black tracking-wide text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
+                            >
+                              <Copy className="h-4 w-4" />
+                              {copiedCode ? "Copied" : profileOffer.code}
+                            </button>
+                          ) : profileOffer.ctaUrl ? (
+                            <a
+                              href={profileOffer.ctaUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111018] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
+                            >
+                              Claim Offer
+                            </a>
+                          ) : (
+                            <div className="rounded-xl bg-[#111018] px-4 py-2.5 text-center text-sm font-black text-white">
+                              No code needed
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {canEditProfile && (profileAssets.avatar || profileAssets.banner) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAssetOverrides({});
+                      setProfileAssets({});
+                    }}
+                    className="mt-3 rounded-full bg-white/5 px-3 py-1 text-[10px] font-semibold text-white/70 ring-1 ring-white/10 hover:text-white"
+                  >
+                    Reset visuals
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+
+          <TbiScoreCard brand={brand} profile={tbiProfile} score={tbiScore} />
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {topTabs.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTopTab(t)}
-              className={
-                "rounded-full px-4 py-1.5 text-[11px] font-semibold ring-1 transition " +
-                (topTab === t
-                  ? "bg-white text-[#1a0b2e] ring-white/40"
-                  : "bg-fuchsia-300/20 text-white ring-fuchsia-300/20 hover:bg-fuchsia-300/30")
-              }
-            >
-              {t}
-            </button>
-          ))}
+        <div className="mt-4 flex justify-center">
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-2 overflow-x-auto">
+            {topTabs.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTopTab(t)}
+                className={
+                  "rounded-full px-4 py-1.5 text-[11px] font-semibold ring-1 transition " +
+                  (topTab === t
+                    ? "bg-white text-[#1a0b2e] ring-white/40"
+                    : "bg-fuchsia-300/20 text-white ring-fuchsia-300/20 hover:bg-fuchsia-300/30")
+                }
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
 
         {topTab === "Reviews" ? (
-          <div className="mt-4"><FirmReviews firmName={name} firmSlug={firmId} /></div>
-        ) : topTab === "Challenges" ? (
+          <div className="mt-4">
+            <FirmReviews firmName={name} firmSlug={firmId} />
+          </div>
+        ) : topTab === "Funding Programs" ? (
           <div className="mt-4">
             <FirmChallenges
               firmName={name}
-              checkoutLink={brand?.cashback?.affiliateLink || brand?.website}
+              checkoutLink={signupUrl}
+              challenges={brand?.challenges}
             />
           </div>
         ) : topTab === "Complaints" ? (
-          <div className="mt-4"><FirmComplaints firmName={name} firmSlug={firmId} /></div>
+          <div className="mt-4">
+            <FirmComplaints firmName={name} firmSlug={firmId} />
+          </div>
         ) : topTab === "Payouts" ? (
-          <div className="mt-4"><FirmPayouts firmName={name} /></div>
+          <div className="mt-4">
+            <FirmPayouts firmName={name} />
+          </div>
         ) : topTab === "Announcement" ? (
-          <div className="mt-4"><FirmAnnouncements firmName={name} /></div>
+          <div className="mt-4">
+            <FirmAnnouncements firmName={name} />
+          </div>
+        ) : topTab === "TBI Index" ? (
+          <TbiIndexContent brand={brand} profile={tbiProfile} score={tbiScore} />
         ) : topTab !== "Overview" ? (
           <div className="mt-4 glass rounded-2xl p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
             <div className="text-base font-semibold text-white">{topTab}</div>
             <p className="mt-2">This section is coming soon.</p>
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-[200px_1fr]">
-            <aside className="glass self-start rounded-2xl p-2 ring-1 ring-violet-400/20 lg:sticky lg:top-[180px]">
-              <ul className="space-y-1">
-                {sideTabs.map((t, i) => (
-                  <li key={t}>
+          <div className="mt-6 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
+            <aside className="self-start lg:sticky lg:top-[170px]">
+              <div className="mb-3 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block">
+                Overview
+              </div>
+              <ul className="flex gap-1 overflow-x-auto border-b border-white/10 pb-2 lg:block lg:space-y-1 lg:overflow-visible lg:border-b-0 lg:border-l lg:border-white/10 lg:pb-0">
+                {sideTabs.map((section, i) => (
+                  <li key={section.id} className="shrink-0 lg:shrink">
                     <button
-                      onClick={() => setActiveIdx(i)}
+                      onClick={() => scrollToProfileSection(section, i)}
                       className={
-                        "w-full rounded-full px-3 py-1.5 text-left text-[11px] font-medium transition " +
+                        "relative whitespace-nowrap rounded-full px-3 py-1.5 text-left text-[11px] font-semibold transition lg:w-full lg:rounded-none lg:py-2 lg:pl-4 " +
                         (i === activeIdx
-                          ? "bg-fuchsia-300/30 text-white ring-1 ring-fuchsia-300/40"
-                          : "text-muted-foreground hover:bg-white/[0.04] hover:text-white")
+                          ? "bg-fuchsia-300/[0.18] text-white ring-1 ring-fuchsia-300/25 lg:bg-transparent lg:ring-0"
+                          : "text-white/45 hover:bg-white/[0.04] hover:text-white/85 lg:hover:bg-transparent")
                       }
                     >
-                      {t}
+                      {i === activeIdx ? (
+                        <span className="absolute left-0 top-1/2 hidden h-5 w-0.5 -translate-y-1/2 rounded-full bg-fuchsia-300 lg:block" />
+                      ) : null}
+                      {section.label}
                     </button>
                   </li>
                 ))}
               </ul>
             </aside>
 
-            <div key={activeIdx} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-              {renderSection(activeIdx, name, brand)}
+            <div className="min-w-0 animate-in fade-in slide-in-from-right-4 duration-300">
+              {sideTabs.map((section, index) => (
+                <div
+                  key={section.id}
+                  id={profileSectionDomId(section.id)}
+                  className={`scroll-mt-[190px] transition duration-500 motion-safe:transform ${
+                    index === activeIdx
+                      ? "translate-y-0 opacity-100"
+                      : "opacity-85 lg:translate-y-1 lg:opacity-75"
+                  }`}
+                >
+                  {renderSection(section.id, profileData)}
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
-    <SiteFooter />
+      <SiteFooter />
     </div>
   );
 }

@@ -263,9 +263,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login: AuthContextType["login"] = async (email, password) => {
+    const identity = email.trim();
     const response = await apiRequest<LoginResponse>("/auth/login", {
       method: "POST",
-      body: { email, password },
+      body: { email: identity, identity, username: identity, password },
     });
 
     const payload = response.payload;

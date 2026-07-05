@@ -355,10 +355,11 @@ export const Route = createFileRoute("/payouts/$brandSlug")({
   notFoundComponent: () => (
     <div className="min-h-screen" style={{ background: "#07090F", color: "#E4E8FF" }}>
       <SiteHeader />
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+      <div className="container-app max-w-2xl py-16 text-center sm:py-20">
         <h1 className="text-3xl font-bold">Firm not found</h1>
         <Link to="/payouts" className="mt-4 inline-block" style={{ color: "#A89BFF" }}>← Back to Payouts</Link>
       </div>
+      <SiteFooter />
     </div>
   ),
   errorComponent: ({ error }) => (
@@ -568,48 +569,27 @@ function BrandPage() {
         .rb-btn-primary:hover { background: ${C.purple2}; transform: translateY(-1px); }
         .rb-btn-outline:hover { background: rgba(124,111,247,0.12); }
         .rb-tab:hover { color: ${C.text}; }
+        @media (max-width: 1024px) {
+          .rb-hero-grid { grid-template-columns: 1fr !important; }
+          .rb-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .rb-main-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .rb-stats-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       <div style={{
         background: C.bg, color: C.text, minHeight: "100vh",
         fontFamily: FF_BODY, fontSize: 13,
       }}>
-        {/* === STICKY NAV ============================================= */}
-        <div style={{
-          position: "sticky", top: 0, zIndex: 100,
-          background: "rgba(7,9,15,0.88)", backdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${C.border}`,
-          padding: "0 48px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <Link to="/" style={{
-            fontFamily: FF_DISPLAY, fontWeight: 800, fontSize: 18, letterSpacing: -0.3,
-            textDecoration: "none",
-          }}>
-            <span style={{ color: C.purple2 }}>Rebate</span>
-            <span style={{ color: C.text }}>Board</span>
-          </Link>
-          <div style={{ fontSize: 12, color: C.muted, fontFamily: FF_BODY }}>
-            <Link to="/" style={{ color: C.purple2, textDecoration: "none" }} className="rb-link">Home</Link>
-            <span style={{ margin: "0 8px" }}>›</span>
-            <Link to="/payouts" style={{ color: C.purple2, textDecoration: "none" }} className="rb-link">Payouts</Link>
-            <span style={{ margin: "0 8px" }}>›</span>
-            <span style={{ color: C.text }}>{firm.name}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{
-              width: 8, height: 8, borderRadius: 999, background: C.green,
-              animation: "rb-pulse 1.6s ease-in-out infinite",
-            }} />
-            <span style={{ color: C.green, fontFamily: FF_MONO, fontSize: 11, letterSpacing: 0.4 }}>
-              Live Data
-            </span>
-          </div>
-        </div>
+        <SiteHeader />
+        <div className="container-app">
 
         {/* === FIRM SELECTOR TAB BAR ================================= */}
         <div style={{
           background: C.surface, borderBottom: `1px solid ${C.border}`,
-          padding: "14px 48px", overflowX: "auto", whiteSpace: "nowrap",
+          padding: "14px 0", overflowX: "auto", whiteSpace: "nowrap",
         }} className="rb-scroll">
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
             <span style={{
@@ -643,7 +623,7 @@ function BrandPage() {
         </div>
 
         {/* === HERO ================================================== */}
-        <section style={{ position: "relative", overflow: "hidden", padding: "48px 48px 36px" }} className="rb-fade rb-d1">
+        <section style={{ position: "relative", overflow: "hidden", padding: "40px 0 32px" }} className="rb-fade rb-d1">
           <div style={{
             position: "absolute", top: -80, left: -80, width: 380, height: 380,
             borderRadius: "50%", background: firm.color, filter: "blur(80px)", opacity: 0.18,
@@ -658,7 +638,7 @@ function BrandPage() {
           <div style={{
             position: "relative", display: "grid", gridTemplateColumns: "1fr auto",
             gap: 32, alignItems: "start",
-          }}>
+          }} className="rb-hero-grid">
             <div>
               <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
                 <div style={{
@@ -671,7 +651,7 @@ function BrandPage() {
                 <div>
                   <h1 style={{
                     fontFamily: FF_DISPLAY, fontWeight: 800, fontSize: 30,
-                    margin: 0, lineHeight: 1.05, letterSpacing: -0.5,
+                    margin: 0, lineHeight: 1.05, letterSpacing: 0,
                   }}>{firm.name}</h1>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                     {firm.tags.map((t) => <TagPill key={t.label} label={t.label} tone={t.tone} />)}
@@ -721,9 +701,9 @@ function BrandPage() {
 
         {/* === TOP STATS STRIP ====================================== */}
         <section style={{
-          padding: "0 48px 32px",
+          padding: "0 0 32px",
           display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10,
-        }} className="rb-fade rb-d2">
+        }} className="rb-fade rb-d2 rb-stats-grid">
           {[
             { icon: "💰", label: "Total Paid Out", value: firm.stats.totalPaid, delta: firm.deltas[0], tone: "pos" },
             { icon: "⚡", label: "Avg Payout Speed", value: firm.stats.avgSpeed, delta: firm.deltas[1], tone: firm.deltas[1].includes("slower") ? "neg" : "pos" },
@@ -740,7 +720,7 @@ function BrandPage() {
                 <span>{s.icon}</span>
               </div>
               <div style={{
-                marginTop: 6, fontFamily: FF_DISPLAY, fontWeight: 700, fontSize: 20, color: C.text, letterSpacing: -0.3,
+                marginTop: 6, fontFamily: FF_DISPLAY, fontWeight: 700, fontSize: 20, color: C.text, letterSpacing: 0,
               }}>{s.value}</div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{s.label}</div>
               {s.delta && (
@@ -757,9 +737,9 @@ function BrandPage() {
 
         {/* === MAIN 2-COLUMN GRID ================================== */}
         <section style={{
-          padding: "0 48px 36px",
+          padding: "0 0 36px",
           display: "grid", gridTemplateColumns: "1fr 380px", gap: 18,
-        }}>
+        }} className="rb-main-grid">
           {/* === LEFT COLUMN === */}
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {/* Volume chart */}
@@ -1027,10 +1007,10 @@ function BrandPage() {
         </section>
 
         {/* === DIVIDER ============================================== */}
-        <div style={{ height: 1, background: C.border, margin: "0 48px 32px" }} />
+        <div style={{ height: 1, background: C.border, margin: "0 0 32px" }} />
 
         {/* === CTA STRIP ============================================ */}
-        <section style={{ margin: "0 48px 48px", position: "relative" }} className="rb-fade rb-d5">
+        <section style={{ margin: "0 0 48px", position: "relative" }} className="rb-fade rb-d5">
           <div style={{
             background: C.card2, border: `1px solid ${C.border}`,
             borderRadius: 14, padding: "28px 32px",
@@ -1067,7 +1047,8 @@ function BrandPage() {
             </div>
           </div>
         </section>
-      <SiteFooter />
+        </div>
+        <SiteFooter />
       </div>
     </>
   );

@@ -13,6 +13,7 @@ import { tickStreak, getStreakConfig } from "@/lib/rr-rewards";
 import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/finance-api";
 import { completeDailyTask, fetchMyDailyTasks, type DailyTaskUserBoard } from "@/lib/daily-tasks-api";
 import { toast } from "@/components/superadmin/AdminActions";
+import { useI18n } from "@/lib/i18n";
 
 function fmtUSD(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function DashboardHome() {
+  const { t } = useI18n();
   const { user, token } = useAuth();
   const [summary, setSummary] = useState<WalletSummary | null>(null);
   const [recentTx, setRecentTx] = useState<WalletTransaction[]>([]);
@@ -65,29 +67,29 @@ function DashboardHome() {
   const { primaryMarketLabel, goalLabel } = usePersonalization();
   const greeting = (() => {
     const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
+    if (h < 12) return t("dashboard.greetingMorning");
+    if (h < 18) return t("dashboard.greetingAfternoon");
+    return t("dashboard.greetingEvening");
   })();
   const subtitle = primaryMarketLabel || goalLabel
-    ? `Tuned for ${primaryMarketLabel ?? "your markets"}${goalLabel ? ` · Goal: ${goalLabel}` : ""}.`
-    : "Here's your command center — performance, signals, and next moves.";
+    ? `${t("dashboard.tunedFor")} ${primaryMarketLabel ?? t("dashboard.yourMarkets")}${goalLabel ? ` · ${t("dashboard.goal")}: ${goalLabel}` : ""}.`
+    : t("dashboard.commandCenter");
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${greeting}, ${user?.name?.split(" ")[0] ?? "Trader"}.`}
+        title={`${greeting}, ${user?.name?.split(" ")[0] ?? t("dashboard.trader")}.`}
         subtitle={subtitle}
         actions={
           <>
             <Link to={"/dashboard/trading-plan" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <ClipboardCheck className="h-3.5 w-3.5 text-accent" /> Trading Plan
+              <ClipboardCheck className="h-3.5 w-3.5 text-accent" /> {t("dashboard.nav.tradingPlan")}
             </Link>
             <button onClick={openAddTrade} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <Plus className="h-3.5 w-3.5" /> Add Trade
+              <Plus className="h-3.5 w-3.5" /> {t("dashboard.addTrade")}
             </button>
             <Link to={"/dashboard/ai-coach" as string} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
-              Ask Rebeta
+              {t("dashboard.askRebeta")}
             </Link>
           </>
         }
@@ -95,12 +97,12 @@ function DashboardHome() {
 
       {/* Section 1 — Money First */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Wallet Balance" value={summary ? `$${Number(summary.balance).toLocaleString()}` : "—"} trend="up" accent="success" />
-        <StatCard label="Total Cashback" value={summary ? `$${Number(summary.totalEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint="All-time" trend="up" accent="success" />
-        <StatCard label="RR Balance" value={user ? String(Math.round(user.rrBalance)) : "—"} accent="warning" />
-        <StatCard label="Total Withdrawn" value={summary ? `$${Number(summary.totalWithdrawn).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint="Lifetime" accent="primary" />
-        <StatCard label="Pending" value={summary ? `$${Number(summary.pendingWithdrawals).toLocaleString()}` : "—"} hint="withdrawals" accent="warning" />
-        <StatCard label="Referrals" value={referralStats ? String(referralStats.total) : "—"} hint={referralStats ? `+${referralStats.thisMonth} this month` : ""} />
+        <StatCard label={t("dashboard.walletBalance")} value={summary ? `$${Number(summary.balance).toLocaleString()}` : "—"} trend="up" accent="success" />
+        <StatCard label={t("dashboard.totalCashback")} value={summary ? `$${Number(summary.totalEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint={t("dashboard.allTime")} trend="up" accent="success" />
+        <StatCard label={t("dashboard.rrBalance")} value={user ? String(Math.round(user.rrBalance)) : "—"} accent="warning" />
+        <StatCard label={t("dashboard.totalWithdrawn")} value={summary ? `$${Number(summary.totalWithdrawn).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint={t("dashboard.lifetime")} accent="primary" />
+        <StatCard label={t("dashboard.pending")} value={summary ? `$${Number(summary.pendingWithdrawals).toLocaleString()}` : "—"} hint={t("dashboard.withdrawals")} accent="warning" />
+        <StatCard label={t("dashboard.referrals")} value={referralStats ? String(referralStats.total) : "—"} hint={referralStats ? `+${referralStats.thisMonth} ${t("dashboard.thisMonthPlus")}` : ""} />
       </div>
 
       {/* Wallet Hero */}
@@ -112,22 +114,22 @@ function DashboardHome() {
               <Wallet className="h-6 w-6 text-white" />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Available to withdraw</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("dashboard.availableToWithdraw")}</div>
               <div className="text-2xl font-bold text-white">{summary ? `$${Number(summary.availableForWithdrawal).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</div>
               <div className="text-[11px] text-muted-foreground">
-                Pending {summary ? fmtUSD(Number(summary.pendingWithdrawals)) : "—"}
+                {t("dashboard.pending")} {summary ? fmtUSD(Number(summary.pendingWithdrawals)) : "—"}
               </div>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to={"/dashboard/wallet" as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]">
-              <ArrowDownToLine className="h-3.5 w-3.5" /> Withdraw
+              <ArrowDownToLine className="h-3.5 w-3.5" /> {t("dashboard.withdraw")}
             </Link>
             <Link to={"/dashboard/wallet" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <Send className="h-3.5 w-3.5" /> Transfer
+              <Send className="h-3.5 w-3.5" /> {t("dashboard.transfer")}
             </Link>
             <Link to={"/dashboard/wallet" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              Open Wallet <ArrowRight className="h-3.5 w-3.5" />
+              {t("dashboard.openWallet")} <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
@@ -135,23 +137,23 @@ function DashboardHome() {
 
       {/* Earnings Intelligence */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Earnings over time" action={<Pill tone="success">6m</Pill>}>
+        <Panel title={t("dashboard.earningsOverTime")} action={<Pill tone="success">6m</Pill>}>
           {earningsTimeline.length > 0
             ? <MiniLineChart data={earningsTimeline.map((d) => ({ label: d.month, amount: d.amount }))} height={140} />
-            : <div className="h-[140px] flex items-center justify-center text-xs text-muted-foreground">No data yet</div>}
+            : <div className="h-[140px] flex items-center justify-center text-xs text-muted-foreground">{t("dashboard.noDataYet")}</div>}
           <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Last 6 months</span>
-            <Link to={"/dashboard/wallet" as string} className="text-accent hover:underline">View wallet →</Link>
+            <span>{t("dashboard.last6Months")}</span>
+            <Link to={"/dashboard/wallet" as string} className="text-accent hover:underline">{t("dashboard.viewWallet")} →</Link>
           </div>
         </Panel>
 
-        <Panel title="Cashback by source" action={<Building2 className="h-3.5 w-3.5 text-muted-foreground" />}>
+        <Panel title={t("dashboard.cashbackBySource")} action={<Building2 className="h-3.5 w-3.5 text-muted-foreground" />}>
           {earningsBySource.length > 0
             ? <SourceBars data={earningsBySource.slice(0, 6)} color="from-emerald-400 to-fuchsia-500" />
-            : <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">No earnings yet</div>}
+            : <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">{t("dashboard.noEarningsYet")}</div>}
         </Panel>
 
-        <Panel title="Earnings Intelligence" action={<Pill tone="primary">AI</Pill>}>
+        <Panel title={t("dashboard.earningsIntelligence")} action={<Pill tone="primary">AI</Pill>}>
           <ul className="space-y-2.5 text-xs">
             <li className="flex gap-2 rounded-lg bg-emerald-500/10 p-2.5">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
@@ -167,7 +169,7 @@ function DashboardHome() {
             </li>
             <li>
               <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-accent hover:underline">
-                Compare brokers <ArrowRight className="h-3 w-3" />
+                {t("dashboard.compareBrokers")} <ArrowRight className="h-3 w-3" />
               </Link>
             </li>
           </ul>
@@ -178,46 +180,46 @@ function DashboardHome() {
       <div className="glass grid gap-4 rounded-2xl p-5 ring-1 ring-white/10 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-            <Users className="h-3.5 w-3.5" /> Referrals
+            <Users className="h-3.5 w-3.5" /> {t("dashboard.referrals")}
           </div>
           <div className="mt-1 text-2xl font-bold text-white">{referralStats?.total ?? "—"}</div>
-          <div className="text-[11px] text-muted-foreground">Traders referred</div>
+          <div className="text-[11px] text-muted-foreground">{t("dashboard.tradersReferred")}</div>
         </div>
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">This month</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("dashboard.thisMonth")}</div>
           <div className="mt-1 text-2xl font-bold text-white">+{referralStats?.thisMonth ?? "—"}</div>
-          <div className="text-[11px] text-muted-foreground">New signups</div>
+          <div className="text-[11px] text-muted-foreground">{t("dashboard.newSignups")}</div>
         </div>
         <div className="flex items-end justify-end">
           <Link to={"/dashboard/referrals" as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
-            Invite & Earn <ArrowRight className="h-3.5 w-3.5" />
+            {t("dashboard.inviteEarn")} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
 
       {/* Section 2 — Today */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Today" action={<Pill tone="success">Live</Pill>}>
+        <Panel title={t("dashboard.today")} action={<Pill tone="success">{t("dashboard.live")}</Pill>}>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <div className="text-[10px] uppercase text-muted-foreground">PnL</div>
+              <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.pnl")}</div>
               <div className="mt-1 text-xl font-bold text-success">+$412</div>
               <div className="text-[10px] text-muted-foreground">+1.6% R</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase text-muted-foreground">Trades</div>
+              <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.trades")}</div>
               <div className="mt-1 text-xl font-bold text-white">3</div>
               <div className="text-[10px] text-muted-foreground">2W · 1L</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase text-muted-foreground">Risk</div>
-              <div className="mt-1 text-xl font-bold text-success">Safe</div>
-              <div className="text-[10px] text-muted-foreground">0 violations</div>
+              <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.risk")}</div>
+              <div className="mt-1 text-xl font-bold text-success">{t("dashboard.safe")}</div>
+              <div className="text-[10px] text-muted-foreground">0 {t("dashboard.violations")}</div>
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
             <Activity className="h-4 w-4 text-success" />
-            Guardrails: <span className="font-semibold text-success">All clear</span>
+            {t("dashboard.guardrails")}: <span className="font-semibold text-success">{t("dashboard.allClear")}</span>
           </div>
         </Panel>
 

@@ -32,14 +32,14 @@ function ReviewsHub() {
   return (
     <div className="relative min-h-screen pt-20">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="container-app py-8 sm:py-10">
         {/* HERO */}
         <section className="glass relative overflow-hidden rounded-3xl p-6 ring-1 ring-white/10 sm:p-10">
           <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[800px] -translate-x-1/2 bg-fuchsia-500/20 blur-3xl" />
           <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <div className="text-xs uppercase tracking-widest text-fuchsia-300">Public Reviews</div>
-              <h1 className="text-gradient mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="text-gradient mt-2 text-3xl font-bold sm:text-4xl">
                 Real traders. Verified experience.
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">

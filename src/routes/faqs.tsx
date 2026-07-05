@@ -1,18 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Plus, Minus, BookOpen, ArrowUpRight, MessageCircle, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { useAdminCollection } from "@/lib/admin-store";
-import { faqs as faqSeed, blogPosts as blogSeed, type Faq, type BlogPost } from "@/lib/admin-data";
+import {
+  articleRouteId,
+  fetchPublicBlogPosts,
+  fetchPublicFaqs,
+  type BlogPost,
+  type Faq,
+} from "@/lib/admin-api";
 
 export const Route = createFileRoute("/faqs")({
   head: () => ({
     meta: [
       { title: "FAQs & Help Center — RebateBoard" },
-      { name: "description", content: "Answers about RebateBoard cashback, prop firms, brokers, exchanges, payouts and partner brands — plus editorial articles." },
+      {
+        name: "description",
+        content:
+          "Answers about RebateBoard cashback, prop firms, brokers, exchanges, payouts and partner brands — plus editorial articles.",
+      },
       { property: "og:title", content: "FAQs & Help Center — RebateBoard" },
-      { property: "og:description", content: "Get clear answers about cashback, payouts, prop firms, brokers, exchanges and partner brands." },
+      {
+        property: "og:description",
+        content:
+          "Get clear answers about cashback, payouts, prop firms, brokers, exchanges and partner brands.",
+      },
     ],
   }),
   component: FaqsPage,
@@ -28,12 +41,43 @@ const CATEGORY_BLURBS: Record<string, string> = {
 };
 
 function FaqsPage() {
-  const { items: faqs } = useAdminCollection<Faq>("faqs", faqSeed);
-  const { items: blog } = useAdminCollection<BlogPost>("blog", blogSeed);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [blog, setBlog] = useState<BlogPost[]>([]);
+  const [loadingFaqs, setLoadingFaqs] = useState(true);
 
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("all");
   const [openKey, setOpenKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContent() {
+      setLoadingFaqs(true);
+      try {
+        const [faqRows, articleRows] = await Promise.all([
+          fetchPublicFaqs(),
+          fetchPublicBlogPosts(),
+        ]);
+        if (!cancelled) {
+          setFaqs(faqRows);
+          setBlog(articleRows);
+        }
+      } catch {
+        if (!cancelled) {
+          setFaqs([]);
+          setBlog([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingFaqs(false);
+      }
+    }
+
+    void loadContent();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const publishedFaqs = useMemo(() => faqs.filter((f) => f.status === "published"), [faqs]);
   const articles = useMemo(() => blog.filter((b) => b.status === "published"), [blog]);
@@ -70,7 +114,7 @@ function FaqsPage() {
     <div className="min-h-screen bg-[#0d0420] text-white">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+      <main className="container-app py-8 sm:py-10">
         {/* Hero */}
         <section className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[11px] uppercase tracking-widest text-muted-foreground ring-1 ring-white/10">
@@ -78,8 +122,9 @@ function FaqsPage() {
           </div>
           <h1 className="mt-4 text-3xl font-bold sm:text-5xl">Everything you need to know</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            Browse {publishedFaqs.length} answers about RebateBoard, our partner brands, prop firms,
-            brokers, exchanges, payouts and the trading industry at large.
+            Browse {loadingFaqs ? "..." : publishedFaqs.length} answers about RebateBoard, our
+            partner brands, prop firms, brokers, exchanges, payouts and the trading industry at
+            large.
           </p>
 
           <div className="mx-auto mt-6 flex max-w-xl items-center gap-2 rounded-full bg-white/[0.05] px-4 py-2 ring-1 ring-white/10">
@@ -120,18 +165,30 @@ function FaqsPage() {
         </section>
 
         {/* Category sections */}
-        <section className="mt-12 space-y-10">
-          {publishedFaqs.length === 0 && (
+        <section className="mt-8 space-y-8">
+          {loadingFaqs && (
             <div className="rounded-2xl bg-white/[0.04] p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
-              No FAQs published yet. Check back soon.
+              Loading FAQs...
             </div>
           )}
-          {publishedFaqs.length > 0 && filtered.length === 0 && (
+          {!loadingFaqs && publishedFaqs.length === 0 && (
+            <div className="rounded-2xl bg-white/[0.04] p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
+              No FAQs published yet. Published admin FAQs will appear here automatically.
+            </div>
+          )}
+          {!loadingFaqs && publishedFaqs.length > 0 && filtered.length === 0 && (
             <div className="rounded-2xl bg-white/[0.04] p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
               No answers match “{query}”. Try a different keyword or{" "}
-              <button onClick={() => { setQuery(""); setActiveCat("all"); }} className="text-fuchsia-300 hover:underline">
+              <button
+                onClick={() => {
+                  setQuery("");
+                  setActiveCat("all");
+                }}
+                className="text-fuchsia-300 hover:underline"
+              >
                 clear filters
-              </button>.
+              </button>
+              .
             </div>
           )}
           {filtered.map((cat) => (
@@ -156,7 +213,11 @@ function FaqsPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <span className="text-sm font-semibold">{f.question}</span>
-                        {open ? <Minus className="mt-0.5 h-4 w-4 shrink-0" /> : <Plus className="mt-0.5 h-4 w-4 shrink-0" />}
+                        {open ? (
+                          <Minus className="mt-0.5 h-4 w-4 shrink-0" />
+                        ) : (
+                          <Plus className="mt-0.5 h-4 w-4 shrink-0" />
+                        )}
                       </div>
                       {open && (
                         <p className="mt-3 whitespace-pre-line text-[12px] leading-relaxed text-muted-foreground animate-fade-in">
@@ -181,7 +242,8 @@ function FaqsPage() {
                 </div>
                 <h2 className="mt-3 text-xl font-bold sm:text-2xl">Beyond the FAQs</h2>
                 <p className="text-xs text-muted-foreground">
-                  Deep-dives into prop firms, brokers and the brands we — and our community — recommend.
+                  Deep-dives into prop firms, brokers and the brands we — and our community —
+                  recommend.
                 </p>
               </div>
             </div>
@@ -191,7 +253,7 @@ function FaqsPage() {
                 <Link
                   key={a.id}
                   to="/articles/$id"
-                  params={{ id: a.id }}
+                  params={{ id: articleRouteId(a) }}
                   className="group overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:bg-white/[0.07]"
                 >
                   {a.cover ? (
@@ -208,10 +270,13 @@ function FaqsPage() {
                     </div>
                     <h3 className="mt-3 text-sm font-semibold leading-snug">{a.title}</h3>
                     {a.excerpt && (
-                      <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground line-clamp-3">{a.excerpt}</p>
+                      <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground line-clamp-3">
+                        {a.excerpt}
+                      </p>
                     )}
                     <div className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300">
-                      Read article <ArrowUpRight className="h-3 w-3 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      Read article{" "}
+                      <ArrowUpRight className="h-3 w-3 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </div>
                   </div>
                 </Link>
@@ -235,10 +300,16 @@ function FaqsPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Link to="/dashboard" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white">
+                <Link
+                  to="/dashboard"
+                  className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white"
+                >
                   Open Support
                 </Link>
-                <Link to="/dashboard/community" className="rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/15">
+                <Link
+                  to="/dashboard/community"
+                  className="rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/15"
+                >
                   Join Community
                 </Link>
               </div>
@@ -246,7 +317,7 @@ function FaqsPage() {
           </div>
         </section>
       </main>
-    <SiteFooter />
+      <SiteFooter />
     </div>
   );
 }

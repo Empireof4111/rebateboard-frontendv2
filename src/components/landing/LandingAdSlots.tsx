@@ -15,22 +15,61 @@ import {
   type AdSlide,
   type SponsorLogo,
 } from "@/lib/dashboard-ads";
+import { fetchPublicAdverts } from "@/lib/public-adverts-api";
+import { useI18n } from "@/lib/i18n";
 
 function useActiveAd(placement: Parameters<typeof pickActiveAdFor>[0]) {
   const [ad, setAd] = useState<DashboardAd | null>(() => pickActiveAdFor(placement));
+
   useEffect(() => {
+    let active = true;
     const refresh = () => setAd(pickActiveAdFor(placement));
+
+    fetchPublicAdverts(placement).then((ads) => {
+      if (!active) return;
+      const liveAd = ads.find((item) => item.active) ?? null;
+      setAd(liveAd ?? pickActiveAdFor(placement));
+    });
+
     window.addEventListener("rb:dashboard-ads", refresh);
-    return () => window.removeEventListener("rb:dashboard-ads", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("rb:dashboard-ads", refresh);
+    };
   }, [placement]);
+
   useEffect(() => { if (ad) trackImpression(ad.id); }, [ad?.id]);
   return ad;
 }
 
+function slidesForAd(ad: DashboardAd | null, fallbackImage: string): AdSlide[] {
+  const slides = (ad?.slides ?? []).map(hydrateSlide);
+  if (!ad) return [];
+
+  const primarySlide =
+    ad.image || (!slides.length && (ad.headline || ad.name))
+      ? {
+          label: ad.headline || ad.name,
+          sub: ad.sub,
+          href: ad.href || "/blog",
+          image: ad.image || fallbackImage,
+          accent: ad.accent,
+        }
+      : null;
+
+  return [primarySlide, ...slides].filter((slide): slide is AdSlide => Boolean(slide));
+}
+
 /** 4-slide rotating hero card on the landing page. */
-export function LandingHeroAdCard({ fallbackImage }: { fallbackImage: string }) {
+export function LandingHeroAdCard({
+  fallbackImage,
+  className = "",
+}: {
+  fallbackImage: string;
+  className?: string;
+}) {
   const ad = useActiveAd("landing-hero");
-  const slides: AdSlide[] = (ad?.slides ?? []).map(hydrateSlide);
+  const slides = slidesForAd(ad, fallbackImage);
   const [i, setI] = useState(0);
 
   useEffect(() => {
@@ -39,13 +78,26 @@ export function LandingHeroAdCard({ fallbackImage }: { fallbackImage: string }) 
     return () => clearInterval(t);
   }, [slides.length]);
 
-  const current = slides[i];
+  useEffect(() => {
+    if (i >= slides.length) setI(0);
+  }, [i, slides.length]);
+
+  const current = slides[i] ?? slides[0];
   const image = current?.image || fallbackImage;
 
   return (
-    <div className="glass-strong relative overflow-hidden rounded-3xl">
-      <img src={image} alt={current?.label ?? "Featured"} className="h-64 w-full object-cover sm:h-80" width={1024} height={768} />
-      <div className="absolute inset-x-0 bottom-0 p-5">
+    <div
+      className={`glass-strong relative min-h-[18rem] overflow-hidden rounded-[2rem] sm:min-h-[20rem] ${className}`}
+    >
+      <img
+        src={image}
+        alt={current?.label ?? "Featured"}
+        className="absolute inset-0 h-full w-full object-cover"
+        width={1024}
+        height={640}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/92 via-[#10051f]/10 to-black/10" />
+      <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
         <Link
           to={current?.href ?? "/blog"}
           onClick={() => ad && trackClick(ad.id)}
@@ -88,12 +140,13 @@ export function LandingHeroAdCard({ fallbackImage }: { fallbackImage: string }) 
 
 /** Sponsored partners logo strip under the hero headline. */
 export function LandingSponsorsStrip({ fallback }: { fallback: SponsorLogo[] }) {
+  const { t } = useI18n();
   const ad = useActiveAd("landing-sponsors");
   const sponsors: SponsorLogo[] = ad?.sponsors?.length ? ad.sponsors : fallback;
 
   return (
-    <div className="mt-8">
-      <div className="eyebrow mb-3">Sponsored partners</div>
+    <div className="mt-4">
+      <div className="eyebrow mb-3">{t("hero.sponsoredPartners")}</div>
       <div className="flex flex-wrap gap-3">
         {sponsors.map((b) => {
           const tagBadge =

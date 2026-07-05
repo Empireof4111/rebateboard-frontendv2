@@ -86,7 +86,7 @@ function ExplorePage() {
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="container-app py-6 sm:py-8">
         <div className="mb-6">
           <div className="text-xs text-muted-foreground">
             <Link to="/tbi" className="hover:text-foreground">TBI</Link> · Explore

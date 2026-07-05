@@ -85,7 +85,7 @@ function PayoutsPage() {
   return (
     <div className="min-h-screen bg-[#0c0418] text-white">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-8 space-y-10">
+      <main className="container-app space-y-8 py-6 sm:py-8">
         {/* HERO */}
         <section className="grid gap-6 lg:grid-cols-2">
           <div>
@@ -94,7 +94,7 @@ function PayoutsPage() {
                 <span key={b} className="glass-pill rounded-full px-3 py-1 text-[11px] text-muted-foreground">{b}</span>
               ))}
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
               Prop Firm Payout Tracker
             </h1>
             <p className="mt-4 text-muted-foreground max-w-xl">
