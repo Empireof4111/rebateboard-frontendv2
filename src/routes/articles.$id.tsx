@@ -48,6 +48,57 @@ function slugify(s: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function authorInitials(name: string) {
+  return (
+    name
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "RB"
+  );
+}
+
+function formatArticleDate(value: string) {
+  if (!value) return "Not dated";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function AuthorAvatar({
+  post,
+  size = "h-7 w-7",
+  textSize = "text-[10px]",
+}: {
+  post: BlogPost;
+  size?: string;
+  textSize?: string;
+}) {
+  if (post.authorAvatar) {
+    return (
+      <img
+        src={post.authorAvatar}
+        alt=""
+        className={`${size} rounded-full object-cover ring-1 ring-white/15`}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`grid ${size} place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 ${textSize} font-bold text-white`}
+    >
+      {authorInitials(post.author)}
+    </span>
+  );
+}
+
 function parseInline(text: string) {
   // **bold**, *italic*, `code`, [text](url)
   const out: React.ReactNode[] = [];
@@ -348,18 +399,12 @@ function ArticlePage() {
 
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-white/60">
             <span className="inline-flex items-center gap-1.5">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[10px] font-bold">
-                {post.author
-                  .split(" ")
-                  .map((s) => s[0])
-                  .slice(0, 2)
-                  .join("")}
-              </span>
+              <AuthorAvatar post={post} />
               <span className="text-white">{post.author}</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
-              {post.time}
+              {formatArticleDate(post.time)}
             </span>
             {post.readTime && (
               <span className="inline-flex items-center gap-1.5">
@@ -395,16 +440,13 @@ function ArticlePage() {
             {/* Author card */}
             <div className="mt-14 rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
               <div className="flex items-start gap-4">
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold">
-                  {post.author
-                    .split(" ")
-                    .map((s) => s[0])
-                    .slice(0, 2)
-                    .join("")}
-                </div>
+                <AuthorAvatar post={post} size="h-12 w-12" textSize="text-sm" />
                 <div>
                   <div className="text-xs text-white/50">Written by</div>
                   <div className="text-base font-bold">{post.author}</div>
+                  <div className="text-xs font-semibold text-fuchsia-200/80">
+                    {post.authorTitle || "Editorial Team"}
+                  </div>
                   <p className="mt-1 text-xs text-white/60">
                     RebateBoard editorial covers prop firms, brokers and the trader economy with
                     verified data and field reporting.

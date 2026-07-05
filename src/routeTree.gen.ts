@@ -9,19 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TradingToolsRouteImport } from './routes/trading-tools'
+import { Route as TradingSoftwareRouteImport } from './routes/trading-software'
+import { Route as TradingPlatformsRouteImport } from './routes/trading-platforms'
+import { Route as TradingJournalsRouteImport } from './routes/trading-journals'
+import { Route as TradingCalculatorsRouteImport } from './routes/trading-calculators'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SignalProvidersRouteImport } from './routes/signal-providers'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LegalRouteImport } from './routes/legal'
+import { Route as FuturesPropFirmsRouteImport } from './routes/futures-prop-firms'
 import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ExchangesRouteImport } from './routes/exchanges'
+import { Route as EducationProvidersRouteImport } from './routes/education-providers'
 import { Route as EconomicCalendarRouteImport } from './routes/economic-calendar'
 import { Route as DemoAccountsRouteImport } from './routes/demo-accounts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CryptoPropFirmsRouteImport } from './routes/crypto-prop-firms'
+import { Route as CopyTradingPlatformsRouteImport } from './routes/copy-trading-platforms'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as BugBountyRouteImport } from './routes/bug-bounty'
 import { Route as BrokersRouteImport } from './routes/brokers'
@@ -128,6 +138,31 @@ import { Route as SuperadminBrandsNewRouteImport } from './routes/superadmin.bra
 import { Route as BusinessOnboardingCategoryRouteImport } from './routes/business.onboarding.$category'
 import { Route as PayoutsBrandSlugTransactionTxIdRouteImport } from './routes/payouts.$brandSlug.transaction.$txId'
 
+const TradingToolsRoute = TradingToolsRouteImport.update({
+  id: '/trading-tools',
+  path: '/trading-tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradingSoftwareRoute = TradingSoftwareRouteImport.update({
+  id: '/trading-software',
+  path: '/trading-software',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradingPlatformsRoute = TradingPlatformsRouteImport.update({
+  id: '/trading-platforms',
+  path: '/trading-platforms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradingJournalsRoute = TradingJournalsRouteImport.update({
+  id: '/trading-journals',
+  path: '/trading-journals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradingCalculatorsRoute = TradingCalculatorsRouteImport.update({
+  id: '/trading-calculators',
+  path: '/trading-calculators',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuperadminRoute = SuperadminRouteImport.update({
   id: '/superadmin',
   path: '/superadmin',
@@ -136,6 +171,11 @@ const SuperadminRoute = SuperadminRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalProvidersRoute = SignalProvidersRouteImport.update({
+  id: '/signal-providers',
+  path: '/signal-providers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewsRoute = ReviewsRouteImport.update({
@@ -168,6 +208,11 @@ const LegalRoute = LegalRouteImport.update({
   path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FuturesPropFirmsRoute = FuturesPropFirmsRouteImport.update({
+  id: '/futures-prop-firms',
+  path: '/futures-prop-firms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FaqsRoute = FaqsRouteImport.update({
   id: '/faqs',
   path: '/faqs',
@@ -176,6 +221,11 @@ const FaqsRoute = FaqsRouteImport.update({
 const ExchangesRoute = ExchangesRouteImport.update({
   id: '/exchanges',
   path: '/exchanges',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducationProvidersRoute = EducationProvidersRouteImport.update({
+  id: '/education-providers',
+  path: '/education-providers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EconomicCalendarRoute = EconomicCalendarRouteImport.update({
@@ -191,6 +241,16 @@ const DemoAccountsRoute = DemoAccountsRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CryptoPropFirmsRoute = CryptoPropFirmsRouteImport.update({
+  id: '/crypto-prop-firms',
+  path: '/crypto-prop-firms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CopyTradingPlatformsRoute = CopyTradingPlatformsRouteImport.update({
+  id: '/copy-trading-platforms',
+  path: '/copy-trading-platforms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -734,19 +794,29 @@ export interface FileRoutesByFullPath {
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
   '/compare': typeof CompareRoute
+  '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
+  '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/demo-accounts': typeof DemoAccountsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
+  '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
+  '/futures-prop-firms': typeof FuturesPropFirmsRoute
   '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/programs': typeof ProgramsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
+  '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
   '/superadmin': typeof SuperadminRouteWithChildren
+  '/trading-calculators': typeof TradingCalculatorsRoute
+  '/trading-journals': typeof TradingJournalsRoute
+  '/trading-platforms': typeof TradingPlatformsRoute
+  '/trading-software': typeof TradingSoftwareRoute
+  '/trading-tools': typeof TradingToolsRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/brand/analytics': typeof BrandAnalyticsRoute
   '/brand/announcements': typeof BrandAnnouncementsRoute
@@ -853,16 +923,26 @@ export interface FileRoutesByTo {
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
   '/compare': typeof CompareRoute
+  '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
+  '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/demo-accounts': typeof DemoAccountsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
+  '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
+  '/futures-prop-firms': typeof FuturesPropFirmsRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/programs': typeof ProgramsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
+  '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/trading-calculators': typeof TradingCalculatorsRoute
+  '/trading-journals': typeof TradingJournalsRoute
+  '/trading-platforms': typeof TradingPlatformsRoute
+  '/trading-software': typeof TradingSoftwareRoute
+  '/trading-tools': typeof TradingToolsRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/brand/analytics': typeof BrandAnalyticsRoute
   '/brand/announcements': typeof BrandAnnouncementsRoute
@@ -971,19 +1051,29 @@ export interface FileRoutesById {
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
   '/compare': typeof CompareRoute
+  '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
+  '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/demo-accounts': typeof DemoAccountsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
+  '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
+  '/futures-prop-firms': typeof FuturesPropFirmsRoute
   '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/programs': typeof ProgramsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
+  '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
   '/superadmin': typeof SuperadminRouteWithChildren
+  '/trading-calculators': typeof TradingCalculatorsRoute
+  '/trading-journals': typeof TradingJournalsRoute
+  '/trading-platforms': typeof TradingPlatformsRoute
+  '/trading-software': typeof TradingSoftwareRoute
+  '/trading-tools': typeof TradingToolsRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/brand/analytics': typeof BrandAnalyticsRoute
   '/brand/announcements': typeof BrandAnnouncementsRoute
@@ -1093,19 +1183,29 @@ export interface FileRouteTypes {
     | '/brokers'
     | '/bug-bounty'
     | '/compare'
+    | '/copy-trading-platforms'
+    | '/crypto-prop-firms'
     | '/dashboard'
     | '/demo-accounts'
     | '/economic-calendar'
+    | '/education-providers'
     | '/exchanges'
     | '/faqs'
+    | '/futures-prop-firms'
     | '/legal'
     | '/login'
     | '/offers'
     | '/programs'
     | '/review'
     | '/reviews'
+    | '/signal-providers'
     | '/signup'
     | '/superadmin'
+    | '/trading-calculators'
+    | '/trading-journals'
+    | '/trading-platforms'
+    | '/trading-software'
+    | '/trading-tools'
     | '/articles/$id'
     | '/brand/analytics'
     | '/brand/announcements'
@@ -1212,16 +1312,26 @@ export interface FileRouteTypes {
     | '/brokers'
     | '/bug-bounty'
     | '/compare'
+    | '/copy-trading-platforms'
+    | '/crypto-prop-firms'
     | '/demo-accounts'
     | '/economic-calendar'
+    | '/education-providers'
     | '/exchanges'
     | '/faqs'
+    | '/futures-prop-firms'
     | '/login'
     | '/offers'
     | '/programs'
     | '/review'
     | '/reviews'
+    | '/signal-providers'
     | '/signup'
+    | '/trading-calculators'
+    | '/trading-journals'
+    | '/trading-platforms'
+    | '/trading-software'
+    | '/trading-tools'
     | '/articles/$id'
     | '/brand/analytics'
     | '/brand/announcements'
@@ -1329,19 +1439,29 @@ export interface FileRouteTypes {
     | '/brokers'
     | '/bug-bounty'
     | '/compare'
+    | '/copy-trading-platforms'
+    | '/crypto-prop-firms'
     | '/dashboard'
     | '/demo-accounts'
     | '/economic-calendar'
+    | '/education-providers'
     | '/exchanges'
     | '/faqs'
+    | '/futures-prop-firms'
     | '/legal'
     | '/login'
     | '/offers'
     | '/programs'
     | '/review'
     | '/reviews'
+    | '/signal-providers'
     | '/signup'
     | '/superadmin'
+    | '/trading-calculators'
+    | '/trading-journals'
+    | '/trading-platforms'
+    | '/trading-software'
+    | '/trading-tools'
     | '/articles/$id'
     | '/brand/analytics'
     | '/brand/announcements'
@@ -1450,19 +1570,29 @@ export interface RootRouteChildren {
   BrokersRoute: typeof BrokersRoute
   BugBountyRoute: typeof BugBountyRoute
   CompareRoute: typeof CompareRoute
+  CopyTradingPlatformsRoute: typeof CopyTradingPlatformsRoute
+  CryptoPropFirmsRoute: typeof CryptoPropFirmsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DemoAccountsRoute: typeof DemoAccountsRoute
   EconomicCalendarRoute: typeof EconomicCalendarRoute
+  EducationProvidersRoute: typeof EducationProvidersRoute
   ExchangesRoute: typeof ExchangesRoute
   FaqsRoute: typeof FaqsRoute
+  FuturesPropFirmsRoute: typeof FuturesPropFirmsRoute
   LegalRoute: typeof LegalRouteWithChildren
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
   ProgramsRoute: typeof ProgramsRoute
   ReviewRoute: typeof ReviewRoute
   ReviewsRoute: typeof ReviewsRouteWithChildren
+  SignalProvidersRoute: typeof SignalProvidersRoute
   SignupRoute: typeof SignupRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
+  TradingCalculatorsRoute: typeof TradingCalculatorsRoute
+  TradingJournalsRoute: typeof TradingJournalsRoute
+  TradingPlatformsRoute: typeof TradingPlatformsRoute
+  TradingSoftwareRoute: typeof TradingSoftwareRoute
+  TradingToolsRoute: typeof TradingToolsRoute
   ArticlesIdRoute: typeof ArticlesIdRoute
   BusinessJoinRoute: typeof BusinessJoinRoute
   BusinessTrustDashboardRoute: typeof BusinessTrustDashboardRoute
@@ -1478,6 +1608,41 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trading-tools': {
+      id: '/trading-tools'
+      path: '/trading-tools'
+      fullPath: '/trading-tools'
+      preLoaderRoute: typeof TradingToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trading-software': {
+      id: '/trading-software'
+      path: '/trading-software'
+      fullPath: '/trading-software'
+      preLoaderRoute: typeof TradingSoftwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trading-platforms': {
+      id: '/trading-platforms'
+      path: '/trading-platforms'
+      fullPath: '/trading-platforms'
+      preLoaderRoute: typeof TradingPlatformsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trading-journals': {
+      id: '/trading-journals'
+      path: '/trading-journals'
+      fullPath: '/trading-journals'
+      preLoaderRoute: typeof TradingJournalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trading-calculators': {
+      id: '/trading-calculators'
+      path: '/trading-calculators'
+      fullPath: '/trading-calculators'
+      preLoaderRoute: typeof TradingCalculatorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/superadmin': {
       id: '/superadmin'
       path: '/superadmin'
@@ -1490,6 +1655,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signal-providers': {
+      id: '/signal-providers'
+      path: '/signal-providers'
+      fullPath: '/signal-providers'
+      preLoaderRoute: typeof SignalProvidersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reviews': {
@@ -1534,6 +1706,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/futures-prop-firms': {
+      id: '/futures-prop-firms'
+      path: '/futures-prop-firms'
+      fullPath: '/futures-prop-firms'
+      preLoaderRoute: typeof FuturesPropFirmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/faqs': {
       id: '/faqs'
       path: '/faqs'
@@ -1546,6 +1725,13 @@ declare module '@tanstack/react-router' {
       path: '/exchanges'
       fullPath: '/exchanges'
       preLoaderRoute: typeof ExchangesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/education-providers': {
+      id: '/education-providers'
+      path: '/education-providers'
+      fullPath: '/education-providers'
+      preLoaderRoute: typeof EducationProvidersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/economic-calendar': {
@@ -1567,6 +1753,20 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crypto-prop-firms': {
+      id: '/crypto-prop-firms'
+      path: '/crypto-prop-firms'
+      fullPath: '/crypto-prop-firms'
+      preLoaderRoute: typeof CryptoPropFirmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/copy-trading-platforms': {
+      id: '/copy-trading-platforms'
+      path: '/copy-trading-platforms'
+      fullPath: '/copy-trading-platforms'
+      preLoaderRoute: typeof CopyTradingPlatformsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -2543,19 +2743,29 @@ const rootRouteChildren: RootRouteChildren = {
   BrokersRoute: BrokersRoute,
   BugBountyRoute: BugBountyRoute,
   CompareRoute: CompareRoute,
+  CopyTradingPlatformsRoute: CopyTradingPlatformsRoute,
+  CryptoPropFirmsRoute: CryptoPropFirmsRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DemoAccountsRoute: DemoAccountsRoute,
   EconomicCalendarRoute: EconomicCalendarRoute,
+  EducationProvidersRoute: EducationProvidersRoute,
   ExchangesRoute: ExchangesRoute,
   FaqsRoute: FaqsRoute,
+  FuturesPropFirmsRoute: FuturesPropFirmsRoute,
   LegalRoute: LegalRouteWithChildren,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
   ProgramsRoute: ProgramsRoute,
   ReviewRoute: ReviewRoute,
   ReviewsRoute: ReviewsRouteWithChildren,
+  SignalProvidersRoute: SignalProvidersRoute,
   SignupRoute: SignupRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
+  TradingCalculatorsRoute: TradingCalculatorsRoute,
+  TradingJournalsRoute: TradingJournalsRoute,
+  TradingPlatformsRoute: TradingPlatformsRoute,
+  TradingSoftwareRoute: TradingSoftwareRoute,
+  TradingToolsRoute: TradingToolsRoute,
   ArticlesIdRoute: ArticlesIdRoute,
   BusinessJoinRoute: BusinessJoinRoute,
   BusinessTrustDashboardRoute: BusinessTrustDashboardRoute,

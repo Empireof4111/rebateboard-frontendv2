@@ -1,10 +1,7 @@
-// Trader ROI Tracker (TRT) — local store + types + insight engine.
-// Used by the user dashboard module and aggregated by the superadmin
-// analytics page. Data is persisted in localStorage so the experience feels
-// real across reloads. Replace with API-backed calls when wiring to Cloud.
+// Trader ROI Tracker (TRT) — local user-entered store + types + insight engine.
+// It starts empty by design. Do not seed fake ROI/transaction history here.
 
 import { useSyncExternalStore } from "react";
-import { adminBrands } from "@/lib/admin-data";
 
 // ---------- Types ----------
 
@@ -91,57 +88,7 @@ export type TrtState = {
 const KEY = "rb.trt.v1";
 
 function seed(): TrtState {
-  const now = Date.now();
-  const day = (n: number) => new Date(now - n * 86_400_000).toISOString();
-  const ftmo: TrtBrand = { id: "b_02", name: "FTMO", category: "Prop Firm" };
-  const ic: TrtBrand = { id: "b_10", name: "IC Markets", category: "Forex Broker" };
-  const tv: TrtBrand = { id: "b_13", name: "TradingView", category: "Trading Software" };
-  const bybit: TrtBrand = { id: "b_07", name: "Bybit", category: "Crypto Exchange" };
-
-  const accounts: TrtAccount[] = [
-    { id: "ac_1", name: "FTMO 100K Phase 1", brand: ftmo, type: "prop_challenge", size: 100_000, phase: "phase_1", status: "passed", openedAt: day(72) },
-    { id: "ac_2", name: "FTMO 100K Funded", brand: ftmo, type: "prop_funded", size: 100_000, phase: "funded", status: "funded", openedAt: day(40) },
-    { id: "ac_3", name: "IC Markets Live", brand: ic, type: "broker_live", status: "active", openedAt: day(180) },
-    { id: "ac_4", name: "Bybit Spot", brand: bybit, type: "exchange", status: "active", openedAt: day(220) },
-  ];
-
-  const tx = (over: Partial<TrtTransaction>): TrtTransaction => ({
-    id: `tx_${Math.random().toString(36).slice(2, 9)}`,
-    date: day(0),
-    direction: "expense",
-    category: "challenge_fee",
-    brand: ftmo,
-    amount: 0,
-    currency: "USD",
-    status: "confirmed",
-    createdAt: day(0),
-    ...over,
-  });
-
-  const transactions: TrtTransaction[] = [
-    tx({ date: day(72), direction: "expense", category: "challenge_fee", brand: ftmo, accountId: "ac_1", amount: 540, notes: "FTMO 100K challenge" }),
-    tx({ date: day(40), direction: "income", category: "payout", brand: ftmo, accountId: "ac_2", amount: 3200, notes: "First profit split" }),
-    tx({ date: day(12), direction: "income", category: "payout", brand: ftmo, accountId: "ac_2", amount: 4200, notes: "Second payout" }),
-    tx({ date: day(60), direction: "expense", category: "platform_subscription", brand: tv, amount: 60, notes: "TradingView Pro+ monthly" }),
-    tx({ date: day(30), direction: "expense", category: "platform_subscription", brand: tv, amount: 60 }),
-    tx({ date: day(2), direction: "expense", category: "platform_subscription", brand: tv, amount: 60 }),
-    tx({ date: day(180), direction: "expense", category: "broker_deposit", brand: ic, accountId: "ac_3", amount: 5000, notes: "Initial funding" }),
-    tx({ date: day(20), direction: "income", category: "rebate", brand: ic, accountId: "ac_3", amount: 312, notes: "Monthly rebate" }),
-    tx({ date: day(50), direction: "income", category: "rebate", brand: ic, accountId: "ac_3", amount: 268 }),
-    tx({ date: day(80), direction: "income", category: "rebate", brand: ic, accountId: "ac_3", amount: 244 }),
-    tx({ date: day(220), direction: "expense", category: "broker_deposit", brand: bybit, accountId: "ac_4", amount: 1200 }),
-    tx({ date: day(15), direction: "income", category: "rebate", brand: bybit, accountId: "ac_4", amount: 96 }),
-    tx({ date: day(120), direction: "expense", category: "education", brand: { id: "custom:ict", name: "ICT Mentorship", custom: true }, amount: 800, notes: "Mentorship program" }),
-    tx({ date: day(95), direction: "expense", category: "challenge_fee", brand: { id: "b_05", name: "E8 Markets", category: "Prop Firm" }, amount: 320, status: "confirmed", notes: "Failed challenge" }),
-    tx({ date: day(55), direction: "expense", category: "reset_fee", brand: { id: "b_05", name: "E8 Markets", category: "Prop Firm" }, amount: 95 }),
-  ];
-
-  const payouts: TrtPayout[] = [
-    { id: "p_1", txId: transactions[1]!.id, method: "USDT TRC20" },
-    { id: "p_2", txId: transactions[2]!.id, method: "Bank wire" },
-  ];
-
-  return { baseCurrency: "USD", transactions, accounts, payouts };
+  return { baseCurrency: "USD", transactions: [], accounts: [], payouts: [] };
 }
 
 let state: TrtState = load();
@@ -183,7 +130,7 @@ function uid(prefix: string) {
 }
 
 export function listBrands(): TrtBrand[] {
-  return adminBrands.map((b) => ({ id: b.id, name: b.name, category: b.category }));
+  return [];
 }
 
 export function makeCustomBrand(name: string): TrtBrand {

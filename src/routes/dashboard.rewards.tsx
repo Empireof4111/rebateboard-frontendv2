@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { financeApi } from "@/lib/finance-api";
-import { PageHeader, Panel, StatCard, Pill } from "@/components/dashboard/Primitives";
+import { EmptyState, PageHeader, Panel, StatCard, Pill } from "@/components/dashboard/Primitives";
 import {
   Gift, Sparkles, Zap, TrendingUp, GraduationCap, Percent, Building2, X,
   CheckCircle2, ArrowRight, Trophy, Flame,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import {
   rrApi,
-  type RrAllConfig, type RrClaim, type RrUserStreak,
+  type RrAllConfig, type RrClaim, type RrSpendRule, type RrUserStreak,
 } from "@/lib/rr-api";
 import { ApiError } from "@/lib/api";
 import {
@@ -33,26 +33,10 @@ export const Route = createFileRoute("/dashboard/rewards")({
 type RedeemKind = "cash" | "propfirm" | "fees" | "academy";
 
 const redeemOptions = [
-  { id: "cash" as RedeemKind, title: "Convert to Cash", tagline: "Sent straight to your wallet", rate: "1,000 RR → $10", icon: TrendingUp, accent: "success" as const, cta: "Convert now" },
-  { id: "propfirm" as RedeemKind, title: "Prop Firm Discount", tagline: "Apply RR at checkout for any prop account", rate: "500 RR → 25% off", icon: Building2, accent: "primary" as const, cta: "Pick a firm" },
-  { id: "fees" as RedeemKind, title: "Trading Fee Discount", tagline: "Reduce spreads & commissions on partner brokers", rate: "750 RR → −30% fees · 30 days", icon: Percent, accent: "warning" as const, cta: "Activate" },
-  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Unlock premium courses, calculators and indicators", rate: "300 RR / unlock", icon: GraduationCap, accent: "primary" as const, cta: "Browse" },
-];
-
-const earnList = [
-  { t: "Log a trade", rr: 5, d: "Per trade with notes & screenshot." },
-  { t: "Write a review", rr: 50, d: "Verified review of any brand." },
-  { t: "Daily journal entry", rr: 24, d: "End-of-day reflection." },
-  { t: "Refer a trader", rr: 200, d: "When they sign up & log 5 trades." },
-  { t: "Complete a quest", rr: 75, d: "Weekly trading challenges." },
-  { t: "Cashback milestone", rr: 100, d: "Every $500 cashback earned." },
-];
-
-const propFirms = [
-  { name: "FundingPips", sizes: ["$10K", "$25K", "$50K", "$100K"], baseFee: 588 },
-  { name: "FTMO", sizes: ["$10K", "$25K", "$50K", "$100K", "$200K"], baseFee: 1080 },
-  { name: "The5ers", sizes: ["$5K", "$20K", "$60K", "$100K"], baseFee: 460 },
-  { name: "MyForexFunds", sizes: ["$10K", "$50K", "$100K"], baseFee: 540 },
+  { id: "cash" as RedeemKind, title: "Convert to Cash", tagline: "Cash redemption rules from admin", rate: "Configured in admin", icon: TrendingUp, accent: "success" as const, cta: "View options" },
+  { id: "propfirm" as RedeemKind, title: "Partner Discounts", tagline: "Partner spend rules from admin", rate: "Configured in admin", icon: Building2, accent: "primary" as const, cta: "View options" },
+  { id: "fees" as RedeemKind, title: "Trading Fee Discount", tagline: "Fee spend rules from admin", rate: "Configured in admin", icon: Percent, accent: "warning" as const, cta: "View options" },
+  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Learning spend rules from admin", rate: "Configured in admin", icon: GraduationCap, accent: "primary" as const, cta: "View options" },
 ];
 
 const DEFAULT_CONFIG: RrAllConfig = {
@@ -115,6 +99,10 @@ function RewardsPage() {
   const pricing = purchaseCatalog?.pricing;
   const walletSnapshot = purchaseCatalog?.wallet;
   const rrPackages = purchaseCatalog?.packages ?? [];
+  const earnRules = config.earn_rules.filter((rule) => rule.enabled);
+  const nextSpendRule = config.spend_rules
+    .filter((rule) => rule.enabled && rule.cost > rrBalance)
+    .sort((a, b) => a.cost - b.cost)[0];
 
   async function handlePackagePurchase(pkg: RrPurchasePackage) {
     if (!pkg.id) return;
@@ -348,7 +336,7 @@ function RewardsPage() {
                     max={pricing?.maxPurchaseRr ?? 0}
                     value={customAmount}
                     onChange={(event) => setCustomAmount(event.target.value)}
-                    className="input"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-fuchsia-400/60 focus:ring-2 focus:ring-fuchsia-400/15"
                     placeholder="Enter RR amount"
                   />
                 </Field>
@@ -404,17 +392,25 @@ function RewardsPage() {
 
       {/* Earn opportunities */}
       <Panel title="Earn RR" action={<Sparkles className="h-4 w-4 text-accent" />}>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {earnList.map((e) => (
-            <div key={e.t} className="flex items-start justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3">
-              <div>
-                <div className="text-sm font-semibold text-white">{e.t}</div>
-                <p className="text-[11px] text-muted-foreground">{e.d}</p>
+        {earnRules.length > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {earnRules.map((rule) => (
+              <div key={rule.id} className="flex items-start justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                <div>
+                  <div className="text-sm font-semibold text-white">{rule.label}</div>
+                  <p className="text-[11px] text-muted-foreground">{rule.description || "Reward rule configured by RebateBoard."}</p>
+                </div>
+                <Pill tone="warning"><Gift className="h-3 w-3" />+{rule.freeAmount}</Pill>
               </div>
-              <Pill tone="warning"><Gift className="h-3 w-3" />+{e.rr}</Pill>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={Gift}
+            title="RR earning rules are not configured yet"
+            description="Admin-configured reward actions will appear here when they are enabled."
+          />
+        )}
       </Panel>
 
       <FollowAndEarnPanel
@@ -427,17 +423,29 @@ function RewardsPage() {
       />
 
       <Panel title="Smart suggestion" action={<Pill tone="primary"><Zap className="h-3 w-3" />AI</Pill>}>
-        <p className="text-sm text-white/85">
-          You're <b>216 RR</b> away from <b>25% off</b> a FundingPips $25K account.
-          Log <b>3 more trades</b> + <b>1 review</b> this week to unlock it.
-        </p>
-        <button onClick={() => setRedeemOpen("propfirm")} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
-          See discount <ArrowRight className="h-3 w-3" />
-        </button>
+        {nextSpendRule ? (
+          <>
+            <p className="text-sm text-white/85">
+              You're <b>{(nextSpendRule.cost - rrBalance).toLocaleString()} RR</b> away from <b>{nextSpendRule.label}</b>.
+              Use the enabled earning rules above to reach this reward.
+            </p>
+            <button onClick={() => setRedeemOpen("propfirm")} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+              See rewards <ArrowRight className="h-3 w-3" />
+            </button>
+          </>
+        ) : rrBalance > 0 ? (
+          <p className="text-sm text-white/85">
+            You have <b>{rrBalance.toLocaleString()} RR</b>. Available spend rules and redemption options will appear when admin enables them.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Earn RR through enabled reward actions, then use it for configured marketplace benefits.
+          </p>
+        )}
       </Panel>
 
       {redeemOpen && (
-        <RedeemModal kind={redeemOpen} rrBalance={rrBalance} onClose={() => setRedeemOpen(null)} />
+        <RedeemModal kind={redeemOpen} rrBalance={rrBalance} spendRules={config.spend_rules.filter((rule) => rule.enabled)} onClose={() => setRedeemOpen(null)} />
       )}
     </div>
   );
@@ -592,6 +600,34 @@ function ClaimSocialModal({ socialId, socialRules, onClose, onSubmitted }: {
 
 /* ============================================================ Shared UI */
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function Row({
+  label,
+  value,
+  bold = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  bold?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={bold ? "font-semibold text-white" : "text-white/90"}>{value}</span>
+    </div>
+  );
+}
+
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -606,132 +642,68 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   );
 }
 
-function RedeemModal({ kind, rrBalance, onClose }: { kind: RedeemKind; rrBalance: number; onClose: () => void }) {
-  const [done, setDone] = useState(false);
-
-  if (kind === "cash") {
-    const [rr, setRr] = useState("1000");
-    const cash = (Number(rr) / 100).toFixed(2);
-    return (
-      <ModalShell title="Convert RR to Cash" onClose={onClose}>
-        {done ? <Success text={`$${cash} credited to wallet.`} onClose={onClose} /> : (
-          <div className="space-y-3">
-            <Field label="RR amount"><input value={rr} onChange={(e) => setRr(e.target.value)} className="input" /></Field>
-            <div className="rounded-xl bg-emerald-500/10 p-4 ring-1 ring-emerald-400/30">
-              <div className="text-[11px] uppercase text-emerald-300">You'll receive</div>
-              <div className="mt-1 text-2xl font-bold text-white">${cash}</div>
-              <div className="mt-1 text-[11px] text-emerald-300">Sent to wallet · instant</div>
-            </div>
-            <button onClick={() => setDone(true)} className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white">
-              Convert {rr} RR
-            </button>
-            <p className="text-center text-[10px] text-muted-foreground">Balance after: {(rrBalance - Number(rr)).toLocaleString()} RR</p>
-          </div>
-        )}
-      </ModalShell>
-    );
-  }
-
-  if (kind === "propfirm") {
-    const [firm, setFirm] = useState(propFirms[0].name);
-    const [size, setSize] = useState(propFirms[0].sizes[2]);
-    const selected = propFirms.find((f) => f.name === firm)!;
-    const finalPrice = (selected.baseFee * 0.75).toFixed(2);
-    return (
-      <ModalShell title="Buy Prop Firm with RR Discount" onClose={onClose}>
-        {done ? <Success text={`Discount applied. Continue to ${firm} checkout.`} onClose={onClose} /> : (
-          <div className="space-y-3">
-            <Field label="Prop firm">
-              <select value={firm} onChange={(e) => { setFirm(e.target.value); setSize(propFirms.find((f) => f.name === e.target.value)!.sizes[0]); }} className="input">
-                {propFirms.map((f) => <option key={f.name}>{f.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Account size">
-              <select value={size} onChange={(e) => setSize(e.target.value)} className="input">
-                {selected.sizes.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </Field>
-            <div className="space-y-1 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs">
-              <Row label="Base price" value={`$${selected.baseFee}`} />
-              <Row label="RR discount" value="−25% (500 RR)" />
-              <Row label="You pay" value={`$${finalPrice}`} bold />
-            </div>
-            <button onClick={() => setDone(true)} className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white">
-              Apply RR & continue
-            </button>
-          </div>
-        )}
-      </ModalShell>
-    );
-  }
-
-  if (kind === "fees") {
-    return (
-      <ModalShell title="Activate Fee Discount" onClose={onClose}>
-        {done ? <Success text="30% fee discount active for 30 days on partner brokers." onClose={onClose} /> : (
-          <div className="space-y-3 text-sm text-white/85">
-            <div className="rounded-xl bg-white/[0.04] p-4">
-              <div className="text-[11px] uppercase text-muted-foreground">Cost</div>
-              <div className="mt-1 text-2xl font-bold text-white">750 RR</div>
-              <div className="mt-1 text-[11px] text-amber-300">Reduces spreads & commissions by 30% for 30 days</div>
-            </div>
-            <button onClick={() => setDone(true)} className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white">
-              Activate for 750 RR
-            </button>
-          </div>
-        )}
-      </ModalShell>
-    );
-  }
+function RedeemModal({
+  kind,
+  rrBalance,
+  spendRules,
+  onClose,
+}: {
+  kind: RedeemKind;
+  rrBalance: number;
+  spendRules: RrSpendRule[];
+  onClose: () => void;
+}) {
+  const categoryMap: Record<RedeemKind, string[]> = {
+    cash: ["cash"],
+    propfirm: ["partner"],
+    fees: ["fees"],
+    academy: ["academy"],
+  };
+  const titles: Record<RedeemKind, string> = {
+    cash: "Cash Redemption Options",
+    propfirm: "Partner Discount Options",
+    fees: "Fee Discount Options",
+    academy: "Academy & Tool Options",
+  };
+  const options = spendRules.filter((rule) => categoryMap[kind].includes(String(rule.category).toLowerCase()));
 
   return (
-    <ModalShell title="Unlock Academy & Tools" onClose={onClose}>
-      {done ? <Success text="Unlocked. Find it under Academy." onClose={onClose} /> : (
-        <div className="space-y-2">
-          {[
-            { t: "Smart Money Concepts — Pro Course", c: 300 },
-            { t: "Risk Sizing Calculator (advanced)", c: 200 },
-            { t: "Liquidity Heatmap Indicator", c: 450 },
-            { t: "Prop Firm Pass Playbook", c: 350 },
-          ].map((x) => (
-            <button key={x.t} onClick={() => setDone(true)} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left transition hover:border-primary/40">
-              <span className="text-sm text-white">{x.t}</span>
-              <Pill tone="warning"><Gift className="h-3 w-3" />{x.c} RR</Pill>
-            </button>
-          ))}
+    <ModalShell title={titles[kind]} onClose={onClose}>
+      <div className="space-y-3">
+        {options.length > 0 ? (
+          options.map((rule) => {
+            const affordable = rrBalance >= rule.cost;
+            const outOfStock = rule.stock != null && rule.redeemed >= rule.stock;
+            return (
+              <div key={rule.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white">{rule.label}</div>
+                    <p className="mt-1 text-xs text-muted-foreground">{rule.description || "Configured RR spend option."}</p>
+                  </div>
+                  <Pill tone={affordable && !outOfStock ? "warning" : "default"}><Gift className="h-3 w-3" />{rule.cost} RR</Pill>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                  {rule.tierGate && <Pill>Tier: {rule.tierGate}</Pill>}
+                  {rule.stock != null && <Pill>{Math.max(0, rule.stock - rule.redeemed)} left</Pill>}
+                  {!affordable && <span>Need {(rule.cost - rrBalance).toLocaleString()} more RR.</span>}
+                  {outOfStock && <span>Out of stock.</span>}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-center">
+            <p className="text-sm font-semibold text-white">No spend options configured</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Admin-enabled RR spend rules for this category will appear here.
+            </p>
+          </div>
+        )}
+        <div className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100">
+          Redemption request processing is not connected to a backend endpoint yet, so this dashboard does not simulate successful redemptions.
         </div>
-      )}
-    </ModalShell>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="text-[11px] uppercase text-muted-foreground">{label}</label>
-      <div className="mt-1">{children}</div>
-      <style>{`.input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);padding:10px 12px;font-size:14px;color:white;outline:none}`}</style>
-    </div>
-  );
-}
-
-function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={bold ? "font-bold text-white" : "text-white"}>{value}</span>
-    </div>
-  );
-}
-
-function Success({ text, onClose }: { text: string; onClose: () => void }) {
-  return (
-    <div className="space-y-3 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-400">
-        <CheckCircle2 className="h-7 w-7" />
       </div>
-      <p className="text-sm text-white">{text}</p>
-      <button onClick={onClose} className="rounded-full bg-white/10 px-4 py-1.5 text-xs text-white">Done</button>
-    </div>
+    </ModalShell>
   );
 }

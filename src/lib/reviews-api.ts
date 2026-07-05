@@ -1,6 +1,13 @@
 import { apiRequest } from "@/lib/api";
 import type { ReviewRecord, ReviewStatus } from "@/lib/reviews-store";
 
+type PaginatedResult<T> = {
+  page: T[];
+  size: number;
+  currentPage: number;
+  totalPages: number;
+};
+
 const AUTH_STORAGE_KEY = "rb_auth_session";
 
 type StoredSession = {
@@ -26,6 +33,20 @@ export async function fetchAdminReviews() {
     token: readToken(),
   });
   return response.payload ?? [];
+}
+
+export async function fetchMyReviews(page = 0, size = 50, status?: ReviewStatus) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("size", String(size));
+  if (status) params.set("status", status);
+
+  const response = await apiRequest<PaginatedResult<ReviewRecord>>(`/review/my?${params}`, {
+    method: "GET",
+    token: readToken(),
+    cache: "no-store",
+  });
+  return response.payload ?? { page: [], size, currentPage: page, totalPages: 0 };
 }
 
 export async function fetchPublicReviews(brandSlug?: string) {

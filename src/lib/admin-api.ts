@@ -22,6 +22,8 @@ export type BlogPost = {
   id: string;
   title: string;
   author: string;
+  authorAvatar: string;
+  authorTitle: string;
   views: string;
   status: "draft" | "published";
   time: string;
@@ -36,11 +38,45 @@ export type BlogPost = {
   urlSlug: string;
 };
 
+const DEFAULT_EDITOR_NAME = "RebateBoard Editorial";
+const DEFAULT_EDITOR_TITLE = "Editorial Team";
+
+function cleanEditorName(value?: unknown) {
+  const name = typeof value === "string" ? value.trim() : "";
+  if (!name || /^User\s*#/i.test(name)) return DEFAULT_EDITOR_NAME;
+  return name;
+}
+
+function firstEditorText(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 function mapBlog(raw: any): BlogPost {
+  const metadata = record(raw.metadata);
+  const authorName = firstEditorText(
+    raw.authorName,
+    raw.author,
+    metadata.authorName,
+    metadata.editorName,
+    raw.createdBy?.name,
+  );
   return {
     id: String(raw.id),
     title: raw.title ?? "",
-    author: raw.createdBy?.name ?? `User #${raw.createdById}`,
+    author: cleanEditorName(authorName),
+    authorAvatar: firstEditorText(
+      raw.authorAvatar,
+      raw.editorAvatar,
+      metadata.authorAvatar,
+      metadata.editorAvatar,
+      raw.createdBy?.avatar,
+      raw.createdBy?.profilePicture,
+      raw.createdBy?.photo,
+    ),
+    authorTitle: firstEditorText(raw.authorTitle, metadata.authorTitle, metadata.editorTitle) || DEFAULT_EDITOR_TITLE,
     views: String(raw.likes ?? 0),
     status: raw.status === "ACTIVE" ? "published" : "draft",
     time: raw.updatedAt ?? raw.createdAt ?? "",
@@ -64,6 +100,9 @@ function blogToDto(post: Partial<BlogPost>) {
     description: post.body,
     shortDescription: post.excerpt,
     thumbnail: post.cover,
+    authorName: cleanEditorName(post.author),
+    authorAvatar: post.authorAvatar,
+    authorTitle: post.authorTitle,
     status: post.status === "published" ? "ACTIVE" : "INACTIVE",
     tags: post.tags ?? [],
     seoTitle: post.seoTitle,
@@ -148,16 +187,50 @@ export type NewsItem = {
   status: "draft" | "published";
   published: string;
   author: string;
+  authorAvatar: string;
+  authorTitle: string;
+  thumbnail: string;
 };
 
 function mapNews(raw: any): NewsItem {
+  const metadata = record(raw.metadata);
+  const authorName = firstEditorText(
+    raw.authorName,
+    raw.author,
+    metadata.authorName,
+    metadata.editorName,
+    raw.createdBy?.name,
+  );
   return {
     id: String(raw.id),
     title: raw.title ?? "",
     excerpt: raw.description ?? "",
     status: raw.status === "ACTIVE" ? "published" : "draft",
     published: raw.createdAt ?? "",
-    author: raw.createdBy?.name ?? `User #${raw.createdById}`,
+    author: cleanEditorName(authorName),
+    authorAvatar: firstEditorText(
+      raw.authorAvatar,
+      raw.editorAvatar,
+      metadata.authorAvatar,
+      metadata.editorAvatar,
+      raw.createdBy?.avatar,
+      raw.createdBy?.profilePicture,
+      raw.createdBy?.photo,
+    ),
+    authorTitle: firstEditorText(raw.authorTitle, metadata.authorTitle, metadata.editorTitle) || DEFAULT_EDITOR_TITLE,
+    thumbnail: raw.thumbnail ?? "",
+  };
+}
+
+function newsToDto(data: Partial<NewsItem>) {
+  return {
+    title: data.title,
+    description: data.excerpt,
+    thumbnail: data.thumbnail,
+    authorName: cleanEditorName(data.author),
+    authorAvatar: data.authorAvatar,
+    authorTitle: data.authorTitle,
+    status: data.status === "published" ? "ACTIVE" : "INACTIVE",
   };
 }
 
@@ -171,11 +244,7 @@ export const newsApi = {
     const res = await apiRequest<any>("/news/", {
       method: "POST",
       token,
-      body: {
-        title: data.title,
-        description: data.excerpt,
-        status: data.status === "published" ? "ACTIVE" : "INACTIVE",
-      },
+      body: newsToDto(data),
     });
     if (res.payload) res.payload = mapNews(res.payload);
     return res as any;
@@ -184,11 +253,7 @@ export const newsApi = {
     const res = await apiRequest<any>(`/news/${id}`, {
       method: "PUT",
       token,
-      body: {
-        title: data.title,
-        description: data.excerpt,
-        status: data.status === "published" ? "ACTIVE" : "INACTIVE",
-      },
+      body: newsToDto(data),
     });
     if (res.payload) res.payload = mapNews(res.payload);
     return res as any;
@@ -565,6 +630,7 @@ export type DashboardAd = {
   href: string;
   accent: string;
   thumbnail?: string;
+  image?: string;
   slides?: any[];
   sponsors?: any[];
   trendingLimit?: number;
@@ -575,23 +641,114 @@ export type DashboardAd = {
   endAt?: string;
 };
 
+function record(value: unknown): Record<string, any> {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, any>;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+function cleanText(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function firstText(...values: unknown[]) {
+  for (const value of values) {
+    const next = cleanText(value);
+    if (next) return next;
+  }
+  return "";
+}
+
+function normalizeAdFormat(value: unknown): DashboardAd["format"] {
+  const raw = cleanText(value).toLowerCase();
+  if (raw === "marquee" || raw === "single" || raw === "carousel" || raw === "trending") {
+    return raw;
+  }
+  if (raw === "banner" || raw === "card" || raw === "top" || raw === "sidebar") {
+    return "single";
+  }
+  return "single";
+}
+
+function normalizeAdPlacement(value: unknown): DashboardAd["placement"] {
+  const raw = cleanText(value);
+  if (
+    raw === "dashboard" ||
+    raw === "landing-hero" ||
+    raw === "landing-sponsors" ||
+    raw === "landing-advertise"
+  ) {
+    return raw;
+  }
+  return "dashboard";
+}
+
+function looksLikeAdHref(value: string) {
+  return (
+    value.startsWith("/") ||
+    value.startsWith("#") ||
+    /^https?:\/\//i.test(value) ||
+    /^mailto:/i.test(value)
+  );
+}
+
+function normalizeAdvertSlide(slide: unknown) {
+  const row = record(slide);
+  return {
+    ...row,
+    label: firstText(row.label, row.title, row.name, row.headline) || "Featured",
+    sub: firstText(row.sub, row.subtitle, row.description, row.excerpt) || undefined,
+    href: firstText(row.href, row.url, row.link) || "/blog",
+    image:
+      firstText(row.image, row.thumbnail, row.cover, row.coverUrl, row.imageUrl, row.logo) ||
+      undefined,
+  };
+}
+
+function normalizeAdvertSponsor(sponsor: unknown) {
+  const row = record(sponsor);
+  const name = firstText(row.name, row.label, row.title) || "Brand";
+  return {
+    ...row,
+    id: firstText(row.id, row.brandSlug, row.slug, name) || name,
+    name,
+    initial: firstText(row.initial, row.initials) || undefined,
+    logo:
+      firstText(row.logo, row.image, row.thumbnail, row.cover, row.imageUrl) ||
+      undefined,
+    href: firstText(row.href, row.url, row.link) || undefined,
+  };
+}
+
 function mapAdvert(raw: any): DashboardAd {
-  const meta = raw.metadata ?? {};
+  const meta = record(raw.metadata);
+  const thumbnail = firstText(raw.thumbnail, meta.image, meta.thumbnail, meta.cover, raw.image);
+  const action = firstText(raw.action);
+  const cta = firstText(meta.cta, looksLikeAdHref(action) ? "" : action);
+  const href = firstText(meta.href, raw.href, looksLikeAdHref(action) ? action : "");
   return {
     id: String(raw.id),
-    name: raw.title ?? "",
-    format: meta.format ?? "single",
-    placement: meta.placement ?? raw.page ?? "dashboard",
+    name: raw.title ?? meta.name ?? "",
+    format: normalizeAdFormat(meta.format),
+    placement: normalizeAdPlacement(meta.placement ?? raw.page),
     active: raw.active !== false,
     priority: Number(raw.priority ?? 0),
-    headline: raw.title ?? "",
+    headline: meta.headline ?? "",
     sub: raw.subTitle ?? meta.sub,
-    cta: raw.action ?? meta.cta,
-    href: meta.href ?? "",
+    cta,
+    href,
     accent: meta.accent ?? "from-violet-500 to-fuchsia-600",
-    thumbnail: raw.thumbnail ?? "",
-    slides: meta.slides,
-    sponsors: meta.sponsors,
+    thumbnail,
+    image: thumbnail,
+    slides: Array.isArray(meta.slides) ? meta.slides.map(normalizeAdvertSlide) : [],
+    sponsors: Array.isArray(meta.sponsors) ? meta.sponsors.map(normalizeAdvertSponsor) : [],
     trendingLimit: meta.trendingLimit,
     impressions: Number(raw.impressions ?? 0),
     clicks: Number(raw.clicks ?? 0),
@@ -602,10 +759,11 @@ function mapAdvert(raw: any): DashboardAd {
 }
 
 function advertToDto(data: Partial<DashboardAd>) {
+  const thumbnail = data.thumbnail ?? data.image ?? "";
   return {
-    title: data.name ?? data.headline,
+    title: data.name ?? data.headline ?? "Draft banner",
     subTitle: data.sub,
-    thumbnail: data.thumbnail ?? "",
+    thumbnail,
     page: data.placement,
     action: data.cta,
     priority: data.priority,
@@ -616,6 +774,9 @@ function advertToDto(data: Partial<DashboardAd>) {
       format: data.format,
       placement: data.placement,
       accent: data.accent,
+      headline: data.headline,
+      image: thumbnail,
+      thumbnail,
       href: data.href,
       cta: data.cta,
       sub: data.sub,
@@ -624,6 +785,12 @@ function advertToDto(data: Partial<DashboardAd>) {
       trendingLimit: data.trendingLimit,
     },
   };
+}
+
+function emitDashboardAdsChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("rb:dashboard-ads"));
+  }
 }
 
 export const advertApi = {
@@ -643,7 +810,10 @@ export const advertApi = {
       token,
       body: advertToDto(data),
     });
-    if (res.payload) res.payload = mapAdvert(res.payload);
+    if (res.payload) {
+      res.payload = mapAdvert(res.payload);
+      emitDashboardAdsChanged();
+    }
     return res as any;
   },
   async update(
@@ -656,11 +826,16 @@ export const advertApi = {
       token,
       body: advertToDto(data),
     });
-    if (res.payload) res.payload = mapAdvert(res.payload);
+    if (res.payload) {
+      res.payload = mapAdvert(res.payload);
+      emitDashboardAdsChanged();
+    }
     return res as any;
   },
   async remove(token: string, id: string): Promise<ApiResponse<void>> {
-    return apiRequest(`/advert/${id}`, { method: "DELETE", token });
+    const res = await apiRequest(`/advert/${id}`, { method: "DELETE", token });
+    emitDashboardAdsChanged();
+    return res;
   },
 };
 

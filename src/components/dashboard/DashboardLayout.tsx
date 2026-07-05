@@ -4,6 +4,7 @@ import {
   Wallet, Trophy, Star, Gift, Users, GraduationCap, User as UserIcon,
   Settings, Search, Bell, Plus, LogOut, Menu, X, Sparkles, Calculator,
   ChevronDown, Newspaper, Megaphone, FileWarning, Layers, ClipboardCheck, FlaskConical, Globe2, Share2, Check,
+  PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -12,6 +13,7 @@ import { AddTradeModal } from "@/components/dashboard/AddTradeModal";
 import { DashboardAdBanner } from "@/components/dashboard/DashboardAdBanner";
 import { openAddTrade, onAddTradeOpen } from "@/lib/ui-bus";
 import { useI18n, type LanguageCode } from "@/lib/i18n";
+import { useNotifications, type NotificationKind } from "@/lib/notifications-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,12 +125,38 @@ function DashboardLanguageSelector() {
   );
 }
 
+const notificationIcon: Record<NotificationKind, typeof Bell> = {
+  rr: Gift,
+  review: Star,
+  referral: Share2,
+  claim: ClipboardCheck,
+  withdrawal: Wallet,
+  tbi: Trophy,
+  system: Bell,
+};
+
+function formatNotificationTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const diff = Date.now() - date.getTime();
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diff < minute) return "Just now";
+  if (diff < hour) return `${Math.max(1, Math.floor(diff / minute))}m ago`;
+  if (diff < day) return `${Math.floor(diff / hour)}h ago`;
+  if (diff < 7 * day) return `${Math.floor(diff / day)}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export function DashboardLayout() {
   const { t } = useI18n();
-  const { user, logout, loading } = useAuth();
+  const { user, token, logout, loading } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const notifications = useNotifications(token);
 
   const initialOpen = useMemo(() => {
     const open: Record<string, boolean> = {};
@@ -163,13 +191,14 @@ export function DashboardLayout() {
       <div className="glow-orb left-[-10%] top-[-10%] h-[500px] w-[500px]" />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-transform duration-200 ease-out lg:translate-x-0 ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-all duration-200 ease-out lg:translate-x-0 ${
+          sidebarCollapsed ? "lg:w-20" : "lg:w-64"
+        } ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
         aria-label="Dashboard navigation"
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/5 px-4">
-          <Link to="/" className="flex items-center gap-2" aria-label="RebateBoard home">
-            <Logo heightClass="h-9" />
-            <span className="hidden text-[10px] text-muted-foreground sm:inline">trader OS</span>
+        <div className={`flex h-16 items-center justify-between border-b border-white/5 px-4 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
+          <Link to="/" className={`flex min-w-0 items-center gap-2 ${sidebarCollapsed ? "lg:justify-center" : ""}`} aria-label="RebateBoard home">
+            <Logo heightClass="h-9" iconOnly={sidebarCollapsed} />
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
@@ -179,21 +208,34 @@ export function DashboardLayout() {
             <X className="h-5 w-5" />
           </button>
         </div>
+        <button
+          onClick={() => setSidebarCollapsed((value) => !value)}
+          className="absolute -right-4 top-5 hidden h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#24113e]/95 text-fuchsia-100 shadow-xl shadow-black/30 backdrop-blur-xl transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </button>
 
-        <nav className="flex flex-col gap-1 overflow-y-auto px-2 py-3" style={{ maxHeight: "calc(100vh - 4rem)" }}>
+        <nav className={`flex flex-col gap-1 overflow-y-auto px-2 py-3 ${sidebarCollapsed ? "lg:px-2" : ""}`} style={{ maxHeight: "calc(100vh - 4rem)" }}>
           {groups.map((g) => {
             const isOpen = openGroups[g.id] ?? false;
+            const showItems = sidebarCollapsed || isOpen;
             return (
               <div key={g.id} className="mb-1">
-                <button
-                  onClick={() => toggle(g.id)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  aria-expanded={isOpen}
-                >
-                  <span>{t(g.labelKey)}</span>
-                  <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-                {isOpen && (
+                {sidebarCollapsed ? (
+                  <div className="mx-3 my-2 hidden h-px bg-white/10 lg:block" title={t(g.labelKey)} />
+                ) : (
+                  <button
+                    onClick={() => toggle(g.id)}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    aria-expanded={isOpen}
+                  >
+                    <span>{t(g.labelKey)}</span>
+                    <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+                {showItems && (
                   <div className="mt-0.5 flex flex-col gap-0.5">
                     {g.items.map((item) => {
                       const active = item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + "/");
@@ -204,17 +246,18 @@ export function DashboardLayout() {
                           to={item.to as string}
                           onClick={() => setMobileOpen(false)}
                           aria-current={active ? "page" : undefined}
+                          title={sidebarCollapsed ? t(item.labelKey) : undefined}
                           className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring/60 ${
                             active
                               ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
                               : "text-muted-foreground hover:bg-white/5 hover:text-white"
-                          }`}
+                          } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
                         >
                           {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" aria-hidden />}
-                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-accent" : "group-hover:text-white/90"}`} />
-                          <span className="flex-1 truncate">{t(item.labelKey)}</span>
+                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-fuchsia-300" : "group-hover:text-white/90"}`} />
+                          <span className={`flex-1 truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>{t(item.labelKey)}</span>
                           {item.badge && (
-                            <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
+                            <span className={`rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                               {item.badge}
                             </span>
                           )}
@@ -229,10 +272,11 @@ export function DashboardLayout() {
 
           <button
             onClick={() => { logout(); navigate({ to: "/" }); }}
-            className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+            className={`mt-2 flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
+            title={sidebarCollapsed ? t("dashboard.logout") : undefined}
           >
             <LogOut className="h-4 w-4" />
-            <span>{t("dashboard.logout")}</span>
+            <span className={sidebarCollapsed ? "lg:hidden" : ""}>{t("dashboard.logout")}</span>
           </button>
         </nav>
       </aside>
@@ -241,7 +285,7 @@ export function DashboardLayout() {
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div className="lg:pl-64">
+      <div className={sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}>
         <header className="sticky top-0 z-30 border-b border-white/5 bg-[#150829]/75 backdrop-blur-xl">
           <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6">
             <button
@@ -274,13 +318,106 @@ export function DashboardLayout() {
                 <Plus className="h-4 w-4" />
               </button>
               <Link to={"/dashboard/ai-coach" as string} className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
-                <Sparkles className="h-3.5 w-3.5 text-accent" /> {t("dashboard.askRebeta")}
+                <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" /> {t("dashboard.askRebeta")}
               </Link>
-              <button className="glass-pill grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10" aria-label={t("dashboard.notifications")}>
-                <Bell className="h-4 w-4" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="glass-pill relative grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"
+                  aria-label={t("dashboard.notifications")}
+                >
+                  <Bell className="h-4 w-4" />
+                  {notifications.unread > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-fuchsia-500 px-1 text-[9px] font-bold text-white ring-2 ring-[#150829]">
+                      {notifications.unread > 9 ? "9+" : notifications.unread}
+                    </span>
+                  )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="glass-strong w-[min(22rem,calc(100vw-1.5rem))] border-2 border-white/20 p-0 text-foreground shadow-2xl"
+                >
+                  <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{t("dashboard.notifications")}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {notifications.unread > 0 ? `${notifications.unread} unread updates` : "No unread updates"}
+                      </p>
+                    </div>
+                    {notifications.items.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => void notifications.markAllRead()}
+                        className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                      >
+                        Mark read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-[22rem] overflow-y-auto p-2">
+                    {notifications.status === "loading" && (
+                      <div className="space-y-2 p-2">
+                        {[0, 1, 2].map((item) => (
+                          <div key={item} className="h-16 animate-pulse rounded-xl bg-white/[0.06]" />
+                        ))}
+                      </div>
+                    )}
+
+                    {notifications.status === "error" && (
+                      <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-100">
+                        <p>{notifications.error ?? "Unable to load notifications."}</p>
+                        <button
+                          type="button"
+                          onClick={() => void notifications.refresh()}
+                          className="mt-2 font-semibold text-white underline underline-offset-4"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    )}
+
+                    {notifications.status !== "loading" && notifications.status !== "error" && notifications.items.length === 0 && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">
+                        <p className="text-sm font-semibold text-white">No notifications yet</p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          Cashback, withdrawal, review, and reward updates will appear here.
+                        </p>
+                      </div>
+                    )}
+
+                    {notifications.items.map((item) => {
+                      const Icon = notificationIcon[item.kind];
+                      return (
+                        <Link
+                          key={item.id}
+                          to={(item.href ?? "/dashboard") as string}
+                          onClick={() => void notifications.markRead(item.id)}
+                          className="group mb-1 flex gap-3 rounded-xl border border-white/0 p-2.5 outline-none transition hover:border-white/10 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                          <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${item.read ? "bg-white/[0.08] text-white/60" : "bg-fuchsia-500/20 text-fuchsia-100 ring-1 ring-fuchsia-400/25"}`}>
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-start justify-between gap-2">
+                              <span className={`line-clamp-1 text-xs font-semibold ${item.read ? "text-white/70" : "text-white"}`}>
+                                {item.title}
+                              </span>
+                              <span className="shrink-0 text-[10px] text-muted-foreground">{formatNotificationTime(item.createdAt)}</span>
+                            </span>
+                            {item.body && (
+                              <span className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                                {item.body}
+                              </span>
+                            )}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link to={"/dashboard/rewards" as string} className="glass-pill inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-semibold text-white sm:gap-1.5 sm:px-3 sm:text-xs">
-                <Gift className="h-3.5 w-3.5 text-accent" />
+                <Gift className="h-3.5 w-3.5 text-fuchsia-300" />
                 <span className="tabular-nums">{user.rrBalance.toFixed(0)}</span>
                 <span className="hidden sm:inline">RR</span>
               </Link>

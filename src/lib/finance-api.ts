@@ -213,6 +213,7 @@ export type PartnerRequestRecord = {
   affiliateLink?: string;
   registeredEmail?: string;
   accountId: string;
+  payoutTarget?: string;
   status: string; // queued | sent | acknowledged | rejected
   sentAt?: string;
   adminNote?: string;
@@ -501,7 +502,7 @@ export const financeApi = {
 
   createPartnerRequest(token: string, body: {
     brand: string; brandCategory?: string; toEmail: string; subject: string; body: string;
-    partnerCode?: string; affiliateLink?: string; registeredEmail?: string; accountId: string;
+    partnerCode?: string; affiliateLink?: string; registeredEmail?: string; accountId: string; payoutTarget?: string;
   }): Promise<ApiResponse<PartnerRequestRecord>> {
     return apiRequest<PartnerRequestRecord>("/partner-request/", { method: "POST", body, token });
   },

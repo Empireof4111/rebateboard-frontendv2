@@ -15,9 +15,9 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Create your account - RebateBoard" },
-      { name: "description", content: "Join RebateBoard 2.0. Personalize your trader OS in under 2 minutes." },
+      { name: "description", content: "Join RebateBoard 2.0. Personalize your trading dashboard in under 2 minutes." },
       { property: "og:title", content: "Create your account - RebateBoard" },
-      { property: "og:description", content: "Join RebateBoard 2.0. Personalize your trader OS in under 2 minutes." },
+      { property: "og:description", content: "Join RebateBoard 2.0. Personalize your trading dashboard in under 2 minutes." },
     ],
   }),
   component: SignupPage,
@@ -793,7 +793,7 @@ function StepSuccess({
         <ActionCard
           icon={<Compass className="h-5 w-5 text-fuchsia-300" />}
           title="Explore Dashboard"
-          desc="Your trader OS overview."
+          desc="Your RebateBoard overview."
           primary
           onClick={onExplore}
         />

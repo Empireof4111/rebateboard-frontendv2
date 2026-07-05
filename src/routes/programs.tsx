@@ -1027,9 +1027,9 @@ function ProgramsPage() {
             )}
 
             {trendingPrograms.length > 0 && (
-              <div className="rounded-2xl bg-white p-5 text-violet-900 shadow-2xl">
+              <div className="rounded-2xl border border-white/15 bg-white/[0.045] p-5 text-white shadow-[0_22px_70px_rgba(14,4,36,0.25)] backdrop-blur-2xl">
                 <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-fuchsia-600" />
+                  <Sparkles className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-bold">Trending Forex prop firm promos</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1038,7 +1038,7 @@ function ProgramsPage() {
                       key={program.id}
                       to="/firm/$firmId"
                       params={{ firmId: program.slug }}
-                      className="inline-flex items-center gap-2 rounded-full bg-fuchsia-100 px-3 py-1.5 text-[11px] font-semibold text-fuchsia-800 ring-1 ring-fuchsia-200 hover:bg-fuchsia-200"
+                      className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-primary/25 transition hover:bg-primary/25"
                     >
                       <Flame className="h-3 w-3" /> {program.name} - {program.promoOff}
                     </Link>

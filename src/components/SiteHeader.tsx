@@ -130,8 +130,8 @@ const navItems: HeaderNavItem[] = [
     items: [
       { labelKey: "nav.allPropFirms", to: "/programs" },
       { labelKey: "nav.forexPropFirms", to: "/programs" },
-      { labelKey: "nav.futuresPropFirms", to: "/programs" },
-      { labelKey: "nav.cryptoPropFirms", to: "/programs" },
+      { labelKey: "nav.futuresPropFirms", to: "/futures-prop-firms" },
+      { labelKey: "nav.cryptoPropFirms", to: "/crypto-prop-firms" },
     ],
   },
   { labelKey: "nav.brokers", to: "/brokers" },
@@ -143,8 +143,16 @@ const navItems: HeaderNavItem[] = [
   { labelKey: "nav.comparisons", to: "/compare" },
   {
     labelKey: "nav.tools",
-    to: "/dashboard/tools",
+    to: "/trading-tools",
     items: [
+      { labelKey: "nav.tradingTools", to: "/trading-tools" },
+      { labelKey: "nav.tradingSoftware", to: "/trading-software" },
+      { labelKey: "nav.tradingJournals", to: "/trading-journals" },
+      { labelKey: "nav.tradingCalculators", to: "/trading-calculators" },
+      { labelKey: "nav.tradingPlatforms", to: "/trading-platforms" },
+      { labelKey: "nav.educationProviders", to: "/education-providers" },
+      { labelKey: "nav.signalProviders", to: "/signal-providers" },
+      { labelKey: "nav.copyTradingPlatforms", to: "/copy-trading-platforms" },
       { labelKey: "nav.economicCalendar", to: "/economic-calendar" },
       { labelKey: "nav.tradingAcademy", to: "/academy" },
       { labelKey: "nav.aiBacktest", to: "/dashboard/backtest" },

@@ -13,7 +13,7 @@ import {
   Building2,
   Trophy,
   Rocket,
-  BrainCircuit,
+  ShieldCheck,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
@@ -45,63 +45,11 @@ import {
   LandingSponsorsStrip,
   LandingAdvertiseBox,
 } from "@/components/landing/LandingAdSlots";
-import type { SponsorLogo } from "@/lib/dashboard-ads";
 import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
-
-const brokers: SponsorLogo[] = [
-  {
-    id: "fb1",
-    name: "Bitget",
-    initial: "B",
-    color: "from-cyan-400 to-blue-500",
-    href: "/payouts/bitget",
-    tag: "sponsor",
-  },
-  {
-    id: "fb2",
-    name: "Bybit",
-    initial: "BY",
-    color: "from-yellow-400 to-orange-500",
-    href: "/payouts/bybit",
-    tag: "featured",
-  },
-  {
-    id: "fb3",
-    name: "Exness",
-    initial: "ex",
-    color: "from-yellow-300 to-yellow-500",
-    href: "/payouts/exness",
-    tag: "ad",
-  },
-  {
-    id: "fb4",
-    name: "FTMO",
-    initial: "F",
-    color: "from-blue-500 to-indigo-600",
-    href: "/payouts/ftmo",
-    tag: "featured",
-  },
-  {
-    id: "fb5",
-    name: "FundedNext",
-    initial: "FN",
-    color: "from-pink-500 to-rose-500",
-    href: "/payouts/fundednext",
-    tag: "sponsor",
-  },
-  {
-    id: "fb6",
-    name: "OKX",
-    initial: "X",
-    color: "from-zinc-700 to-zinc-900",
-    href: "/payouts/okx",
-    tag: "ad",
-  },
-];
 
 const reviewBars = [
   { stars: 5, value: 84, count: "2.1k" },
@@ -516,35 +464,40 @@ function RankingPanel({
 
 function HeroActionStrip() {
   const { t } = useI18n();
+  const linkClass =
+    "group flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.055] px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-violet-300/35";
+  const iconClass =
+    "grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#7c4dff]/15 text-[#7c4dff] ring-1 ring-[#7c4dff]/35 shadow-[0_0_16px_rgba(124,77,255,0.18)]";
+  const labelClass = "min-w-0 text-[11px] font-bold leading-tight text-white/90 sm:text-xs";
 
   return (
-    <div className="grid gap-2 text-xs text-white/82 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+    <div className="grid gap-2 text-xs text-white/82 sm:grid-cols-3">
       <Link
         to="/signup"
-        className="group flex items-center gap-2 rounded-2xl bg-white/[0.055] px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-emerald-300/25"
+        className={linkClass}
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-emerald-400/15 text-emerald-200 ring-1 ring-emerald-300/25">
-          <Rocket className="h-4 w-4" />
+        <span className={iconClass}>
+          <Rocket className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
-        <span className="font-semibold">{t("hero.getStarted")}</span>
+        <span className={labelClass}>{t("hero.getStarted")}</span>
       </Link>
       <Link
         to="/offers"
-        className="group flex items-center gap-2 rounded-2xl bg-white/[0.055] px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-amber-300/25"
+        className={linkClass}
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-200 ring-1 ring-amber-300/25">
-          <BadgePercent className="h-4 w-4" />
+        <span className={iconClass}>
+          <BadgePercent className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
-        <span className="font-semibold">{t("hero.cashback")}</span>
+        <span className={labelClass}>{t("hero.cashback")}</span>
       </Link>
       <Link
         to="/tbi"
-        className="group flex items-center gap-2 rounded-2xl bg-white/[0.055] px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-fuchsia-300/25"
+        className={linkClass}
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-fuchsia-400/15 text-fuchsia-100 ring-1 ring-fuchsia-300/25">
-          <BrainCircuit className="h-4 w-4" />
+        <span className={iconClass}>
+          <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
-        <span className="font-semibold">{t("hero.aiTrustScores")}</span>
+        <span className={labelClass}>{t("hero.aiTrustScores")}</span>
       </Link>
     </div>
   );
@@ -827,9 +780,9 @@ function Index() {
       <SiteHeader />
       <div className="container-app relative pb-5 pt-2 sm:pb-6 sm:pt-3">
         {/* HERO */}
-        <section className="grid gap-5 lg:grid-cols-[1.05fr_1fr] lg:items-start lg:gap-6">
+        <section className="grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-start lg:gap-6">
           <div>
-            <div className="flex flex-col lg:h-[22rem] xl:h-[23.5rem]">
+            <div className="flex flex-col lg:min-h-[22rem] xl:min-h-[23.5rem]">
               <h1
                 className={`max-w-3xl break-words font-bold leading-[1.04] ${
                   compactHeroCopy
@@ -847,20 +800,17 @@ function Index() {
               >
                 {t("hero.subheadline")}
               </p>
+              <div className="mt-5">
+                <HeroActionStrip />
+              </div>
             </div>
-            {/* Sponsored company logos — managed in Superadmin → Dashboard Ads */}
-            <LandingSponsorsStrip fallback={brokers} />
           </div>
 
           <div>
             {/* Hero rotating ad card — managed in Superadmin → Dashboard Ads */}
             <LandingHeroAdCard fallbackImage={heroChart} className="lg:h-[22rem] xl:h-[23.5rem]" />
-            <div className="mt-4">
-              <div className="eyebrow mb-3 invisible" aria-hidden="true">
-                Primary actions
-              </div>
-              <HeroActionStrip />
-            </div>
+            {/* Sponsored company logos — managed in Superadmin → Dashboard Ads */}
+            <LandingSponsorsStrip />
           </div>
         </section>
 

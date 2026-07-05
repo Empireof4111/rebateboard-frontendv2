@@ -10,6 +10,8 @@ import {
   ListTodo,
   Monitor,
   BookOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ToastViewport, toast } from "./AdminActions";
@@ -104,6 +106,7 @@ export function SuperadminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { canRoute, roles, activeRoleId, setActiveRoleId, activeRole } = useAdminPermissions();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [bugBountyOpenCount, setBugBountyOpenCount] = useState<string>("");
   const [open, setOpen] = useState<Record<string, boolean>>({
@@ -155,18 +158,28 @@ export function SuperadminLayout() {
       <div className="glow-orb right-[-10%] bottom-[-10%] h-[600px] w-[600px]" />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-transform duration-200 ease-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-all duration-200 ease-out lg:translate-x-0 ${
+          sidebarCollapsed ? "lg:w-20" : "lg:w-64"
+        } ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
         aria-label="Superadmin navigation"
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/5 px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <Logo heightClass="h-9" />
-            <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+        <div className={`flex h-16 items-center justify-between border-b border-white/5 px-4 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
+          <Link to="/" className={`flex min-w-0 items-center gap-2 ${sidebarCollapsed ? "lg:justify-center" : ""}`}>
+            <Logo heightClass="h-9" iconOnly={sidebarCollapsed} />
+            <span className={`rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
               ADMIN
             </span>
           </Link>
+          <button
+            onClick={() => setSidebarCollapsed((value) => !value)}
+            className="hidden h-9 w-9 place-items-center rounded-xl text-fuchsia-100 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
+          </button>
           <button
             onClick={() => setMobileOpen(false)}
             className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-white/5 hover:text-white lg:hidden"
@@ -176,20 +189,25 @@ export function SuperadminLayout() {
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1 overflow-y-auto px-2 py-3" style={{ maxHeight: "calc(100vh - 4rem)" }}>
+        <nav className={`flex flex-col gap-1 overflow-y-auto px-2 py-3 ${sidebarCollapsed ? "lg:px-2" : ""}`} style={{ maxHeight: "calc(100vh - 4rem)" }}>
           {visibleGroups.map((g) => {
             const isOpen = open[g.id];
+            const showItems = sidebarCollapsed || isOpen;
             return (
               <div key={g.id} className="mb-1">
-                <button
-                  onClick={() => toggle(g.id)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  aria-expanded={isOpen}
-                >
-                  <span>{g.label}</span>
-                  <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-                {isOpen && (
+                {sidebarCollapsed ? (
+                  <div className="mx-3 my-2 hidden h-px bg-white/10 lg:block" title={g.label} />
+                ) : (
+                  <button
+                    onClick={() => toggle(g.id)}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    aria-expanded={isOpen}
+                  >
+                    <span>{g.label}</span>
+                    <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+                {showItems && (
                   <div className="mt-0.5 flex flex-col gap-0.5">
                     {g.items.map((item) => {
                       const active = item.exact
@@ -202,17 +220,18 @@ export function SuperadminLayout() {
                           to={item.to as string}
                           onClick={() => setMobileOpen(false)}
                           aria-current={active ? "page" : undefined}
+                          title={sidebarCollapsed ? item.label : undefined}
                           className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring/60 ${
                             active
                               ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
                               : "text-muted-foreground hover:bg-white/5 hover:text-white"
-                          }`}
+                          } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
                         >
                           {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" aria-hidden />}
                           <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-fuchsia-400" : "group-hover:text-white/90"}`} />
-                          <span className="flex-1 truncate">{item.label}</span>
+                          <span className={`flex-1 truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>{item.label}</span>
                           {(item.to === "/superadmin/Bug-bounty" ? bugBountyOpenCount : item.badge) && (
-                            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/10">
+                            <span className={`rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/10 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                               {item.to === "/superadmin/Bug-bounty" ? bugBountyOpenCount : item.badge}
                             </span>
                           )}
@@ -231,7 +250,7 @@ export function SuperadminLayout() {
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div className="lg:pl-64">
+      <div className={sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}>
         <header className="sticky top-0 z-30 border-b border-white/5 bg-[#150829]/75 backdrop-blur-xl">
           <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6">
             <button

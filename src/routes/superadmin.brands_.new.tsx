@@ -77,11 +77,13 @@ export const Route = createFileRoute("/superadmin/brands_/new")({
 
 type Category =
   | "Forex Broker" | "Prop Firm" | "Futures Prop Firm" | "Crypto Prop Firm" | "Stock Prop Firm" | "DEX Prop Firm"
-  | "Crypto Exchange" | "Trading Software" | "Education Provider" | "Other";
+  | "Crypto Exchange" | "Trading Software" | "Trading Tool" | "Trading Journal" | "Trading Calculator" | "Trading Platform"
+  | "Signal Provider" | "Copy Trading Platform" | "Education Provider" | "Other";
 
 const CATEGORIES: Category[] = [
   "Forex Broker", "Prop Firm", "Futures Prop Firm", "Crypto Prop Firm", "Stock Prop Firm", "DEX Prop Firm",
-  "Crypto Exchange", "Trading Software", "Education Provider", "Other",
+  "Crypto Exchange", "Trading Software", "Trading Tool", "Trading Journal", "Trading Calculator", "Trading Platform",
+  "Signal Provider", "Copy Trading Platform", "Education Provider", "Other",
 ];
 
 function Field({ label, children, span = 1, hint }: { label: string; children: React.ReactNode; span?: 1 | 2; hint?: string }) {
@@ -329,7 +331,14 @@ function NewBrandPage() {
     category === "Stock Prop Firm" ||
     category === "DEX Prop Firm";
   const isExchange = category === "Crypto Exchange";
-  const isTool = category === "Trading Software";
+  const isTool =
+    category === "Trading Software" ||
+    category === "Trading Tool" ||
+    category === "Trading Journal" ||
+    category === "Trading Calculator" ||
+    category === "Trading Platform" ||
+    category === "Signal Provider" ||
+    category === "Copy Trading Platform";
 
   const sections = useMemo(() => {
     const base: { id: SectionId; label: string; icon: typeof IdCard; show: boolean }[] = [
@@ -1150,7 +1159,7 @@ function NewBrandPage() {
 
           {section === "profile" && (
             <div className="space-y-4">
-              {!isBroker && !isExchange && category !== "Trading Software" && category !== "Education Provider" && (
+              {!isBroker && !isExchange && !isTool && category !== "Education Provider" && (
                 <Panel title="Account option · instruments & leverage">
                   <p className="mb-3 text-[11px] text-muted-foreground">
                     These render on the brand profile under <span className="font-semibold text-white">Account Option</span> and <span className="font-semibold text-white">Supported Instrument &amp; Leverage</span>.
@@ -1170,7 +1179,7 @@ function NewBrandPage() {
                 </Panel>
               )}
 
-              {!isExchange && category !== "Trading Software" && (
+              {!isExchange && !isTool && (
                 <Panel title="Customer support">
                   <div className="grid gap-3 md:grid-cols-2">
                     <Field label="Channels" span={2}><input className={inputCls} placeholder="Email, Helpdesk, Discord" value={profile.supportChannels} onChange={(e) => setProfile({ ...profile, supportChannels: e.target.value })} /></Field>
@@ -1498,7 +1507,7 @@ function NewBrandPage() {
                 <Field label="Initial TBI score (0–100)">
                   <input type="number" min={0} max={100} className={inputCls} value={tbi} onChange={(e) => setTbi(Number(e.target.value))} />
                 </Field>
-                {!isBroker && category !== "Trading Software" && category !== "Education Provider" && <Field label="License #"><input className={inputCls} placeholder="DFSA / ASIC / —" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} /></Field>}
+                {!isBroker && !isTool && category !== "Education Provider" && <Field label="License #"><input className={inputCls} placeholder="DFSA / ASIC / —" value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} /></Field>}
                 <Field label="KYB / license document" span={2}>
                   <label className="block">
                     <input

@@ -25,7 +25,9 @@ function slugify(text: string) {
 const emptyPost = (): BlogPost => ({
   id: "",
   title: "",
-  author: "",
+  author: "RebateBoard Editorial",
+  authorAvatar: "",
+  authorTitle: "Editorial Team",
   views: "0",
   status: "draft",
   time: "",
@@ -209,6 +211,30 @@ function BlogAdmin() {
             <Field label="Read time">
               <input className={fieldCls} value={editing.readTime ?? ""} onChange={(e) => setEditing({ ...editing, readTime: e.target.value })} placeholder="e.g. 6 min read" />
             </Field>
+            <Field label="Editor / publisher name">
+              <input
+                className={fieldCls}
+                value={editing.author ?? ""}
+                onChange={(e) => setEditing({ ...editing, author: e.target.value })}
+                placeholder="RebateBoard Editorial"
+              />
+            </Field>
+            <Field label="Editor role">
+              <input
+                className={fieldCls}
+                value={editing.authorTitle ?? ""}
+                onChange={(e) => setEditing({ ...editing, authorTitle: e.target.value })}
+                placeholder="Editorial Team"
+              />
+            </Field>
+            <div className="md:col-span-2">
+              <ThumbnailUploader
+                label="Editor avatar / profile picture"
+                value={editing.authorAvatar}
+                height="h-24"
+                onChange={(url) => setEditing({ ...editing, authorAvatar: url })}
+              />
+            </div>
             <Field label="Excerpt (card summary)" span={2}>
               <textarea rows={2} className={fieldCls} value={editing.excerpt ?? ""} onChange={(e) => setEditing({ ...editing, excerpt: e.target.value })} placeholder="Short summary shown on the article card…" />
             </Field>

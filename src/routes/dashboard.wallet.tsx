@@ -6,16 +6,33 @@ import {
   TrendingUp, Building2, Zap, Upload, Coins, Banknote,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
-import { type WalletTransaction, type TxStatus } from "@/lib/wallet-data";
-import { adminBrands, type PayoutTarget } from "@/lib/admin-data";
+import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import { LinkAccountModal } from "@/components/dashboard/LinkAccountModal";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type WalletSummary, type PartnerRequestRecord } from "@/lib/finance-api";
 import { ApiError } from "@/lib/api";
 
 const PAYOUT_PREF_KEY = "rb-user:payoutPref";
+type PayoutTarget = "rr-wallet" | "rebate-wallet" | "revete-wallet" | "broker-wallet";
 type PayoutPref = { default: PayoutTarget };
 const defaultPref: PayoutPref = { default: "rebate-wallet" };
+type TxStatus = "Pending" | "Approved" | "Credited" | "Withdrawn" | "Completed";
+type WalletTransaction = {
+  id: string;
+  date: string;
+  source: "Forex Broker" | "Prop Firm" | "Crypto Exchange" | "Futures Broker" | "Internal" | "System";
+  brandName: string;
+  type: "Cashback" | "Referral" | "Transfer" | "Reward" | "Withdrawal";
+  volumeLots?: number;
+  commissionGenerated?: number;
+  rebatePercent?: number;
+  amount: number;
+  status: TxStatus;
+  note?: string;
+  direction?: "in" | "out";
+  counterpartyName?: string;
+  counterpartyHandle?: string;
+};
 
 export const Route = createFileRoute("/dashboard/wallet")({
   head: () => ({
@@ -34,12 +51,18 @@ function fmtUSD(n: number) {
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
+function formatPayoutTarget(value: string) {
+  if (value === "rr-wallet") return "RR wallet";
+  if (value === "broker-wallet") return "Broker wallet";
+  return "Rebate wallet";
+}
 
 const statusTone: Record<TxStatus, "success" | "warning" | "primary" | "default"> = {
   Credited: "success",
   Approved: "primary",
   Pending: "warning",
   Withdrawn: "default",
+  Completed: "success",
 };
 
 function WalletPage() {
@@ -159,6 +182,9 @@ function WalletPage() {
   };
 
   const walletTransactions = transactions;
+  const topEarningSource = useMemo(() => {
+    return [...earningsBySource].sort((a, b) => b.amount - a.amount)[0] ?? null;
+  }, [earningsBySource]);
 
   const filtered = useMemo(() => {
     return walletTransactions.filter((t) => {
@@ -257,11 +283,29 @@ function WalletPage() {
             </div>}
         </Panel>
         <Panel title="Earnings Intelligence" action={<Pill tone="primary"><Zap className="h-3 w-3" />AI</Pill>}>
-          <div className="space-y-3 text-xs">
-            <Insight tone="success" text={<>You earned <b>$1,240</b> from <b>Exness</b> this month — your top source.</>} />
-            <Insight tone="warning" text={<>Switching <b>40%</b> of crypto volume from Binance to Bybit could earn you ~<b>+$48/mo</b>.</>} />
-            <Insight tone="primary" text={<>Your <b>FundingPips</b> rebate jumped <b>50% → 60%</b> this week. Lock it in.</>} />
-          </div>
+          {topEarningSource || linkedAccts.length > 0 || summary ? (
+            <div className="space-y-3 text-xs">
+              {topEarningSource ? (
+                <Insight tone="success" text={<><b>{topEarningSource.source}</b> is your top tracked earning source at <b>{fmtUSD(topEarningSource.amount)}</b>.</>} />
+              ) : (
+                <Insight tone="primary" text={<>No source-level earnings yet. Linked accounts and approved cashback entries will populate this insight.</>} />
+              )}
+              {linkedAccts.length > 0 ? (
+                <Insight tone="primary" text={<><b>{linkedAccts.length}</b> linked account request{linkedAccts.length === 1 ? "" : "s"} found. Pending requests update when admin confirms the partner connection.</>} />
+              ) : (
+                <Insight tone="warning" text={<>No linked partner accounts yet. Link a broker, prop firm, or exchange to enable automated cashback tracking.</>} />
+              )}
+              {summary && Number(summary.pendingWithdrawals) > 0 ? (
+                <Insight tone="warning" text={<><b>{fmtUSD(Number(summary.pendingWithdrawals))}</b> is pending withdrawal review.</>} />
+              ) : (
+                <Insight tone="success" text={<>Available withdrawal balance: <b>{fmtUSD(Number(summary?.availableForWithdrawal ?? 0))}</b>.</>} />
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center text-xs text-muted-foreground">
+              Earnings intelligence appears after wallet activity, linked accounts, or cashback claims are recorded.
+            </div>
+          )}
         </Panel>
       </div>
 
@@ -430,7 +474,9 @@ function WalletPage() {
                     <div className="grid h-9 w-9 place-items-center rounded-full bg-fuchsia-500/15 text-fuchsia-300"><Building2 className="h-4 w-4" /></div>
                     <div>
                       <div className="text-sm font-semibold text-white">{la.brand} · <span className="font-mono text-[11px] text-muted-foreground">{la.accountId}</span></div>
-                      <div className="text-[10px] text-muted-foreground">{la.brandCategory}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {la.brandCategory || "Partner"}{la.payoutTarget ? ` · ${formatPayoutTarget(la.payoutTarget)}` : ""}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
@@ -448,7 +494,14 @@ function WalletPage() {
       {withdrawOpen && token && <WithdrawModal token={token} walletSummary={walletSummary} onClose={() => setWithdrawOpen(false)} onSuccess={loadData} />}
       {transferOpen && token && <TransferModal token={token} onClose={() => setTransferOpen(false)} onSuccess={loadData} />}
       {claimOpen && token && user && <ClaimCashbackModal token={token} userId={user.id} defaultPref={pref.default} onClose={() => setClaimOpen(false)} onSuccess={loadData} />}
-      {linkOpen && <LinkAccountModal onClose={() => setLinkOpen(false)} />}
+      {linkOpen && token && (
+        <LinkAccountModal
+          token={token}
+          currentUser={user?.name ?? "RebateBoard user"}
+          onClose={() => setLinkOpen(false)}
+          onLinked={() => loadData()}
+        />
+      )}
     </div>
   );
 }
@@ -676,21 +729,31 @@ function TransferModal({ token, onClose, onSuccess }: { token: string; onClose: 
 /* =====================================================================
  * Claim Cashback modal — submits to backend via API
  * ===================================================================== */
-type BrandLike = { name: string; category: string; cashback?: { supportsApiAuto?: boolean; supportsRebateWallet?: boolean; supportsReveteWallet?: boolean; requiresManualClaim?: boolean; proofRequired?: { screenshot?: boolean; registeredEmail?: boolean; accountId?: boolean; orderId?: boolean } } };
+type BrandLike = {
+  name: string;
+  category: string;
+  cashback?: {
+    supportsApiAuto?: boolean;
+    supportsRebateWallet?: boolean;
+    supportsReveteWallet?: boolean;
+    requiresManualClaim?: boolean;
+    proofRequired?: { screenshot?: boolean; registeredEmail?: boolean; accountId?: boolean; orderId?: boolean };
+  };
+};
+
+function mapClaimBrand(brand: AdminBrandRecord): BrandLike {
+  return {
+    name: brand.name,
+    category: brand.category,
+    cashback: brand.cashback as BrandLike["cashback"],
+  };
+}
 
 function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSuccess }: { token: string; userId: string; defaultPref: PayoutTarget; onClose: () => void; onSuccess: () => void }) {
-  const customBrands = useMemo<BrandLike[]>(() => {
-    try {
-      const raw = sessionStorage.getItem("rb-admin:brands");
-      return raw ? (JSON.parse(raw) as BrandLike[]) : [];
-    } catch { return []; }
-  }, []);
-  const allBrands: BrandLike[] = useMemo(
-    () => [...customBrands, ...adminBrands.map((b) => ({ name: b.name, category: b.category }))],
-    [customBrands]
-  );
-
-  const [partner, setPartner] = useState<string>(allBrands[0]?.name ?? "");
+  const [allBrands, setAllBrands] = useState<BrandLike[]>([]);
+  const [brandsLoading, setBrandsLoading] = useState(true);
+  const [brandsError, setBrandsError] = useState("");
+  const [partner, setPartner] = useState("");
   const [accountId, setAccountId] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [orderId, setOrderId] = useState("");
@@ -700,6 +763,32 @@ function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSu
   const [target, setTarget] = useState<PayoutTarget>(defaultPref);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    setBrandsLoading(true);
+    fetchPublicAdminBrands(undefined, token)
+      .then((brands) => {
+        if (!alive) return;
+        const supported = brands
+          .filter((brand) => Boolean(brand.cashback) || ["Prop Firm", "Forex Broker", "Crypto Exchange", "Futures Prop Firm", "Crypto Prop Firm"].includes(brand.category))
+          .map(mapClaimBrand);
+        setAllBrands(supported);
+        setPartner((current) => current || supported[0]?.name || "");
+        setBrandsError("");
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setAllBrands([]);
+        setBrandsError(err instanceof Error ? err.message : "Unable to load cashback partners.");
+      })
+      .finally(() => {
+        if (alive) setBrandsLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token]);
 
   const brand = allBrands.find((b) => b.name === partner);
   const cat = brand?.category ?? "";
@@ -732,7 +821,7 @@ function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSu
   const submit = async () => {
     const amt = Number(amount);
     setError("");
-    if (!partner) { setError("Pick a partner"); return; }
+    if (!partner) { setError("Pick a published cashback partner"); return; }
     if (!amt || amt <= 0) { setError("Enter a valid amount"); return; }
     if (proofNeeded) {
       if (proof.accountId && !accountId.trim()) { setError("Account ID is required for this partner"); return; }
@@ -770,8 +859,11 @@ function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSu
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Partner</label>
           <select value={partner} onChange={(e) => setPartner(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50">
+            {brandsLoading && <option value="">Loading partners...</option>}
+            {!brandsLoading && allBrands.length === 0 && <option value="">No cashback partners available</option>}
             {allBrands.map((b) => <option key={b.name} value={b.name}>{b.name} — {b.category}</option>)}
           </select>
+          {brandsError && <div className="mt-1 text-[10px] text-rose-300">{brandsError}</div>}
           <div className="mt-1 text-[10px] text-muted-foreground">
             {cb.supportsApiAuto ? "✓ API auto-payout supported" : "Manual proof required"}
             {cb.supportsRebateWallet ? " · Rebate wallet supported" : ""}

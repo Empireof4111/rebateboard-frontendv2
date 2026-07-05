@@ -2,12 +2,7 @@
 // In-memory + localStorage so saved reports/strategies persist across navigation.
 
 import { useSyncExternalStore } from "react";
-import {
-  mockReports,
-  mockTrades,
-  type BacktestReport,
-  type BacktestTrade,
-} from "./backtest-data";
+import type { BacktestReport, BacktestTrade } from "./backtest-data";
 
 export type StrategyTemplate = {
   id: string;
@@ -45,6 +40,7 @@ export type ImportedTradeBatch = {
 const REPORTS_KEY = "rb.backtest.reports.v1";
 const TEMPLATES_KEY = "rb.backtest.templates.v1";
 const IMPORTS_KEY = "rb.backtest.imports.v1";
+const TRADES_KEY = "rb.backtest.trades.v1";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -65,9 +61,10 @@ function safeSet<T>(key: string, value: T) {
 }
 
 // ---- state caches (referentially stable for useSyncExternalStore) ----
-let reportsState: BacktestReport[] = safeGet<BacktestReport[]>(REPORTS_KEY, mockReports);
-let templatesState: StrategyTemplate[] = safeGet<StrategyTemplate[]>(TEMPLATES_KEY, defaultTemplates());
+let reportsState: BacktestReport[] = safeGet<BacktestReport[]>(REPORTS_KEY, []);
+let templatesState: StrategyTemplate[] = safeGet<StrategyTemplate[]>(TEMPLATES_KEY, []);
 let importsState: ImportedTradeBatch[] = safeGet<ImportedTradeBatch[]>(IMPORTS_KEY, []);
+let reportTradesState: Record<string, BacktestTrade[]> = safeGet<Record<string, BacktestTrade[]>>(TRADES_KEY, {});
 
 const listeners = new Set<() => void>();
 function emit() { listeners.forEach((l) => l()); }
@@ -77,9 +74,50 @@ function subscribe(cb: () => void) { listeners.add(cb); return () => { listeners
 export function getReports() { return reportsState; }
 export function getTemplates() { return templatesState; }
 export function getImports() { return importsState; }
-export function getReportTrades(_reportId: string): BacktestTrade[] {
-  // Phase 1: return mock trade rows for any report.
-  return mockTrades;
+export function getReportTrades(reportId: string): BacktestTrade[] {
+  return reportTradesState[reportId] ?? [];
+}
+
+export function setReports(next: BacktestReport[]) {
+  reportsState = Array.isArray(next) ? next : [];
+  safeSet(REPORTS_KEY, reportsState);
+  emit();
+}
+
+export function setTemplates(next: StrategyTemplate[]) {
+  templatesState = Array.isArray(next) ? next : [];
+  safeSet(TEMPLATES_KEY, templatesState);
+  emit();
+}
+
+export function setImports(next: ImportedTradeBatch[]) {
+  importsState = Array.isArray(next) ? next : [];
+  safeSet(IMPORTS_KEY, importsState);
+  emit();
+}
+
+export function upsertReport(report: BacktestReport) {
+  reportsState = [report, ...reportsState.filter((item) => item.id !== report.id)];
+  safeSet(REPORTS_KEY, reportsState);
+  emit();
+}
+
+export function upsertTemplate(template: StrategyTemplate) {
+  templatesState = [template, ...templatesState.filter((item) => item.id !== template.id)];
+  safeSet(TEMPLATES_KEY, templatesState);
+  emit();
+}
+
+export function upsertImport(entry: ImportedTradeBatch) {
+  importsState = [entry, ...importsState.filter((item) => item.id !== entry.id)];
+  safeSet(IMPORTS_KEY, importsState);
+  emit();
+}
+
+export function setReportTrades(reportId: string, trades: BacktestTrade[]) {
+  reportTradesState = { ...reportTradesState, [reportId]: Array.isArray(trades) ? trades : [] };
+  safeSet(TRADES_KEY, reportTradesState);
+  emit();
 }
 
 export function addReport(r: Omit<BacktestReport, "id" | "createdAt" | "status">) {
@@ -97,7 +135,11 @@ export function addReport(r: Omit<BacktestReport, "id" | "createdAt" | "status">
 
 export function deleteReport(id: string) {
   reportsState = reportsState.filter((r) => r.id !== id);
+  const nextTrades = { ...reportTradesState };
+  delete nextTrades[id];
+  reportTradesState = nextTrades;
   safeSet(REPORTS_KEY, reportsState);
+  safeSet(TRADES_KEY, reportTradesState);
   emit();
 }
 
@@ -149,35 +191,4 @@ export function useTemplates() {
 }
 export function useImports() {
   return useSyncExternalStore(subscribe, getImports, getImports);
-}
-
-function defaultTemplates(): StrategyTemplate[] {
-  const base = (overrides: Partial<StrategyTemplate>): StrategyTemplate => ({
-    id: `tpl-seed-${Math.random().toString(36).slice(2, 8)}`,
-    name: "Untitled",
-    market: "Forex",
-    symbol: "EURUSD",
-    timeframe: "15m",
-    session: "London",
-    range: "6 months",
-    startBalance: 10000,
-    riskPerTrade: 1,
-    description: "",
-    rules: {
-      entry: "Break of structure + retest",
-      exit: "TP at 2R, trail after 1R",
-      risk: "1% per trade, daily loss cap 3%",
-      filters: "Tue–Thu, no news ±30min",
-      invalidation: "Skip if range > 60 pips",
-      fees: "Spread 0.8 pip, $7/lot, +$2.3/lot cashback",
-    },
-    createdAt: "2026-04-01",
-    ...overrides,
-  });
-  return [
-    base({ name: "London Asian Range Break", market: "Forex", symbol: "EURUSD" }),
-    base({ name: "BTC Mean Reversion", market: "Crypto", symbol: "BTCUSDT", timeframe: "1h", session: "24/7" }),
-    base({ name: "NY Open Momentum", market: "Indices", symbol: "US100", timeframe: "5m", session: "New York" }),
-    base({ name: "Gold News Fade", market: "Commodities", symbol: "XAUUSD", timeframe: "30m", session: "London" }),
-  ];
 }

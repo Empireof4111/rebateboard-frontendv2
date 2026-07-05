@@ -44,6 +44,7 @@ export type SponsorLogo = {
   id: string;
   name: string;
   initial?: string;
+  logo?: string;
   color?: string;       // tailwind from-x to-y gradient
   href?: string;
   tag?: "featured" | "ad" | "sponsor";
@@ -299,7 +300,7 @@ export function hydrateSlide(s: AdSlide): AdSlide {
     label: post.title || s.label,
     sub: post.excerpt || post.tag || s.sub,
     href: `/articles/${post.id}`,
-    image: post.cover || s.image,
+    image: post.cover || (post as BlogPost & { thumbnail?: string }).thumbnail || s.image,
   };
 }
 

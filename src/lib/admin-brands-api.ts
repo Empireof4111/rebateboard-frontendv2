@@ -34,6 +34,11 @@ export type AdminBrandCategory =
   | "DEX Prop Firm"
   | "Trading Software"
   | "Trading Tool"
+  | "Trading Journal"
+  | "Trading Calculator"
+  | "Trading Platform"
+  | "Signal Provider"
+  | "Copy Trading Platform"
   | "Education Provider"
   | "Other";
 

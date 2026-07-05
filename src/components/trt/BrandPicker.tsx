@@ -1,16 +1,42 @@
 // BrandPicker — search a listed brand or create a custom one.
 // Used by the transaction drawer and the account modal.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Sparkles, Plus, Check } from "lucide-react";
 import type { TrtBrand } from "@/lib/trt-store";
-import { listBrands, makeCustomBrand } from "@/lib/trt-store";
+import { makeCustomBrand } from "@/lib/trt-store";
+import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
 
 export function BrandPicker({
   value, onChange, label = "Brand",
 }: { value?: TrtBrand; onChange: (b: TrtBrand) => void; label?: string }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const all = useMemo(() => listBrands(), []);
+  const [all, setAll] = useState<TrtBrand[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchPublicAdminBrands()
+      .then((brands) => {
+        if (!alive) return;
+        setAll(brands.map((brand) => ({ id: brand.id, name: brand.name, category: brand.category })));
+        setError("");
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setAll([]);
+        setError(err instanceof Error ? err.message : "Unable to load listed brands");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const matches = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return all.slice(0, 8);
@@ -53,6 +79,12 @@ export function BrandPicker({
               </div>
             </div>
             <ul className="max-h-64 overflow-y-auto p-1.5">
+              {loading && (
+                <li className="px-3 py-3 text-center text-xs text-muted-foreground">Loading listed brands...</li>
+              )}
+              {!loading && error && (
+                <li className="px-3 py-3 text-center text-xs text-rose-300">{error}</li>
+              )}
               {matches.map((b) => {
                 const selected = value?.id === b.id;
                 return (
@@ -71,7 +103,7 @@ export function BrandPicker({
                   </li>
                 );
               })}
-              {matches.length === 0 && !allowCustom && (
+              {!loading && !error && matches.length === 0 && !allowCustom && (
                 <li className="px-3 py-3 text-center text-xs text-muted-foreground">No brands found</li>
               )}
               {allowCustom && (

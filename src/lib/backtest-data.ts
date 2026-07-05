@@ -27,6 +27,18 @@ export type BacktestReport = {
   createdAt: string;
   status: "completed" | "running" | "failed";
   source: "ai-strategy" | "real-trades";
+  rules?: {
+    entry: string;
+    exit: string;
+    risk: string;
+    filters: string;
+    invalidation: string;
+    fees: string;
+  };
+  equityCurve?: { i: number; equity: number; drawdown: number }[];
+  calendar?: { day: number; pnl: number; trades: number; tone: "up" | "down" | "warn" | "flat" }[];
+  assumptions?: Record<string, unknown>;
+  insights?: { title: string; text: string; tone: "success" | "warn" | "info" | "danger" }[];
 };
 
 export type BacktestTrade = {

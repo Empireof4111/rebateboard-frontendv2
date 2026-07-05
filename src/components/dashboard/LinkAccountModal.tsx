@@ -1,11 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, ChevronRight, ChevronLeft, Search, Mail, CheckCircle2, ExternalLink, Building2, Sparkles, Banknote, Coins, AlertTriangle, Send } from "lucide-react";
-import { adminBrands, linkedAccounts as laSeed, partnerRequests as prSeed, type LinkedAccount, type PartnerRequest, type PayoutTarget } from "@/lib/admin-data";
-import { pushCollection, newId } from "@/lib/admin-store";
+import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
+import { ApiError } from "@/lib/api";
+import { financeApi, type PartnerRequestRecord } from "@/lib/finance-api";
+
+type PayoutTarget = "rr-wallet" | "rebate-wallet" | "revete-wallet" | "broker-wallet";
 
 type BrandLike = {
   name: string;
   category: string;
+  website?: string;
+  supportEmail?: string;
   cashback?: {
     supportsApiAuto?: boolean;
     supportsRebateWallet?: boolean;
@@ -30,18 +35,30 @@ function fillTpl(tpl: string, vars: Record<string, string>) {
   return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`);
 }
 
-export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park" }: { onClose: () => void; onLinked?: (la: LinkedAccount) => void; currentUser?: string }) {
-  // Pull saved brands from admin store + seed
-  const customBrands = useMemo<BrandLike[]>(() => {
-    try {
-      const raw = sessionStorage.getItem("rb-admin:brands");
-      return raw ? (JSON.parse(raw) as BrandLike[]) : [];
-    } catch { return []; }
-  }, []);
-  const allBrands = useMemo<BrandLike[]>(
-    () => [...customBrands, ...adminBrands.map((b) => ({ name: b.name, category: b.category }))],
-    [customBrands]
-  );
+function mapBrand(b: AdminBrandRecord): BrandLike {
+  return {
+    name: b.name,
+    category: b.category,
+    website: b.website,
+    supportEmail: b.supportEmail,
+    cashback: b.cashback as BrandLike["cashback"],
+  };
+}
+
+export function LinkAccountModal({
+  onClose,
+  onLinked,
+  token,
+  currentUser = "RebateBoard user",
+}: {
+  onClose: () => void;
+  onLinked?: (request: PartnerRequestRecord) => void;
+  token: string;
+  currentUser?: string;
+}) {
+  const [allBrands, setAllBrands] = useState<BrandLike[]>([]);
+  const [loadingBrands, setLoadingBrands] = useState(true);
+  const [brandError, setBrandError] = useState("");
 
   const [step, setStep] = useState<Step>("category");
   const [category, setCategory] = useState<typeof CATEGORIES[number]>("Forex Broker");
@@ -53,6 +70,33 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
   const [pref, setPref] = useState<PayoutTarget>("rebate-wallet");
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [body, setBody] = useState(DEFAULT_BODY);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    setLoadingBrands(true);
+    fetchPublicAdminBrands(undefined, token)
+      .then((brands) => {
+        if (!alive) return;
+        const supported = brands
+          .filter((b) => CATEGORIES.includes(b.category as (typeof CATEGORIES)[number]))
+          .map(mapBrand);
+        setAllBrands(supported);
+        setBrandError("");
+      })
+      .catch((error) => {
+        if (!alive) return;
+        setAllBrands([]);
+        setBrandError(error instanceof Error ? error.message : "Unable to load supported partners");
+      })
+      .finally(() => {
+        if (alive) setLoadingBrands(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token]);
 
   // Filter brands by category + cashback support
   const filtered = useMemo(() => {
@@ -68,9 +112,9 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
   const supportsRebateWallet = cb.supportsRebateWallet ?? cb.supportsReveteWallet ?? true;
   const supportsApiAuto = cb.supportsApiAuto ?? true;
 
-  const partnerCode = cb.partnerCode || "RB-XX-2245";
-  const partnerEmail = cb.partnerEmail || `partners@${(brandName || "brand").toLowerCase().replace(/\s+/g, "")}.com`;
-  const affiliateLink = cb.affiliateLink || `https://${(brandName || "brand").toLowerCase().replace(/\s+/g, "")}.com/?ref=${partnerCode}`;
+  const partnerCode = cb.partnerCode || "";
+  const partnerEmail = cb.partnerEmail || brand?.supportEmail || "partners@rebateboard.com";
+  const affiliateLink = cb.affiliateLink || brand?.website || "";
 
   // When entering email step, hydrate template from brand config
   const enterEmailStep = () => {
@@ -87,55 +131,51 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
     setStep("email");
   };
 
-  const finalize = () => {
+  const finalize = async () => {
     if (!brandName) return;
-    const laId = newId("la");
-    let prId: string | undefined;
+    if (!accountId.trim()) {
+      setSubmitError("Account ID is required.");
+      return;
+    }
 
-    if (mode === "existing") {
-      // Create partner request (queued for superadmin)
-      const pr: PartnerRequest = {
-        id: newId("pr"),
-        user: currentUser,
+    const requestSubject = subject || DEFAULT_SUBJECT;
+    const requestBody = body || fillTpl(DEFAULT_BODY, {
+      accountId: accountId.trim(),
+      partnerCode,
+      registeredEmail: registeredEmail.trim() || "Not provided",
+      traderName: currentUser,
+      affiliateLink,
+    });
+
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const response = await financeApi.createPartnerRequest(token, {
         brand: brandName,
         brandCategory: category,
         toEmail: partnerEmail,
-        subject,
-        body,
-        partnerCode,
-        affiliateLink,
-        registeredEmail: registeredEmail || undefined,
-        accountId,
-        status: "queued",
-        createdAt: "just now",
-        linkedAccountId: laId,
-      };
-      pushCollection<PartnerRequest>("partnerRequests", pr, prSeed);
-      prId = pr.id;
+        subject: requestSubject,
+        body: requestBody,
+        partnerCode: partnerCode || undefined,
+        affiliateLink: affiliateLink || undefined,
+        registeredEmail: registeredEmail.trim() || undefined,
+        accountId: accountId.trim(),
+        payoutTarget: pref,
+      });
+      if (response.payload) onLinked?.(response.payload);
 
-      // Also try to open user's mailto as a backup channel
-      try {
-        const mailto = `mailto:${encodeURIComponent(partnerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(mailto, "_blank");
-      } catch {}
+      if (mode === "existing") {
+        try {
+          const mailto = `mailto:${encodeURIComponent(partnerEmail)}?subject=${encodeURIComponent(requestSubject)}&body=${encodeURIComponent(requestBody)}`;
+          window.open(mailto, "_blank");
+        } catch {}
+      }
+      setStep("done");
+    } catch (error) {
+      setSubmitError(error instanceof ApiError ? error.message : "Unable to submit account link request.");
+    } finally {
+      setSubmitting(false);
     }
-
-    const la: LinkedAccount = {
-      id: laId,
-      user: currentUser,
-      brand: brandName,
-      brandCategory: category,
-      accountId,
-      registeredEmail: registeredEmail || undefined,
-      isNewAccount: mode === "new",
-      payoutTarget: pref,
-      status: mode === "new" ? "active" : "pending-attach",
-      linkedAt: "just now",
-      partnerRequestId: prId,
-    };
-    pushCollection<LinkedAccount>("linkedAccounts", la, laSeed);
-    onLinked?.(la);
-    setStep("done");
   };
 
   return (
@@ -188,6 +228,16 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
                 <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Top supported partners</div>
               )}
               <div className="grid grid-cols-2 gap-1.5">
+                {loadingBrands && (
+                  <div className="col-span-2 rounded-lg border border-white/10 bg-white/5 p-4 text-center text-[11px] text-muted-foreground">
+                    Loading supported partners...
+                  </div>
+                )}
+                {!loadingBrands && brandError && (
+                  <div className="col-span-2 rounded-lg border border-rose-400/20 bg-rose-500/10 p-4 text-center text-[11px] text-rose-200">
+                    {brandError}
+                  </div>
+                )}
                 {(query ? filtered : top10).map((b) => (
                   <button
                     key={b.name}
@@ -198,10 +248,9 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
                     <div className="text-[10px] text-muted-foreground">{b.category}</div>
                   </button>
                 ))}
-                {filtered.length === 0 && (
+                {!loadingBrands && !brandError && filtered.length === 0 && (
                   <div className="col-span-2 rounded-lg border-2 border-dashed border-white/10 bg-white/5 p-4 text-center text-[11px] text-muted-foreground">
-                    Can't find your {category.toLowerCase()}?{" "}
-                    <a href={`mailto:partners@rebateboard.com?subject=Add%20broker%20request&body=Please%20add%20${encodeURIComponent(query)}%20to%20RebateBoard.`} className="text-fuchsia-300 underline">Email us to add it</a>
+                    No published {category.toLowerCase()} partners are available yet.
                   </div>
                 )}
               </div>
@@ -227,7 +276,7 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
                   active={mode === "new"}
                   onClick={() => setMode("new")}
                   title="Create a new account"
-                  desc="We'll send you to the partner's signup page pre-tagged with our IB code — you're auto-linked from day 1."
+                  desc="Open the official partner link, create your account, then submit the account ID here so our team can verify tracking."
                 />
               </div>
               <div className="mt-3 flex justify-between">
@@ -243,10 +292,16 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
               {mode === "new" && (
                 <div className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-3">
                   <div className="text-xs font-semibold text-white">Step 1 — Sign up at {brand.name}</div>
-                  <p className="mt-1 text-[11px] text-white/80">Click the link below. Your new account will automatically be tagged under RebateBoard.</p>
-                  <a href={affiliateLink} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
-                    <ExternalLink className="h-3 w-3" /> Open {brand.name}
-                  </a>
+                  <p className="mt-1 text-[11px] text-white/80">Use the official partner link if available, then return with your account ID for admin verification.</p>
+                  {affiliateLink ? (
+                    <a href={affiliateLink} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+                      <ExternalLink className="h-3 w-3" /> Open {brand.name}
+                    </a>
+                  ) : (
+                    <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-[11px] text-muted-foreground">
+                      Official signup link has not been configured for this partner.
+                    </div>
+                  )}
                 </div>
               )}
               <Label>Your account ID at {brand.name}</Label>
@@ -290,8 +345,9 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
                 <BackBtn onClick={() => setStep("details")} />
                 {mode === "existing"
                   ? <NextBtn onClick={enterEmailStep}>Compose attach email</NextBtn>
-                  : <NextBtn onClick={finalize}>Finish & link</NextBtn>}
+                  : <NextBtn onClick={finalize} disabled={submitting}>{submitting ? "Submitting..." : "Submit for tracking"}</NextBtn>}
               </div>
+              {submitError && <p className="text-[11px] text-rose-300">{submitError}</p>}
             </div>
           )}
 
@@ -311,10 +367,11 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
               </p>
               <div className="flex justify-between pt-1">
                 <BackBtn onClick={() => setStep("preference")} />
-                <button onClick={finalize} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">
-                  <Send className="h-3 w-3" /> Send & link
+                <button onClick={finalize} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                  <Send className="h-3 w-3" /> {submitting ? "Submitting..." : "Send & link"}
                 </button>
               </div>
+              {submitError && <p className="text-[11px] text-rose-300">{submitError}</p>}
             </div>
           )}
 
@@ -324,11 +381,9 @@ export function LinkAccountModal({ onClose, onLinked, currentUser = "Aiden Park"
               <div className="grid h-12 w-12 place-items-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-400/30">
                 <CheckCircle2 className="h-6 w-6 text-emerald-300" />
               </div>
-              <div className="text-base font-bold text-white">{mode === "new" ? "Account linked!" : "Request queued!"}</div>
+              <div className="text-base font-bold text-white">Request queued!</div>
               <p className="max-w-sm text-[12px] text-muted-foreground">
-                {mode === "new"
-                  ? `Your new ${brandName} account is now tagged under RebateBoard. Cashback starts accruing on your next trade.`
-                  : `We've recorded your attach request. You can track status in Wallet → Linked accounts. Most partners confirm within 24–72h.`}
+                We've recorded your {brandName} account request. You can track status in Wallet - Linked accounts. Most partners confirm within 24-72h.
               </p>
               <button onClick={onClose} className="mt-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Done</button>
             </div>

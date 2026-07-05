@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { PageHeader, Pill } from "@/components/dashboard/Primitives";
+import { useEffect, useMemo, useState } from "react";
+import { EmptyState, PageHeader, Pill, SkeletonCard } from "@/components/dashboard/Primitives";
+import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import {
-  LineChart, Building2, Bitcoin, Activity, Search, Filter, Star, ArrowRight, Layers,
+  Activity, ArrowRight, Bitcoin, Building2, Filter, Layers, LineChart, Search, Star,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/brands")({
@@ -16,31 +17,7 @@ export const Route = createFileRoute("/dashboard/brands")({
 });
 
 type Category = "all" | "forex" | "prop" | "crypto" | "futures";
-type Program = {
-  slug: string;
-  name: string;
-  category: Exclude<Category, "all">;
-  tbi: number;
-  rebate: string;
-  payoutSpeed: string;
-  highlight?: string;
-};
-
-const programs: Program[] = [
-  { slug: "exness", name: "Exness", category: "forex", tbi: 8.9, rebate: "Up to 60%", payoutSpeed: "Instant", highlight: "Top earner" },
-  { slug: "ic-markets", name: "IC Markets", category: "forex", tbi: 9.0, rebate: "Up to 55%", payoutSpeed: "1d" },
-  { slug: "pepperstone", name: "Pepperstone", category: "forex", tbi: 8.7, rebate: "50%", payoutSpeed: "1d" },
-  { slug: "fundingpips", name: "FundingPips", category: "prop", tbi: 9.1, rebate: "60% cashback", payoutSpeed: "<24h", highlight: "Hot" },
-  { slug: "ftmo", name: "FTMO", category: "prop", tbi: 9.2, rebate: "45%", payoutSpeed: "2d" },
-  { slug: "the5ers", name: "The5ers", category: "prop", tbi: 8.6, rebate: "40%", payoutSpeed: "3d" },
-  { slug: "myforexfunds", name: "MyForexFunds", category: "prop", tbi: 7.8, rebate: "35%", payoutSpeed: "5d" },
-  { slug: "bybit", name: "Bybit", category: "crypto", tbi: 8.4, rebate: "40% fees", payoutSpeed: "Daily" },
-  { slug: "binance", name: "Binance", category: "crypto", tbi: 8.1, rebate: "35% fees", payoutSpeed: "Daily" },
-  { slug: "okx", name: "OKX", category: "crypto", tbi: 8.0, rebate: "30% fees", payoutSpeed: "Daily" },
-  { slug: "tradeify", name: "Tradeify", category: "futures", tbi: 8.3, rebate: "50%", payoutSpeed: "<24h" },
-  { slug: "topstep", name: "Topstep", category: "futures", tbi: 8.5, rebate: "40%", payoutSpeed: "1d" },
-  { slug: "apex", name: "Apex Trader Funding", category: "futures", tbi: 8.2, rebate: "45%", payoutSpeed: "2d" },
-];
+type SortId = "tbi" | "rebate" | "payout";
 
 const tabs: { id: Category; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "all", label: "All", icon: Layers },
@@ -50,30 +27,83 @@ const tabs: { id: Category; label: string; icon: React.ComponentType<{ className
   { id: "futures", label: "Futures", icon: Activity },
 ];
 
-const sortOptions = [
+const sortOptions: { id: SortId; label: string }[] = [
   { id: "tbi", label: "Top TBI" },
   { id: "rebate", label: "Best Rebate" },
-  { id: "payout", label: "Fastest Payout" },
-] as const;
-type SortId = typeof sortOptions[number]["id"];
+  { id: "payout", label: "Payout Data" },
+];
+
+function dashboardCategory(category: string): Exclude<Category, "all"> {
+  const value = category.toLowerCase();
+  if (value.includes("forex broker")) return "forex";
+  if (value.includes("futures")) return "futures";
+  if (value.includes("crypto exchange") || value.includes("crypto prop") || value.includes("dex")) return "crypto";
+  return "prop";
+}
+
+function labelFor(category: string) {
+  return category || "Brand";
+}
+
+function numericCashback(brand: AdminBrandRecord) {
+  const cashback = brand.cashback ?? {};
+  const candidates = [
+    cashback.maxPct,
+    cashback.maximumPct,
+    cashback.maxPercent,
+    cashback.defaultPct,
+    cashback.percent,
+    cashback.rate,
+  ];
+  const value = candidates.map(Number).find((item) => Number.isFinite(item) && item > 0);
+  return value ?? 0;
+}
+
+function formatCashback(brand: AdminBrandRecord) {
+  const cashback = brand.cashback ?? {};
+  const value = numericCashback(brand);
+  if (value > 0) return `Up to ${value}%`;
+  const label = cashback.label ?? cashback.summary ?? cashback.terms;
+  return typeof label === "string" && label.trim() ? label.trim() : "Not provided";
+}
 
 function ProgramsPage() {
   const [cat, setCat] = useState<Category>("all");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<SortId>("tbi");
+  const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchPublicAdminBrands()
+      .then((items) => {
+        if (!cancelled) setBrands(items);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const list = useMemo(() => {
-    let l = programs.filter((p) => (cat === "all" ? true : p.category === cat));
-    if (q) l = l.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
-    if (sort === "tbi") l = [...l].sort((a, b) => b.tbi - a.tbi);
-    return l;
-  }, [cat, q, sort]);
+    let next = brands.filter((brand) => (cat === "all" ? true : dashboardCategory(brand.category) === cat));
+    const query = q.trim().toLowerCase();
+    if (query) {
+      next = next.filter((brand) => [brand.name, brand.category, brand.payouts].filter(Boolean).join(" ").toLowerCase().includes(query));
+    }
+    if (sort === "tbi") next = [...next].sort((a, b) => Number(b.tbi ?? 0) - Number(a.tbi ?? 0));
+    if (sort === "rebate") next = [...next].sort((a, b) => numericCashback(b) - numericCashback(a));
+    if (sort === "payout") next = [...next].sort((a, b) => String(a.payouts || "").localeCompare(String(b.payouts || "")));
+    return next;
+  }, [brands, cat, q, sort]);
 
   const counts = useMemo(() => {
-    const c: Record<Category, number> = { all: programs.length, forex: 0, prop: 0, crypto: 0, futures: 0 };
-    programs.forEach((p) => { c[p.category]++; });
-    return c;
-  }, []);
+    const next: Record<Category, number> = { all: brands.length, forex: 0, prop: 0, crypto: 0, futures: 0 };
+    brands.forEach((brand) => { next[dashboardCategory(brand.category)] += 1; });
+    return next;
+  }, [brands]);
 
   return (
     <div className="space-y-6">
@@ -82,16 +112,15 @@ function ProgramsPage() {
         subtitle="Pick your trading vehicle — every broker, prop firm, exchange, and futures program in one place."
       />
 
-      {/* Smart filter bar */}
       <div className="glass rounded-2xl p-4">
         <div className="flex flex-wrap items-center gap-2">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            const active = cat === t.id;
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = cat === tab.id;
             return (
               <button
-                key={t.id}
-                onClick={() => setCat(t.id)}
+                key={tab.id}
+                onClick={() => setCat(tab.id)}
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   active
                     ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_18px_rgba(192,132,252,0.4)]"
@@ -99,9 +128,9 @@ function ProgramsPage() {
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {t.label}
+                {tab.label}
                 <span className={`rounded-full px-1.5 text-[10px] ${active ? "bg-black/20 text-white" : "bg-white/10 text-white/70"}`}>
-                  {counts[t.id]}
+                  {counts[tab.id]}
                 </span>
               </button>
             );
@@ -113,87 +142,95 @@ function ProgramsPage() {
             <Search className="h-3 w-3 text-muted-foreground" />
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search programs…"
+              onChange={(event) => setQ(event.target.value)}
+              placeholder="Search programs..."
               className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex items-center gap-1.5">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-            {sortOptions.map((s) => (
+            {sortOptions.map((option) => (
               <button
-                key={s.id}
-                onClick={() => setSort(s.id)}
+                key={option.id}
+                onClick={() => setSort(option.id)}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                  sort === s.id ? "bg-white/15 text-white" : "bg-white/5 text-muted-foreground hover:text-white"
+                  sort === option.id ? "bg-white/15 text-white" : "bg-white/5 text-muted-foreground hover:text-white"
                 }`}
               >
-                {s.label}
+                {option.label}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Listings */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {list.map((p) => (
-          <div key={p.slug} className="glass rounded-2xl p-4 ring-1 ring-white/5 transition hover:ring-primary/30">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="text-base font-semibold text-white">{p.name}</div>
-                  {p.highlight && (
-                    <span className="rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">
-                      {p.highlight}
-                    </span>
+      {loading ? (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((item) => <SkeletonCard key={item} />)}
+        </div>
+      ) : list.length > 0 ? (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {list.map((brand) => (
+            <div key={brand.id} className="glass rounded-2xl p-4 ring-1 ring-white/5 transition hover:ring-primary/30">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  {brand.thumbnail ? (
+                    <img src={brand.thumbnail} alt="" className="h-11 w-11 shrink-0 rounded-xl object-contain ring-1 ring-white/10" />
+                  ) : (
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-bold text-white">
+                      {brand.name.slice(0, 2).toUpperCase()}
+                    </div>
                   )}
+                  <div className="min-w-0">
+                    <div className="truncate text-base font-semibold text-white">{brand.name}</div>
+                    <Pill>{labelFor(brand.category)}</Pill>
+                  </div>
                 </div>
-                <Pill>{labelFor(p.category)}</Pill>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] uppercase text-muted-foreground">TBI</div>
-                <div className="flex items-center gap-1 text-lg font-bold text-accent">
-                  <Star className="h-3.5 w-3.5 fill-current" /> {p.tbi}
+                <div className="shrink-0 text-right">
+                  <div className="text-[10px] uppercase text-muted-foreground">TBI</div>
+                  <div className="flex items-center gap-1 text-lg font-bold text-accent">
+                    <Star className="h-3.5 w-3.5 fill-current" /> {Number(brand.tbi ?? 0).toFixed(1)}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-              <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-                <div className="text-muted-foreground">Rebate</div>
-                <div className="font-semibold text-emerald-400">{p.rebate}</div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+                  <div className="text-muted-foreground">Cashback</div>
+                  <div className="truncate font-semibold text-emerald-400">{formatCashback(brand)}</div>
+                </div>
+                <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+                  <div className="text-muted-foreground">Payout</div>
+                  <div className="truncate font-semibold text-white">{brand.payouts || "Not provided"}</div>
+                </div>
               </div>
-              <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-                <div className="text-muted-foreground">Payout</div>
-                <div className="font-semibold text-white">{p.payoutSpeed}</div>
-              </div>
-            </div>
 
-            <div className="mt-3 flex gap-2">
-              <Link
-                to={"/payouts/$brandSlug" as string}
-                params={{ brandSlug: p.slug }}
-                className="flex-1 rounded-lg bg-white/5 py-2 text-center text-xs text-white hover:bg-white/10"
-              >
-                View payouts
-              </Link>
-              <button className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white">
-                Activate <ArrowRight className="h-3 w-3" />
-              </button>
+              <div className="mt-3 flex gap-2">
+                <Link
+                  to={"/payouts/$brandSlug" as string}
+                  params={{ brandSlug: brand.slug }}
+                  className="flex-1 rounded-lg bg-white/5 py-2 text-center text-xs text-white hover:bg-white/10"
+                >
+                  View payouts
+                </Link>
+                <Link
+                  to={"/firm/$firmId" as string}
+                  params={{ firmId: brand.slug }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white"
+                >
+                  View brand <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
-        {list.length === 0 && (
-          <div className="glass col-span-full rounded-2xl p-8 text-center text-sm text-muted-foreground">
-            No programs match your filters.
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={Layers}
+          title="No published programs yet"
+          description="Published brands from the admin dashboard will appear here as soon as they are available."
+        />
+      )}
     </div>
   );
-}
-
-function labelFor(c: Exclude<Category, "all">) {
-  return c === "forex" ? "Forex Broker" : c === "prop" ? "Prop Firm" : c === "crypto" ? "Crypto Exchange" : "Futures";
 }

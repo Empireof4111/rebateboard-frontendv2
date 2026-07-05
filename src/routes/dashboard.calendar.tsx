@@ -1,59 +1,138 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Panel } from "@/components/dashboard/Primitives";
+import { useMemo } from "react";
+import { EmptyState, PageHeader, Panel } from "@/components/dashboard/Primitives";
+import { openAddTrade } from "@/lib/ui-bus";
+import { useTrades } from "@/lib/trading-plan";
+import { CalendarDays, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/calendar")({
   component: CalendarPage,
 });
 
-function CalendarPage() {
-  // Build a 5x7 mock month
-  const days = Array.from({ length: 35 }, (_, i) => {
-    const seed = (i * 7) % 11;
-    const pnl = ((seed - 5) * 60) + (i % 4 === 0 ? 120 : 0);
-    return { day: i + 1, pnl };
-  });
+function money(value: number) {
+  const sign = value < 0 ? "-" : value > 0 ? "+" : "";
+  return `${sign}$${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
 
-  const colorFor = (pnl: number) => {
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function CalendarPage() {
+  const trades = useTrades();
+  const today = new Date();
+
+  const data = useMemo(() => {
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const leadingBlanks = firstDay === 0 ? 6 : firstDay - 1;
+    const monthTrades = trades.filter((trade) => {
+      const date = new Date(trade.createdAt);
+      return date.getFullYear() === year && date.getMonth() === month;
+    });
+
+    const dayRows = Array.from({ length: leadingBlanks }, () => null as null | { day: number; pnl: number; trades: number }).concat(
+      Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        const dayTrades = monthTrades.filter((trade) => new Date(trade.createdAt).getDate() === day);
+        return {
+          day,
+          pnl: dayTrades.reduce((sum, trade) => sum + Number(trade.pnl ?? 0), 0),
+          trades: dayTrades.length,
+        };
+      }),
+    );
+
+    const last7 = Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - offset));
+      const dayTrades = trades.filter((trade) => sameDay(new Date(trade.createdAt), date));
+      const avgAdherence = dayTrades.length
+        ? Math.round(dayTrades.reduce((sum, trade) => sum + Number(trade.adherence ?? 0), 0) / dayTrades.length)
+        : null;
+      return {
+        label: date.toLocaleDateString(undefined, { weekday: "short" }),
+        avgAdherence,
+        trades: dayTrades.length,
+      };
+    });
+
+    return { dayRows, monthTrades, last7 };
+  }, [today, trades]);
+
+  const colorFor = (pnl: number, tradeCount: number) => {
+    if (tradeCount === 0) return "bg-white/5 text-muted-foreground";
     if (pnl > 200) return "bg-success/40 text-white";
     if (pnl > 0) return "bg-success/20 text-success";
-    if (pnl === 0) return "bg-white/5 text-muted-foreground";
+    if (pnl === 0) return "bg-white/10 text-white/70";
     if (pnl > -200) return "bg-destructive/20 text-destructive";
     return "bg-destructive/40 text-white";
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Calendar" subtitle="PnL heatmap & day-by-day behavior." />
+      <PageHeader title="Calendar" subtitle="PnL heatmap and day-by-day behavior from your trade journal." />
 
-      <Panel title="This Month">
-        <div className="grid grid-cols-7 gap-2">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-            <div key={d} className="text-center text-[10px] uppercase text-muted-foreground">{d}</div>
-          ))}
-          {days.map((d) => (
-            <div key={d.day} className={`flex flex-col items-center justify-center rounded-xl p-3 ${colorFor(d.pnl)}`}>
-              <div className="text-[10px] opacity-70">{d.day}</div>
-              <div className="text-xs font-semibold">{d.pnl >= 0 ? "+" : "−"}${Math.abs(d.pnl)}</div>
-            </div>
-          ))}
-        </div>
+      <Panel title={today.toLocaleDateString(undefined, { month: "long", year: "numeric" })}>
+        {trades.length === 0 ? (
+          <EmptyState
+            icon={CalendarDays}
+            title="No calendar data yet"
+            description="Log trades to turn this calendar into a real PnL and discipline heatmap."
+            action={
+              <button
+                type="button"
+                onClick={openAddTrade}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add trade
+              </button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-7 gap-2">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+              <div key={day} className="text-center text-[10px] uppercase text-muted-foreground">{day}</div>
+            ))}
+            {data.dayRows.map((day, index) => (
+              day ? (
+                <div key={day.day} className={`flex min-h-16 flex-col items-center justify-center rounded-xl p-2 ${colorFor(day.pnl, day.trades)}`}>
+                  <div className="text-[10px] opacity-70">{day.day}</div>
+                  <div className="text-xs font-semibold">{money(day.pnl)}</div>
+                  {day.trades > 0 && <div className="mt-0.5 text-[9px] opacity-70">{day.trades} trade{day.trades === 1 ? "" : "s"}</div>}
+                </div>
+              ) : (
+                <div key={`blank-${index}`} className="min-h-16 rounded-xl bg-transparent" />
+              )
+            ))}
+          </div>
+        )}
       </Panel>
 
       <Panel title="Behavior per Day (Last 7)">
-        <div className="space-y-2">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => {
-            const score = 6 + ((i * 3) % 4) * 0.5;
-            return (
-              <div key={d} className="flex items-center gap-3 text-xs">
-                <span className="w-10 text-muted-foreground">{d}</span>
+        {data.last7.some((day) => day.trades > 0) ? (
+          <div className="space-y-2">
+            {data.last7.map((day) => (
+              <div key={day.label} className="flex items-center gap-3 text-xs">
+                <span className="w-10 text-muted-foreground">{day.label}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${score * 10}%` }} />
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-accent"
+                    style={{ width: `${day.avgAdherence ?? 0}%` }}
+                  />
                 </div>
-                <span className="w-10 text-right font-semibold text-white">{score.toFixed(1)}</span>
+                <span className="w-16 text-right font-semibold text-white">
+                  {day.avgAdherence == null ? "No trades" : `${day.avgAdherence}%`}
+                </span>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No trades logged in the last 7 days.</p>
+        )}
       </Panel>
     </div>
   );

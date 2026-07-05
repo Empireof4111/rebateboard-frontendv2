@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth, usePersonalization } from "@/lib/auth";
-import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
+import { PageHeader, StatCard, Panel, Pill, EmptyState } from "@/components/dashboard/Primitives";
 import { MiniLineChart, SourceBars } from "@/components/dashboard/Charts";
 import {
-  TrendingUp, TrendingDown, Sparkles, AlertTriangle, Activity,
-  Plus, Star, Building2, Bot, Lightbulb, Target,
+  TrendingUp, Sparkles, AlertTriangle, Activity,
+  Plus, Star, Building2, Bot, Lightbulb,
   Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug,
 } from "lucide-react";
 import { openAddTrade } from "@/lib/ui-bus";
@@ -14,6 +14,7 @@ import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/fi
 import { completeDailyTask, fetchMyDailyTasks, type DailyTaskUserBoard } from "@/lib/daily-tasks-api";
 import { toast } from "@/components/superadmin/AdminActions";
 import { useI18n } from "@/lib/i18n";
+import { useTrades } from "@/lib/trading-plan";
 
 function fmtUSD(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -33,6 +34,7 @@ function DashboardHome() {
   const [referralStats, setReferralStats] = useState<{ total: number; thisMonth: number } | null>(null);
   const [dailyTaskBoard, setDailyTaskBoard] = useState<DailyTaskUserBoard | null>(null);
   const [claimingTaskId, setClaimingTaskId] = useState("");
+  const trades = useTrades();
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -65,6 +67,38 @@ function DashboardHome() {
     }
   }, []);
   const { primaryMarketLabel, goalLabel } = usePersonalization();
+  const topEarningSource = useMemo(() => {
+    return [...earningsBySource].sort((a, b) => b.amount - a.amount)[0] ?? null;
+  }, [earningsBySource]);
+  const todayTradeStats = useMemo(() => {
+    const todayKey = new Date().toDateString();
+    const todayTrades = trades.filter((trade) => new Date(trade.createdAt).toDateString() === todayKey);
+    const pnl = todayTrades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
+    const wins = todayTrades.filter((trade) => Number(trade.pnl || 0) > 0).length;
+    const losses = todayTrades.filter((trade) => Number(trade.pnl || 0) < 0).length;
+    const violations = todayTrades.reduce((sum, trade) => sum + (trade.violations?.length ?? 0), 0);
+    const adherence = todayTrades.length
+      ? Math.round(todayTrades.reduce((sum, trade) => sum + Number(trade.adherence || 0), 0) / todayTrades.length)
+      : 0;
+    return { todayTrades, pnl, wins, losses, violations, adherence };
+  }, [trades]);
+  const journalSnapshot = useMemo(() => {
+    const wins = trades.filter((trade) => Number(trade.pnl || 0) > 0).length;
+    const winRate = trades.length ? Math.round((wins / trades.length) * 100) : 0;
+    const adherence = trades.length
+      ? Math.round(trades.reduce((sum, trade) => sum + Number(trade.adherence || 0), 0) / trades.length)
+      : 0;
+    const violations = trades.reduce((sum, trade) => sum + (trade.violations?.length ?? 0), 0);
+    const byAsset = trades.reduce<Record<string, { pnl: number; count: number }>>((acc, trade) => {
+      const key = trade.asset || "Unknown";
+      acc[key] = acc[key] ?? { pnl: 0, count: 0 };
+      acc[key].pnl += Number(trade.pnl || 0);
+      acc[key].count += 1;
+      return acc;
+    }, {});
+    const strongestAsset = Object.entries(byAsset).sort((a, b) => b[1].pnl - a[1].pnl)[0] ?? null;
+    return { winRate, adherence, violations, strongestAsset };
+  }, [trades]);
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return t("dashboard.greetingMorning");
@@ -154,25 +188,47 @@ function DashboardHome() {
         </Panel>
 
         <Panel title={t("dashboard.earningsIntelligence")} action={<Pill tone="primary">AI</Pill>}>
-          <ul className="space-y-2.5 text-xs">
-            <li className="flex gap-2 rounded-lg bg-emerald-500/10 p-2.5">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-              <span className="text-white"><b>You earned $1,240</b> from Exness in the last 6 months.</span>
-            </li>
-            <li className="flex gap-2 rounded-lg bg-fuchsia-500/10 p-2.5">
-              <Zap className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-400" />
-              <span className="text-white">Switching <b>Bybit → Binance</b> could earn <b>+30%</b> more on crypto volume.</span>
-            </li>
-            <li className="flex gap-2 rounded-lg bg-amber-500/10 p-2.5">
-              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-              <span className="text-white">You're <b>216 RR</b> away from a $25K prop discount.</span>
-            </li>
-            <li>
-              <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-accent hover:underline">
-                {t("dashboard.compareBrokers")} <ArrowRight className="h-3 w-3" />
-              </Link>
-            </li>
-          </ul>
+          {summary || topEarningSource || user ? (
+            <ul className="space-y-2.5 text-xs">
+              {topEarningSource ? (
+                <li className="flex gap-2 rounded-lg bg-emerald-500/10 p-2.5">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  <span className="text-white"><b>{topEarningSource.source}</b> is your top tracked earning source at <b>{fmtUSD(Number(topEarningSource.amount))}</b>.</span>
+                </li>
+              ) : (
+                <li className="flex gap-2 rounded-lg bg-white/5 p-2.5">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="text-white/75">No cashback earnings have landed yet. Link an account or submit a claim to start tracking.</span>
+                </li>
+              )}
+              {summary && Number(summary.pendingWithdrawals) > 0 ? (
+                <li className="flex gap-2 rounded-lg bg-amber-500/10 p-2.5">
+                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  <span className="text-white">You have <b>{fmtUSD(Number(summary.pendingWithdrawals))}</b> in pending withdrawals.</span>
+                </li>
+              ) : (
+                <li className="flex gap-2 rounded-lg bg-fuchsia-500/10 p-2.5">
+                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-400" />
+                  <span className="text-white">Available wallet balance is <b>{summary ? fmtUSD(Number(summary.availableForWithdrawal)) : "$0"}</b>.</span>
+                </li>
+              )}
+              <li className="flex gap-2 rounded-lg bg-amber-500/10 p-2.5">
+                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                <span className="text-white">Current RR balance: <b>{Math.round(user?.rrBalance ?? 0).toLocaleString()} RR</b>.</span>
+              </li>
+              <li>
+                <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-accent hover:underline">
+                  {t("dashboard.compareBrokers")} <ArrowRight className="h-3 w-3" />
+                </Link>
+              </li>
+            </ul>
+          ) : (
+            <EmptyState
+              icon={Lightbulb}
+              title="No earnings insights yet"
+              description="Wallet and cashback intelligence appears after you connect accounts, earn cashback, or submit claims."
+            />
+          )}
         </Panel>
       </div>
 
@@ -200,27 +256,40 @@ function DashboardHome() {
       {/* Section 2 — Today */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title={t("dashboard.today")} action={<Pill tone="success">{t("dashboard.live")}</Pill>}>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.pnl")}</div>
-              <div className="mt-1 text-xl font-bold text-success">+$412</div>
-              <div className="text-[10px] text-muted-foreground">+1.6% R</div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.trades")}</div>
-              <div className="mt-1 text-xl font-bold text-white">3</div>
-              <div className="text-[10px] text-muted-foreground">2W · 1L</div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.risk")}</div>
-              <div className="mt-1 text-xl font-bold text-success">{t("dashboard.safe")}</div>
-              <div className="text-[10px] text-muted-foreground">0 {t("dashboard.violations")}</div>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
-            <Activity className="h-4 w-4 text-success" />
-            {t("dashboard.guardrails")}: <span className="font-semibold text-success">{t("dashboard.allClear")}</span>
-          </div>
+          {todayTradeStats.todayTrades.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="No trades logged today"
+              description="Log today’s trades to see PnL, win/loss count, rule adherence, and guardrail status."
+              action={<button onClick={openAddTrade} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">Add trade</button>}
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.pnl")}</div>
+                  <div className={`mt-1 text-xl font-bold ${todayTradeStats.pnl >= 0 ? "text-success" : "text-destructive"}`}>{todayTradeStats.pnl >= 0 ? "+" : "−"}${Math.abs(todayTradeStats.pnl).toFixed(2)}</div>
+                  <div className="text-[10px] text-muted-foreground">{todayTradeStats.adherence}% adherence</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.trades")}</div>
+                  <div className="mt-1 text-xl font-bold text-white">{todayTradeStats.todayTrades.length}</div>
+                  <div className="text-[10px] text-muted-foreground">{todayTradeStats.wins}W · {todayTradeStats.losses}L</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.risk")}</div>
+                  <div className={`mt-1 text-xl font-bold ${todayTradeStats.violations === 0 ? "text-success" : "text-accent"}`}>
+                    {todayTradeStats.violations === 0 ? t("dashboard.safe") : "Review"}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">{todayTradeStats.violations} {t("dashboard.violations")}</div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
+                <Activity className={`h-4 w-4 ${todayTradeStats.violations === 0 ? "text-success" : "text-accent"}`} />
+                {t("dashboard.guardrails")}: <span className={`font-semibold ${todayTradeStats.violations === 0 ? "text-success" : "text-accent"}`}>{todayTradeStats.violations === 0 ? t("dashboard.allClear") : `${todayTradeStats.violations} item(s) to review`}</span>
+              </div>
+            </>
+          )}
         </Panel>
 
         {/* Section 3 — Rebeta Snapshot */}
@@ -232,28 +301,35 @@ function DashboardHome() {
             </Link>
           }
         >
-          <ul className="space-y-2.5 text-xs">
-            <li className="flex gap-2">
-              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-              <span className="text-white/90">Your win rate jumps to <b>71%</b> in London session.</span>
-            </li>
-            <li className="flex gap-2">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <span className="text-white/90">EURUSD is your strongest pair this month (+8.2R).</span>
-            </li>
-            <li className="flex gap-2">
-              <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-              <span className="text-white/90">Discipline score trending up: 6.2 → 7.1.</span>
-            </li>
-            <li className="flex gap-2 rounded-lg bg-warning/10 p-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-              <span className="text-white"><b>Recommendation:</b> Cap trades at 4/day after 2 consecutive losses.</span>
-            </li>
-            <li className="flex gap-2 rounded-lg bg-destructive/10 p-2">
-              <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              <span className="text-white"><b>Warning:</b> NY session win rate dropped to 38% this week.</span>
-            </li>
-          </ul>
+          {trades.length === 0 ? (
+            <EmptyState
+              icon={Bot}
+              title="AI insights need trade data"
+              description="Rebeta journal insights will appear after enough trades are logged."
+              action={<button onClick={openAddTrade} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">Log trade</button>}
+            />
+          ) : (
+            <ul className="space-y-2.5 text-xs">
+              <li className="flex gap-2">
+                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <span className="text-white/90">Logged trades: <b>{trades.length}</b> · win rate <b>{journalSnapshot.winRate}%</b>.</span>
+              </li>
+              {journalSnapshot.strongestAsset && (
+                <li className="flex gap-2">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span className="text-white/90"><b>{journalSnapshot.strongestAsset[0]}</b> is your strongest logged asset at <b>{journalSnapshot.strongestAsset[1].pnl >= 0 ? "+" : "−"}${Math.abs(journalSnapshot.strongestAsset[1].pnl).toFixed(2)}</b>.</span>
+                </li>
+              )}
+              <li className="flex gap-2">
+                <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                <span className="text-white/90">Average plan adherence is <b>{journalSnapshot.adherence}%</b>.</span>
+              </li>
+              <li className={`flex gap-2 rounded-lg p-2 ${journalSnapshot.violations === 0 ? "bg-emerald-500/10" : "bg-warning/10"}`}>
+                <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${journalSnapshot.violations === 0 ? "text-success" : "text-accent"}`} />
+                <span className="text-white"><b>{journalSnapshot.violations === 0 ? "Guardrail:" : "Review:"}</b> {journalSnapshot.violations === 0 ? "No journal rule violations recorded." : `${journalSnapshot.violations} rule violation(s) recorded across your journal.`}</span>
+              </li>
+            </ul>
+          )}
         </Panel>
 
         {/* Activity feed */}

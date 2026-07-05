@@ -6,19 +6,30 @@ import {
   CheckCircle2, Info, Plus, Play, Save, Pencil, Brain, ShieldAlert,
   FileUp, X,
 } from "lucide-react";
-import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
-import { mockTrades, aiInsights, importSources, type BacktestReport } from "@/lib/backtest-data";
+import { EmptyState, PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
+import { importSources, type BacktestReport, type BacktestTrade } from "@/lib/backtest-data";
 import {
-  useReports, useTemplates,
-  addReport, addTemplate, addImport, deleteReport,
+  useReports, useTemplates, useImports,
+  deleteReport, getReportTrades,
+  setImports, setReportTrades, setReports, setTemplates,
   setPreset, consumePreset,
+  upsertImport, upsertReport, upsertTemplate,
 } from "@/lib/backtest-store";
 import {
   parseCsv, autoMap, aggregate, TRADE_FIELDS,
   type ParsedCsv, type TradeField,
 } from "@/lib/csv-parser";
 import { buildEquityCurve, pathFromCurve, buildCalendar } from "@/lib/chart-utils";
-import { generateInsights, interpretStrategy } from "@/lib/backtest-ai";
+import {
+  deleteBacktestReport,
+  fetchBacktestBoard,
+  fetchBacktestReportTrades,
+  generateBacktestInsights,
+  importBacktestTrades,
+  interpretBacktestStrategy,
+  runBacktestStrategy,
+  saveBacktestTemplate,
+} from "@/lib/backtest-api";
 
 export const Route = createFileRoute("/dashboard/backtest")({
   head: () => ({
@@ -48,6 +59,31 @@ const tabs: { id: Tab; label: string; icon: typeof FlaskConical }[] = [
 
 function BacktestLab() {
   const [tab, setTab] = useState<Tab>("overview");
+  const [syncState, setSyncState] = useState<"loading" | "ready" | "offline">("loading");
+  const [syncMessage, setSyncMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchBacktestBoard()
+      .then((board) => {
+        if (cancelled) return;
+        setReports(board.reports);
+        setTemplates(board.templates);
+        setImports(board.imports);
+        setSyncState("ready");
+        setSyncMessage("");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSyncState("offline");
+        setSyncMessage(error?.message ?? "Backtest API unavailable. Showing local lab data.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -60,6 +96,18 @@ function BacktestLab() {
           </span>
         }
       />
+
+      {syncState !== "ready" && (
+        <div
+          className={`rounded-xl border px-3 py-2 text-xs ${
+            syncState === "loading"
+              ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-200"
+              : "border-amber-400/20 bg-amber-500/10 text-amber-200"
+          }`}
+        >
+          {syncState === "loading" ? "Syncing Backtest Lab with your dashboard data..." : syncMessage}
+        </div>
+      )}
 
       <div className="glass flex flex-wrap gap-1 rounded-2xl p-1.5">
         {tabs.map((t) => {
@@ -99,19 +147,25 @@ function BacktestLab() {
 function Overview({ onNav }: { onNav: (t: Tab) => void }) {
   const reports = useReports();
   const templates = useTemplates();
+  const imports = useImports();
   const best = reports.reduce((b, r) => (r.profitFactor > (b?.profitFactor ?? 0) ? r : b), reports[0]);
+  const savedTrades = reports.flatMap((report) => getReportTrades(report.id));
+  const feesLogged = savedTrades.reduce((sum, trade) => sum + Number(trade.fees ?? 0), 0);
+  const cashbackLogged = savedTrades.reduce((sum, trade) => sum + Number(trade.cashback ?? 0), 0);
+  const importedTrades = imports.reduce((sum, item) => sum + Number(item.trades ?? 0), 0);
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Total Backtests" value={String(reports.length)} hint="+3 this week" trend="up" accent="primary" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <StatCard label="Total Backtests" value={String(reports.length)} hint="Saved reports" accent="primary" />
         <StatCard label="Saved Strategies" value={String(templates.length)} hint={`${templates.length} templates`} accent="primary" />
         <StatCard label="Best Strategy" value={best?.name.slice(0, 16) ?? "—"} hint={`PF ${best?.profitFactor.toFixed(2) ?? "—"}`} trend="up" accent="success" />
-        <StatCard label="Real Trading Score" value="62/100" hint="Discipline 71%" accent="warning" />
+        <StatCard label="Real Trade Reports" value={String(reports.filter((report) => report.source === "real-trades").length)} hint="Imported histories" accent="warning" />
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Fees Analyzed" value="$1,840" accent="primary" />
-        <StatCard label="Cashback Earned" value="$612" trend="up" accent="success" />
-        <StatCard label="Cashback Missed" value="$284" trend="down" accent="destructive" />
+        <StatCard label="Imported Batches" value={String(imports.length)} accent="primary" />
+        <StatCard label="Imported Trades" value={String(importedTrades)} accent="primary" />
+        <StatCard label="Fees Logged" value={`$${feesLogged.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} accent="primary" />
+        <StatCard label="Cashback Logged" value={`$${cashbackLogged.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} accent="success" />
         <StatCard label="Last Report" value={reports[0]?.createdAt ?? "—"} accent="primary" />
       </div>
 
@@ -149,13 +203,15 @@ function Overview({ onNav }: { onNav: (t: Tab) => void }) {
 function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTemplate: () => void }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState({
-    name: "London Range Break", market: "Forex", symbol: "EURUSD", timeframe: "15m",
-    session: "London", range: "6 months", startBalance: "10000", riskPerTrade: "1", maxTrades: "3",
+    name: "", market: "Forex", symbol: "EURUSD", timeframe: "15m",
+    session: "London", range: "", startBalance: "", riskPerTrade: "1", maxTrades: "3",
     description: "",
   });
   const [interpretation, setInterpretation] = useState<{ entry: string; exit: string; risk: string; filters: string; invalidation: string; fees: string } | null>(null);
   const [interpretLoading, setInterpretLoading] = useState(false);
   const [interpretErr, setInterpretErr] = useState<string>("");
+  const [runLoading, setRunLoading] = useState(false);
+  const [templateLoading, setTemplateLoading] = useState(false);
 
   // Consume preset from Templates tab once on mount.
   useEffect(() => {
@@ -194,11 +250,13 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
   const interpret = async () => {
     setInterpretErr(""); setInterpretLoading(true);
     try {
-      const res = await interpretStrategy({
-        data: {
-          description: form.description, symbol: form.symbol, timeframe: form.timeframe,
-          session: form.session, riskPerTrade: form.riskPerTrade, maxTrades: form.maxTrades,
-        },
+      const res = await interpretBacktestStrategy({
+        description: form.description,
+        symbol: form.symbol,
+        timeframe: form.timeframe,
+        session: form.session,
+        riskPerTrade: form.riskPerTrade,
+        maxTrades: form.maxTrades,
       });
       setInterpretation(res.interpretation);
       setStep(2);
@@ -216,39 +274,59 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
     fees: "Spread 0.8 pip, commission $7/lot. Cashback +$2.3/lot.",
   };
 
-  const saveTemplate = () => {
-    addTemplate({
-      name: form.name, market: form.market, symbol: form.symbol, timeframe: form.timeframe,
-      session: form.session, range: form.range,
-      startBalance: Number(form.startBalance) || 10000,
-      riskPerTrade: Number(form.riskPerTrade) || 1,
-      description: form.description,
-      rules,
-    });
-    onSavedTemplate();
+  const saveTemplate = async () => {
+    setTemplateLoading(true);
+    setInterpretErr("");
+    try {
+      const template = await saveBacktestTemplate({
+        name: form.name,
+        market: form.market,
+        symbol: form.symbol,
+        timeframe: form.timeframe,
+        session: form.session,
+        range: form.range,
+        startBalance: form.startBalance,
+        riskPerTrade: form.riskPerTrade,
+        maxTrades: form.maxTrades,
+        description: form.description || rules.entry,
+        rules,
+      });
+      upsertTemplate(template);
+      onSavedTemplate();
+    } catch (error: any) {
+      setInterpretErr(error?.message ?? "Template save failed");
+    } finally {
+      setTemplateLoading(false);
+    }
   };
 
-  const runBacktest = () => {
+  const runBacktest = async () => {
     setStep(3);
-    setTimeout(() => {
-      addReport({
-        name: form.name, market: form.market, symbol: form.symbol, timeframe: form.timeframe,
-        session: form.session, range: form.range,
-        netPnl: Math.round(2000 + Math.random() * 4000),
-        winRate: 52 + Math.round(Math.random() * 15),
-        profitFactor: +(1.3 + Math.random() * 0.9).toFixed(2),
-        avgRR: +(1.6 + Math.random() * 0.8).toFixed(2),
-        trades: 80 + Math.round(Math.random() * 120),
-        wins: 50, losses: 35, breakeven: 5,
-        maxDD: -Math.round(400 + Math.random() * 800),
-        bestDay: "Tue", worstDay: "Mon",
-        bestMonth: "Mar 2025", worstMonth: "Jan 2025",
-        longestWin: 7, longestLoss: 4, avgDuration: "2h 12m",
-        riskOfRuin: "Low",
-        source: "ai-strategy",
+    setRunLoading(true);
+    setInterpretErr("");
+    try {
+      const result = await runBacktestStrategy({
+        name: form.name,
+        market: form.market,
+        symbol: form.symbol,
+        timeframe: form.timeframe,
+        session: form.session,
+        range: form.range,
+        startBalance: form.startBalance,
+        riskPerTrade: form.riskPerTrade,
+        maxTrades: form.maxTrades,
+        description: form.description || rules.entry,
+        rules,
       });
+      upsertReport(result.report);
+      setReportTrades(result.report.id, result.trades);
       onRun();
-    }, 900);
+    } catch (error: any) {
+      setInterpretErr(error?.message ?? "Backtest run failed");
+      setStep(2);
+    } finally {
+      setRunLoading(false);
+    }
   };
 
   return (
@@ -337,15 +415,29 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
               </div>
             ))}
           </div>
+          {interpretErr && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-300 ring-1 ring-rose-400/30">
+              <AlertTriangle className="h-3.5 w-3.5" /> {interpretErr}
+            </div>
+          )}
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-sm text-white">
               <Pencil className="h-3.5 w-3.5" /> Edit Rules
             </button>
-            <button onClick={saveTemplate} className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-sm text-white">
+            <button
+              onClick={saveTemplate}
+              disabled={templateLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-sm text-white disabled:opacity-50"
+            >
               <Save className="h-3.5 w-3.5" /> Save as Template
             </button>
-            <button onClick={runBacktest} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-sm font-semibold text-white">
-              <Play className="h-3.5 w-3.5" /> Confirm & Run Backtest
+            <button
+              onClick={runBacktest}
+              disabled={runLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {runLoading ? <span className="h-3.5 w-3.5 animate-spin rounded-full border border-white border-t-transparent" /> : <Play className="h-3.5 w-3.5" />}
+              {runLoading ? "Running..." : "Confirm & Run Backtest"}
             </button>
           </div>
         </Panel>
@@ -371,11 +463,12 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
     {} as Record<TradeField, string | null>,
   );
   const [meta, setMeta] = useState({
-    source: "MT5 Statement", account: "IC Markets",
-    range: "Q1 2026", startBalance: "5000", currency: "USD",
+    source: "MT5 Statement", account: "",
+    range: "", startBalance: "", currency: "USD",
   });
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string>("");
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
 
   const stats = useMemo(
     () => (parsed ? aggregate(parsed.rows, mapping) : null),
@@ -404,30 +497,29 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
 
   const reset = () => { setParsed(null); setFileName(""); setMapping({} as any); setError(""); };
 
-  const analyze = () => {
+  const analyze = async () => {
     if (!parsed || !stats) return;
-    addImport({
-      source: meta.source, account: meta.account, range: meta.range,
-      startBalance: Number(meta.startBalance) || 0,
-      currency: meta.currency, trades: stats.trades,
-    });
-    addReport({
-      name: `Live Trading — ${meta.account}`,
-      market: "Mixed", symbol: "Multi", timeframe: "Mixed",
-      session: "Mixed", range: meta.range,
-      netPnl: stats.netPnl,
-      winRate: stats.winRate,
-      profitFactor: stats.profitFactor,
-      avgRR: stats.avgRR,
-      trades: stats.trades, wins: stats.wins, losses: stats.losses, breakeven: stats.breakeven,
-      maxDD: stats.maxDD,
-      bestDay: stats.bestDay, worstDay: stats.worstDay,
-      bestMonth: "—", worstMonth: "—",
-      longestWin: 0, longestLoss: 0, avgDuration: "—",
-      riskOfRuin: stats.profitFactor < 1 ? "High" : stats.profitFactor < 1.3 ? "Medium" : "Low",
-      source: "real-trades",
-    });
-    onAnalyze();
+    setAnalyzeLoading(true);
+    setError("");
+    try {
+      const result = await importBacktestTrades({
+        source: meta.source,
+        account: meta.account,
+        range: meta.range,
+        startBalance: meta.startBalance,
+        currency: meta.currency,
+        rows: parsed.rows,
+        mapping,
+      });
+      upsertImport(result.import);
+      upsertReport(result.report);
+      setReportTrades(result.report.id, result.trades);
+      onAnalyze();
+    } catch (err: any) {
+      setError(err?.message ?? "Trade import analysis failed");
+    } finally {
+      setAnalyzeLoading(false);
+    }
   };
 
   return (
@@ -587,9 +679,11 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
             <button onClick={reset} className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white">Cancel</button>
             <button
               onClick={analyze}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white"
+              disabled={analyzeLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
-              <Brain className="h-4 w-4" /> Analyze with AI
+              {analyzeLoading ? <span className="h-4 w-4 animate-spin rounded-full border border-white border-t-transparent" /> : <Brain className="h-4 w-4" />}
+              {analyzeLoading ? "Analyzing..." : "Analyze with AI"}
             </button>
           </div>
         </>
@@ -601,6 +695,33 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
 function Reports() {
   const reports = useReports();
   const r = reports[0];
+  const [trades, setTrades] = useState<BacktestTrade[]>(() => (r ? getReportTrades(r.id) : []));
+  const [tradeError, setTradeError] = useState("");
+
+  useEffect(() => {
+    if (!r) return;
+    setTrades(getReportTrades(r.id));
+    setTradeError("");
+
+    if (!/^\d+$/.test(r.id)) return;
+    let cancelled = false;
+
+    fetchBacktestReportTrades(r.id)
+      .then((rows) => {
+        if (cancelled) return;
+        setReportTrades(r.id, rows);
+        setTrades(rows);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setTradeError(error?.message ?? "Could not load report trades");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [r?.id]);
+
   if (!r) return <Panel title="No reports yet"><p className="text-sm text-muted-foreground">Run a backtest or import trades to see results here.</p></Panel>;
   return (
     <div className="space-y-5">
@@ -627,6 +748,11 @@ function Reports() {
       </div>
 
       <Panel title="Trade-by-trade">
+        {tradeError && (
+          <div className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200 ring-1 ring-amber-400/20">
+            {tradeError}
+          </div>
+        )}
         <div className="-mx-5 overflow-x-auto px-5">
           <table className="w-full text-left text-xs">
             <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -637,7 +763,7 @@ function Reports() {
               </tr>
             </thead>
             <tbody>
-              {mockTrades.map((t) => (
+              {trades.map((t) => (
                 <tr key={t.id} className="border-t border-white/5 text-white/90">
                   <td className="px-2 py-2">{t.date}</td>
                   <td className="px-2 py-2">{t.symbol}</td>
@@ -655,6 +781,11 @@ function Reports() {
                   <td className="px-2 py-2 text-emerald-300">+${t.cashback}</td>
                 </tr>
               ))}
+              {!trades.length && (
+                <tr className="border-t border-white/5 text-muted-foreground">
+                  <td className="px-2 py-4" colSpan={12}>No trade rows saved for this report.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -672,7 +803,9 @@ function CalendarView() {
 
   if (!r) return <Panel title="Trade Calendar"><p className="text-sm text-muted-foreground">No reports yet — run a backtest or import trades.</p></Panel>;
 
-  const cells = buildCalendar({ reportId: r.id, netPnl: r.netPnl, trades: r.trades, bestDay: r.bestDay });
+  const cells = r.calendar?.length
+    ? r.calendar
+    : buildCalendar({ reportId: r.id, netPnl: r.netPnl, trades: r.trades, bestDay: r.bestDay });
   const tone = (t: typeof cells[number]["tone"]) =>
     t === "up" ? "bg-emerald-500/30 ring-emerald-400/40"
     : t === "down" ? "bg-rose-500/30 ring-rose-400/40"
@@ -741,10 +874,18 @@ function Insights() {
   const reports = useReports();
   const report = reports[0];
   const [items, setItems] = useState<{ title: string; text: string; tone: "success" | "warn" | "info" | "danger" }[]>(
-    aiInsights as any,
+    report?.insights?.length ? report.insights : [],
   );
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string>("");
+
+  useEffect(() => {
+    if (report?.insights?.length) {
+      setItems(report.insights);
+    } else {
+      setItems([]);
+    }
+  }, [report?.id]);
 
   const map = {
     success: { ring: "ring-emerald-400/40", icon: CheckCircle2, color: "text-emerald-300" },
@@ -757,20 +898,9 @@ function Insights() {
     if (!report) { setErr("Run a backtest or import trades first."); return; }
     setLoading(true); setErr("");
     try {
-      const res = await generateInsights({
-        data: {
-          report: {
-            name: report.name, market: report.market, symbol: report.symbol,
-            timeframe: report.timeframe, range: report.range,
-            netPnl: report.netPnl, winRate: report.winRate,
-            profitFactor: report.profitFactor, avgRR: report.avgRR,
-            trades: report.trades, wins: report.wins, losses: report.losses,
-            maxDD: report.maxDD, bestDay: report.bestDay, worstDay: report.worstDay,
-            source: report.source,
-          },
-        },
-      });
+      const res = await generateBacktestInsights(report.id);
       setItems(res.insights);
+      upsertReport({ ...report, insights: res.insights });
     } catch (e: any) {
       setErr(e?.message ?? "Failed to generate insights");
     } finally { setLoading(false); }
@@ -795,8 +925,9 @@ function Insights() {
           <AlertTriangle className="h-3.5 w-3.5" /> {err}
         </div>
       )}
-      <div className="grid gap-3 md:grid-cols-2">
-        {items.map((i) => {
+      {items.length > 0 ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          {items.map((i) => {
           const cfg = map[i.tone];
           const Icon = cfg.icon;
           return (
@@ -807,8 +938,15 @@ function Insights() {
               <p className="mt-2 text-xs text-white/85">{i.text}</p>
             </div>
           );
-        })}
-      </div>
+          })}
+        </div>
+      ) : (
+        <EmptyState
+          icon={Sparkles}
+          title="No AI insights yet"
+          description="Generate insights after you run a backtest or import real trades. No canned analysis is shown."
+        />
+      )}
     </Panel>
   );
 }
@@ -923,13 +1061,32 @@ function Compare() {
 
 function Saved() {
   const reports = useReports();
+  const [deleteError, setDeleteError] = useState("");
+
+  const remove = async (reportId: string) => {
+    setDeleteError("");
+    try {
+      if (/^\d+$/.test(reportId)) {
+        await deleteBacktestReport(reportId);
+      }
+      deleteReport(reportId);
+    } catch (error: any) {
+      setDeleteError(error?.message ?? "Report delete failed");
+    }
+  };
+
   return (
     <Panel title="Saved reports" action={
       <span className="text-[11px] text-muted-foreground">{reports.length} total</span>
     }>
+      {deleteError && (
+        <div className="mb-3 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-200 ring-1 ring-rose-400/20">
+          {deleteError}
+        </div>
+      )}
       {reports.length === 0
         ? <p className="text-sm text-muted-foreground">No reports saved yet.</p>
-        : <ReportsTable rows={reports} onDelete={deleteReport} />}
+        : <ReportsTable rows={reports} onDelete={remove} />}
     </Panel>
   );
 }
@@ -982,10 +1139,12 @@ function ReportsTable({ rows, compact, onDelete }: { rows: BacktestReport[]; com
 }
 
 function ReportChart({ report, kind }: { report: BacktestReport; kind: "equity" | "drawdown" }) {
-  const curve = buildEquityCurve({
-    reportId: report.id, trades: report.trades,
-    netPnl: report.netPnl, winRate: report.winRate, avgRR: report.avgRR,
-  });
+  const curve = report.equityCurve?.length
+    ? report.equityCurve
+    : buildEquityCurve({
+        reportId: report.id, trades: report.trades,
+        netPnl: report.netPnl, winRate: report.winRate, avgRR: report.avgRR,
+      });
   const series = kind === "equity" ? curve.map((p) => p.equity) : curve.map((p) => p.drawdown);
   const positive = kind === "equity" ? report.netPnl >= 0 : false;
   const { line, area } = pathFromCurve(series, 300, 100, 4);

@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Calculator, DollarSign, TrendingUp, ArrowLeftRight, Gift, Search,
   Star, History, Sparkles, X, Save, BookPlus, Share2, AlertTriangle,
 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
+import { useTrades } from "@/lib/trading-plan";
+import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
 
 export const Route = createFileRoute("/dashboard/tools")({
   head: () => ({
@@ -28,14 +30,15 @@ type ToolMeta = {
 };
 
 const TOOLS: ToolMeta[] = [
-  { key: "rebate",   title: "Rebate Calculator",   description: "Estimate how much cashback you earn per trade", icon: Gift,           preview: "+$15 / 10 trades", accent: "from-fuchsia-500 to-violet-600" },
-  { key: "fees",     title: "Fees Calculator",     description: "Calculate spread + commission cost",            icon: DollarSign,     preview: "$24.50 total",     accent: "from-amber-400 to-orange-500" },
-  { key: "margin",   title: "Margin Calculator",   description: "Required margin for any position",              icon: Calculator,     preview: "$120 needed",      accent: "from-cyan-400 to-blue-600" },
-  { key: "profit",   title: "Profit Calculator",   description: "Profit, loss, pips and RR ratio",               icon: TrendingUp,     preview: "+$180 (1.8R)",     accent: "from-emerald-400 to-teal-600" },
-  { key: "currency", title: "Currency Converter",  description: "Convert across 20+ currencies",                 icon: ArrowLeftRight, preview: "$100 → ₦150,000",  accent: "from-pink-400 to-rose-600" },
+  { key: "rebate",   title: "Rebate Calculator",   description: "Estimate how much cashback you earn per trade", icon: Gift,           preview: "Cashback estimate", accent: "from-fuchsia-500 to-violet-600" },
+  { key: "fees",     title: "Fees Calculator",     description: "Calculate spread + commission cost",            icon: DollarSign,     preview: "Fee estimate",      accent: "from-amber-400 to-orange-500" },
+  { key: "margin",   title: "Margin Calculator",   description: "Required margin for any position",              icon: Calculator,     preview: "Margin estimate",   accent: "from-cyan-400 to-blue-600" },
+  { key: "profit",   title: "Profit Calculator",   description: "Profit, loss, pips and RR ratio",               icon: TrendingUp,     preview: "PnL scenario",      accent: "from-emerald-400 to-teal-600" },
+  { key: "currency", title: "Currency Converter",  description: "Convert across 20+ currencies",                 icon: ArrowLeftRight, preview: "Manual rate mode",   accent: "from-pink-400 to-rose-600" },
 ];
 
 function ToolsPage() {
+  const trades = useTrades();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<ToolKey | null>(null);
   const [favs, setFavs] = useState<ToolKey[]>(["rebate"]);
@@ -53,6 +56,19 @@ function ToolsPage() {
     setHistory(h => [{ tool, value, ts: Date.now() }, ...h].slice(0, 8));
 
   const activeMeta = TOOLS.find(t => t.key === active);
+  const journalGuidance = useMemo(() => {
+    if (trades.length === 0) return null;
+    const avgLot = trades.reduce((sum, trade) => sum + Number(trade.lot ?? 0), 0) / trades.length;
+    const avgR = trades.reduce((sum, trade) => sum + Number(trade.rr ?? 0), 0) / trades.length;
+    const mostTradedAsset = Object.entries(
+      trades.reduce<Record<string, number>>((acc, trade) => {
+        const key = trade.asset?.toUpperCase() || "UNKNOWN";
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      }, {}),
+    ).sort((a, b) => b[1] - a[1])[0]?.[0];
+    return { avgLot, avgR, mostTradedAsset };
+  }, [trades]);
 
   return (
     <div className="space-y-6">
@@ -76,7 +92,7 @@ function ToolsPage() {
         <StatCard label="Tools available" value={String(TOOLS.length)} hint="Live & connected" accent="primary" />
         <StatCard label="Saved calculations" value={String(history.length)} hint="This session" accent="success" />
         <StatCard label="Favorites" value={String(favs.length)} hint="Pinned tools" accent="warning" />
-        <StatCard label="AI suggestions" value="3 ready" hint="Based on your journal" trend="up" accent="primary" />
+        <StatCard label="Journal context" value={trades.length ? `${trades.length} trades` : "No trades"} hint={trades.length ? "Based on journal" : "Manual mode"} accent="primary" />
       </div>
 
       {favs.length > 0 && (
@@ -121,7 +137,7 @@ function ToolsPage() {
               </div>
               <h3 className="mt-3 text-sm font-semibold text-white">{t.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
-              <div className="mt-3 text-[11px] text-accent">Preview · {t.preview}</div>
+              <div className="mt-3 text-[11px] text-accent">Mode · {t.preview}</div>
               <button
                 onClick={() => setActive(t.key)}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] transition hover:brightness-110"
@@ -152,18 +168,26 @@ function ToolsPage() {
           )}
         </Panel>
 
-        <Panel title="AI suggestions" action={<Sparkles className="h-4 w-4 text-accent" />}>
-          <ul className="space-y-2 text-xs">
-            <li className="rounded-xl bg-white/5 p-3 text-white/85">
-              You usually trade <span className="text-accent">0.5 lots</span>. Recommended rebate target: <span className="text-success font-semibold">$7 per session</span>.
-            </li>
-            <li className="rounded-xl bg-white/5 p-3 text-white/85">
-              Your average RR is 1.4. Try the <button onClick={() => setActive("profit")} className="text-accent underline">Profit Calculator</button> scenario mode.
-            </li>
-            <li className="rounded-xl bg-white/5 p-3 text-white/85">
-              Switching to a 30% rebate broker could save you <span className="text-success font-semibold">$340/mo</span>.
-            </li>
-          </ul>
+        <Panel title="Journal guidance" action={<Sparkles className="h-4 w-4 text-accent" />}>
+          {journalGuidance ? (
+            <ul className="space-y-2 text-xs">
+              <li className="rounded-xl bg-white/5 p-3 text-white/85">
+                Average logged position size: <span className="text-accent">{journalGuidance.avgLot.toFixed(2)} lots</span>. Use the rebate calculator to estimate cashback on similar trades.
+              </li>
+              <li className="rounded-xl bg-white/5 p-3 text-white/85">
+                Average logged RR: <span className="font-semibold text-success">{journalGuidance.avgR.toFixed(2)}R</span>. Use the <button onClick={() => setActive("profit")} className="text-accent underline">Profit Calculator</button> to test alternate targets.
+              </li>
+              {journalGuidance.mostTradedAsset && (
+                <li className="rounded-xl bg-white/5 p-3 text-white/85">
+                  Most logged asset: <span className="text-accent">{journalGuidance.mostTradedAsset}</span>. Keep calculator assumptions aligned with that market.
+                </li>
+              )}
+            </ul>
+          ) : (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Journal-based guidance will appear after you log trades. Calculators are available now in manual estimate mode.
+            </p>
+          )}
         </Panel>
       </div>
 
@@ -498,8 +522,20 @@ function RebateCalculator({ onResult }: { onResult: (v: string) => void }) {
   const [type, setType] = useState("Forex");
   const [lot, setLot] = useState(1);
   const [trades, setTrades] = useState(10);
-  const [broker, setBroker] = useState("FundedNext");
+  const [broker, setBroker] = useState("");
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [pct, setPct] = useState(30);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPublicAdminBrands().then((brands) => {
+      if (cancelled) return;
+      const names = brands.map((brand) => brand.name).filter(Boolean);
+      setBrandOptions(names);
+      setBroker((current) => current || names[0] || "");
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const baseCommission = type === "Crypto" ? 8 : type === "Indices" ? 6 : 7;
   const totalCommission = baseCommission * lot * trades;
@@ -523,7 +559,9 @@ function RebateCalculator({ onResult }: { onResult: (v: string) => void }) {
             <NumberInput value={trades} onChange={setTrades} step={1} min={0} />
             <PresetRow presets={[{label:"10",value:10},{label:"50",value:50},{label:"100",value:100}]} onPick={setTrades} />
           </Field>
-          <Field label="Broker / firm"><Select value={broker} onChange={setBroker} options={["FundedNext","FTMO","MyForexFunds","Exness","IC Markets"]} /></Field>
+          <Field label="Broker / firm">
+            <Select value={broker || "No published brands"} onChange={setBroker} options={brandOptions.length ? brandOptions : ["No published brands"]} />
+          </Field>
           <Field label="Rebate %" hint={`${pct}%`}>
             <input type="range" min={5} max={80} value={pct} onChange={(e) => setPct(parseInt(e.target.value))} className="w-full accent-fuchsia-500" />
           </Field>

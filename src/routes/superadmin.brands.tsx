@@ -26,6 +26,11 @@ const TABS = [
   { id: "Crypto Exchange", label: "Crypto Exchanges" },
   { id: "Trading Software", label: "Software" },
   { id: "Trading Tool", label: "Tools" },
+  { id: "Trading Journal", label: "Journals" },
+  { id: "Trading Calculator", label: "Calculators" },
+  { id: "Trading Platform", label: "Platforms" },
+  { id: "Signal Provider", label: "Signals" },
+  { id: "Copy Trading Platform", label: "Copy Trading" },
   { id: "Education Provider", label: "Education" },
 ] as const;
 

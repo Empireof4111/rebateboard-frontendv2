@@ -6,8 +6,8 @@ import {
 import { PageHeader, Panel, StatCard } from "@/components/superadmin/AdminUI";
 import { ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
 import { advertApi, blogApi, type DashboardAd, type BlogPost } from "@/lib/admin-api";
+import { fetchAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import type { AdFormat, AdPlacement, AdSlide, SponsorLogo } from "@/lib/dashboard-ads";
-import { TBI_BRANDS } from "@/lib/tbi-data";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { uploadMediaFile } from "@/lib/media-api";
@@ -34,15 +34,15 @@ const PLACEMENTS: { value: AdPlacement; label: string; hint: string }[] = [
 function emptyAd(): DashboardAd {
   return {
     id: "",
-    name: "Untitled banner",
+    name: "Draft banner",
     format: "single",
     placement: "dashboard",
-    active: true,
-    priority: 1,
+    active: false,
+    priority: 0,
     headline: "",
     sub: "",
-    cta: "Learn more",
-    href: "/dashboard/wallet",
+    cta: "",
+    href: "",
     accent: "from-fuchsia-500 to-violet-600",
     thumbnail: "",
     slides: [],
@@ -58,6 +58,7 @@ function AdsPage() {
   const { token } = useAuth();
   const [ads, setAds] = useState<DashboardAd[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -66,12 +67,14 @@ function AdsPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const [adsRes, blogRes] = await Promise.all([
+      const [adsRes, blogRes, brandRows] = await Promise.all([
         advertApi.list(token),
         blogApi.list(token),
+        fetchAdminBrands(),
       ]);
       if (adsRes.payload) setAds(adsRes.payload.page);
       if (blogRes.payload) setBlogPosts(blogRes.payload.page);
+      setBrands(brandRows);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Failed to load ads");
     } finally {
@@ -112,7 +115,8 @@ function AdsPage() {
       const res = await advertApi.update(token, ad.id, ad);
       if (res.payload) {
         setAds((prev) => prev.map((a) => a.id === ad.id ? res.payload! : a));
-        toast.success("Ad saved — live on user dashboards");
+        const placement = PLACEMENTS.find((item) => item.value === ad.placement)?.label ?? "selected placement";
+        toast.success(ad.active ? `Ad saved — live on ${placement}` : "Draft saved");
       }
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Save failed");
@@ -147,7 +151,7 @@ function AdsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard Ads"
-        subtitle="Banners shown on top of every user dashboard page. Schedule, prioritize, and track performance."
+        subtitle="Manage dashboard, landing hero, sponsor strip, and advertise-box campaigns from one place."
         actions={
           <div className="flex gap-2">
             <button onClick={load} className="grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10">
@@ -162,7 +166,7 @@ function AdsPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total banners" value={ads.length.toString()} delta="created" />
-        <StatCard label="Active now" value={activeCount.toString()} delta="visible to users" />
+        <StatCard label="Active now" value={activeCount.toString()} delta="visible on selected placements" />
         <StatCard label="Impressions" value={totalImpressions.toLocaleString()} delta="all-time" />
         <StatCard label="CTR" value={`${ctr}%`} delta={`${totalClicks.toLocaleString()} clicks`} />
       </div>
@@ -220,7 +224,15 @@ function AdsPage() {
 
         <Panel title={editing ? `Edit · ${editing.name}` : "Editor"}>
           {editing ? (
-            <Editor key={editing.id} ad={editing} blogPosts={blogPosts} saving={saving} onSave={save} onClose={() => setEditingId(null)} />
+            <Editor
+              key={editing.id}
+              ad={editing}
+              blogPosts={blogPosts}
+              brands={brands}
+              saving={saving}
+              onSave={save}
+              onClose={() => setEditingId(null)}
+            />
           ) : (
             <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-xs text-muted-foreground">
               Select a banner on the left or create a new one to start editing.
@@ -238,15 +250,69 @@ function FormatIcon({ format }: { format: AdFormat }) {
   return <Icon className="h-4 w-4 text-white" />;
 }
 
-function Editor({ ad, blogPosts, saving, onSave, onClose }: {
+function slugFromBrand(brand: AdminBrandRecord) {
+  return brand.slug || brand.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function brandHref(brand: AdminBrandRecord) {
+  return `/firm/${slugFromBrand(brand)}`;
+}
+
+function brandInitial(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 1) return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function brandAccent(brand: AdminBrandRecord) {
+  const category = String(brand.category ?? "");
+  if (category.includes("Crypto")) return "from-cyan-400 to-blue-600";
+  if (category.includes("Broker")) return "from-emerald-400 to-teal-600";
+  if (category.includes("Tool") || category.includes("Software")) return "from-violet-500 to-fuchsia-600";
+  return "from-fuchsia-500 to-violet-600";
+}
+
+function brandTbiLabel(brand: AdminBrandRecord) {
+  return Number.isFinite(brand.tbi) ? `TBI ${Number(brand.tbi).toFixed(1)}/100` : "TBI not provided";
+}
+
+function slideFromBrand(brand: AdminBrandRecord): Partial<AdSlide> {
+  return {
+    brandSlug: slugFromBrand(brand),
+    label: brand.name,
+    sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
+    href: brandHref(brand),
+    accent: brandAccent(brand),
+    image: brand.cover || brand.thumbnail,
+  };
+}
+
+function sponsorFromBrand(brand: AdminBrandRecord, tag: SponsorLogo["tag"] = "sponsor"): SponsorLogo {
+  return {
+    id: `brand-${slugFromBrand(brand)}`,
+    name: brand.name,
+    initial: brandInitial(brand.name),
+    logo: brand.thumbnail || brand.cover,
+    color: brandAccent(brand),
+    href: brandHref(brand),
+    tag,
+  };
+}
+
+function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
   ad: DashboardAd;
   blogPosts: BlogPost[];
+  brands: AdminBrandRecord[];
   saving: boolean;
   onSave: (ad: DashboardAd) => void;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<DashboardAd>(ad);
   useEffect(() => setDraft(ad), [ad]);
+  const selectableBrands = useMemo(() => {
+    const published = brands.filter((brand) => brand.visibility === "published");
+    return published.length ? published : brands;
+  }, [brands]);
 
   const set = <K extends keyof DashboardAd>(k: K, v: DashboardAd[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const uploadBanner = async (file: File) => {
@@ -257,11 +323,61 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
     return uploaded.url;
   };
 
-  const addSlide = () => set("slides", [...(draft.slides ?? []), { source: "template", label: "New slide", sub: "", href: "/payouts/ftmo", accent: "from-fuchsia-500 to-violet-600" }]);
+  const addSlide = () => {
+    const brand = selectableBrands[0];
+    const next: AdSlide = brand
+      ? {
+          source: "template",
+          label: brand.name,
+          sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
+          href: brandHref(brand),
+          accent: brandAccent(brand),
+          image: brand.cover || brand.thumbnail,
+          brandSlug: slugFromBrand(brand),
+        }
+      : {
+          source: "template",
+          label: "Manual slide",
+          sub: "",
+          href: "/blog",
+          accent: "from-fuchsia-500 to-violet-600",
+        };
+    set("slides", [...(draft.slides ?? []), next]);
+  };
   const updateSlide = (i: number, patch: Partial<AdSlide>) => set("slides", (draft.slides ?? []).map((s, idx) => idx === i ? { ...s, ...patch } : s));
   const removeSlide = (i: number) => set("slides", (draft.slides ?? []).filter((_, idx) => idx !== i));
 
-  const addSponsor = () => set("sponsors", [...(draft.sponsors ?? []), { id: `sp-${Math.random().toString(36).slice(2, 8)}`, name: "Brand", initial: "B", color: "from-fuchsia-500 to-violet-600", href: "/", tag: "sponsor" }]);
+  const applySingleBrand = (brand: AdminBrandRecord) => {
+    const image = brand.cover || brand.thumbnail || draft.thumbnail;
+    setDraft((current) => ({
+      ...current,
+      name:
+        current.name && !["Untitled banner", "Draft banner"].includes(current.name)
+          ? current.name
+          : `${brand.name} banner`,
+      headline: brand.name,
+      sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
+      href: brandHref(brand),
+      accent: brandAccent(brand),
+      thumbnail: image,
+      image,
+    }));
+  };
+
+  const addSponsor = () => {
+    const brand = selectableBrands[(draft.sponsors ?? []).length % Math.max(selectableBrands.length, 1)];
+    const sponsor = brand
+      ? sponsorFromBrand(brand)
+      : {
+          id: `sp-${Math.random().toString(36).slice(2, 8)}`,
+          name: "Brand",
+          initial: "B",
+          color: "from-fuchsia-500 to-violet-600",
+          href: "/",
+          tag: "sponsor" as const,
+        };
+    set("sponsors", [...(draft.sponsors ?? []), sponsor]);
+  };
   const updateSponsor = (i: number, patch: Partial<SponsorLogo>) => set("sponsors", (draft.sponsors ?? []).map((s, idx) => idx === i ? { ...s, ...patch } : s));
   const removeSponsor = (i: number) => set("sponsors", (draft.sponsors ?? []).filter((_, idx) => idx !== i));
 
@@ -309,15 +425,76 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
       </Field>
 
       {draft.format === "single" && (
-        <Field label="Banner image">
-          <ThumbnailUploader
-            value={draft.thumbnail}
-            onChange={(url) => set("thumbnail", url)}
-            onSelectFile={uploadBanner}
-            label="Upload banner image"
-            height="h-44"
-          />
-        </Field>
+        <>
+          <Field label="Use real brand data">
+            <select
+              className={inputCls}
+              value=""
+              onChange={(e) => {
+                const brand = selectableBrands.find((b) => b.id === e.target.value);
+                if (brand) applySingleBrand(brand);
+              }}
+            >
+              <option value="">Pick a listed brand to prefill this banner</option>
+              {selectableBrands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name} · {brand.category} · {brandTbiLabel(brand)}
+                </option>
+              ))}
+            </select>
+            {selectableBrands.length === 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Add or publish brands first, then use them here to avoid manual duplicate ad data.
+              </p>
+            )}
+          </Field>
+          <Field label="Banner image">
+            <ThumbnailUploader
+              value={draft.thumbnail || draft.image}
+              onChange={(url) => {
+                set("thumbnail", url);
+                set("image", url);
+              }}
+              onSelectFile={uploadBanner}
+              label="Upload banner image"
+              height="h-44"
+            />
+          </Field>
+          <Field label="Public headline (optional)">
+            <input
+              className={inputCls}
+              placeholder="Leave empty when the uploaded banner already contains the copy"
+              value={draft.headline ?? ""}
+              onChange={(e) => set("headline", e.target.value)}
+            />
+          </Field>
+          <Field label="Public subtitle (optional)">
+            <input
+              className={inputCls}
+              placeholder="Short supporting line"
+              value={draft.sub ?? ""}
+              onChange={(e) => set("sub", e.target.value)}
+            />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="CTA label (optional)">
+              <input
+                className={inputCls}
+                placeholder="Learn more"
+                value={draft.cta ?? ""}
+                onChange={(e) => set("cta", e.target.value)}
+              />
+            </Field>
+            <Field label="Link target">
+              <input
+                className={inputCls}
+                placeholder="/offers or https://..."
+                value={draft.href ?? ""}
+                onChange={(e) => set("href", e.target.value)}
+              />
+            </Field>
+          </div>
+        </>
       )}
 
       {draft.format === "marquee" && (
@@ -342,7 +519,7 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
                   ))}
                 </div>
                 {(s.source ?? "template") === "blog" ? (
-                  <select className={inputCls} value={s.blogId ?? ""} onChange={(e) => { const post = blogPosts.find((b) => b.id === e.target.value); updateSlide(i, post ? { blogId: e.target.value, label: post.title, sub: post.excerpt || post.tag, href: `/articles/${post.id}`, image: post.cover } : { blogId: undefined }); }}>
+                  <select className={inputCls} value={s.blogId ?? ""} onChange={(e) => { const post = blogPosts.find((b) => b.id === e.target.value); updateSlide(i, post ? { blogId: e.target.value, label: post.title, sub: post.excerpt || post.tag, href: `/articles/${post.urlSlug || post.id}`, image: post.cover } : { blogId: undefined }); }}>
                     <option value="">— Pick a blog post —</option>
                     {blogPosts.map((b) => <option key={b.id} value={b.id}>{b.title}{b.status === "draft" ? " (draft)" : ""}</option>)}
                   </select>
@@ -351,14 +528,28 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
                     <input className={inputCls} placeholder="Label" value={s.label} onChange={(e) => updateSlide(i, { label: e.target.value })} />
                     <input className={inputCls} placeholder="Sub" value={s.sub ?? ""} onChange={(e) => updateSlide(i, { sub: e.target.value })} />
                     <input className={inputCls} placeholder="Link" value={s.href} onChange={(e) => updateSlide(i, { href: e.target.value })} />
-                    <select className={inputCls} value={s.brandSlug ?? ""} onChange={(e) => { const brand = TBI_BRANDS.find((b) => b.slug === e.target.value); updateSlide(i, brand ? { brandSlug: e.target.value, label: brand.name, href: `/payouts/${e.target.value}` } : { brandSlug: undefined }); }}>
-                      <option value="">— Pick TBI brand (optional) —</option>
-                      {TBI_BRANDS.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
+                    <select className={inputCls} value={s.brandSlug ?? ""} onChange={(e) => { const brand = selectableBrands.find((b) => slugFromBrand(b) === e.target.value); updateSlide(i, brand ? slideFromBrand(brand) : { brandSlug: undefined }); }}>
+                      <option value="">— Pick platform brand (optional) —</option>
+                      {selectableBrands.map((b) => <option key={b.id} value={slugFromBrand(b)}>{b.name} · {b.category}</option>)}
                     </select>
                     <input className={inputCls} placeholder="Accent" value={s.accent ?? ""} onChange={(e) => updateSlide(i, { accent: e.target.value })} />
-                    <input className={inputCls} placeholder="Image URL" value={s.image ?? ""} onChange={(e) => updateSlide(i, { image: e.target.value })} />
                   </div>
                 )}
+                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.1fr]">
+                  <input
+                    className={inputCls}
+                    placeholder="Image URL"
+                    value={s.image ?? ""}
+                    onChange={(e) => updateSlide(i, { image: e.target.value })}
+                  />
+                  <ThumbnailUploader
+                    value={s.image}
+                    onChange={(url) => updateSlide(i, { image: url })}
+                    onSelectFile={uploadBanner}
+                    label="Upload slide image"
+                    height="h-24"
+                  />
+                </div>
                 <button onClick={() => removeSlide(i)} className="mt-2 inline-flex items-center gap-1 text-[11px] text-rose-300 hover:text-rose-200"><X className="h-3 w-3" /> Remove</button>
               </div>
             ))}
@@ -373,13 +564,25 @@ function Editor({ ad, blogPosts, saving, onSave, onClose }: {
             {(draft.sponsors ?? []).map((s, i) => (
               <div key={s.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
                 <div className="grid gap-2 sm:grid-cols-2">
+                  <select className={inputCls} value={s.href?.startsWith("/firm/") ? s.href.replace("/firm/", "") : ""} onChange={(e) => { const brand = selectableBrands.find((b) => slugFromBrand(b) === e.target.value); if (brand) updateSponsor(i, sponsorFromBrand(brand, s.tag)); }}>
+                    <option value="">— Pick platform brand —</option>
+                    {selectableBrands.map((b) => <option key={b.id} value={slugFromBrand(b)}>{b.name} · {b.category}</option>)}
+                  </select>
+                  <select className={inputCls} value={s.tag ?? "sponsor"} onChange={(e) => updateSponsor(i, { tag: e.target.value as SponsorLogo["tag"] })}>
+                    <option value="sponsor">Sponsor</option><option value="featured">Featured</option><option value="ad">Ad</option>
+                  </select>
                   <input className={inputCls} placeholder="Brand name" value={s.name} onChange={(e) => updateSponsor(i, { name: e.target.value })} />
                   <input className={inputCls} placeholder="Initial" value={s.initial ?? ""} onChange={(e) => updateSponsor(i, { initial: e.target.value })} />
                   <input className={inputCls} placeholder="Color gradient" value={s.color ?? ""} onChange={(e) => updateSponsor(i, { color: e.target.value })} />
                   <input className={inputCls} placeholder="Link" value={s.href ?? ""} onChange={(e) => updateSponsor(i, { href: e.target.value })} />
-                  <select className={inputCls} value={s.tag ?? "sponsor"} onChange={(e) => updateSponsor(i, { tag: e.target.value as SponsorLogo["tag"] })}>
-                    <option value="sponsor">Sponsor</option><option value="featured">Featured</option><option value="ad">Ad</option>
-                  </select>
+                  <input className={inputCls} placeholder="Logo URL" value={s.logo ?? ""} onChange={(e) => updateSponsor(i, { logo: e.target.value })} />
+                  <ThumbnailUploader
+                    value={s.logo}
+                    onChange={(url) => updateSponsor(i, { logo: url })}
+                    onSelectFile={uploadBanner}
+                    label="Upload logo"
+                    height="h-20"
+                  />
                 </div>
                 <button onClick={() => removeSponsor(i)} className="mt-2 inline-flex items-center gap-1 text-[11px] text-rose-300 hover:text-rose-200"><X className="h-3 w-3" /> Remove</button>
               </div>

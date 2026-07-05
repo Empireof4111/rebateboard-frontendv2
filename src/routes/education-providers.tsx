@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PublicCategoryListing } from "@/components/listings/PublicCategoryListing";
 import { getListingCategoryConfig } from "@/lib/listing-categories";
 
-const config = getListingCategoryConfig("brokers");
+const config = getListingCategoryConfig("education-providers");
 
-export const Route = createFileRoute("/brokers")({
+export const Route = createFileRoute("/education-providers")({
   head: () => ({
     meta: [
       { title: `${config.title} | RebateBoard` },
