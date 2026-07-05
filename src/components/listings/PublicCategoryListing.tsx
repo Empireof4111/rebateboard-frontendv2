@@ -549,11 +549,14 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
     setLoading(true);
     setError("");
     try {
-      const response = await apiRequest<AdminBrandRecord[]>("/admin-brand/public-list", {
-        method: "GET",
-        cache: "no-store",
-        token,
-      });
+      const response = await apiRequest<AdminBrandRecord[]>(
+        "/admin-brand/public-list?page=0&size=250",
+        {
+          method: "GET",
+          cache: "no-store",
+          token,
+        },
+      );
       setBrands((response.payload ?? []).filter(isPublishedBrand));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load listings.");

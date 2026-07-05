@@ -105,13 +105,17 @@ export async function fetchPublicAdminBrand(slug: string, token?: string | null)
 }
 
 export async function fetchPublicAdminBrands(category?: AdminBrandCategory, token?: string | null) {
-  const query = category ? `?category=${encodeURIComponent(category)}` : "";
+  const params = new URLSearchParams({ page: "0", size: "250" });
+  if (category) params.set("category", category);
   try {
-    const response = await apiRequest<AdminBrandRecord[]>(`/admin-brand/public-list${query}`, {
-      method: "GET",
-      cache: "no-store",
-      token: requestToken(token),
-    });
+    const response = await apiRequest<AdminBrandRecord[]>(
+      `/admin-brand/public-list?${params.toString()}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        token: requestToken(token),
+      },
+    );
     return (response.payload ?? []).filter((brand) => brand.visibility === "published");
   } catch {
     return [];

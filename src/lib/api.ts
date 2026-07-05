@@ -5,11 +5,42 @@ export type ApiResponse<T> = {
 };
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+const LOCAL_API_BASE_URL = "http://localhost:8081/api/v1";
+const PRODUCTION_API_BASE_URL = "https://rebateboard-backendv2.onrender.com/api/v1";
 
-export const API_BASE_URL = (configuredBaseUrl?.trim() || "http://localhost:8081/api/v1").replace(
-  /\/+$/,
-  "",
-);
+function normalizeBaseUrl(value: string) {
+  return value.trim().replace(/\/+$/, "");
+}
+
+function resolveApiBaseUrl() {
+  if (configuredBaseUrl?.trim()) return normalizeBaseUrl(configuredBaseUrl);
+
+  if (typeof window === "undefined") return LOCAL_API_BASE_URL;
+
+  try {
+    const browserOverride = window.localStorage.getItem("rb_api_base_url");
+    if (browserOverride?.trim()) return normalizeBaseUrl(browserOverride);
+  } catch {
+    // Ignore storage failures and keep resolving from location.
+  }
+
+  const { hostname, origin } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return LOCAL_API_BASE_URL;
+  }
+
+  if (
+    hostname.endsWith(".workers.dev") ||
+    hostname === "rebateboard.com" ||
+    hostname === "www.rebateboard.com"
+  ) {
+    return PRODUCTION_API_BASE_URL;
+  }
+
+  return `${origin.replace(/\/+$/, "")}/api/v1`;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export class ApiError extends Error {
   payload?: unknown;
