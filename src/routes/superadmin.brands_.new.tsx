@@ -242,7 +242,8 @@ function NewBrandPage() {
   // Specifics — exchange
   const [exch, setExch] = useState({
     supportedAssets: "", fees: "", spot: "Yes", futures: "Yes", copyTrading: "Yes",
-    kyc: "", deposits: "", withdrawals: "", security: "", licenses: "",
+    kyc: "", minDeposit: "", deposits: "", withdrawals: "", security: "", licenses: "",
+    fiatOnRamp: "No", staking: "No",
     institutionalServices: "No", web3Integration: "No", apiTrading: "No", nativeToken: "", maxLeverage: "",
   });
 
@@ -463,7 +464,8 @@ function NewBrandPage() {
     );
     setExch({
       supportedAssets: "", fees: "", spot: "Yes", futures: "Yes", copyTrading: "Yes",
-      kyc: "", deposits: "", withdrawals: "", security: "", licenses: "",
+      kyc: "", minDeposit: "", deposits: "", withdrawals: "", security: "", licenses: "",
+      fiatOnRamp: "No", staking: "No",
       institutionalServices: "No", web3Integration: "No", apiTrading: "No", nativeToken: "", maxLeverage: "",
       ...((brand.exchange ?? {}) as Record<string, string>),
     });
@@ -1095,13 +1097,14 @@ function NewBrandPage() {
                   ["supportedAssets","Supported assets","500+ spot, 200+ perp"],
                   ["fees","Trading fees","0.10% maker / 0.10% taker"],
                   ["kyc","KYC requirements","Tiered KYC"],
+                  ["minDeposit","Minimum deposit","$10"],
                   ["deposits","Deposit methods","Crypto, Card, P2P, Bank"],
                   ["withdrawals","Withdrawal methods","Crypto, Bank"],
                 ] as const).map(([k, l, p]) => (
                   <Field key={k} label={l}><input className={inputCls} placeholder={p} value={(exch as any)[k]} onChange={(e) => setExch({ ...exch, [k]: e.target.value })} /></Field>
                 ))}
                 {([
-                  ["spot","Spot support"],["futures","Futures support"],["copyTrading","Copy trading"],["institutionalServices","Institutional services"],["web3Integration","Web3 integration"],["apiTrading","API trading"],
+                  ["spot","Spot support"],["futures","Futures support"],["copyTrading","Copy trading"],["fiatOnRamp","Fiat on-ramp"],["staking","Staking"],["institutionalServices","Institutional services"],["web3Integration","Web3 integration"],["apiTrading","API trading"],
                 ] as const).map(([k, l]) => (
                   <Field key={k} label={l}>
                     <select className={selectCls} value={(exch as any)[k]} onChange={(e) => setExch({ ...exch, [k]: e.target.value })}>

@@ -129,11 +129,44 @@ function DashboardHome() {
         }
       />
 
+      {!user?.onboardingCompleted && (
+        <div className="glass overflow-hidden rounded-2xl border border-primary/20 p-4 sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
+              <ClipboardCheck className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white">Complete your onboarding</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Complete your onboarding to unlock your welcome rewards and personalize your dashboard.
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500"
+                    style={{ width: `${user?.profileCompletion ?? 0}%` }}
+                  />
+                </div>
+                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-fuchsia-200">
+                  {user?.profileCompletion ?? 0}%
+                </span>
+              </div>
+            </div>
+            <Link
+              to="/signup"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
+            >
+              Complete Onboarding <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Section 1 — Money First */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <StatCard label={t("dashboard.walletBalance")} value={summary ? `$${Number(summary.balance).toLocaleString()}` : "—"} trend="up" accent="success" />
         <StatCard label={t("dashboard.totalCashback")} value={summary ? `$${Number(summary.totalEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint={t("dashboard.allTime")} trend="up" accent="success" />
-        <StatCard label={t("dashboard.rrBalance")} value={user ? String(Math.round(user.rrBalance)) : "—"} accent="warning" />
+        <StatCard label={t("dashboard.rrBalance")} value={user ? String(Math.round(user.rrBalance)) : "—"} accent="primary" />
         <StatCard label={t("dashboard.totalWithdrawn")} value={summary ? `$${Number(summary.totalWithdrawn).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint={t("dashboard.lifetime")} accent="primary" />
         <StatCard label={t("dashboard.pending")} value={summary ? `$${Number(summary.pendingWithdrawals).toLocaleString()}` : "—"} hint={t("dashboard.withdrawals")} accent="warning" />
         <StatCard label={t("dashboard.referrals")} value={referralStats ? String(referralStats.total) : "—"} hint={referralStats ? `+${referralStats.thisMonth} ${t("dashboard.thisMonthPlus")}` : ""} />
@@ -212,8 +245,8 @@ function DashboardHome() {
                   <span className="text-white">Available wallet balance is <b>{summary ? fmtUSD(Number(summary.availableForWithdrawal)) : "$0"}</b>.</span>
                 </li>
               )}
-              <li className="flex gap-2 rounded-lg bg-amber-500/10 p-2.5">
-                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <li className="flex gap-2 rounded-lg bg-primary/10 p-2.5">
+                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-300" />
                 <span className="text-white">Current RR balance: <b>{Math.round(user?.rrBalance ?? 0).toLocaleString()} RR</b>.</span>
               </li>
               <li>
@@ -377,7 +410,7 @@ function DashboardHome() {
                         <span>·</span>
                         <span>{task.quantity}/day</span>
                         <span>·</span>
-                        <span className="text-amber-300">+{task.rrReward} RR</span>
+                        <span className="text-fuchsia-200">+{task.rrReward} RR</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -434,7 +467,7 @@ function DashboardHome() {
             </div>
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">RR Claimed</div>
-              <div className="mt-1 text-xl font-bold text-amber-300">{dailyTaskBoard?.stats.rrClaimedToday ?? 0}</div>
+              <div className="mt-1 text-xl font-bold text-fuchsia-200">{dailyTaskBoard?.stats.rrClaimedToday ?? 0}</div>
             </div>
           </div>
           <div className="mt-4 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">

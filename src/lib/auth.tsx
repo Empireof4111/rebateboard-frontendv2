@@ -27,13 +27,19 @@ export type User = {
   username?: string;
   email: string;
   country?: string;
+  dp?: string;
   role?: string;
   rrBalance: number;
   traderScore: number;
   joinedAt: string;
   marketingOptIn?: boolean;
   onboardingCompleted: boolean;
+  onboardingRewardGranted?: boolean;
+  profileCompletion: number;
   onboarding?: OnboardingAnswers;
+  verified: number;
+  kycLevel: number;
+  kycStatus: "not_started" | "pending" | "verified" | "rejected";
   status?: string;
 };
 
@@ -76,6 +82,7 @@ type BackendUser = Partial<User> & {
   email?: string;
   emailAddress?: string;
   country?: string;
+  dp?: string;
   role?: string;
   rrBalance?: number;
   traderScore?: number;
@@ -83,7 +90,12 @@ type BackendUser = Partial<User> & {
   createdAt?: string;
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
+  onboardingRewardGranted?: boolean;
+  profileCompletion?: number;
   onboarding?: Partial<OnboardingAnswers>;
+  verified?: number;
+  kycLevel?: number;
+  kycStatus?: User["kycStatus"];
   status?: string;
 };
 
@@ -132,13 +144,23 @@ function normalizeUser(raw: BackendUser | User | null | undefined): User | null 
     username: raw.username,
     email,
     country: raw.country,
+    dp: raw.dp,
     role: raw.role,
     rrBalance: Number(raw.rrBalance ?? 0),
     traderScore: Number(raw.traderScore ?? 0),
     joinedAt: raw.joinedAt ?? (raw as BackendUser).createdAt ?? new Date().toISOString(),
     marketingOptIn: raw.marketingOptIn,
     onboardingCompleted: Boolean(raw.onboardingCompleted),
+    onboardingRewardGranted: Boolean(raw.onboardingRewardGranted),
+    profileCompletion: Math.max(0, Math.min(100, Number(raw.profileCompletion ?? 0))),
     onboarding: normalizeAnswers(raw.onboarding),
+    verified: Number(raw.verified ?? 0),
+    kycLevel: Number(raw.kycLevel ?? 0),
+    kycStatus:
+      raw.kycStatus ??
+      (Number(raw.verified ?? 0) > 0 && Number(raw.kycLevel ?? 0) > 0
+        ? "verified"
+        : "not_started"),
     status: raw.status,
   };
 }

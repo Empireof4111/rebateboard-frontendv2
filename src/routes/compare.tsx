@@ -102,18 +102,29 @@ function ComparePage() {
 
   const cols = Math.max(brands.length, 1);
   const gridTemplate = `1.2fr ${"1fr ".repeat(cols).trim()}`;
+  const brokerFilterOptions: Record<string, string[]> = {
+    Regulators: ["FCA", "ASIC", "CySEC", "NFA"],
+    "Commission($)": ["$1", "$1 - $5", "$6 - $10", "$10+"],
+    "Spread Type": ["Floating Spread", "Fixed Spread"],
+    "Minimum Deposit": ["$0 - $100", "$101 - $200", "$500 - $1,000", "$10,000+"],
+    Accounts: ["Standard Account", "Mini/Micro Account", "VIP/Premium Account", "ECN Account"],
+    Products: ["Forex", "CFDs", "Commodities", "Indices", "Crypto"],
+  };
 
   const FilterSidebar = (
     <div className="glass self-start rounded-2xl p-4 ring-1 ring-violet-400/20">
-      {["Regulators", "Commission($)", "Spread Type", "Minimum Deposit", "Accounts", "Products"].map((g, i) => (
-        <div key={g} className={i > 0 ? "mt-3 border-t border-white/10 pt-3" : ""}>
+      {Object.entries(brokerFilterOptions).map(([group, options], i) => (
+        <div key={group} className={i > 0 ? "mt-3 border-t border-white/10 pt-3" : ""}>
           <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold">{g}</div>
+            <div className="text-xs font-semibold">{group}</div>
             <ChevronDown className="h-3 w-3" />
           </div>
           <div className="mt-2 space-y-1.5 text-[11px] text-muted-foreground">
-            <label className="flex items-center gap-2"><input type="checkbox" className="accent-fuchsia-400" defaultChecked /> Supporting line text</label>
-            <label className="flex items-center gap-2"><input type="checkbox" className="accent-fuchsia-400" /> Supporting line text</label>
+            {options.map((option) => (
+              <label key={option} className="flex items-center gap-2">
+                <input type="checkbox" className="accent-fuchsia-400" /> {option}
+              </label>
+            ))}
           </div>
         </div>
       ))}

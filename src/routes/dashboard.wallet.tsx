@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Wallet, ArrowDownToLine, Send, Sparkles, X, ChevronRight, ArrowUpRight,
   ArrowDownLeft, Filter, Search, CheckCircle2, Clock, CircleDollarSign,
-  TrendingUp, Building2, Zap, Upload, Coins, Banknote,
+  TrendingUp, Building2, Zap, Upload, Coins, Banknote, IdCard,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
 import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
@@ -180,6 +180,9 @@ function WalletPage() {
     rrBalance: user?.rrBalance ?? 0,
     rrCashValue: (user?.rrBalance ?? 0) / 100,
   };
+  const kycVerified =
+    user?.kycStatus === "verified" ||
+    ((user?.verified ?? 0) > 0 && (user?.kycLevel ?? 0) > 0);
 
   const walletTransactions = transactions;
   const topEarningSource = useMemo(() => {
@@ -491,7 +494,15 @@ function WalletPage() {
 
       {/* Modals */}
       {selectedTx && <CashbackBreakdown tx={selectedTx} onClose={() => setSelectedTx(null)} />}
-      {withdrawOpen && token && <WithdrawModal token={token} walletSummary={walletSummary} onClose={() => setWithdrawOpen(false)} onSuccess={loadData} />}
+      {withdrawOpen && token && (
+        <WithdrawModal
+          token={token}
+          walletSummary={walletSummary}
+          kycVerified={kycVerified}
+          onClose={() => setWithdrawOpen(false)}
+          onSuccess={loadData}
+        />
+      )}
       {transferOpen && token && <TransferModal token={token} onClose={() => setTransferOpen(false)} onSuccess={loadData} />}
       {claimOpen && token && user && <ClaimCashbackModal token={token} userId={user.id} defaultPref={pref.default} onClose={() => setClaimOpen(false)} onSuccess={loadData} />}
       {linkOpen && token && (
@@ -614,7 +625,19 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function WithdrawModal({ token, walletSummary, onClose, onSuccess }: { token: string; walletSummary: { availableForWithdrawal: number }; onClose: () => void; onSuccess: () => void }) {
+function WithdrawModal({
+  token,
+  walletSummary,
+  kycVerified,
+  onClose,
+  onSuccess,
+}: {
+  token: string;
+  walletSummary: { availableForWithdrawal: number };
+  kycVerified: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("USDT (TRC20)");
   const [address, setAddress] = useState("");
@@ -644,6 +667,29 @@ function WithdrawModal({ token, walletSummary, onClose, onSuccess }: { token: st
       setLoading(false);
     }
   };
+
+  if (!kycVerified) {
+    return (
+      <ModalShell title="Verification required" onClose={onClose}>
+        <div className="text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
+            <IdCard className="h-6 w-6" />
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-white">Verify your identity to withdraw</h3>
+          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-muted-foreground">
+            Identity verification is required before withdrawals can be processed. Your wallet balance remains available while verification is reviewed.
+          </p>
+          <Link
+            to="/dashboard/profile"
+            onClick={onClose}
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
+          >
+            <IdCard className="h-4 w-4" /> Go to Verification
+          </Link>
+        </div>
+      </ModalShell>
+    );
+  }
 
   return (
     <ModalShell title="Withdraw funds" onClose={onClose}>

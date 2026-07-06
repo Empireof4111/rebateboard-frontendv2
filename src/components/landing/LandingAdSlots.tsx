@@ -240,20 +240,14 @@ export function LandingSponsorsStrip() {
   if (sponsors.length === 0) return null;
 
   return (
-    <div className="mt-4 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
+    <div className="mt-4 flex w-full items-center gap-2 overflow-x-auto no-scrollbar">
       <div className="eyebrow shrink-0">{t("hero.sponsoredPartners")}</div>
-      <div className="flex min-w-[18rem] flex-1 flex-wrap items-center justify-start gap-3 sm:justify-between">
+      <div className="flex shrink-0 items-center gap-2">
         {sponsors.map((b) => {
-          const tagBadge =
-            b.tag === "featured"
-              ? "bg-fuchsia-500/80 text-white"
-              : b.tag === "ad"
-              ? "bg-fuchsia-500/80 text-white"
-              : "bg-white/15 text-white";
           const inner = (
             <div
               className={`relative grid h-11 w-11 place-items-center overflow-hidden rounded-md ${b.logo ? "bg-white/[0.06]" : `bg-gradient-to-br ${b.color ?? "from-violet-500 to-fuchsia-600"}`} text-[10px] font-semibold text-white/90 shadow-lg ring-1 ring-white/20`}
-              title={`${b.name} — ${b.tag ?? "Sponsored"}`}
+              title={b.name}
             >
               {b.logo ? (
                 <img
@@ -264,11 +258,6 @@ export function LandingSponsorsStrip() {
                 />
               ) : (
                 <span className="opacity-90">{b.initial ?? b.name.slice(0, 2)}</span>
-              )}
-              {b.tag && (
-                <span className={`absolute -top-1 -right-1 rounded-full px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider ${tagBadge}`}>
-                  {b.tag === "featured" ? "★" : b.tag === "ad" ? "Ad" : "Sp"}
-                </span>
               )}
             </div>
           );

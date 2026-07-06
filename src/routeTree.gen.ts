@@ -15,6 +15,7 @@ import { Route as TradingPlatformsRouteImport } from './routes/trading-platforms
 import { Route as TradingJournalsRouteImport } from './routes/trading-journals'
 import { Route as TradingCalculatorsRouteImport } from './routes/trading-calculators'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
+import { Route as StockPropFirmsRouteImport } from './routes/stock-prop-firms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SignalProvidersRouteImport } from './routes/signal-providers'
 import { Route as ReviewsRouteImport } from './routes/reviews'
@@ -28,6 +29,7 @@ import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ExchangesRouteImport } from './routes/exchanges'
 import { Route as EducationProvidersRouteImport } from './routes/education-providers'
 import { Route as EconomicCalendarRouteImport } from './routes/economic-calendar'
+import { Route as DexPropFirmsRouteImport } from './routes/dex-prop-firms'
 import { Route as DemoAccountsRouteImport } from './routes/demo-accounts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CryptoPropFirmsRouteImport } from './routes/crypto-prop-firms'
@@ -168,6 +170,11 @@ const SuperadminRoute = SuperadminRouteImport.update({
   path: '/superadmin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StockPropFirmsRoute = StockPropFirmsRouteImport.update({
+  id: '/stock-prop-firms',
+  path: '/stock-prop-firms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -231,6 +238,11 @@ const EducationProvidersRoute = EducationProvidersRouteImport.update({
 const EconomicCalendarRoute = EconomicCalendarRouteImport.update({
   id: '/economic-calendar',
   path: '/economic-calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DexPropFirmsRoute = DexPropFirmsRouteImport.update({
+  id: '/dex-prop-firms',
+  path: '/dex-prop-firms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoAccountsRoute = DemoAccountsRouteImport.update({
@@ -798,6 +810,7 @@ export interface FileRoutesByFullPath {
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/demo-accounts': typeof DemoAccountsRoute
+  '/dex-prop-firms': typeof DexPropFirmsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
@@ -811,6 +824,7 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof ReviewsRouteWithChildren
   '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/stock-prop-firms': typeof StockPropFirmsRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/trading-calculators': typeof TradingCalculatorsRoute
   '/trading-journals': typeof TradingJournalsRoute
@@ -926,6 +940,7 @@ export interface FileRoutesByTo {
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/demo-accounts': typeof DemoAccountsRoute
+  '/dex-prop-firms': typeof DexPropFirmsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
@@ -938,6 +953,7 @@ export interface FileRoutesByTo {
   '/reviews': typeof ReviewsRouteWithChildren
   '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/stock-prop-firms': typeof StockPropFirmsRoute
   '/trading-calculators': typeof TradingCalculatorsRoute
   '/trading-journals': typeof TradingJournalsRoute
   '/trading-platforms': typeof TradingPlatformsRoute
@@ -1055,6 +1071,7 @@ export interface FileRoutesById {
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/demo-accounts': typeof DemoAccountsRoute
+  '/dex-prop-firms': typeof DexPropFirmsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
@@ -1068,6 +1085,7 @@ export interface FileRoutesById {
   '/reviews': typeof ReviewsRouteWithChildren
   '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/stock-prop-firms': typeof StockPropFirmsRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/trading-calculators': typeof TradingCalculatorsRoute
   '/trading-journals': typeof TradingJournalsRoute
@@ -1187,6 +1205,7 @@ export interface FileRouteTypes {
     | '/crypto-prop-firms'
     | '/dashboard'
     | '/demo-accounts'
+    | '/dex-prop-firms'
     | '/economic-calendar'
     | '/education-providers'
     | '/exchanges'
@@ -1200,6 +1219,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/signal-providers'
     | '/signup'
+    | '/stock-prop-firms'
     | '/superadmin'
     | '/trading-calculators'
     | '/trading-journals'
@@ -1315,6 +1335,7 @@ export interface FileRouteTypes {
     | '/copy-trading-platforms'
     | '/crypto-prop-firms'
     | '/demo-accounts'
+    | '/dex-prop-firms'
     | '/economic-calendar'
     | '/education-providers'
     | '/exchanges'
@@ -1327,6 +1348,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/signal-providers'
     | '/signup'
+    | '/stock-prop-firms'
     | '/trading-calculators'
     | '/trading-journals'
     | '/trading-platforms'
@@ -1443,6 +1465,7 @@ export interface FileRouteTypes {
     | '/crypto-prop-firms'
     | '/dashboard'
     | '/demo-accounts'
+    | '/dex-prop-firms'
     | '/economic-calendar'
     | '/education-providers'
     | '/exchanges'
@@ -1456,6 +1479,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/signal-providers'
     | '/signup'
+    | '/stock-prop-firms'
     | '/superadmin'
     | '/trading-calculators'
     | '/trading-journals'
@@ -1574,6 +1598,7 @@ export interface RootRouteChildren {
   CryptoPropFirmsRoute: typeof CryptoPropFirmsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DemoAccountsRoute: typeof DemoAccountsRoute
+  DexPropFirmsRoute: typeof DexPropFirmsRoute
   EconomicCalendarRoute: typeof EconomicCalendarRoute
   EducationProvidersRoute: typeof EducationProvidersRoute
   ExchangesRoute: typeof ExchangesRoute
@@ -1587,6 +1612,7 @@ export interface RootRouteChildren {
   ReviewsRoute: typeof ReviewsRouteWithChildren
   SignalProvidersRoute: typeof SignalProvidersRoute
   SignupRoute: typeof SignupRoute
+  StockPropFirmsRoute: typeof StockPropFirmsRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
   TradingCalculatorsRoute: typeof TradingCalculatorsRoute
   TradingJournalsRoute: typeof TradingJournalsRoute
@@ -1648,6 +1674,13 @@ declare module '@tanstack/react-router' {
       path: '/superadmin'
       fullPath: '/superadmin'
       preLoaderRoute: typeof SuperadminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stock-prop-firms': {
+      id: '/stock-prop-firms'
+      path: '/stock-prop-firms'
+      fullPath: '/stock-prop-firms'
+      preLoaderRoute: typeof StockPropFirmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -1739,6 +1772,13 @@ declare module '@tanstack/react-router' {
       path: '/economic-calendar'
       fullPath: '/economic-calendar'
       preLoaderRoute: typeof EconomicCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dex-prop-firms': {
+      id: '/dex-prop-firms'
+      path: '/dex-prop-firms'
+      fullPath: '/dex-prop-firms'
+      preLoaderRoute: typeof DexPropFirmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo-accounts': {
@@ -2747,6 +2787,7 @@ const rootRouteChildren: RootRouteChildren = {
   CryptoPropFirmsRoute: CryptoPropFirmsRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DemoAccountsRoute: DemoAccountsRoute,
+  DexPropFirmsRoute: DexPropFirmsRoute,
   EconomicCalendarRoute: EconomicCalendarRoute,
   EducationProvidersRoute: EducationProvidersRoute,
   ExchangesRoute: ExchangesRoute,
@@ -2760,6 +2801,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewsRoute: ReviewsRouteWithChildren,
   SignalProvidersRoute: SignalProvidersRoute,
   SignupRoute: SignupRoute,
+  StockPropFirmsRoute: StockPropFirmsRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
   TradingCalculatorsRoute: TradingCalculatorsRoute,
   TradingJournalsRoute: TradingJournalsRoute,

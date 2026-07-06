@@ -76,6 +76,7 @@ function ClaimsPage() {
   const { token } = useAuth();
   const [rawClaims, setRawClaims] = useState<CashbackClaim[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [challengeRows, setChallengeRows] = useState<ChallengePurchaseRow[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | UIClaimStatus>("all");
@@ -86,6 +87,7 @@ function ClaimsPage() {
   const load = useCallback(async (pageNum = 0) => {
     if (!token) return;
     setLoading(true);
+    setError("");
     try {
       const [claimsRes, challengeRes] = await Promise.all([
         financeApi.getMyClaims(token, { page: pageNum, size: 30 }),
@@ -100,7 +102,7 @@ function ClaimsPage() {
         setChallengeRows(challengeRes.rows);
       }
     } catch (e) {
-      console.error("Claims load failed", e instanceof ApiError ? e.message : e);
+      setError(e instanceof ApiError ? e.message : "Unable to load claims.");
     } finally {
       setLoading(false);
     }
@@ -192,7 +194,7 @@ function ClaimsPage() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search partner, account, claim ID…"
             className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 focus:border-accent focus:outline-none" />
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
           <Filter className="h-3.5 w-3.5 text-white/40" />
           {(["all", "pending", "approved", "paid", "rejected"] as const).map((s) => (
             <button key={s} onClick={() => setStatus(s)}
@@ -203,7 +205,15 @@ function ClaimsPage() {
         </div>
       </div>
 
-      {loading && claims.length === 0 ? (
+      {error && claims.length === 0 ? (
+        <div className="rounded-xl border border-rose-400/20 bg-rose-500/[0.06] px-4 py-8 text-center">
+          <p className="text-sm font-semibold text-white">Claims could not be loaded</p>
+          <p className="mt-1 text-xs text-rose-100/75">{error}</p>
+          <button type="button" onClick={() => void load(0)} className="mt-4 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/15">
+            Try again
+          </button>
+        </div>
+      ) : loading && claims.length === 0 ? (
         <div className="py-12 text-center text-sm text-white/50">Loading your claims…</div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">

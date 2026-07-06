@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyState, PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
 import { AlertTriangle, Target, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type WalletSummary, type ClaimStats } from "@/lib/finance-api";
+import { useTrades } from "@/lib/trading-plan";
 
 export const Route = createFileRoute("/dashboard/intelligence")({
   component: IntelligencePage,
@@ -13,6 +14,7 @@ function IntelligencePage() {
   const { token } = useAuth();
   const [summary, setSummary] = useState<WalletSummary | null>(null);
   const [claimStats, setClaimStats] = useState<ClaimStats | null>(null);
+  const trades = useTrades();
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -27,6 +29,18 @@ function IntelligencePage() {
   useEffect(() => { load(); }, [load]);
 
   const fmtUSD = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  const journal = useMemo(() => {
+    const violations = trades.reduce((sum, trade) => sum + (trade.violations?.length ?? 0), 0);
+    const adherence = trades.length
+      ? Math.round(trades.reduce((sum, trade) => sum + Number(trade.adherence || 0), 0) / trades.length)
+      : 0;
+    const emotionalTrades = trades.filter((trade) =>
+      ["angry", "tilt", "fomo"].includes(trade.emotionBefore ?? "") ||
+      (trade.mistakes ?? []).some((mistake) => /revenge|overtrad|fomo|tilt/i.test(mistake))
+    );
+    const emotionalCost = emotionalTrades.reduce((sum, trade) => sum + Math.min(0, Number(trade.pnl || 0)), 0);
+    return { violations, adherence, emotionalTrades, emotionalCost };
+  }, [trades]);
 
   return (
     <div className="space-y-6">
@@ -40,28 +54,46 @@ function IntelligencePage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Your Weakest Area" action={<Pill tone="warning">Focus</Pill>}>
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-warning/15">
-              <AlertTriangle className="h-5 w-5 text-accent" />
+        <Panel title="Your Weakest Area" action={<Pill tone={journal.violations > 0 ? "warning" : "primary"}>Journal</Pill>}>
+          {trades.length ? (
+            <div className="flex items-center gap-3">
+              <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${journal.violations > 0 ? "bg-warning/15 text-warning" : "bg-primary/15 text-fuchsia-200"}`}>
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-base font-semibold text-white">Plan adherence · {journal.adherence}%</div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {journal.violations > 0
+                    ? `${journal.violations} rule violation${journal.violations === 1 ? "" : "s"} recorded across your journal.`
+                    : "No rule violations are recorded in your journal."}
+                </p>
+              </div>
             </div>
-            <div>
-              <div className="text-base font-semibold text-white">Discipline · 6.2</div>
-              <p className="text-xs text-muted-foreground">You break risk rules ~3× per week. Tightening this lifts ROI by an est. +6.8%.</p>
-            </div>
-          </div>
+          ) : (
+            <EmptyState icon={Sparkles} title="Not enough journal data" description="Log trades to identify repeatable strengths and execution gaps." />
+          )}
         </Panel>
 
-        <Panel title="Focus Today" action={<Pill tone="primary">AI</Pill>}>
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15">
-              <Target className="h-5 w-5 text-primary" />
+        <Panel title="Focus Today" action={<Pill tone="primary">Journal</Pill>}>
+          {trades.length ? (
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/15 text-fuchsia-200">
+                <Target className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-base font-semibold text-white">
+                  {journal.emotionalTrades.length ? "Review emotional entries" : "Protect plan consistency"}
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {journal.emotionalTrades.length
+                    ? `${journal.emotionalTrades.length} emotionally tagged trade${journal.emotionalTrades.length === 1 ? "" : "s"} logged${journal.emotionalCost < 0 ? `, with ${fmtUSD(Math.abs(journal.emotionalCost))} in losses` : ""}.`
+                    : "No FOMO, tilt, or revenge-trading tags are recorded."}
+                </p>
+              </div>
             </div>
-            <div>
-              <div className="text-base font-semibold text-white">Avoid overtrading after losses</div>
-              <p className="text-xs text-muted-foreground">Your last 12 revenge trades cost a combined −$840.</p>
-            </div>
-          </div>
+          ) : (
+            <EmptyState icon={Target} title="Your focus will appear here" description="Insights unlock after your journal contains real trade data." />
+          )}
         </Panel>
       </div>
 

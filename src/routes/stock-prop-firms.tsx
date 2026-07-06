@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PublicCategoryListing } from "@/components/listings/PublicCategoryListing";
 import { getListingCategoryConfig } from "@/lib/listing-categories";
 
-const config = getListingCategoryConfig("prop-firms");
+const config = getListingCategoryConfig("stock-prop-firms");
 
-export const Route = createFileRoute("/programs")({
+export const Route = createFileRoute("/stock-prop-firms")({
   head: () => ({
     meta: [
-      { title: "Forex Prop Firms - Funded Trader Challenges | RebateBoard" },
+      { title: `${config.title} | RebateBoard` },
       { name: "description", content: config.description },
-      { property: "og:title", content: "Forex Prop Firms | RebateBoard" },
+      { property: "og:title", content: `${config.title} | RebateBoard` },
       { property: "og:description", content: config.description },
     ],
   }),

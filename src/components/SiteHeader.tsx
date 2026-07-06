@@ -1,14 +1,35 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type LucideIcon } from "react";
 import {
+  AppWindow,
+  BarChart3,
+  Bitcoin,
+  Building2,
+  Calculator,
+  CalendarDays,
   Check,
-  Search,
   ChevronDown,
+  CircleHelp,
+  ClipboardList,
+  Copy,
+  FlaskConical,
   Globe2,
+  GraduationCap,
+  Landmark,
   LayoutDashboard,
   LayoutGrid,
+  LineChart,
   LogOut,
+  MonitorUp,
+  Network,
+  NotebookTabs,
+  RadioTower,
+  Scale,
+  Search,
+  ShieldCheck,
+  TrendingUp,
   User as UserIcon,
+  Wrench,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,6 +40,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Logo } from "@/components/Logo";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
 import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 import { useI18n, type LanguageCode, type TranslationKey } from "@/lib/i18n";
@@ -46,9 +68,16 @@ function UserPill() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-3 text-left transition hover:border-white/20 hover:bg-white/[0.08] outline-none">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-600 text-[10px] font-bold text-white shadow-[0_0_18px_rgba(192,132,252,0.45)]">
-          {initials}
-        </span>
+        <Avatar className="h-8 w-8 shrink-0 shadow-[0_0_18px_rgba(192,132,252,0.38)]">
+          <AvatarImage
+            src={user.dp || undefined}
+            alt={`${user.fullName || user.name} profile`}
+            className="object-cover"
+          />
+          <AvatarFallback className="bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-600 text-[10px] font-bold text-white">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
         <span className="hidden flex-col leading-tight sm:flex">
           <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
             {t("header.welcome")}
@@ -103,13 +132,13 @@ function GuestActions() {
     <>
       <Link
         to="/login"
-        className="glass-pill flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white"
+        className="glass-pill hidden items-center gap-1 rounded-full px-3 py-1.5 text-xs text-white sm:flex"
       >
         <span className="h-2 w-2 rounded-full bg-success" /> {t("common.login")}
       </Link>
       <Link
         to="/signup"
-        className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.5)]"
+        className="hidden rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.5)] sm:inline-flex"
       >
         {t("common.signUp")}
       </Link>
@@ -120,7 +149,12 @@ function GuestActions() {
 type HeaderNavItem = {
   labelKey: TranslationKey;
   to?: string;
-  items?: { labelKey: TranslationKey; to?: string }[];
+  items?: {
+    labelKey: TranslationKey;
+    to?: string;
+    description: string;
+    icon: LucideIcon;
+  }[];
 };
 
 const navItems: HeaderNavItem[] = [
@@ -128,10 +162,36 @@ const navItems: HeaderNavItem[] = [
     labelKey: "nav.propFirms",
     to: "/programs",
     items: [
-      { labelKey: "nav.allPropFirms", to: "/programs" },
-      { labelKey: "nav.forexPropFirms", to: "/programs" },
-      { labelKey: "nav.futuresPropFirms", to: "/futures-prop-firms" },
-      { labelKey: "nav.cryptoPropFirms", to: "/crypto-prop-firms" },
+      {
+        labelKey: "nav.forexPropFirms",
+        to: "/programs",
+        description: "Compare funded forex programs and account rules",
+        icon: TrendingUp,
+      },
+      {
+        labelKey: "nav.futuresPropFirms",
+        to: "/futures-prop-firms",
+        description: "Explore futures evaluations and funded accounts",
+        icon: LineChart,
+      },
+      {
+        labelKey: "nav.cryptoPropFirms",
+        to: "/crypto-prop-firms",
+        description: "Find funding programs built for crypto traders",
+        icon: Bitcoin,
+      },
+      {
+        labelKey: "nav.dexPropFirms",
+        to: "/dex-prop-firms",
+        description: "Discover decentralized trading opportunities",
+        icon: Network,
+      },
+      {
+        labelKey: "nav.stockPropFirms",
+        to: "/stock-prop-firms",
+        description: "Compare funded stock and equities programs",
+        icon: BarChart3,
+      },
     ],
   },
   { labelKey: "nav.brokers", to: "/brokers" },
@@ -145,27 +205,107 @@ const navItems: HeaderNavItem[] = [
     labelKey: "nav.tools",
     to: "/trading-tools",
     items: [
-      { labelKey: "nav.tradingTools", to: "/trading-tools" },
-      { labelKey: "nav.tradingSoftware", to: "/trading-software" },
-      { labelKey: "nav.tradingJournals", to: "/trading-journals" },
-      { labelKey: "nav.tradingCalculators", to: "/trading-calculators" },
-      { labelKey: "nav.tradingPlatforms", to: "/trading-platforms" },
-      { labelKey: "nav.educationProviders", to: "/education-providers" },
-      { labelKey: "nav.signalProviders", to: "/signal-providers" },
-      { labelKey: "nav.copyTradingPlatforms", to: "/copy-trading-platforms" },
-      { labelKey: "nav.economicCalendar", to: "/economic-calendar" },
-      { labelKey: "nav.tradingAcademy", to: "/academy" },
-      { labelKey: "nav.aiBacktest", to: "/dashboard/backtest" },
-      { labelKey: "nav.tradingPlan", to: "/dashboard/trading-plan" },
+      {
+        labelKey: "nav.tradingTools",
+        to: "/trading-tools",
+        description: "Practical tools for everyday trading decisions",
+        icon: Wrench,
+      },
+      {
+        labelKey: "nav.tradingSoftware",
+        to: "/trading-software",
+        description: "Research trading and analytics software",
+        icon: AppWindow,
+      },
+      {
+        labelKey: "nav.tradingJournals",
+        to: "/trading-journals",
+        description: "Track execution, habits, and performance",
+        icon: NotebookTabs,
+      },
+      {
+        labelKey: "nav.tradingCalculators",
+        to: "/trading-calculators",
+        description: "Calculate risk, margin, profit, and rebates",
+        icon: Calculator,
+      },
+      {
+        labelKey: "nav.tradingPlatforms",
+        to: "/trading-platforms",
+        description: "Compare platforms, features, and integrations",
+        icon: MonitorUp,
+      },
+      {
+        labelKey: "nav.educationProviders",
+        to: "/education-providers",
+        description: "Find structured learning for every skill level",
+        icon: GraduationCap,
+      },
+      {
+        labelKey: "nav.signalProviders",
+        to: "/signal-providers",
+        description: "Review signal quality and provider transparency",
+        icon: RadioTower,
+      },
+      {
+        labelKey: "nav.copyTradingPlatforms",
+        to: "/copy-trading-platforms",
+        description: "Compare social and copy trading services",
+        icon: Copy,
+      },
+      {
+        labelKey: "nav.economicCalendar",
+        to: "/economic-calendar",
+        description: "Follow market-moving events and releases",
+        icon: CalendarDays,
+      },
+      {
+        labelKey: "nav.tradingAcademy",
+        to: "/academy",
+        description: "Build skills with guided trading lessons",
+        icon: Landmark,
+      },
+      {
+        labelKey: "nav.aiBacktest",
+        to: "/dashboard/backtest",
+        description: "Test strategies against historical market data",
+        icon: FlaskConical,
+      },
+      {
+        labelKey: "nav.tradingPlan",
+        to: "/dashboard/trading-plan",
+        description: "Create and maintain a disciplined trading plan",
+        icon: ClipboardList,
+      },
     ],
   },
   {
     labelKey: "nav.aboutUs",
     items: [
-      { labelKey: "nav.company", to: "/business/join" },
-      { labelKey: "nav.trustDashboard", to: "/business/trust-dashboard" },
-      { labelKey: "nav.faq", to: "/faqs" },
-      { labelKey: "nav.legal", to: "/legal" },
+      {
+        labelKey: "nav.company",
+        to: "/business/join",
+        description: "Learn about RebateBoard and partner with us",
+        icon: Building2,
+      },
+      {
+        labelKey: "nav.trustDashboard",
+        to: "/business/trust-dashboard",
+        description: "See how transparency and trust are measured",
+        icon: ShieldCheck,
+      },
+      {
+        labelKey: "nav.faq",
+        to: "/faqs",
+        description: "Find answers to common platform questions",
+        icon: CircleHelp,
+      },
+      {
+        labelKey: "nav.legal",
+        to: "/legal",
+        description: "Review platform policies and legal information",
+        icon: Scale,
+      },
     ],
   },
   { labelKey: "nav.blogs", to: "/blog" },
@@ -173,26 +313,92 @@ const navItems: HeaderNavItem[] = [
 
 function HeaderNavPill({ item }: { item: HeaderNavItem }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const baseClass =
     "flex h-8 shrink-0 items-center gap-1 rounded-full px-3.5 text-[12px] font-medium text-muted-foreground outline-none transition hover:bg-white/[0.075] hover:text-foreground focus-visible:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring";
 
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+
+  const openMenu = () => {
+    cancelClose();
+    setOpen(true);
+  };
+
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpen(false), 180);
+  };
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
   if (item.items?.length) {
+    const menuWidth =
+      item.items.length > 8
+        ? "w-[min(44rem,calc(100vw-2rem))]"
+        : "w-[min(38rem,calc(100vw-2rem))]";
+
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger className={baseClass}>
-          {t(item.labelKey)} <ChevronDown className="h-3 w-3" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="glass-strong border-2 border-white/40 text-xs backdrop-blur-3xl text-foreground shadow-2xl">
-          {item.items.map((sub) => (
-            <DropdownMenuItem
-              key={sub.labelKey}
-              asChild={!!sub.to}
-              className="cursor-pointer text-xs text-foreground/95 focus:bg-white/15 focus:text-white"
-            >
-              {sub.to ? <Link to={sub.to}>{t(sub.labelKey)}</Link> : <span>{t(sub.labelKey)}</span>}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
+      <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+        <div onPointerEnter={openMenu} onPointerLeave={scheduleClose}>
+          <DropdownMenuTrigger className={baseClass}>
+            {t(item.labelKey)}
+            <ChevronDown
+              className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            sideOffset={10}
+            onPointerEnter={openMenu}
+            onPointerLeave={scheduleClose}
+            className={`glass-strong ${menuWidth} border border-white/18 bg-[#16072b]/95 p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl`}
+          >
+            <div className="grid gap-1 sm:grid-cols-2">
+              {item.items.map((sub) => {
+                const Icon = sub.icon;
+                return (
+                  <DropdownMenuItem
+                    key={sub.labelKey}
+                    asChild={!!sub.to}
+                    className="cursor-pointer rounded-xl p-0 focus:bg-transparent"
+                  >
+                    {sub.to ? (
+                      <Link
+                        to={sub.to}
+                        className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
+                      >
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200 ring-1 ring-violet-300/18 transition group-hover/menu:bg-violet-400/20 group-hover/menu:text-white">
+                          <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                        </span>
+                        <span className="min-w-0 pt-0.5">
+                          <span className="block text-xs font-semibold text-white">
+                            {t(sub.labelKey)}
+                          </span>
+                          <span className="mt-1 block text-[10px] leading-4 text-white/48">
+                            {sub.description}
+                          </span>
+                        </span>
+                      </Link>
+                    ) : (
+                      <span>{t(sub.labelKey)}</span>
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
+            </div>
+          </DropdownMenuContent>
+        </div>
       </DropdownMenu>
     );
   }
@@ -273,8 +479,8 @@ export function SiteHeader() {
           {user ? "auth" : "guest"}
         </span>
         <div className="container-app">
-          <div className="liquid-glass rounded-[1.35rem] px-3 py-2.5 shadow-[0_18px_55px_rgba(9,4,18,0.32)] sm:px-4">
-            <nav className="flex items-center justify-between gap-3">
+          <div className="liquid-glass w-full max-w-full overflow-hidden rounded-[1.35rem] px-3 py-2.5 shadow-[0_18px_55px_rgba(9,4,18,0.32)] sm:px-4">
+            <nav className="flex min-w-0 items-center justify-between gap-3">
               <Link
                 to="/"
                 className="flex min-w-0 shrink-0 items-center gap-3"
@@ -295,8 +501,10 @@ export function SiteHeader() {
                 </button>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                <LanguageSelector />
+              <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+                <div className="hidden sm:block">
+                  <LanguageSelector />
+                </div>
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
@@ -309,7 +517,7 @@ export function SiteHeader() {
                 <Link
                   to="/dashboard"
                   aria-label="Open dashboard"
-                  className="grid h-10 w-10 place-items-center rounded-full bg-white/[0.045] text-white transition hover:bg-white/[0.08]"
+                  className="hidden h-10 w-10 place-items-center rounded-full bg-white/[0.045] text-white transition hover:bg-white/[0.08] sm:grid"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Link>
@@ -317,8 +525,8 @@ export function SiteHeader() {
             </nav>
 
             <div className="mt-2">
-              <div className="overflow-x-auto no-scrollbar lg:overflow-visible">
-                <div className="flex items-center justify-center gap-1.5 lg:min-w-max xl:min-w-0">
+              <div className="max-w-full overflow-x-auto no-scrollbar">
+                <div className="flex w-max min-w-full items-center justify-center gap-1.5 lg:w-full">
                   {navItems.map((item) => (
                     <HeaderNavPill key={item.labelKey} item={item} />
                   ))}

@@ -36,10 +36,17 @@ export function StatCard({
     warning: "ring-warning/25",
     destructive: "ring-destructive/25",
   }[accent ?? "primary"];
+  const accentBar = {
+    primary: "from-violet-500 to-fuchsia-400",
+    success: "from-emerald-500 to-cyan-400",
+    warning: "from-amber-500 to-amber-300",
+    destructive: "from-rose-600 to-rose-400",
+  }[accent ?? "primary"];
   return (
-    <div className={`glass card-hover rounded-2xl p-3.5 ring-1 sm:p-4 ${accentRing}`}>
+    <div className={`glass card-hover min-h-[104px] overflow-hidden rounded-2xl p-3.5 ring-1 sm:p-4 ${accentRing}`}>
+      <div className={`mb-3 h-0.5 w-8 rounded-full bg-gradient-to-r ${accentBar}`} aria-hidden />
       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px]">{label}</div>
-      <div className="mt-1.5 text-xl font-bold tracking-tight text-white tabular-nums sm:text-2xl">{value}</div>
+      <div className="mt-1.5 break-words text-xl font-bold tracking-tight text-white tabular-nums sm:text-2xl">{value}</div>
       {hint && (
         <div className={`mt-1 inline-flex items-center gap-1 text-[10px] font-medium sm:text-[11px] ${trendColor}`}>
           {trend && <TrendIcon className="h-3 w-3" aria-hidden />}
@@ -77,7 +84,7 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon?: 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
       {Icon && (
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-accent ring-1 ring-white/10">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
           <Icon className="h-5 w-5" />
         </div>
       )}

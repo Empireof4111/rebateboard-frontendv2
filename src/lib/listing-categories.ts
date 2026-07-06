@@ -6,6 +6,8 @@ export type ListingCategoryId =
   | "exchanges"
   | "futures-prop-firms"
   | "crypto-prop-firms"
+  | "dex-prop-firms"
+  | "stock-prop-firms"
   | "trading-tools"
   | "trading-software"
   | "trading-journals"
@@ -34,8 +36,8 @@ export const LISTING_CATEGORY_CONFIGS: ListingCategoryConfig[] = [
   {
     id: "prop-firms",
     route: "/programs",
-    title: "All Prop Firms",
-    eyebrow: "Funded trader programs",
+    title: "Forex Prop Firms",
+    eyebrow: "Forex funding programs",
     description:
       "Compare funded trader brands with real TBI data, challenge details, payout terms, rebates, and public trader feedback.",
     searchPlaceholder: "Search prop firms...",
@@ -95,10 +97,38 @@ export const LISTING_CATEGORY_CONFIGS: ListingCategoryConfig[] = [
     description:
       "Explore crypto prop firms and funded accounts with real brand data, profit split terms, restrictions, and trust signals.",
     searchPlaceholder: "Search crypto prop firms...",
-    categoryFilters: ["Crypto Prop Firm", "DEX Prop Firm"],
+    categoryFilters: ["Crypto Prop Firm"],
     exactCategoryOnly: true,
     featuredLabel: "Featured Crypto Firms",
     allLabel: "All Crypto Prop Firms",
+    metricProfile: "prop",
+  },
+  {
+    id: "dex-prop-firms",
+    route: "/dex-prop-firms",
+    title: "DEX Prop Firms",
+    eyebrow: "Decentralized funding",
+    description:
+      "Explore decentralized prop trading programs with live funding terms, supported protocols, payout rules, rebates, and trust context.",
+    searchPlaceholder: "Search DEX prop firms...",
+    categoryFilters: ["DEX Prop Firm"],
+    exactCategoryOnly: true,
+    featuredLabel: "Featured DEX Prop Firms",
+    allLabel: "All DEX Prop Firms",
+    metricProfile: "prop",
+  },
+  {
+    id: "stock-prop-firms",
+    route: "/stock-prop-firms",
+    title: "Stock Prop Firms",
+    eyebrow: "Equity funding",
+    description:
+      "Compare stock-focused funded programs by account size, buying power, evaluation rules, payout schedules, platforms, and trust data.",
+    searchPlaceholder: "Search stock prop firms...",
+    categoryFilters: ["Stock Prop Firm"],
+    exactCategoryOnly: true,
+    featuredLabel: "Featured Stock Prop Firms",
+    allLabel: "All Stock Prop Firms",
     metricProfile: "prop",
   },
   {

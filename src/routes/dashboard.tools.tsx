@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { useTrades } from "@/lib/trading-plan";
-import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
+import { RebateCalculator } from "@/components/calculators/RebateCalculator";
 
 export const Route = createFileRoute("/dashboard/tools")({
   head: () => ({
@@ -512,88 +512,6 @@ function CurrencyConverter({ onResult }: { onResult: (v: string) => void }) {
           </div>
           <div className="mt-2 text-xs text-muted-foreground">{amount} {from} ≈ {result.toLocaleString(undefined, { maximumFractionDigits: 2 })} {to}</div>
           <ResultActions value={`${amount} ${from} = ${result.toFixed(2)} ${to}`} onSave={onResult} />
-        </>
-      }
-    />
-  );
-}
-
-function RebateCalculator({ onResult }: { onResult: (v: string) => void }) {
-  const [type, setType] = useState("Forex");
-  const [lot, setLot] = useState(1);
-  const [trades, setTrades] = useState(10);
-  const [broker, setBroker] = useState("");
-  const [brandOptions, setBrandOptions] = useState<string[]>([]);
-  const [pct, setPct] = useState(30);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchPublicAdminBrands().then((brands) => {
-      if (cancelled) return;
-      const names = brands.map((brand) => brand.name).filter(Boolean);
-      setBrandOptions(names);
-      setBroker((current) => current || names[0] || "");
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  const baseCommission = type === "Crypto" ? 8 : type === "Indices" ? 6 : 7;
-  const totalCommission = baseCommission * lot * trades;
-  const rebate = (totalCommission * pct) / 100;
-  const perTrade = trades > 0 ? rebate / trades : 0;
-  const monthly = rebate * 4;
-  const without = totalCommission;
-  const withRebate = totalCommission - rebate;
-  const savePct = without > 0 ? (rebate / without) * 100 : 0;
-
-  return (
-    <TwoCol
-      left={
-        <>
-          <Field label="Asset type"><Select value={type} onChange={setType} options={["Forex","Crypto","Indices"]} /></Field>
-          <Field label="Lot size">
-            <NumberInput value={lot} onChange={setLot} step={0.1} min={0} />
-            <PresetRow presets={[{label:"0.1",value:0.1},{label:"1",value:1},{label:"5",value:5}]} onPick={setLot} />
-          </Field>
-          <Field label="Number of trades">
-            <NumberInput value={trades} onChange={setTrades} step={1} min={0} />
-            <PresetRow presets={[{label:"10",value:10},{label:"50",value:50},{label:"100",value:100}]} onPick={setTrades} />
-          </Field>
-          <Field label="Broker / firm">
-            <Select value={broker || "No published brands"} onChange={setBroker} options={brandOptions.length ? brandOptions : ["No published brands"]} />
-          </Field>
-          <Field label="Rebate %" hint={`${pct}%`}>
-            <input type="range" min={5} max={80} value={pct} onChange={(e) => setPct(parseInt(e.target.value))} className="w-full accent-fuchsia-500" />
-          </Field>
-        </>
-      }
-      right={
-        <>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Total rebate</div>
-          <div className="mt-1 text-3xl font-bold text-success">${rebate.toFixed(2)}</div>
-          <div className="mt-3 space-y-1 text-xs text-white/85">
-            <div className="flex justify-between"><span>Per trade</span><span className="font-mono">${perTrade.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Monthly estimate</span><span className="font-mono text-success">${monthly.toFixed(2)}</span></div>
-          </div>
-
-          <div className="my-4 h-px bg-white/10" />
-
-          <div className="rounded-xl bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 p-3 ring-1 ring-fuchsia-400/20">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Without rebate</span>
-              <span className="font-mono text-destructive">-${without.toFixed(2)}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">With rebate</span>
-              <span className="font-mono text-success">-${withRebate.toFixed(2)}</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
-              <span className="text-[11px] uppercase tracking-wider text-accent">You save</span>
-              <span className="text-lg font-bold text-success">{savePct.toFixed(0)}%</span>
-            </div>
-          </div>
-
-          <ResultActions value={`Rebate $${rebate.toFixed(2)} (${savePct.toFixed(0)}% saved)`} onSave={onResult} />
         </>
       }
     />

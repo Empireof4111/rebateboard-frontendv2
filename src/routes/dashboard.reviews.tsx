@@ -123,7 +123,7 @@ function ReviewsPage() {
                     </span>
                   )}
                   {review.rrAwarded ? (
-                    <span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-300 ring-1 ring-amber-400/20">
+                    <span className="rounded-full bg-fuchsia-500/10 px-2 py-1 text-fuchsia-200 ring-1 ring-fuchsia-400/20">
                       +{review.rrAwarded} RR
                     </span>
                   ) : null}

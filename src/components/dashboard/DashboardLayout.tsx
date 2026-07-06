@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; exact?: boolean; badge?: string };
 type NavGroup = { id: string; labelKey: string; items: NavItem[] };
@@ -364,7 +365,7 @@ export function DashboardLayout() {
                     )}
 
                     {notifications.status === "error" && (
-                      <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-100">
+                      <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-xs text-rose-100">
                         <p>{notifications.error ?? "Unable to load notifications."}</p>
                         <button
                           type="button"
@@ -421,8 +422,13 @@ export function DashboardLayout() {
                 <span className="tabular-nums">{user.rrBalance.toFixed(0)}</span>
                 <span className="hidden sm:inline">RR</span>
               </Link>
-              <Link to={"/dashboard/profile" as string} className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-600 text-xs font-bold text-white shadow-[0_0_14px_rgba(192,132,252,0.35)] transition-transform hover:scale-[1.04]" aria-label={t("dashboard.profile")}>
-                {user.name.slice(0, 2).toUpperCase()}
+              <Link to={"/dashboard/profile" as string} className="rounded-full outline-none transition-transform hover:scale-[1.04] focus-visible:ring-2 focus-visible:ring-ring/60" aria-label={t("dashboard.profile")}>
+                <Avatar className="h-9 w-9 ring-1 ring-white/15 shadow-[0_0_14px_rgba(192,132,252,0.3)]">
+                  <AvatarImage src={user.dp || undefined} alt={`${user.name} profile`} className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-600 text-xs font-bold text-white">
+                    {user.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               </Link>
             </div>
           </div>

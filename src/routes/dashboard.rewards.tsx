@@ -149,19 +149,19 @@ function RewardsPage() {
       />
 
       {/* RR hero */}
-      <div className="glass relative overflow-hidden rounded-3xl p-6 ring-1 ring-amber-400/20">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-amber-400/30 to-fuchsia-500/20 blur-3xl" />
+      <div className="glass relative overflow-hidden rounded-3xl p-5 ring-1 ring-primary/25 sm:p-6">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-violet-500/25 to-fuchsia-500/20 blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              <Gift className="h-3.5 w-3.5 text-amber-400" /> RR Balance
+              <Gift className="h-3.5 w-3.5 text-fuchsia-300" /> RR Balance
             </div>
             <div className="mt-2 flex items-end gap-3">
               <div className="text-5xl font-bold text-white">{rrBalance.toLocaleString()}</div>
               <div className="pb-2 text-sm text-muted-foreground">≈ <b className="text-emerald-400">${cashValue}</b></div>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Pill tone="warning"><Flame className="h-3 w-3" />{streak.current}-day streak</Pill>
+              <Pill tone="primary"><Flame className="h-3 w-3" />{streak.current}-day streak</Pill>
               <Pill tone="success">Longest: {streak.longest}d</Pill>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -205,12 +205,12 @@ function RewardsPage() {
 
       {/* Streak Center */}
       {streakCfg.enabled && (
-        <Panel title="Streak Center" action={<Pill tone="warning"><Flame className="h-3 w-3" />{streak.current}-day streak · longest {streak.longest}d</Pill>}>
+        <Panel title="Streak Center" action={<Pill tone="primary"><Flame className="h-3 w-3" />{streak.current}-day streak · longest {streak.longest}d</Pill>}>
           <div>
             <p className="text-[12px] text-muted-foreground">
               Show up every day ({streakCfg.qualifier === "trade_log" ? "log a trade" : streakCfg.qualifier === "login" ? "log in" : "log in or log a trade"}) to grow your streak. Hit a milestone, RR auto-credits to your wallet.
               {nextMilestone && (
-                <> Next reward: <b className="text-amber-300">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({nextMilestone.days - streak.current} to go).</>
+                <> Next reward: <b className="text-fuchsia-200">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({nextMilestone.days - streak.current} to go).</>
               )}
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -221,11 +221,11 @@ function RewardsPage() {
                   <div key={m.id} className={`rounded-xl border p-3 ${claimed ? "border-emerald-400/30 bg-emerald-500/5" : "border-white/10 bg-white/[0.04]"}`}>
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-semibold text-white">{m.label}</div>
-                      {claimed ? <Pill tone="success"><CheckCircle2 className="h-3 w-3" />Claimed</Pill> : <Pill tone="warning">{m.days}d</Pill>}
+                      {claimed ? <Pill tone="success"><CheckCircle2 className="h-3 w-3" />Claimed</Pill> : <Pill tone="primary">{m.days}d</Pill>}
                     </div>
                     <div className="mt-1 text-[11px] text-muted-foreground">+{m.reward} RR on day {m.days}</div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
-                      <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : "bg-gradient-to-r from-amber-400 to-fuchsia-500"}`} style={{ width: `${pct}%` }} />
+                      <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : "bg-gradient-to-r from-violet-500 to-fuchsia-400"}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -240,7 +240,7 @@ function RewardsPage() {
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {redeemOptions.map((opt) => {
             const Icon = opt.icon;
-            const ring = opt.accent === "success" ? "ring-emerald-400/30" : opt.accent === "warning" ? "ring-amber-400/30" : "ring-primary/30";
+            const ring = opt.accent === "success" ? "ring-emerald-400/30" : "ring-primary/30";
             return (
               <button key={opt.id} onClick={() => setRedeemOpen(opt.id)}
                 className={`group rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.07] ${ring} hover:ring-1`}
@@ -302,7 +302,7 @@ function RewardsPage() {
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                     <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total RR</div>
-                      <div className="mt-1 font-semibold text-amber-300">{Number(pkg.totalRr ?? pkg.amountRr).toLocaleString()}</div>
+                      <div className="mt-1 font-semibold text-fuchsia-200">{Number(pkg.totalRr ?? pkg.amountRr).toLocaleString()}</div>
                     </div>
                     <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Cost</div>
@@ -400,7 +400,7 @@ function RewardsPage() {
                   <div className="text-sm font-semibold text-white">{rule.label}</div>
                   <p className="text-[11px] text-muted-foreground">{rule.description || "Reward rule configured by RebateBoard."}</p>
                 </div>
-                <Pill tone="warning"><Gift className="h-3 w-3" />+{rule.freeAmount}</Pill>
+                <Pill tone="primary"><Gift className="h-3 w-3" />+{rule.freeAmount}</Pill>
               </div>
             ))}
           </div>
@@ -495,7 +495,7 @@ function FollowAndEarnPanel({
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
                     <Icon className="h-5 w-5 text-white" />
                   </div>
-                  <Pill tone="warning"><Gift className="h-3 w-3" />+{r.reward} RR</Pill>
+                  <Pill tone="primary"><Gift className="h-3 w-3" />+{r.reward} RR</Pill>
                 </div>
                 <div className="mt-3 text-sm font-semibold text-white">{r.label}</div>
                 <p className="mt-1 flex-1 text-[11px] text-muted-foreground">{r.description}</p>
@@ -681,7 +681,7 @@ function RedeemModal({
                     <div className="text-sm font-semibold text-white">{rule.label}</div>
                     <p className="mt-1 text-xs text-muted-foreground">{rule.description || "Configured RR spend option."}</p>
                   </div>
-                  <Pill tone={affordable && !outOfStock ? "warning" : "default"}><Gift className="h-3 w-3" />{rule.cost} RR</Pill>
+                  <Pill tone={affordable && !outOfStock ? "primary" : "default"}><Gift className="h-3 w-3" />{rule.cost} RR</Pill>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                   {rule.tierGate && <Pill>Tier: {rule.tierGate}</Pill>}

@@ -21,7 +21,7 @@ import heroChart from "@/assets/hero-chart.jpg";
 import youtubeThumb from "@/assets/youtube-thumb.jpg";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { RebateCalculatorModal } from "@/components/RebateCalculatorModal";
+import { RebateCalculator } from "@/components/calculators/RebateCalculator";
 import { OfferCard, OfferDetailModal } from "@/components/offers/OfferCard";
 import {
   adminBrands as seedAdminBrands,
@@ -355,11 +355,15 @@ function BrandRankRow({
       className="group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25"
     >
       <div className="relative">
-        <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-white/[0.06] text-[10px] font-black text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] ring-1 ring-white/10">
+        <div
+          className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ${
+            brand.thumbnail ? "bg-transparent" : "bg-primary/20 text-white"
+          }`}
+        >
           {brand.thumbnail ? (
             <img
               src={brand.thumbnail}
-              alt=""
+              alt={`${brand.name} logo`}
               className="h-full w-full object-cover"
               loading="lazy"
             />
@@ -555,7 +559,13 @@ function ExclusiveOffersPanel({
               onClick={() => onSelect(offer)}
               className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl bg-white/[0.035] p-2.5 text-left ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25"
             >
-              <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-white/[0.06] text-[10px] font-black text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] ring-1 ring-white/10">
+              <span
+                className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ${
+                  "brandLogo" in offer && offer.brandLogo
+                    ? "bg-transparent"
+                    : "bg-primary/20 text-white"
+                }`}
+              >
                 {"brandLogo" in offer && offer.brandLogo ? (
                   <img
                     src={offer.brandLogo}
@@ -651,7 +661,6 @@ function Index() {
   const [openFaq, setOpenFaq] = useState(0);
   const [offerTab, setOfferTab] = useState<OfferTab>("reviews");
   const [compareOpen, setCompareOpen] = useState<null | { a: string; b: string }>(null);
-  const [calcOpen, setCalcOpen] = useState(false);
   const [activeOffer, setActiveOffer] = useState<AdminOffer | null>(null);
   const [liveOffers, setLiveOffers] = useState<AdminOffer[]>(seedOffers);
   const [liveBrands, setLiveBrands] = useState<AdminBrandRecord[]>(fallbackBrands);
@@ -874,26 +883,19 @@ function Index() {
               {/* Advertise Here — managed in Superadmin → Dashboard Ads */}
               <LandingAdvertiseBox />
 
-              <div className="glass rounded-3xl p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Estimate Cashback</h3>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                      Monthly trade <span className="glass-pill rounded-full px-2 py-0.5">●</span>
-                    </div>
+              <div className="glass rounded-3xl p-5 sm:p-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/20 text-primary ring-1 ring-primary/30">
+                    <BadgePercent className="h-5 w-5" />
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-success">$3,99.0</div>
-                    <div className="text-[10px] text-muted-foreground">per year</div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Rebate Calculator</h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Estimate cashback using live RebateBoard brands.
+                    </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setCalcOpen(true)}
-                  className="mt-4 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold transition hover:opacity-95"
-                >
-                  Calculate
-                </button>
+                <RebateCalculator compact showSaveAction={false} />
               </div>
             </div>
           </div>
@@ -1304,7 +1306,6 @@ function Index() {
       <SiteFooter />
 
       <CompareDialog open={compareOpen} onClose={() => setCompareOpen(null)} />
-      <RebateCalculatorModal open={calcOpen} onClose={() => setCalcOpen(false)} />
       <OfferDetailModal offer={activeOffer} onClose={() => setActiveOffer(null)} />
     </div>
   );
@@ -1320,30 +1321,29 @@ function CompareDialog({
   const [view, setView] = useState<"compare" | "addFirm">("compare");
   const brands = open ? [open.a, open.b] : [];
   const firmGrid = Array.from({ length: 12 }).map(() => "ACY Securities");
+  const brokerFilterOptions: Record<string, string[]> = {
+    Regulators: ["FCA", "ASIC", "CySEC", "NFA"],
+    "Commission($)": ["$1", "$1 - $5", "$6 - $10", "$10+"],
+    "Spread Type": ["Floating Spread", "Fixed Spread"],
+    "Minimum Deposit": ["$0 - $100", "$101 - $200", "$500 - $1,000", "$10,000+"],
+    Accounts: ["Standard Account", "Mini/Micro Account", "VIP/Premium Account", "ECN Account"],
+    Products: ["Forex", "CFDs", "Commodities", "Indices", "Crypto"],
+  };
 
   const FilterSidebar = (
     <div className="glass self-start rounded-2xl p-4 ring-1 ring-violet-400/20">
-      {[
-        "Regulators",
-        "Commission($)",
-        "Spread Type",
-        "Minimum Deposit",
-        "Accounts",
-        "Products",
-      ].map((g, i) => (
-        <div key={g} className={i > 0 ? "mt-3 border-t border-white/10 pt-3" : ""}>
+      {Object.entries(brokerFilterOptions).map(([group, options], i) => (
+        <div key={group} className={i > 0 ? "mt-3 border-t border-white/10 pt-3" : ""}>
           <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold">{g}</div>
+            <div className="text-xs font-semibold">{group}</div>
             <ChevronDown className="h-3 w-3" />
           </div>
           <div className="mt-2 space-y-1.5 text-[11px] text-muted-foreground">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" className="accent-fuchsia-400" defaultChecked /> Supporting
-              line text
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" className="accent-fuchsia-400" /> Supporting line text
-            </label>
+            {options.map((option) => (
+              <label key={option} className="flex items-center gap-2">
+                <input type="checkbox" className="accent-fuchsia-400" /> {option}
+              </label>
+            ))}
           </div>
         </div>
       ))}
