@@ -40,6 +40,7 @@ import { fetchTbiExplore, type TbiProfile } from "@/lib/tbi-api";
 import { fetchPublicFaqs, type Faq } from "@/lib/admin-api";
 import { isPublishedBrand, publicTbiStageTheme, resolveBrandTbiState } from "@/lib/public-brand";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
+import { writeCompareSelection } from "@/lib/compare-selection";
 import {
   LandingHeroAdCard,
   LandingSponsorsStrip,
@@ -1305,9 +1306,102 @@ function Index() {
 
       <SiteFooter />
 
-      <CompareDialog open={compareOpen} onClose={() => setCompareOpen(null)} />
+      <LiveCompareDialog
+        open={compareOpen}
+        brands={liveBrands}
+        onClose={() => setCompareOpen(null)}
+      />
       <OfferDetailModal offer={activeOffer} onClose={() => setActiveOffer(null)} />
     </div>
+  );
+}
+
+function LiveCompareDialog({
+  open,
+  brands,
+  onClose,
+}: {
+  open: null | { a: string; b: string };
+  brands: AdminBrandRecord[];
+  onClose: () => void;
+}) {
+  const selected = useMemo(() => {
+    if (!open) return [];
+    const names = [open.a, open.b].map((name) => name.trim().toLowerCase());
+    return brands.filter((brand) => names.includes(brand.name.trim().toLowerCase()));
+  }, [brands, open]);
+
+  return (
+    <Dialog open={!!open} onOpenChange={(value) => !value && onClose()}>
+      <DialogContent className="max-w-xl border-white/15 bg-[#17082a] p-5 text-white">
+        <div>
+          <h2 className="text-lg font-black">Compare selected brands</h2>
+          <p className="mt-1 text-xs leading-5 text-white/48">
+            Continue to the live comparison workspace for category-specific data,
+            TBI status, cashback, pricing, and trading conditions.
+          </p>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {selected.map((brand) => (
+            <div
+              key={brand.id}
+              className="flex items-center gap-3 rounded-2xl bg-white/[0.045] p-3 ring-1 ring-white/10"
+            >
+              <span
+                className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl ${
+                  brand.thumbnail ? "bg-transparent" : "bg-primary/20"
+                }`}
+              >
+                {brand.thumbnail ? (
+                  <img
+                    src={brand.thumbnail}
+                    alt={`${brand.name} logo`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[10px] font-black">
+                    {initials(brand.name)}
+                  </span>
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold">{brand.name}</span>
+                <span className="block truncate text-[10px] text-white/42">
+                  {brand.category}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+        {selected.length < 2 && (
+          <p className="mt-3 rounded-xl bg-white/[0.04] p-3 text-xs text-white/48 ring-1 ring-white/10">
+            One or more legacy selections are no longer public. Choose current
+            brands in the comparison workspace.
+          </p>
+        )}
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-white/[0.06] px-4 py-2 text-xs font-bold text-white/72 ring-1 ring-white/10"
+          >
+            Cancel
+          </button>
+          <Link
+            to="/compare"
+            onClick={() => {
+              if (selected.length) {
+                writeCompareSelection(selected.map((brand) => brand.id));
+              }
+              onClose();
+            }}
+            className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-white"
+          >
+            Open comparison
+          </Link>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -35,6 +35,10 @@ import {
   type AdminBrandRecord,
 } from "@/lib/admin-brands-api";
 import { useAuth } from "@/lib/auth";
+import {
+  readCompareSelection,
+  toggleCompareSelection,
+} from "@/lib/compare-selection";
 import { resolveCountryDisplay } from "@/lib/country-format";
 import type { ListingCategoryConfig } from "@/lib/listing-categories";
 import {
@@ -1096,7 +1100,9 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [comparedIds, setComparedIds] = useState<string[]>([]);
+  const [comparedIds, setComparedIds] = useState<string[]>(() =>
+    readCompareSelection(),
+  );
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [followBusy, setFollowBusy] = useState<string | null>(null);
 
@@ -1170,13 +1176,7 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
   };
 
   const toggleCompare = (brand: AdminBrandRecord) => {
-    setComparedIds((current) =>
-      current.includes(brand.id)
-        ? current.filter((id) => id !== brand.id)
-        : current.length >= 4
-          ? current
-          : [...current, brand.id],
-    );
+    setComparedIds((current) => toggleCompareSelection(current, brand.id));
   };
 
   const toggleFollow = async (brand: AdminBrandRecord) => {

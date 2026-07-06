@@ -196,6 +196,35 @@ const navItems: HeaderNavItem[] = [
   },
   { labelKey: "nav.brokers", to: "/brokers" },
   { labelKey: "nav.cryptoExchanges", to: "/exchanges" },
+  {
+    labelKey: "nav.products",
+    items: [
+      {
+        labelKey: "nav.propFirms",
+        to: "/programs",
+        description: "Compare funded trading programs and rules",
+        icon: TrendingUp,
+      },
+      {
+        labelKey: "nav.brokers",
+        to: "/brokers",
+        description: "Research brokers, conditions, and regulation",
+        icon: Building2,
+      },
+      {
+        labelKey: "nav.cryptoExchanges",
+        to: "/exchanges",
+        description: "Compare exchange fees, features, and trust",
+        icon: Bitcoin,
+      },
+      {
+        labelKey: "nav.tradingTools",
+        to: "/trading-tools",
+        description: "Discover software, journals, and trader tools",
+        icon: Wrench,
+      },
+    ],
+  },
   { labelKey: "nav.payouts", to: "/payouts" },
   { labelKey: "nav.tbi", to: "/tbi" },
   { labelKey: "nav.topSellers", to: "/offers" },
