@@ -591,7 +591,7 @@ function HomepageVideoSlider() {
 
   return (
     <div className="glass-strong overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-0.5">
-      <div className="relative h-52 overflow-hidden rounded-t-3xl bg-white/[0.035] sm:h-56">
+      <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-white/[0.035]">
         {playing && videoId ? (
           <iframe
             className="h-full w-full"
@@ -1029,17 +1029,14 @@ function Index() {
         {/* YOUTUBE / ADVERTISE / CASHBACK */}
         <section className="mt-10 sm:mt-12">
           <h2 className="mb-6 text-center text-2xl font-bold sm:text-3xl">Latest YouTube Videos</h2>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <HomepageVideoSlider />
-
-            <div className="space-y-4">
+          <div className="grid items-stretch gap-4 lg:grid-cols-2">
+            <div className="flex h-full flex-col gap-4">
+              <HomepageVideoSlider />
               {/* Advertise Here — managed in Superadmin → Dashboard Ads */}
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
-                Sponsored Partner
-              </div>
               <LandingAdvertiseBox />
+            </div>
 
-              <div className="glass rounded-3xl p-5 sm:p-6">
+            <div className="glass h-full rounded-3xl p-5 sm:p-6">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/20 text-primary ring-1 ring-primary/30">
                     <BadgePercent className="h-5 w-5" />
@@ -1052,7 +1049,6 @@ function Index() {
                   </div>
                 </div>
                 <RebateCalculator compact showSaveAction={false} />
-              </div>
             </div>
           </div>
         </section>

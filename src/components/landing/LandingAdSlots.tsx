@@ -272,8 +272,8 @@ export function LandingSponsorsStrip() {
   );
 }
 
-/** "Advertise Here" promo box near the cashback calculator. */
-export function LandingAdvertiseBox() {
+/** "Advertise Here" promo box near the homepage video feed. */
+export function LandingAdvertiseBox({ className = "" }: { className?: string } = {}) {
   const ad = useActiveAd("landing-advertise");
   if (!ad) return null;
 
@@ -288,20 +288,24 @@ export function LandingAdvertiseBox() {
         to={href}
         onClick={() => trackAdClick(ad)}
         aria-label={headline || "Sponsored advert"}
-        className="block overflow-hidden rounded-3xl transition-opacity hover:opacity-95"
+        className={`glass-strong group relative block aspect-video overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-0.5 hover:bg-white/[0.065] ${className}`}
       >
         <img
           src={ad.image}
           alt={headline || "Sponsored advert"}
-          className="block max-h-56 w-full object-contain"
+          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
           loading="lazy"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/50 via-transparent to-black/10" />
+        <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white ring-1 ring-white/20 backdrop-blur">
+          Featured Partner
+        </span>
       </Link>
     );
   }
 
   return (
-    <div className="glass rounded-3xl p-6">
+    <div className={`glass rounded-3xl p-6 ${className}`}>
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-lg font-semibold">{headline}</h3>
         <span className="glass-pill rounded-full px-2 py-0.5 text-[10px]">Sponsored</span>
