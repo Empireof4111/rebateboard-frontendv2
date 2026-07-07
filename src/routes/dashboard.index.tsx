@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth, usePersonalization } from "@/lib/auth";
 import { PageHeader, StatCard, Panel, Pill, EmptyState } from "@/components/dashboard/Primitives";
+import { DashboardChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { MiniLineChart, SourceBars } from "@/components/dashboard/Charts";
 import {
   TrendingUp, Sparkles, AlertTriangle, Activity,
   Plus, Star, Building2, Bot, Lightbulb,
-  Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug,
+  Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug, Gift,
 } from "lucide-react";
 import { openAddTrade } from "@/lib/ui-bus";
 import { tickStreak, getStreakConfig } from "@/lib/rr-rewards";
@@ -14,10 +15,23 @@ import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/fi
 import { completeDailyTask, fetchMyDailyTasks, type DailyTaskUserBoard } from "@/lib/daily-tasks-api";
 import { toast } from "@/components/superadmin/AdminActions";
 import { useI18n } from "@/lib/i18n";
-import { useTrades } from "@/lib/trading-plan";
+import { useTrades, useTradingPlan } from "@/lib/trading-plan";
+import { fetchMyReviews } from "@/lib/reviews-api";
 
 function fmtUSD(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+function displayMoney(value: number | null | undefined, hasActivity = true) {
+  if (value === null || value === undefined) return "Loading...";
+  if (!hasActivity && Math.abs(Number(value)) < 0.01) return "No Data Yet";
+  return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function displayCount(value: number | null | undefined, hasActivity = true) {
+  if (value === null || value === undefined) return "Loading...";
+  if (!hasActivity && Number(value) === 0) return "No Data Yet";
+  return Number(value).toLocaleString();
 }
 
 export const Route = createFileRoute("/dashboard/")({
@@ -34,22 +48,32 @@ function DashboardHome() {
   const [referralStats, setReferralStats] = useState<{ total: number; thisMonth: number } | null>(null);
   const [dailyTaskBoard, setDailyTaskBoard] = useState<DailyTaskUserBoard | null>(null);
   const [claimingTaskId, setClaimingTaskId] = useState("");
+  const [reviewCount, setReviewCount] = useState(0);
+  const [claimCount, setClaimCount] = useState(0);
+  const [linkedAccountsCount, setLinkedAccountsCount] = useState(0);
   const trades = useTrades();
+  const tradingPlan = useTradingPlan();
 
   const load = useCallback(async () => {
     if (!token) return;
-    const [sumRes, txRes, brkRes, timeRes, refRes] = await Promise.allSettled([
+    const [sumRes, txRes, brkRes, timeRes, refRes, reviewRes, claimRes, partnerRes] = await Promise.allSettled([
       financeApi.getWalletSummary(token),
       financeApi.getTransactions(token, { size: 5 }),
       financeApi.getEarningsBreakdown(token),
       financeApi.getEarningsTimeline(token),
       financeApi.getReferralStats(token),
+      fetchMyReviews(0, 1),
+      financeApi.getMyClaims(token, { page: 0, size: 1 }),
+      financeApi.getMyPartnerRequests(token, { page: 0, size: 1 }),
     ]);
     if (sumRes.status === "fulfilled" && sumRes.value.payload) setSummary(sumRes.value.payload);
     if (txRes.status === "fulfilled" && txRes.value.payload) setRecentTx(txRes.value.payload.page);
     if (brkRes.status === "fulfilled" && brkRes.value.payload) setEarningsBySource(brkRes.value.payload);
     if (timeRes.status === "fulfilled" && timeRes.value.payload) setEarningsTimeline(timeRes.value.payload);
     if (refRes.status === "fulfilled" && refRes.value.payload) setReferralStats(refRes.value.payload);
+    if (reviewRes.status === "fulfilled") setReviewCount(reviewRes.value.page.length);
+    if (claimRes.status === "fulfilled" && claimRes.value.payload) setClaimCount(claimRes.value.payload.page.length);
+    if (partnerRes.status === "fulfilled" && partnerRes.value.payload) setLinkedAccountsCount(partnerRes.value.payload.page.length);
     try {
       const taskBoard = await fetchMyDailyTasks();
       setDailyTaskBoard(taskBoard);
@@ -67,6 +91,16 @@ function DashboardHome() {
     }
   }, []);
   const { primaryMarketLabel, goalLabel } = usePersonalization();
+  const hasTradingPlan = Boolean(
+    tradingPlan.profile || tradingPlan.strategies.length > 0 || tradingPlan.checklist.length > 0,
+  );
+  const walletHasActivity = Boolean(summary && (
+    Number(summary.balance) > 0
+    || Number(summary.totalEarned) > 0
+    || Number(summary.totalWithdrawn) > 0
+    || Number(summary.pendingWithdrawals) > 0
+    || recentTx.length > 0
+  ));
   const topEarningSource = useMemo(() => {
     return [...earningsBySource].sort((a, b) => b.amount - a.amount)[0] ?? null;
   }, [earningsBySource]);
@@ -129,47 +163,24 @@ function DashboardHome() {
         }
       />
 
-      {!user?.onboardingCompleted && (
-        <div className="glass overflow-hidden rounded-2xl border border-primary/20 p-4 sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
-              <ClipboardCheck className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-white">Complete your onboarding</h2>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Complete your onboarding to unlock your welcome rewards and personalize your dashboard.
-              </p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500"
-                    style={{ width: `${user?.profileCompletion ?? 0}%` }}
-                  />
-                </div>
-                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-fuchsia-200">
-                  {user?.profileCompletion ?? 0}%
-                </span>
-              </div>
-            </div>
-            <Link
-              to="/signup"
-              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
-            >
-              Complete Onboarding <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      )}
+      <DashboardChecklist
+        signals={{
+          linkedAccounts: linkedAccountsCount,
+          reviews: reviewCount,
+          claims: claimCount,
+          trades: trades.length,
+          hasTradingPlan,
+        }}
+      />
 
       {/* Section 1 — Money First */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label={t("dashboard.walletBalance")} value={summary ? `$${Number(summary.balance).toLocaleString()}` : "—"} trend="up" accent="success" />
-        <StatCard label={t("dashboard.totalCashback")} value={summary ? `$${Number(summary.totalEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint={t("dashboard.allTime")} trend="up" accent="success" />
-        <StatCard label={t("dashboard.rrBalance")} value={user ? String(Math.round(user.rrBalance)) : "—"} accent="primary" />
-        <StatCard label={t("dashboard.totalWithdrawn")} value={summary ? `$${Number(summary.totalWithdrawn).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} hint={t("dashboard.lifetime")} accent="primary" />
-        <StatCard label={t("dashboard.pending")} value={summary ? `$${Number(summary.pendingWithdrawals).toLocaleString()}` : "—"} hint={t("dashboard.withdrawals")} accent="warning" />
-        <StatCard label={t("dashboard.referrals")} value={referralStats ? String(referralStats.total) : "—"} hint={referralStats ? `+${referralStats.thisMonth} ${t("dashboard.thisMonthPlus")}` : ""} />
+        <StatCard label={t("dashboard.walletBalance")} value={displayMoney(summary?.balance, walletHasActivity)} trend={walletHasActivity ? "up" : "neutral"} accent="success" />
+        <StatCard label={t("dashboard.totalCashback")} value={displayMoney(summary?.totalEarned, walletHasActivity)} hint={t("dashboard.allTime")} trend={walletHasActivity ? "up" : "neutral"} accent="success" />
+        <StatCard label={t("dashboard.rrBalance")} value={displayCount(user?.rrBalance, Number(user?.rrBalance ?? 0) > 0)} accent="primary" />
+        <StatCard label={t("dashboard.totalWithdrawn")} value={displayMoney(summary?.totalWithdrawn, walletHasActivity)} hint={t("dashboard.lifetime")} accent="primary" />
+        <StatCard label={t("dashboard.pending")} value={displayMoney(summary?.pendingWithdrawals, walletHasActivity)} hint={t("dashboard.withdrawals")} accent="warning" />
+        <StatCard label={t("dashboard.referrals")} value={displayCount(referralStats?.total, Number(referralStats?.total ?? 0) > 0)} hint={referralStats && referralStats.thisMonth > 0 ? `+${referralStats.thisMonth} ${t("dashboard.thisMonthPlus")}` : ""} />
       </div>
 
       {/* Wallet Hero */}
@@ -182,15 +193,23 @@ function DashboardHome() {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("dashboard.availableToWithdraw")}</div>
-              <div className="text-2xl font-bold text-white">{summary ? `$${Number(summary.availableForWithdrawal).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</div>
+              <div className="text-2xl font-bold text-white">
+                {summary && walletHasActivity
+                  ? `$${Number(summary.availableForWithdrawal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                  : summary
+                    ? "Awaiting Activity"
+                    : "Loading..."}
+              </div>
               <div className="text-[11px] text-muted-foreground">
-                {t("dashboard.pending")} {summary ? fmtUSD(Number(summary.pendingWithdrawals)) : "—"}
+                {summary && walletHasActivity
+                  ? `${t("dashboard.pending")} ${fmtUSD(Number(summary.pendingWithdrawals))}`
+                  : "Cashback and withdrawals will appear here."}
               </div>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to={"/dashboard/wallet" as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]">
-              <ArrowDownToLine className="h-3.5 w-3.5" /> {t("dashboard.withdraw")}
+            <Link to={(walletHasActivity ? "/dashboard/wallet" : "/dashboard/brands") as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+              <ArrowDownToLine className="h-3.5 w-3.5" /> {walletHasActivity ? t("dashboard.withdraw") : "Explore Programs"}
             </Link>
             <Link to={"/dashboard/wallet" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Send className="h-3.5 w-3.5" /> {t("dashboard.transfer")}
@@ -242,12 +261,12 @@ function DashboardHome() {
               ) : (
                 <li className="flex gap-2 rounded-lg bg-fuchsia-500/10 p-2.5">
                   <Zap className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-400" />
-                  <span className="text-white">Available wallet balance is <b>{summary ? fmtUSD(Number(summary.availableForWithdrawal)) : "$0"}</b>.</span>
+                  <span className="text-white">Available wallet balance is <b>{summary && walletHasActivity ? fmtUSD(Number(summary.availableForWithdrawal)) : "No Data Yet"}</b>.</span>
                 </li>
               )}
               <li className="flex gap-2 rounded-lg bg-primary/10 p-2.5">
                 <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-300" />
-                <span className="text-white">Current RR balance: <b>{Math.round(user?.rrBalance ?? 0).toLocaleString()} RR</b>.</span>
+                <span className="text-white">Current RR balance: <b>{Number(user?.rrBalance ?? 0) > 0 ? `${Math.round(user?.rrBalance ?? 0).toLocaleString()} RR` : "No Data Yet"}</b>.</span>
               </li>
               <li>
                 <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-accent hover:underline">
@@ -271,12 +290,12 @@ function DashboardHome() {
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
             <Users className="h-3.5 w-3.5" /> {t("dashboard.referrals")}
           </div>
-          <div className="mt-1 text-2xl font-bold text-white">{referralStats?.total ?? "—"}</div>
+          <div className="mt-1 text-2xl font-bold text-white">{referralStats && referralStats.total > 0 ? referralStats.total : "No Data Yet"}</div>
           <div className="text-[11px] text-muted-foreground">{t("dashboard.tradersReferred")}</div>
         </div>
         <div>
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("dashboard.thisMonth")}</div>
-          <div className="mt-1 text-2xl font-bold text-white">+{referralStats?.thisMonth ?? "—"}</div>
+          <div className="mt-1 text-2xl font-bold text-white">{referralStats && referralStats.thisMonth > 0 ? `+${referralStats.thisMonth}` : "No Data Yet"}</div>
           <div className="text-[11px] text-muted-foreground">{t("dashboard.newSignups")}</div>
         </div>
         <div className="flex items-end justify-end">
@@ -367,9 +386,16 @@ function DashboardHome() {
 
         {/* Activity feed */}
         <Panel title="Recent activity" action={<Link to={"/dashboard/wallet" as string} className="text-[11px] text-accent hover:underline">View all →</Link>}>
-          <ul className="space-y-3 text-xs">
-            {recentTx.length === 0 && <li className="py-4 text-center text-muted-foreground">No recent activity.</li>}
-            {recentTx.map((t) => {
+          {recentTx.length === 0 ? (
+            <EmptyState
+              icon={Wallet}
+              title="No wallet activity yet"
+              description="Cashback credits, withdrawals, and RR movements will appear here after your first activity."
+              action={<Link to={"/dashboard/brands" as string} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15">Browse Programs</Link>}
+            />
+          ) : (
+            <ul className="space-y-3 text-xs">
+              {recentTx.map((t) => {
               const isCredit = t.activity === "CREDIT";
               const Icon = isCredit ? TrendingUp : ArrowDownToLine;
               const color = isCredit ? "text-success" : "text-muted-foreground";
@@ -385,18 +411,22 @@ function DashboardHome() {
                   <span className="text-[10px] text-muted-foreground">{when}</span>
                 </li>
               );
-            })}
-          </ul>
+              })}
+            </ul>
+          )}
         </Panel>
       </div>
 
       {/* Section 5 — Quick Actions */}
       <div className="grid gap-4 lg:grid-cols-[1.3fr_0.9fr]">
-        <Panel title="Today's tasks" action={<Pill tone="warning">{dailyTaskBoard?.stats.remaining ?? 0} left</Pill>}>
+        <Panel title="Today's tasks" action={<Pill tone="warning">{dailyTaskBoard?.stats.remaining ? `${dailyTaskBoard.stats.remaining} left` : "No live tasks"}</Pill>}>
           {!dailyTaskBoard || dailyTaskBoard.tasks.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-muted-foreground">
-              No live tasks from superadmin right now.
-            </div>
+            <EmptyState
+              icon={Gift}
+              title="No live tasks today"
+              description="When reward tasks are published, they will appear here with the RR you can earn."
+              action={<Link to={"/dashboard/rewards" as string} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15">View Rewards</Link>}
+            />
           ) : (
             <div className="space-y-3">
               {dailyTaskBoard.tasks.slice(0, 4).map((task) => (
@@ -459,15 +489,15 @@ function DashboardHome() {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">Available</div>
-              <div className="mt-1 text-xl font-bold text-white">{dailyTaskBoard?.stats.total ?? 0}</div>
+              <div className="mt-1 text-xl font-bold text-white">{dailyTaskBoard?.stats.total ? dailyTaskBoard.stats.total : "No Data Yet"}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">Completed</div>
-              <div className="mt-1 text-xl font-bold text-emerald-300">{dailyTaskBoard?.stats.completedToday ?? 0}</div>
+              <div className="mt-1 text-xl font-bold text-emerald-300">{dailyTaskBoard?.stats.completedToday ? dailyTaskBoard.stats.completedToday : "No Data Yet"}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">RR Claimed</div>
-              <div className="mt-1 text-xl font-bold text-fuchsia-200">{dailyTaskBoard?.stats.rrClaimedToday ?? 0}</div>
+              <div className="mt-1 text-xl font-bold text-fuchsia-200">{dailyTaskBoard?.stats.rrClaimedToday ? dailyTaskBoard.stats.rrClaimedToday : "No Data Yet"}</div>
             </div>
           </div>
           <div className="mt-4 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">

@@ -621,16 +621,18 @@ export type DashboardAd = {
   id: string;
   name: string;
   format: "marquee" | "single" | "carousel" | "trending";
-  placement: "dashboard" | "landing-hero" | "landing-sponsors" | "landing-advertise";
+  placement: "dashboard" | "landing-hero" | "landing-sponsors" | "landing-advertise" | "homepage-video";
   active: boolean;
   priority: number;
   headline: string;
   sub?: string;
+  description?: string;
   cta?: string;
   href: string;
   accent: string;
   thumbnail?: string;
   image?: string;
+  videoUrl?: string;
   slides?: any[];
   sponsors?: any[];
   trendingLimit?: number;
@@ -683,7 +685,8 @@ function normalizeAdPlacement(value: unknown): DashboardAd["placement"] {
     raw === "dashboard" ||
     raw === "landing-hero" ||
     raw === "landing-sponsors" ||
-    raw === "landing-advertise"
+    raw === "landing-advertise" ||
+    raw === "homepage-video"
   ) {
     return raw;
   }
@@ -742,8 +745,10 @@ function mapAdvert(raw: any): DashboardAd {
     priority: Number(raw.priority ?? 0),
     headline: meta.headline ?? "",
     sub: raw.subTitle ?? meta.sub,
+    description: raw.description ?? meta.description,
     cta,
     href,
+    videoUrl: firstText(meta.videoUrl, raw.videoUrl, looksLikeAdHref(action) ? action : ""),
     accent: meta.accent ?? "from-violet-500 to-fuchsia-600",
     thumbnail,
     image: thumbnail,
@@ -763,6 +768,7 @@ function advertToDto(data: Partial<DashboardAd>) {
   return {
     title: data.name ?? data.headline ?? "Draft banner",
     subTitle: data.sub,
+    description: data.description,
     thumbnail,
     page: data.placement,
     action: data.cta,
@@ -780,6 +786,8 @@ function advertToDto(data: Partial<DashboardAd>) {
       href: data.href,
       cta: data.cta,
       sub: data.sub,
+      description: data.description,
+      videoUrl: data.videoUrl,
       slides: data.slides,
       sponsors: data.sponsors,
       trendingLimit: data.trendingLimit,

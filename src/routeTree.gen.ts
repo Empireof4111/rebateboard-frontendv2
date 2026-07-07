@@ -73,6 +73,7 @@ import { Route as SuperadminNewsRouteImport } from './routes/superadmin.news'
 import { Route as SuperadminLeaderboardsRouteImport } from './routes/superadmin.leaderboards'
 import { Route as SuperadminJournalAnalyticsRouteImport } from './routes/superadmin.journal-analytics'
 import { Route as SuperadminInboxRouteImport } from './routes/superadmin.inbox'
+import { Route as SuperadminHomepageVideosRouteImport } from './routes/superadmin.homepage-videos'
 import { Route as SuperadminFlagsRouteImport } from './routes/superadmin.flags'
 import { Route as SuperadminFaqsRouteImport } from './routes/superadmin.faqs'
 import { Route as SuperadminDisputesRouteImport } from './routes/superadmin.disputes'
@@ -81,6 +82,7 @@ import { Route as SuperadminDailyTasksRouteImport } from './routes/superadmin.da
 import { Route as SuperadminComplaintsRouteImport } from './routes/superadmin.complaints'
 import { Route as SuperadminClaimsRouteImport } from './routes/superadmin.claims'
 import { Route as SuperadminChallengePurchasesRouteImport } from './routes/superadmin.challenge-purchases'
+import { Route as SuperadminCashbackCalculatorRouteImport } from './routes/superadmin.cashback-calculator'
 import { Route as SuperadminCashbackRouteImport } from './routes/superadmin.cashback'
 import { Route as SuperadminBrandsRouteImport } from './routes/superadmin.brands'
 import { Route as SuperadminBrandRequestsRouteImport } from './routes/superadmin.brand-requests'
@@ -463,6 +465,12 @@ const SuperadminInboxRoute = SuperadminInboxRouteImport.update({
   path: '/inbox',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const SuperadminHomepageVideosRoute =
+  SuperadminHomepageVideosRouteImport.update({
+    id: '/homepage-videos',
+    path: '/homepage-videos',
+    getParentRoute: () => SuperadminRoute,
+  } as any)
 const SuperadminFlagsRoute = SuperadminFlagsRouteImport.update({
   id: '/flags',
   path: '/flags',
@@ -502,6 +510,12 @@ const SuperadminChallengePurchasesRoute =
   SuperadminChallengePurchasesRouteImport.update({
     id: '/challenge-purchases',
     path: '/challenge-purchases',
+    getParentRoute: () => SuperadminRoute,
+  } as any)
+const SuperadminCashbackCalculatorRoute =
+  SuperadminCashbackCalculatorRouteImport.update({
+    id: '/cashback-calculator',
+    path: '/cashback-calculator',
     getParentRoute: () => SuperadminRoute,
   } as any)
 const SuperadminCashbackRoute = SuperadminCashbackRouteImport.update({
@@ -885,6 +899,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/brand-requests': typeof SuperadminBrandRequestsRoute
   '/superadmin/brands': typeof SuperadminBrandsRoute
   '/superadmin/cashback': typeof SuperadminCashbackRoute
+  '/superadmin/cashback-calculator': typeof SuperadminCashbackCalculatorRoute
   '/superadmin/challenge-purchases': typeof SuperadminChallengePurchasesRoute
   '/superadmin/claims': typeof SuperadminClaimsRoute
   '/superadmin/complaints': typeof SuperadminComplaintsRoute
@@ -893,6 +908,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/disputes': typeof SuperadminDisputesRoute
   '/superadmin/faqs': typeof SuperadminFaqsRoute
   '/superadmin/flags': typeof SuperadminFlagsRoute
+  '/superadmin/homepage-videos': typeof SuperadminHomepageVideosRoute
   '/superadmin/inbox': typeof SuperadminInboxRoute
   '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
@@ -1013,6 +1029,7 @@ export interface FileRoutesByTo {
   '/superadmin/brand-requests': typeof SuperadminBrandRequestsRoute
   '/superadmin/brands': typeof SuperadminBrandsRoute
   '/superadmin/cashback': typeof SuperadminCashbackRoute
+  '/superadmin/cashback-calculator': typeof SuperadminCashbackCalculatorRoute
   '/superadmin/challenge-purchases': typeof SuperadminChallengePurchasesRoute
   '/superadmin/claims': typeof SuperadminClaimsRoute
   '/superadmin/complaints': typeof SuperadminComplaintsRoute
@@ -1021,6 +1038,7 @@ export interface FileRoutesByTo {
   '/superadmin/disputes': typeof SuperadminDisputesRoute
   '/superadmin/faqs': typeof SuperadminFaqsRoute
   '/superadmin/flags': typeof SuperadminFlagsRoute
+  '/superadmin/homepage-videos': typeof SuperadminHomepageVideosRoute
   '/superadmin/inbox': typeof SuperadminInboxRoute
   '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
@@ -1146,6 +1164,7 @@ export interface FileRoutesById {
   '/superadmin/brand-requests': typeof SuperadminBrandRequestsRoute
   '/superadmin/brands': typeof SuperadminBrandsRoute
   '/superadmin/cashback': typeof SuperadminCashbackRoute
+  '/superadmin/cashback-calculator': typeof SuperadminCashbackCalculatorRoute
   '/superadmin/challenge-purchases': typeof SuperadminChallengePurchasesRoute
   '/superadmin/claims': typeof SuperadminClaimsRoute
   '/superadmin/complaints': typeof SuperadminComplaintsRoute
@@ -1154,6 +1173,7 @@ export interface FileRoutesById {
   '/superadmin/disputes': typeof SuperadminDisputesRoute
   '/superadmin/faqs': typeof SuperadminFaqsRoute
   '/superadmin/flags': typeof SuperadminFlagsRoute
+  '/superadmin/homepage-videos': typeof SuperadminHomepageVideosRoute
   '/superadmin/inbox': typeof SuperadminInboxRoute
   '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
@@ -1280,6 +1300,7 @@ export interface FileRouteTypes {
     | '/superadmin/brand-requests'
     | '/superadmin/brands'
     | '/superadmin/cashback'
+    | '/superadmin/cashback-calculator'
     | '/superadmin/challenge-purchases'
     | '/superadmin/claims'
     | '/superadmin/complaints'
@@ -1288,6 +1309,7 @@ export interface FileRouteTypes {
     | '/superadmin/disputes'
     | '/superadmin/faqs'
     | '/superadmin/flags'
+    | '/superadmin/homepage-videos'
     | '/superadmin/inbox'
     | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
@@ -1408,6 +1430,7 @@ export interface FileRouteTypes {
     | '/superadmin/brand-requests'
     | '/superadmin/brands'
     | '/superadmin/cashback'
+    | '/superadmin/cashback-calculator'
     | '/superadmin/challenge-purchases'
     | '/superadmin/claims'
     | '/superadmin/complaints'
@@ -1416,6 +1439,7 @@ export interface FileRouteTypes {
     | '/superadmin/disputes'
     | '/superadmin/faqs'
     | '/superadmin/flags'
+    | '/superadmin/homepage-videos'
     | '/superadmin/inbox'
     | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
@@ -1540,6 +1564,7 @@ export interface FileRouteTypes {
     | '/superadmin/brand-requests'
     | '/superadmin/brands'
     | '/superadmin/cashback'
+    | '/superadmin/cashback-calculator'
     | '/superadmin/challenge-purchases'
     | '/superadmin/claims'
     | '/superadmin/complaints'
@@ -1548,6 +1573,7 @@ export interface FileRouteTypes {
     | '/superadmin/disputes'
     | '/superadmin/faqs'
     | '/superadmin/flags'
+    | '/superadmin/homepage-videos'
     | '/superadmin/inbox'
     | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
@@ -2082,6 +2108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminInboxRouteImport
       parentRoute: typeof SuperadminRoute
     }
+    '/superadmin/homepage-videos': {
+      id: '/superadmin/homepage-videos'
+      path: '/homepage-videos'
+      fullPath: '/superadmin/homepage-videos'
+      preLoaderRoute: typeof SuperadminHomepageVideosRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/superadmin/flags': {
       id: '/superadmin/flags'
       path: '/flags'
@@ -2136,6 +2169,13 @@ declare module '@tanstack/react-router' {
       path: '/challenge-purchases'
       fullPath: '/superadmin/challenge-purchases'
       preLoaderRoute: typeof SuperadminChallengePurchasesRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/cashback-calculator': {
+      id: '/superadmin/cashback-calculator'
+      path: '/cashback-calculator'
+      fullPath: '/superadmin/cashback-calculator'
+      preLoaderRoute: typeof SuperadminCashbackCalculatorRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/superadmin/cashback': {
@@ -2672,6 +2712,7 @@ interface SuperadminRouteChildren {
   SuperadminBrandRequestsRoute: typeof SuperadminBrandRequestsRoute
   SuperadminBrandsRoute: typeof SuperadminBrandsRoute
   SuperadminCashbackRoute: typeof SuperadminCashbackRoute
+  SuperadminCashbackCalculatorRoute: typeof SuperadminCashbackCalculatorRoute
   SuperadminChallengePurchasesRoute: typeof SuperadminChallengePurchasesRoute
   SuperadminClaimsRoute: typeof SuperadminClaimsRoute
   SuperadminComplaintsRoute: typeof SuperadminComplaintsRoute
@@ -2680,6 +2721,7 @@ interface SuperadminRouteChildren {
   SuperadminDisputesRoute: typeof SuperadminDisputesRoute
   SuperadminFaqsRoute: typeof SuperadminFaqsRoute
   SuperadminFlagsRoute: typeof SuperadminFlagsRoute
+  SuperadminHomepageVideosRoute: typeof SuperadminHomepageVideosRoute
   SuperadminInboxRoute: typeof SuperadminInboxRoute
   SuperadminJournalAnalyticsRoute: typeof SuperadminJournalAnalyticsRoute
   SuperadminLeaderboardsRoute: typeof SuperadminLeaderboardsRoute
@@ -2723,6 +2765,7 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminBrandRequestsRoute: SuperadminBrandRequestsRoute,
   SuperadminBrandsRoute: SuperadminBrandsRoute,
   SuperadminCashbackRoute: SuperadminCashbackRoute,
+  SuperadminCashbackCalculatorRoute: SuperadminCashbackCalculatorRoute,
   SuperadminChallengePurchasesRoute: SuperadminChallengePurchasesRoute,
   SuperadminClaimsRoute: SuperadminClaimsRoute,
   SuperadminComplaintsRoute: SuperadminComplaintsRoute,
@@ -2731,6 +2774,7 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminDisputesRoute: SuperadminDisputesRoute,
   SuperadminFaqsRoute: SuperadminFaqsRoute,
   SuperadminFlagsRoute: SuperadminFlagsRoute,
+  SuperadminHomepageVideosRoute: SuperadminHomepageVideosRoute,
   SuperadminInboxRoute: SuperadminInboxRoute,
   SuperadminJournalAnalyticsRoute: SuperadminJournalAnalyticsRoute,
   SuperadminLeaderboardsRoute: SuperadminLeaderboardsRoute,

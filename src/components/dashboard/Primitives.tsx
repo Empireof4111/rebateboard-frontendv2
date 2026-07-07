@@ -28,6 +28,10 @@ export function SectionHeader({ title, subtitle, action }: { title: string; subt
 export function StatCard({
   label, value, hint, trend, accent,
 }: { label: string; value: string; hint?: string; trend?: "up" | "down" | "neutral"; accent?: "primary" | "success" | "warning" | "destructive" }) {
+  const normalizedValue = String(value ?? "").trim();
+  const placeholderValues = new Set(["", "—", "--", "$0", "$0.00", "0.0"]);
+  const displayValue = placeholderValues.has(normalizedValue) ? "No Data Yet" : value;
+  const isPlaceholder = displayValue === "No Data Yet" || displayValue === "Coming Soon" || displayValue === "Awaiting Verification" || displayValue === "Not Enough Activity";
   const trendColor = trend === "up" ? "text-success" : trend === "down" ? "text-destructive" : "text-muted-foreground";
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
   const accentRing = {
@@ -46,7 +50,9 @@ export function StatCard({
     <div className={`glass card-hover min-h-[104px] overflow-hidden rounded-2xl p-3.5 ring-1 sm:p-4 ${accentRing}`}>
       <div className={`mb-3 h-0.5 w-8 rounded-full bg-gradient-to-r ${accentBar}`} aria-hidden />
       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px]">{label}</div>
-      <div className="mt-1.5 break-words text-xl font-bold tracking-tight text-white tabular-nums sm:text-2xl">{value}</div>
+      <div className={`mt-1.5 break-words font-bold tracking-tight text-white tabular-nums ${isPlaceholder ? "text-sm sm:text-base" : "text-xl sm:text-2xl"}`}>
+        {displayValue}
+      </div>
       {hint && (
         <div className={`mt-1 inline-flex items-center gap-1 text-[10px] font-medium sm:text-[11px] ${trendColor}`}>
           {trend && <TrendIcon className="h-3 w-3" aria-hidden />}

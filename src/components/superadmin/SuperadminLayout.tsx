@@ -12,6 +12,8 @@ import {
   BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
+  Youtube,
+  Calculator,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ToastViewport, toast } from "./AdminActions";
@@ -76,16 +78,24 @@ const groups: Group[] = [
       { to: "/superadmin/rr-purchases", label: "RR Purchases", icon: CircleDollarSign, badge: "NEW" },
       { to: "/superadmin/leaderboards", label: "Leaderboards", icon: Trophy },
       { to: "/superadmin/academy", label: "Academy", icon: GraduationCap },
-      { to: "/superadmin/blog", label: "Blog & News", icon: Newspaper },
-      { to: "/superadmin/news", label: "Company News", icon: Radio },
-      { to: "/superadmin/faqs", label: "FAQs", icon: HelpCircle },
-      { to: "/superadmin/announcements", label: "Announcements", icon: Megaphone },
-      { to: "/superadmin/ads", label: "Dashboard Ads", icon: Megaphone, badge: "NEW" },
       { to: "/superadmin/demo-accounts", label: "Demo Accounts", icon: Monitor, badge: "NEW" },
       { to: "/superadmin/challenge-purchases", label: "Challenge Purchases", icon: ClipboardCheck, badge: "NEW" },
       { to: "/superadmin/top-sellers", label: "Top Sellers", icon: Trophy, badge: "NEW" },
       { to: "/superadmin/popups", label: "Pop-ups", icon: MousePointerClick },
       { to: "/superadmin/subscribers", label: "Subscribers", icon: Mail },
+    ],
+  },
+  {
+    id: "contentManagement",
+    label: "Content Management",
+    items: [
+      { to: "/superadmin/blog", label: "Blog & News", icon: Newspaper },
+      { to: "/superadmin/news", label: "Company News", icon: Radio },
+      { to: "/superadmin/homepage-videos", label: "Homepage Videos", icon: Youtube, badge: "NEW" },
+      { to: "/superadmin/faqs", label: "FAQs", icon: HelpCircle },
+      { to: "/superadmin/announcements", label: "Announcements", icon: Megaphone },
+      { to: "/superadmin/ads", label: "Dashboard Ads", icon: Megaphone, badge: "NEW" },
+      { to: "/superadmin/cashback-calculator", label: "Cashback Calculator", icon: Calculator, badge: "NEW" },
     ],
   },
   {
@@ -110,7 +120,7 @@ export function SuperadminLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [bugBountyOpenCount, setBugBountyOpenCount] = useState<string>("");
   const [open, setOpen] = useState<Record<string, boolean>>({
-    core: true, brands: true, finance: true, content: true, system: true,
+    core: true, brands: true, finance: true, content: true, contentManagement: true, system: true,
   });
   const toggle = (id: string) => setOpen((s) => ({ ...s, [id]: !s[id] }));
 

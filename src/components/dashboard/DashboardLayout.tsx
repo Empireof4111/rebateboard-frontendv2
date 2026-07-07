@@ -23,63 +23,70 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { markDashboardVisit } from "@/components/dashboard/OnboardingChecklist";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; exact?: boolean; badge?: string };
 type NavGroup = { id: string; labelKey: string; items: NavItem[] };
 
 const groups: NavGroup[] = [
   {
-    id: "primary",
-    labelKey: "dashboard.group.primary",
+    id: "trading",
+    labelKey: "dashboard.group.trading",
     items: [
       { to: "/dashboard", labelKey: "dashboard.nav.dashboard", icon: LayoutDashboard, exact: true },
       { to: "/dashboard/wallet", labelKey: "dashboard.nav.wallet", icon: Wallet, badge: "NEW" },
       { to: "/dashboard/claims", labelKey: "dashboard.nav.claims", icon: ClipboardCheck },
-      { to: "/dashboard/rewards", labelKey: "dashboard.nav.rewards", icon: Gift },
-      { to: "/dashboard/intelligence", labelKey: "dashboard.nav.intelligence", icon: Brain },
+      { to: "/dashboard/brands", labelKey: "dashboard.nav.programs", icon: Layers },
+      { to: "/dashboard/offers", labelKey: "dashboard.nav.offers", icon: Megaphone },
     ],
   },
   {
-    id: "trading",
-    labelKey: "dashboard.group.trading",
+    id: "performance",
+    labelKey: "dashboard.group.performance",
     items: [
-      { to: "/dashboard/trading-plan", labelKey: "dashboard.nav.tradingPlan", icon: ClipboardCheck, badge: "NEW" },
-      { to: "/dashboard/backtest", labelKey: "dashboard.nav.backtest", icon: FlaskConical, badge: "NEW" },
       { to: "/dashboard/trades", labelKey: "dashboard.nav.journal", icon: LineChart },
       { to: "/dashboard/analytics", labelKey: "dashboard.nav.analytics", icon: BarChart3 },
       { to: "/dashboard/calendar", labelKey: "dashboard.nav.pnlCalendar", icon: Calendar },
-      { to: "/dashboard/economic-calendar", labelKey: "dashboard.nav.economicCalendar", icon: Globe2, badge: "NEW" },
       { to: "/dashboard/accounts", labelKey: "dashboard.nav.roiTracker", icon: Wallet, badge: "TRT" },
       { to: "/dashboard/risk", labelKey: "dashboard.nav.risk", icon: ShieldAlert },
-      { to: "/dashboard/ai-coach", labelKey: "dashboard.nav.rebeta", icon: Bot },
-      { to: "/dashboard/tools", labelKey: "dashboard.nav.tools", icon: Calculator },
-      { to: "/dashboard/brands", labelKey: "dashboard.nav.programs", icon: Layers },
     ],
   },
   {
-    id: "social",
-    labelKey: "dashboard.group.social",
+    id: "intelligence",
+    labelKey: "dashboard.group.intelligence",
+    items: [
+      { to: "/dashboard/ai-coach", labelKey: "dashboard.nav.rebeta", icon: Bot },
+      { to: "/dashboard/intelligence", labelKey: "dashboard.nav.intelligence", icon: Brain },
+      { to: "/dashboard/tbi", labelKey: "dashboard.nav.tbiRankings", icon: Trophy },
+      { to: "/dashboard/backtest", labelKey: "dashboard.nav.backtest", icon: FlaskConical, badge: "NEW" },
+      { to: "/dashboard/tools", labelKey: "dashboard.nav.tools", icon: Calculator },
+    ],
+  },
+  {
+    id: "learn",
+    labelKey: "dashboard.group.learn",
+    items: [
+      { to: "/dashboard/trading-plan", labelKey: "dashboard.nav.tradingPlan", icon: ClipboardCheck, badge: "NEW" },
+      { to: "/dashboard/academy", labelKey: "dashboard.nav.academy", icon: GraduationCap },
+      { to: "/dashboard/economic-calendar", labelKey: "dashboard.nav.economicCalendar", icon: Globe2, badge: "NEW" },
+      { to: "/dashboard/community", labelKey: "dashboard.nav.blogNews", icon: Newspaper },
+    ],
+  },
+  {
+    id: "community",
+    labelKey: "dashboard.group.community",
     items: [
       { to: "/dashboard/reviews", labelKey: "dashboard.nav.reviews", icon: Star },
       { to: "/dashboard/referrals", labelKey: "dashboard.nav.referrals", icon: Share2, badge: "NEW" },
       { to: "/dashboard/community", labelKey: "dashboard.nav.community", icon: Users },
       { to: "/dashboard/leaderboards", labelKey: "dashboard.nav.leaderboards", icon: Trophy },
-      { to: "/dashboard/tbi", labelKey: "dashboard.nav.tbiRankings", icon: Trophy },
     ],
   },
   {
-    id: "content",
-    labelKey: "dashboard.group.content",
+    id: "account",
+    labelKey: "dashboard.group.account",
     items: [
-      { to: "/dashboard/academy", labelKey: "dashboard.nav.academy", icon: GraduationCap },
-      { to: "/dashboard/community", labelKey: "dashboard.nav.blogNews", icon: Newspaper },
-      { to: "/dashboard/offers", labelKey: "dashboard.nav.offers", icon: Megaphone },
-    ],
-  },
-  {
-    id: "system",
-    labelKey: "dashboard.group.system",
-    items: [
+      { to: "/dashboard/rewards", labelKey: "dashboard.nav.rewards", icon: Gift },
       { to: "/dashboard/risk", labelKey: "dashboard.nav.reports", icon: FileWarning },
       { to: "/dashboard/profile", labelKey: "dashboard.profile", icon: UserIcon },
       { to: "/dashboard/settings", labelKey: "dashboard.nav.settings", icon: Settings },
@@ -164,8 +171,8 @@ export function DashboardLayout() {
     for (const g of groups) {
       open[g.id] = g.items.some((i) => (i.exact ? pathname === i.to : pathname.startsWith(i.to)));
     }
-    // primary always open by default
-    open.primary = true;
+    // Keep the first group open so new users see the core launch actions.
+    open.trading = true;
     return open;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -174,6 +181,11 @@ export function DashboardLayout() {
   const toggle = (id: string) => setOpenGroups((s) => ({ ...s, [id]: !s[id] }));
 
   useEffect(() => { const off = onAddTradeOpen(() => setTradeOpen(true)); return () => { off(); }; }, []);
+
+  useEffect(() => {
+    if (pathname.startsWith("/dashboard/brands")) markDashboardVisit("programs");
+    if (pathname.startsWith("/dashboard/ai-coach")) markDashboardVisit("rebeta");
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });

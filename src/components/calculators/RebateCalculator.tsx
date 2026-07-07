@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BadgePercent, Gift, Save } from "lucide-react";
 import {
   fetchPublicAdminBrands,
@@ -9,6 +9,16 @@ type RebateCalculatorProps = {
   compact?: boolean;
   onResult?: (value: string) => void;
   showSaveAction?: boolean;
+};
+
+export type CashbackCalculatorRate = {
+  id?: string;
+  asset?: string;
+  accountType?: string;
+  rebatePerLot?: number | string;
+  percentage?: number | string;
+  currency?: string;
+  active?: boolean;
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -46,6 +56,44 @@ function commissionRate(brand?: AdminBrandRecord) {
   return firstNumber(commission);
 }
 
+function calculatorRates(brand?: AdminBrandRecord): CashbackCalculatorRate[] {
+  if (!brand) return [];
+  const cashback = asRecord(brand.cashback);
+  const rows = Array.isArray(cashback.calculatorRates) ? cashback.calculatorRates : [];
+  return rows
+    .filter((row): row is CashbackCalculatorRate => Boolean(row && typeof row === "object"))
+    .filter((row) => row.active !== false);
+}
+
+function useAnimatedNumber(value: number, duration = 520) {
+  const [display, setDisplay] = useState(value);
+  const previous = useRef(value);
+
+  useEffect(() => {
+    const from = previous.current;
+    const to = Number.isFinite(value) ? value : 0;
+    previous.current = to;
+
+    if (Math.abs(from - to) < 0.01) {
+      setDisplay(to);
+      return;
+    }
+
+    let frame = 0;
+    const started = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - started) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(from + (to - from) * eased);
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [duration, value]);
+
+  return display;
+}
+
 function Field({
   label,
   hint,
@@ -77,8 +125,9 @@ export function RebateCalculator({
   showSaveAction = true,
 }: RebateCalculatorProps) {
   const [type, setType] = useState("Forex");
+  const [accountType, setAccountType] = useState("Standard");
   const [lot, setLot] = useState(1);
-  const [trades, setTrades] = useState(10);
+  const [trades, setTrades] = useState(20);
   const [brandId, setBrandId] = useState("");
   const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
   const [pct, setPct] = useState(30);
@@ -95,7 +144,7 @@ export function RebateCalculator({
       });
       const options = eligible.length ? eligible : items;
       setBrands(options);
-      setBrandId((current) => current || options[0]?.id || "");
+      setBrandId((current) => current || options.find((brand) => /exness/i.test(brand.name))?.id || options[0]?.id || "");
     });
     return () => {
       active = false;
@@ -106,13 +155,38 @@ export function RebateCalculator({
     () => brands.find((brand) => brand.id === brandId),
     [brandId, brands],
   );
+  const rates = useMemo(() => calculatorRates(selectedBrand), [selectedBrand]);
+  const assetOptions = useMemo(() => {
+    const values = Array.from(new Set(rates.map((rate) => String(rate.asset ?? "").trim()).filter(Boolean)));
+    return values.length ? values : ["Forex", "Crypto", "Indices"];
+  }, [rates]);
+  const accountOptions = useMemo(() => {
+    const byAsset = rates.filter((rate) => !rate.asset || rate.asset === type);
+    const values = Array.from(new Set(byAsset.map((rate) => String(rate.accountType ?? "").trim()).filter(Boolean)));
+    return values.length ? values : ["Standard"];
+  }, [rates, type]);
+  const selectedRate = useMemo(() => {
+    return (
+      rates.find((rate) => rate.asset === type && rate.accountType === accountType) ??
+      rates.find((rate) => rate.asset === type) ??
+      rates[0]
+    );
+  }, [accountType, rates, type]);
 
   useEffect(() => {
-    const liveRate = rebateRate(selectedBrand);
+    if (assetOptions.length && !assetOptions.includes(type)) setType(assetOptions[0]);
+  }, [assetOptions, type]);
+
+  useEffect(() => {
+    if (accountOptions.length && !accountOptions.includes(accountType)) setAccountType(accountOptions[0]);
+  }, [accountOptions, accountType]);
+
+  useEffect(() => {
+    const liveRate = firstNumber(selectedRate?.percentage) ?? rebateRate(selectedBrand);
     const liveCommission = commissionRate(selectedBrand);
     if (liveRate !== null) setPct(Math.min(80, Math.max(0, liveRate)));
     if (liveCommission !== null) setCommission(Math.max(0, liveCommission));
-  }, [selectedBrand]);
+  }, [selectedBrand, selectedRate]);
 
   useEffect(() => {
     if (selectedBrand) return;
@@ -120,10 +194,13 @@ export function RebateCalculator({
   }, [selectedBrand, type]);
 
   const totalCommission = commission * lot * trades;
-  const rebate = (totalCommission * pct) / 100;
+  const rebatePerLot = firstNumber(selectedRate?.rebatePerLot);
+  const rebate = rebatePerLot !== null ? rebatePerLot * lot * trades : (totalCommission * pct) / 100;
   const perTrade = trades > 0 ? rebate / trades : 0;
   const monthly = rebate * 4;
   const withRebate = totalCommission - rebate;
+  const animatedRebate = useAnimatedNumber(rebate);
+  const currency = String(selectedRate?.currency || "USD").toUpperCase();
   const result = `Rebate $${rebate.toFixed(2)} (${pct.toFixed(0)}% cashback)`;
 
   return (
@@ -136,22 +213,21 @@ export function RebateCalculator({
         <div className={compact ? "grid grid-cols-2 gap-3" : "grid grid-cols-2 gap-3"}>
           <Field label="Asset type">
             <select value={type} onChange={(event) => setType(event.target.value)} className={inputClass}>
-              {["Forex", "Crypto", "Indices"].map((option) => (
+              {assetOptions.map((option) => (
                 <option key={option} value={option} className="bg-[#150829]">
                   {option}
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Rebate rate" hint={`${pct}%`}>
-            <input
-              type="number"
-              min={0}
-              max={80}
-              value={pct}
-              onChange={(event) => setPct(Math.min(80, Math.max(0, Number(event.target.value))))}
-              className={inputClass}
-            />
+          <Field label="Account type">
+            <select value={accountType} onChange={(event) => setAccountType(event.target.value)} className={inputClass}>
+              {accountOptions.map((option) => (
+                <option key={option} value={option} className="bg-[#150829]">
+                  {option}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
 
@@ -207,6 +283,24 @@ export function RebateCalculator({
             />
           </Field>
         </div>
+        <Field
+          label="Cashback basis"
+          hint={rebatePerLot !== null ? `${currency} ${rebatePerLot}/lot` : `${pct}%`}
+        >
+          <input
+            type="number"
+            min={0}
+            max={rebatePerLot !== null ? undefined : 80}
+            step={rebatePerLot !== null ? 0.1 : 1}
+            value={rebatePerLot !== null ? rebatePerLot : pct}
+            onChange={(event) => {
+              if (rebatePerLot !== null) return;
+              setPct(Math.min(80, Math.max(0, Number(event.target.value))));
+            }}
+            readOnly={rebatePerLot !== null}
+            className={`${inputClass} ${rebatePerLot !== null ? "cursor-default opacity-80" : ""}`}
+          />
+        </Field>
       </div>
 
       <div className="flex min-h-[180px] flex-col rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-white/[0.04] to-transparent p-4">
@@ -214,7 +308,10 @@ export function RebateCalculator({
           <BadgePercent className="h-4 w-4" />
           Estimated rebate
         </div>
-        <div className="mt-2 text-3xl font-black text-emerald-300">${rebate.toFixed(2)}</div>
+        <div className="mt-2 text-3xl font-black text-emerald-300">
+          {currency === "USD" ? "$" : `${currency} `}
+          {animatedRebate.toFixed(2)}
+        </div>
         <div className="mt-3 space-y-1.5 text-xs text-white/70">
           <div className="flex justify-between gap-3">
             <span>Per trade</span>

@@ -10,6 +10,7 @@ const placements: AdPlacement[] = [
   "landing-hero",
   "landing-sponsors",
   "landing-advertise",
+  "homepage-video",
 ];
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -137,6 +138,8 @@ function mapPublicAdvert(raw: unknown): DashboardAd {
     href,
     accent: text(meta.accent) || "from-fuchsia-500 to-violet-600",
     image,
+    description: text(row.description || meta.description) || undefined,
+    videoUrl: text(meta.videoUrl || row.videoUrl || (looksLikeHref(action) ? action : "")) || undefined,
     slides: Array.isArray(meta.slides)
       ? meta.slides.map(normalizeSlide).filter((slide): slide is AdSlide => Boolean(slide))
       : undefined,

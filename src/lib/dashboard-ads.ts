@@ -22,12 +22,14 @@ export type AdFormat = "marquee" | "single" | "carousel" | "trending";
  *  - "landing-hero"       : the 4-slide rotating card on the landing hero (right side)
  *  - "landing-sponsors"   : the "Sponsored partners" logo strip on the landing hero
  *  - "landing-advertise"  : the "Advertise Here" promo box near the cashback calculator
+ *  - "homepage-video"     : featured YouTube videos near the homepage calculator
  */
 export type AdPlacement =
   | "dashboard"
   | "landing-hero"
   | "landing-sponsors"
-  | "landing-advertise";
+  | "landing-advertise"
+  | "homepage-video";
 
 export type AdSlide = {
   brandSlug?: string;
@@ -66,6 +68,8 @@ export type DashboardAd = {
   href?: string;
   accent?: string;          // gradient from-to e.g. "from-fuchsia-500 to-violet-600"
   image?: string;           // optional cover image (used by hero / single banner)
+  description?: string;
+  videoUrl?: string;
   // carousel
   slides?: AdSlide[];
   // sponsors strip

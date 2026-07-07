@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Panel } from "@/components/dashboard/Primitives";
 import { useAuth } from "@/lib/auth";
+import { DashboardChecklist } from "@/components/dashboard/OnboardingChecklist";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
@@ -11,6 +12,8 @@ function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" subtitle="Account, notifications, and privacy." />
+
+      <DashboardChecklist variant="settings" />
 
       <Panel title="Account">
         <div className="space-y-3 text-sm">

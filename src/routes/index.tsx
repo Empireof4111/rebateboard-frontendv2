@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Search,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowUpRight,
   Star,
   Play,
@@ -18,7 +20,6 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
 import heroChart from "@/assets/hero-chart.jpg";
-import youtubeThumb from "@/assets/youtube-thumb.jpg";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { RebateCalculator } from "@/components/calculators/RebateCalculator";
@@ -46,6 +47,8 @@ import {
   LandingSponsorsStrip,
   LandingAdvertiseBox,
 } from "@/components/landing/LandingAdSlots";
+import { fetchPublicAdverts } from "@/lib/public-adverts-api";
+import type { DashboardAd } from "@/lib/dashboard-ads";
 import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -508,6 +511,177 @@ function HeroActionStrip() {
   );
 }
 
+function youtubeIdFromUrl(url?: string) {
+  const value = String(url ?? "").trim();
+  if (!value) return "";
+  const patterns = [
+    /youtu\.be\/([^?&#/]+)/i,
+    /youtube\.com\/watch\?[^#]*v=([^?&#]+)/i,
+    /youtube\.com\/embed\/([^?&#/]+)/i,
+    /youtube\.com\/shorts\/([^?&#/]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return "";
+}
+
+function videoThumbnail(video: DashboardAd) {
+  const explicit = video.thumbnail || video.image;
+  if (explicit) return explicit;
+  const id = youtubeIdFromUrl(video.videoUrl || video.href);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : "";
+}
+
+function HomepageVideoSlider() {
+  const [videos, setVideos] = useState<DashboardAd[]>([]);
+  const [active, setActive] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchPublicAdverts("homepage-video").then((items) => {
+      if (!mounted) return;
+      setVideos(items.filter((item) => item.active).slice(0, 5));
+      setActive(0);
+      setPlaying(false);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (playing || videos.length < 2) return;
+    const timer = window.setInterval(() => {
+      setActive((index) => (index + 1) % videos.length);
+    }, 6500);
+    return () => window.clearInterval(timer);
+  }, [playing, videos.length]);
+
+  const current = videos[active];
+  const videoId = youtubeIdFromUrl(current?.videoUrl || current?.href);
+  const thumbnail = current ? videoThumbnail(current) : "";
+  const hasVideos = videos.length > 0;
+
+  const go = (direction: -1 | 1) => {
+    if (videos.length < 2) return;
+    setPlaying(false);
+    setActive((index) => (index + direction + videos.length) % videos.length);
+  };
+
+  if (!hasVideos) {
+    return (
+      <div className="glass-strong rounded-3xl p-5">
+        <div className="grid h-52 place-items-center rounded-2xl border border-dashed border-white/10 bg-white/[0.035] text-center sm:h-56">
+          <div>
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/25">
+              <Youtube className="h-5 w-5" />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-white">Homepage videos coming soon</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Add active videos from Content Management.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass-strong overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-0.5">
+      <div className="relative h-52 overflow-hidden rounded-t-3xl bg-white/[0.035] sm:h-56">
+        {playing && videoId ? (
+          <iframe
+            className="h-full w-full"
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+            title={current.headline || current.name}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        ) : thumbnail ? (
+          <img
+            src={thumbnail}
+            alt={current.headline || current.name || "Homepage video"}
+            className="h-full w-full object-cover transition duration-500"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-primary/20 via-white/[0.04] to-transparent" />
+        )}
+        {!playing && (
+          <button
+            type="button"
+            onClick={() => setPlaying(true)}
+            className="absolute inset-0 grid place-items-center bg-black/10 transition hover:bg-black/20"
+            aria-label="Play homepage video"
+          >
+            <span className="glass-strong grid h-14 w-14 place-items-center rounded-full transition duration-300 hover:scale-105 sm:h-16 sm:w-16">
+              <Play className="h-5 w-5 fill-white sm:h-6 sm:w-6" />
+            </span>
+          </button>
+        )}
+        {videos.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              className="absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white backdrop-blur transition hover:bg-black/50"
+              aria-label="Previous video"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white backdrop-blur transition hover:bg-black/50"
+              aria-label="Next video"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-bold text-white">
+            {current.headline || current.name || "Featured RebateBoard video"}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {current.description || current.sub || "Watch the latest RebateBoard walkthroughs and trading insights."}
+          </p>
+        </div>
+        <a
+          href={current.videoUrl || current.href || "#"}
+          target="_blank"
+          rel="noreferrer"
+          className="glass-pill inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition hover:bg-white/15"
+        >
+          <Youtube className="h-3.5 w-3.5" />
+          YouTube
+        </a>
+      </div>
+      {videos.length > 1 && (
+        <div className="flex justify-center gap-1.5 pb-3">
+          {videos.map((video, index) => (
+            <button
+              type="button"
+              key={video.id}
+              onClick={() => {
+                setActive(index);
+                setPlaying(false);
+              }}
+              className={`h-1.5 rounded-full transition-all ${index === active ? "w-8 bg-white" : "w-2 bg-white/35 hover:bg-white/60"}`}
+              aria-label={`Show video ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ExclusiveOffersPanel({
   offers,
   active,
@@ -856,32 +1030,13 @@ function Index() {
         <section className="mt-10 sm:mt-12">
           <h2 className="mb-6 text-center text-2xl font-bold sm:text-3xl">Latest YouTube Videos</h2>
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="glass-strong relative overflow-hidden rounded-3xl">
-              <img
-                src={youtubeThumb}
-                alt="Video"
-                className="h-72 w-full object-cover"
-                loading="lazy"
-                width={768}
-                height={768}
-              />
-              <button className="absolute inset-0 grid place-items-center">
-                <div className="glass-strong grid h-16 w-16 place-items-center rounded-full">
-                  <Play className="h-6 w-6 fill-white" />
-                </div>
-              </button>
-              <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                <p className="glass max-w-[60%] rounded-xl p-2 text-[10px]">
-                  Lorem ipsum is simply dummy text of the printing and typesetting…
-                </p>
-                <button className="glass-pill flex items-center gap-1 rounded-full px-3 py-1 text-[10px]">
-                  <Youtube className="h-3 w-3" /> Youtube
-                </button>
-              </div>
-            </div>
+            <HomepageVideoSlider />
 
             <div className="space-y-4">
               {/* Advertise Here — managed in Superadmin → Dashboard Ads */}
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+                Sponsored Partner
+              </div>
               <LandingAdvertiseBox />
 
               <div className="glass rounded-3xl p-5 sm:p-6">
