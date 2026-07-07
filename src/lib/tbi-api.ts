@@ -31,6 +31,9 @@ export type TbiProfile = {
   confidence: TbiConfidence;
   confidenceFactor: number;
   state: TbiState;
+  scoreState?: TbiState;
+  scoreStateLabel?: string;
+  lastUpdated?: string;
   visibility: string;
   status: string;
   trustLabel: string;
@@ -47,16 +50,96 @@ export type TbiProfile = {
     tc: number;
     cx: number;
   };
+  componentBreakdown?: Array<{
+    key: keyof TbiProfile["components"];
+    code: string;
+    label: string;
+    score: number;
+    weight: number;
+    weightDecimal: number;
+    contribution: number;
+    explanation: string;
+    source: string;
+  }>;
   componentExplanations: Record<string, string>;
   reviewCount: number;
   verifiedReviewCount: number;
   weightedReviewMass: number;
   reviewDistribution: Array<{ stars: number; count: number }>;
+  ratingDistribution?: Array<{
+    rating: number;
+    count: number;
+    percentage: number;
+    verified: number;
+    unverified: number;
+    effectOnUserTrust: number;
+  }>;
+  reviewStats?: {
+    totalReviews: number;
+    verifiedTraderReviews: number;
+    activeTraderReviews: number;
+    recentReviews: number;
+    oldReviews: number;
+    averageRawRating: number;
+    averageRating5: number;
+    weightedRating: number;
+    totalWeight: number;
+    contributionToUserTrust: number;
+    contributionToFinalScore: number;
+    rows: Array<{
+      id: string;
+      reviewer: string;
+      rating: number;
+      score: number;
+      verificationStatus: string;
+      activityStatus: string;
+      recency: string;
+      ageDays: number;
+      weight: number;
+      weightedScore: number;
+      weightedContribution: number;
+      reviewStatus: string;
+      contributedToTbi: boolean;
+    }>;
+  };
+  reviewWeightRules?: {
+    baseReviewWeight: number;
+    verifiedTraderMultiplier: number;
+    activeTraderMultiplier: number;
+    recentReviewMultiplier: number;
+    oldReviewMultiplier: number;
+  };
   complaints: {
     total: number;
     pending: number;
     resolved: number;
+    open?: number;
+    rejected?: number;
+    invalid?: number;
+    trend?: string;
+    riskPenaltyImpact?: number;
   };
+  complaintStats?: {
+    total: number;
+    open: number;
+    resolved: number;
+    rejected: number;
+    invalid: number;
+    categories: Array<{ label: string; count: number }>;
+    severity: Array<{ label: string; count: number }>;
+    trend: string;
+    riskPenaltyImpact: number;
+    affectsCustomerExperience: boolean;
+    affectsPayoutReliability: boolean;
+    affectsConfidence: boolean;
+    impactExplanation: string;
+  };
+  activeRiskFlags?: Array<{
+    kind: string;
+    impact: number;
+    title: string;
+    detail: string;
+  }>;
   riskEvents: Array<{
     kind: string;
     impact: number;
@@ -65,11 +148,31 @@ export type TbiProfile = {
   }>;
   trustEngine: {
     formula: string;
+    formulaParts?: Array<{
+      code: string;
+      label: string;
+      score: number;
+      weight: number;
+      contribution: number;
+      display: string;
+    }>;
     rawScore: number;
     confidenceFactor: number;
     riskPenalty: number;
     computedFinalScore?: number;
     finalScore: number;
+    scoreSource?: "formula" | "manual" | "preliminary" | string;
+    finalScoreNote?: string;
+    calculation?: {
+      rawScore: number;
+      confidenceFactor: number;
+      riskPenalty: number;
+      computedFinalScore?: number;
+      finalScore: number;
+      scoreSource?: "formula" | "manual" | "preliminary" | string;
+      finalScoreNote?: string;
+      expression: string;
+    };
   };
   performanceInsights: {
     avgRoi: number;

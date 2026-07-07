@@ -1276,32 +1276,307 @@ function TbiIndexContent({
   score: number;
 }) {
   const metrics = tbiMetricsForProfile(brand, profile, score);
+  const componentBreakdown =
+    profile?.componentBreakdown?.length
+      ? profile.componentBreakdown
+      : metrics.map((metric) => ({
+          key: metric.key,
+          code: metric.short,
+          label: metric.label,
+          score: metric.value,
+          weight: metric.weight,
+          weightDecimal: metric.weight / 100,
+          contribution: Number((metric.value * (metric.weight / 100)).toFixed(2)),
+          explanation: profile?.componentExplanations?.[metric.key] ?? "Calculated from available brand data.",
+          source: "Brand trust profile",
+        }));
+  const reviewStats = profile?.reviewStats;
+  const reviewRows = reviewStats?.rows ?? [];
+  const ratingDistribution = profile?.ratingDistribution ?? [];
+  const complaintStats = profile?.complaintStats;
+  const riskFlags = profile?.activeRiskFlags ?? profile?.riskEvents ?? [];
+  const formulaParts =
+    profile?.trustEngine?.formulaParts ??
+    componentBreakdown.map((component) => ({
+      code: component.code,
+      label: component.label,
+      score: component.score,
+      weight: component.weightDecimal,
+      contribution: component.contribution,
+      display: `(${component.score} x ${component.weightDecimal.toFixed(2)})`,
+    }));
+  const scoreStateLabel =
+    profile?.scoreStateLabel ??
+    (profile?.state === "full" ? "Full TBI" : profile?.state === "partial" ? "Partial" : "Preliminary");
+  const updatedAt = profile?.lastUpdated
+    ? new Date(profile.lastUpdated).toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "Not provided";
+  const rawScore = Number(profile?.rawScore ?? 0);
+  const confidenceFactor = Number(profile?.confidenceFactor ?? 0);
+  const riskPenalty = Number(profile?.riskPenalty ?? 0);
+  const finalScore = Number(profile?.finalScore ?? score);
+  const computedFinalScore = Number(
+    profile?.trustEngine?.calculation?.computedFinalScore ?? profile?.trustEngine?.computedFinalScore ?? finalScore,
+  );
+  const scoreSource = profile?.trustEngine?.scoreSource ?? profile?.trustEngine?.calculation?.scoreSource ?? "formula";
+  const finalScoreNote =
+    profile?.trustEngine?.finalScoreNote ??
+    profile?.trustEngine?.calculation?.finalScoreNote ??
+    "Final TBI is calculated from the weighted component formula.";
+  const formulaText = `${profile?.trustEngine?.formula ?? "TBI = (UT x 0.30) + (PR x 0.25) + (TS x 0.15) + (RC x 0.10) + (TC x 0.10) + (CX x 0.10)"}\n${formulaParts
+    .map((part) => part.display)
+    .join(" + ")}\nRaw Score: ${rawScore.toFixed(2)}\nConfidence Factor: ${confidenceFactor.toFixed(2)}\nRisk Penalty: ${riskPenalty.toFixed(2)}\nFormula Score: ${computedFinalScore.toFixed(2)} / 10\nFinal TBI: ${finalScore.toFixed(2)} / 10\nScore Source: ${scoreSource}\n${finalScoreNote}`;
+  const summaryItems = [
+    { label: "Final TBI", value: `${finalScore.toFixed(2)} / 10` },
+    { label: "Trust label", value: profile?.trustLabel ?? "Not provided" },
+    { label: "Confidence", value: profile?.confidence ?? "Not provided" },
+    { label: "Score state", value: scoreStateLabel },
+    { label: "Last updated", value: updatedAt },
+    { label: "Reviews used", value: String(profile?.reviewCount ?? 0) },
+    { label: "Verified reviews", value: String(profile?.verifiedReviewCount ?? 0) },
+    { label: "Complaints", value: String(profile?.complaints?.total ?? 0) },
+  ];
 
   return (
     <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px]">
-      <Section title="TBI Index">
-        <div className="grid gap-3 sm:grid-cols-2">
-          {metrics.map((metric) => (
-            <div key={metric.key} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[11px] font-semibold text-white">{metric.label}</div>
-                  <div className="mt-1 text-[10px] text-muted-foreground">
-                    {metric.short} · {metric.weight}% weight
-                  </div>
-                </div>
-                <div className="text-lg font-black">{metric.value.toFixed(1)}</div>
+      <div className="min-w-0">
+        <Section title="TBI Index">
+          <div className="mb-5 rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-white">Transparency & Trust Center</div>
+                <p className="mt-1 max-w-2xl text-xs leading-6 text-muted-foreground">
+                  This view uses the backend TBI engine values, approved reviews, and complaint records to explain why this brand has its current score.
+                </p>
               </div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                <span
-                  className="block h-full rounded-full bg-gradient-to-r from-slate-200 via-sky-300 to-violet-300"
-                  style={{ width: `${metric.value * 10}%` }}
-                />
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(formulaText)}
+                className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/[0.1]"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy Formula
+              </button>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {summaryItems.map((item) => (
+                <div key={item.label} className="rounded-xl bg-black/15 p-3 ring-1 ring-white/10">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {item.label}
+                  </div>
+                  <div className="mt-1 text-sm font-bold text-white">{item.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-[11px] leading-5 text-muted-foreground">
+              Pending and rejected reviews are excluded from TBI. Complaint penalties are applied only when the backend trust engine has active risk events.
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {componentBreakdown.map((metric) => (
+              <div key={metric.key} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] font-semibold text-white">{metric.label}</div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      {metric.code} · {metric.weight}% weight · {metric.contribution.toFixed(2)} contribution
+                    </div>
+                  </div>
+                  <div className="text-lg font-black">{Number(metric.score).toFixed(1)}</div>
+                </div>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <span
+                    className="block h-full rounded-full bg-gradient-to-r from-slate-200 via-sky-300 to-violet-300"
+                    style={{ width: `${Math.min(100, Number(metric.score) * 10)}%` }}
+                  />
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-muted-foreground">{metric.explanation}</p>
+                <div className="mt-2 rounded-lg bg-black/15 px-2.5 py-2 text-[10px] text-white/60 ring-1 ring-white/10">
+                  Source: {metric.source}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-white">Formula Transparency</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  The formula below is returned by the backend. Manual or preliminary final scores are clearly marked.
+                </div>
+              </div>
+              <div className="rounded-full bg-fuchsia-500/12 px-3 py-1 text-[11px] font-semibold text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+                Verify this score
               </div>
             </div>
-          ))}
-        </div>
-      </Section>
+            <div className="mt-4 rounded-xl bg-black/20 p-3 font-mono text-[11px] leading-6 text-white/80 ring-1 ring-white/10">
+              <div>{profile?.trustEngine?.formula ?? "TBI = (UT x 0.30) + (PR x 0.25) + (TS x 0.15) + (RC x 0.10) + (TC x 0.10) + (CX x 0.10)"}</div>
+              <div className="mt-2 text-fuchsia-100">{formulaParts.map((part) => part.display).join(" + ")}</div>
+              <div className="mt-2 grid gap-1 sm:grid-cols-2">
+                <span>Raw Score: {rawScore.toFixed(2)}</span>
+                <span>Confidence Factor: {confidenceFactor.toFixed(2)}</span>
+                <span>Risk Penalty: {riskPenalty.toFixed(2)}</span>
+                <span>Formula Score: {computedFinalScore.toFixed(2)} / 10</span>
+                <span>Final TBI: {finalScore.toFixed(2)} / 10</span>
+              </div>
+              <div className="mt-3 rounded-lg bg-white/[0.05] px-3 py-2 text-[11px] leading-5 text-muted-foreground ring-1 ring-white/10">
+                <span className="font-semibold text-white">Score source: {scoreSource}</span> · {finalScoreNote}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-white">Review Weight Breakdown</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Approved reviews only. Verified, active, and recent traders carry more trust weight.
+                </p>
+              </div>
+              <div className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-semibold text-white ring-1 ring-white/10">
+                Weighted rating {Number(reviewStats?.weightedRating ?? 0).toFixed(2)}
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
+              {[
+                ["Total", reviewStats?.totalReviews ?? 0],
+                ["Verified", reviewStats?.verifiedTraderReviews ?? 0],
+                ["Active", reviewStats?.activeTraderReviews ?? 0],
+                ["Recent", reviewStats?.recentReviews ?? 0],
+                ["Old", reviewStats?.oldReviews ?? 0],
+                ["Weight mass", reviewStats?.totalWeight ?? 0],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl bg-black/15 p-3 ring-1 ring-white/10">
+                  <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+                  <div className="mt-1 text-sm font-black text-white">{String(value)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-white/65">
+              <span className="rounded-full bg-white/[0.05] px-2.5 py-1 ring-1 ring-white/10">Base review weight = 1.0</span>
+              <span className="rounded-full bg-white/[0.05] px-2.5 py-1 ring-1 ring-white/10">Verified Trader = x2.0</span>
+              <span className="rounded-full bg-white/[0.05] px-2.5 py-1 ring-1 ring-white/10">Active Trader = x1.5</span>
+              <span className="rounded-full bg-white/[0.05] px-2.5 py-1 ring-1 ring-white/10">Recent Review = x1.2</span>
+              <span className="rounded-full bg-white/[0.05] px-2.5 py-1 ring-1 ring-white/10">Old Review = x0.7</span>
+            </div>
+
+            {reviewRows.length ? (
+              <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-white/10">
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="min-w-full divide-y divide-white/10 text-left text-xs">
+                    <thead className="bg-white/[0.04] text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2">Reviewer</th>
+                        <th className="px-3 py-2">Rating</th>
+                        <th className="px-3 py-2">Verification</th>
+                        <th className="px-3 py-2">Activity</th>
+                        <th className="px-3 py-2">Recency</th>
+                        <th className="px-3 py-2">Weight</th>
+                        <th className="px-3 py-2">Weighted</th>
+                        <th className="px-3 py-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                      {reviewRows.slice(0, 12).map((row) => (
+                        <tr key={row.id} className="text-white/80">
+                          <td className="px-3 py-2 font-semibold text-white">{row.reviewer}</td>
+                          <td className="px-3 py-2">{Number(row.score).toFixed(1)}/10</td>
+                          <td className="px-3 py-2">{row.verificationStatus}</td>
+                          <td className="px-3 py-2">{row.activityStatus}</td>
+                          <td className="px-3 py-2">{row.recency}</td>
+                          <td className="px-3 py-2">{Number(row.weight).toFixed(2)}</td>
+                          <td className="px-3 py-2">{Number(row.weightedScore).toFixed(2)}</td>
+                          <td className="px-3 py-2">{row.reviewStatus}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="grid gap-2 p-2 md:hidden">
+                  {reviewRows.slice(0, 8).map((row) => (
+                    <div key={row.id} className="rounded-lg bg-black/15 p-3 ring-1 ring-white/10">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="font-semibold text-white">{row.reviewer}</div>
+                        <div className="text-xs font-bold text-fuchsia-100">{Number(row.score).toFixed(1)}/10</div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                        <span>{row.verificationStatus}</span>
+                        <span>{row.activityStatus}</span>
+                        <span>{row.recency}</span>
+                        <span>Weight {Number(row.weight).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <EmptyBlock>No approved reviews are available yet.</EmptyBlock>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            <div className="rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
+              <div className="text-sm font-bold text-white">Rating Distribution</div>
+              <div className="mt-3 space-y-2">
+                {ratingDistribution.length ? (
+                  ratingDistribution.map((item) => (
+                    <div key={item.rating} className="grid grid-cols-[42px_1fr_46px] items-center gap-2 text-xs">
+                      <div className="font-semibold text-white">{item.rating}/10</div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                        <span
+                          className="block h-full rounded-full bg-gradient-to-r from-fuchsia-300 to-violet-400"
+                          style={{ width: `${Math.min(100, item.percentage)}%` }}
+                        />
+                      </div>
+                      <div className="text-right text-muted-foreground">{item.count}</div>
+                    </div>
+                  ))
+                ) : (
+                  <EmptyBlock>No rating distribution is available yet.</EmptyBlock>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
+              <div className="text-sm font-bold text-white">Complaints & Risk Impact</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  ["Total", complaintStats?.total ?? 0],
+                  ["Open", complaintStats?.open ?? 0],
+                  ["Resolved", complaintStats?.resolved ?? 0],
+                  ["Rejected", complaintStats?.rejected ?? 0],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-xl bg-black/15 p-3 ring-1 ring-white/10">
+                    <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+                    <div className="mt-1 text-sm font-black text-white">{String(value)}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 rounded-xl bg-black/15 p-3 text-xs leading-6 text-white/75 ring-1 ring-white/10">
+                {complaintStats?.impactExplanation ?? "No active complaints are currently affecting this score."}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(complaintStats?.categories ?? []).slice(0, 5).map((category) => (
+                  <span key={category.label} className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[10px] text-white/70 ring-1 ring-white/10">
+                    {category.label}: {category.count}
+                  </span>
+                ))}
+                {!complaintStats?.categories?.length && (
+                  <span className="text-[11px] text-muted-foreground">No active complaint categories.</span>
+                )}
+              </div>
+              <div className="mt-3 text-[11px] text-muted-foreground">
+                Trend: {complaintStats?.trend ?? "Stable"} · Risk flags: {riskFlags.length}
+              </div>
+            </div>
+          </div>
+        </Section>
+      </div>
       <TbiScoreCard brand={brand} profile={profile} score={score} />
     </div>
   );

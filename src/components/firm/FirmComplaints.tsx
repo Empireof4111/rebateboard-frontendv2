@@ -96,7 +96,8 @@ export function FirmComplaints({ firmName, firmSlug }: { firmName: string; firmS
     const resolved = items.filter((i) => i.status === "resolved").length;
     const sevScore = items.reduce((a, i) => a + (i.severity === "high" ? 3 : i.severity === "medium" ? 2 : 1), 0) / Math.max(total, 1);
     const sevLabel = sevScore >= 2.4 ? "High" : sevScore >= 1.7 ? "Medium" : "Low";
-    return { total, resolvedPct: total ? Math.round((resolved / total) * 100) : 0, sevLabel };
+    const tbiImpact = total ? "Synced in TBI" : "No active impact";
+    return { total, resolvedPct: total ? Math.round((resolved / total) * 100) : 0, sevLabel, tbiImpact };
   }, [items]);
 
   const visible = useMemo(() => {
@@ -164,7 +165,7 @@ export function FirmComplaints({ firmName, firmSlug }: { firmName: string; firmS
           <Kpi icon={<Flag className="h-3.5 w-3.5" />} label="Total complaints" value={String(stats.total)} />
           <Kpi icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="% Resolved" value={`${stats.resolvedPct}%`} accent="emerald" />
           <Kpi icon={<AlertTriangle className="h-3.5 w-3.5" />} label="Avg severity" value={stats.sevLabel} accent={stats.sevLabel === "High" ? "rose" : stats.sevLabel === "Medium" ? "amber" : "emerald"} />
-          <Kpi icon={<TrendingUp className="h-3.5 w-3.5" />} label="TBI impact" value="-2.4 pts" accent="rose" />
+          <Kpi icon={<TrendingUp className="h-3.5 w-3.5" />} label="TBI impact" value={stats.tbiImpact} accent={stats.total ? "amber" : "emerald"} />
         </div>
       </div>
 

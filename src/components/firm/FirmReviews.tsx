@@ -15,7 +15,7 @@ type Review = {
   proofUrl?: string;
   experience: string;
   overall: number;
-  weight: "low" | "medium" | "high" | null;
+  weight: "low" | "medium" | "high" | "proof-backed" | "standard" | null;
   body: string;
   scores: {
     customerCare: number;
@@ -204,7 +204,7 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
         proofUrl: r.proofs[0]?.dataUrl,
         experience: r.experience,
         overall: r.ratings.overall,
-        weight: r.proofs.length > 0 ? "high" : null,
+        weight: r.proofs.length > 0 ? "proof-backed" : "standard",
         body: r.body,
         scores: {
           customerCare: r.ratings.customerCare,
@@ -320,9 +320,9 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
                 <div className="mt-1 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
                   Review weight
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.weight === null ? "bg-white/10 text-muted-foreground" : r.weight === "high" ? "bg-emerald-500/20 text-emerald-300" : r.weight === "medium" ? "bg-amber-500/20 text-amber-300" : "bg-fuchsia-500/20 text-fuchsia-300"}`}
+                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.weight === "standard" ? "bg-white/10 text-muted-foreground" : r.weight === "proof-backed" ? "bg-emerald-500/20 text-emerald-300" : r.weight === "medium" ? "bg-amber-500/20 text-amber-300" : "bg-fuchsia-500/20 text-fuchsia-300"}`}
                   >
-                    {r.weight ?? "null"}
+                    {r.weight}
                   </span>
                 </div>
               </div>

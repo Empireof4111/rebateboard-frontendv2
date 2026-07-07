@@ -701,7 +701,7 @@ function Step3({
       <div>
         <h2 className="text-xl font-bold text-white">Rate your experience</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Please provide honest ratings based on your experience.
+          Please provide honest ratings based on your experience. Approved reviews may affect TBI, and verified or proof-backed reviews carry stronger credibility.
         </p>
       </div>
 
@@ -893,7 +893,7 @@ function SidebarNote({ step }: { step: 1 | 2 | 3 | 4 }) {
       >
         <li>You must have traded with the item for at least 2 weeks.</li>
         <li>No reviews from challenge phase accounts.</li>
-        <li>Reviews are linked to the brand's TBI score.</li>
+        <li>Only approved reviews can contribute to the brand's TBI score.</li>
       </NoteCard>
     );
   }
@@ -932,6 +932,7 @@ function SidebarNote({ step }: { step: 1 | 2 | 3 | 4 }) {
       tone="emerald"
     >
       <li>Reviews must be factual and verifiable.</li>
+      <li>Proof-backed reviews may receive higher credibility.</li>
       <li>No offensive language or personal attacks.</li>
       <li>Must have actual trading experience.</li>
       <li>False information may result in account suspension.</li>
