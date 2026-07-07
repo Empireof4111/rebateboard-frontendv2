@@ -67,16 +67,31 @@ function AdsPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const [adsRes, blogRes, brandRows] = await Promise.all([
+      const [adsRes, blogRes, brandRows] = await Promise.allSettled([
         advertApi.list(token),
         blogApi.list(token),
         fetchAdminBrands(),
       ]);
-      if (adsRes.payload) setAds(adsRes.payload.page);
-      if (blogRes.payload) setBlogPosts(blogRes.payload.page);
-      setBrands(brandRows);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Failed to load ads");
+
+      if (adsRes.status === "fulfilled") {
+        setAds(adsRes.value.payload?.page ?? []);
+      } else {
+        toast.error(adsRes.reason instanceof ApiError ? adsRes.reason.message : "Failed to load ads");
+      }
+
+      if (blogRes.status === "fulfilled") {
+        setBlogPosts(blogRes.value.payload?.page ?? []);
+      } else {
+        setBlogPosts([]);
+        toast.error(blogRes.reason instanceof ApiError ? blogRes.reason.message : "Blog posts could not be loaded");
+      }
+
+      if (brandRows.status === "fulfilled") {
+        setBrands(brandRows.value);
+      } else {
+        setBrands([]);
+        toast.error("Brand records could not be loaded");
+      }
     } finally {
       setLoading(false);
     }
