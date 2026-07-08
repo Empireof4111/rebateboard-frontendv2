@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, Gift, Save } from "lucide-react";
+import { BadgePercent, Save } from "lucide-react";
 import {
   fetchPublicAdminBrands,
   type AdminBrandRecord,
@@ -8,6 +8,7 @@ import {
 type RebateCalculatorProps = {
   compact?: boolean;
   onResult?: (value: string) => void;
+  onSelectedBrandChange?: (brand: AdminBrandRecord | null) => void;
   showSaveAction?: boolean;
 };
 
@@ -122,6 +123,7 @@ const inputClass =
 export function RebateCalculator({
   compact = false,
   onResult,
+  onSelectedBrandChange,
   showSaveAction = true,
 }: RebateCalculatorProps) {
   const [type, setType] = useState("Forex");
@@ -155,6 +157,10 @@ export function RebateCalculator({
     () => brands.find((brand) => brand.id === brandId),
     [brandId, brands],
   );
+
+  useEffect(() => {
+    onSelectedBrandChange?.(selectedBrand ?? null);
+  }, [onSelectedBrandChange, selectedBrand]);
   const rates = useMemo(() => calculatorRates(selectedBrand), [selectedBrand]);
   const assetOptions = useMemo(() => {
     const values = Array.from(new Set(rates.map((rate) => String(rate.asset ?? "").trim()).filter(Boolean)));
@@ -341,12 +347,6 @@ export function RebateCalculator({
         )}
       </div>
 
-      {compact && (
-        <div className="flex items-center gap-2 text-[10px] text-white/45">
-          <Gift className="h-3.5 w-3.5 text-primary" />
-          Brand rates are loaded from the RebateBoard admin system when available.
-        </div>
-      )}
     </div>
   );
 }

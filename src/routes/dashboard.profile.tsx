@@ -130,6 +130,10 @@ function ProfilePage() {
     .slice(0, 2)
     .toUpperCase();
   const completion = user.profileCompletion ?? (user.onboardingCompleted ? 100 : 0);
+  const username = user.username ? `@${user.username.replace(/^@/, "")}` : "Username not set";
+  const memberSince = user.joinedAt
+    ? new Date(user.joinedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+    : "Not available";
 
   async function persistAvatar(dp: string) {
     if (!token) return;
@@ -279,11 +283,20 @@ function ProfilePage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-xl font-bold text-white">{user.fullName || user.name}</div>
-            <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="font-semibold text-fuchsia-200">{username}</span>
+              <span>{user.email}</span>
+            </div>
             <div className="mt-1 flex flex-wrap gap-2">
               {user.status && <Pill tone={user.status === "ACTIVE" ? "success" : "default"}>{user.status}</Pill>}
               {user.country && <Pill>{user.country}</Pill>}
               {user.onboardingCompleted ? <Pill tone="success">Profile complete</Pill> : <Pill tone="primary">Profile {completion}% complete</Pill>}
+            </div>
+            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+              <IdentityItem label="Full Name" value={user.fullName || user.name} />
+              <IdentityItem label="Username" value={username} />
+              <IdentityItem label="Country" value={user.country || "Not provided"} />
+              <IdentityItem label="Member Since" value={memberSince} />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <label className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full bg-primary/20 px-3 py-2 text-xs font-semibold text-white ring-1 ring-primary/35 transition hover:bg-primary/30">
@@ -443,6 +456,15 @@ function VerificationPill({ status }: { status: VerificationStatus }) {
   if (status === "pending") return <Pill tone="primary"><FileCheck2 className="h-3 w-3" />Pending</Pill>;
   if (status === "rejected") return <Pill tone="destructive"><AlertCircle className="h-3 w-3" />Rejected</Pill>;
   return <Pill><IdCard className="h-3 w-3" />Not started</Pill>;
+}
+
+function IdentityItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+      <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 truncate font-medium text-white/90">{value}</div>
+    </div>
+  );
 }
 
 function VerificationUpload({

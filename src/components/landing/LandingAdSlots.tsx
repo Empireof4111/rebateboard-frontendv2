@@ -200,7 +200,9 @@ export function LandingHeroAdCard({
         <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
           <div className="glass rounded-2xl p-4">
             <p className="text-sm font-semibold text-white">Featured placement ready</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Campaigns added in Superadmin Ads will appear here.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              New partner highlights and trader offers will appear here soon.
+            </p>
           </div>
         </div>
       )}

@@ -87,7 +87,7 @@ function ReferralsPage() {
   const baseLink = useMemo(() => (profile ? buildShareUrl(profile) : ""), [profile]);
 
   if (loading || !profile || !stats) {
-    return <EmptyState icon={Users} title="Loading your referral profile…" />;
+    return <EmptyState icon={Users} title="Preparing your referral profile…" />;
   }
 
   const copy = async (text: string) => {
@@ -206,7 +206,7 @@ function ReferralsPage() {
               <button onClick={() => share("twitter")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Twitter className="h-3.5 w-3.5 text-sky-400" /> Twitter / X</button>
               <button onClick={() => share("whatsapp")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><MessageCircle className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp</button>
               <button onClick={() => share("telegram")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Send className="h-3.5 w-3.5 text-cyan-300" /> Telegram</button>
-              <button onClick={() => share("email")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Mail className="h-3.5 w-3.5 text-amber-300" /> Email</button>
+              <button onClick={() => share("email")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Mail className="h-3.5 w-3.5 text-fuchsia-300" /> Email</button>
               <button onClick={() => setShowQr((v) => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><QrCode className="h-3.5 w-3.5 text-fuchsia-300" /> {showQr ? "Hide QR" : "Show QR"}</button>
               <a href={baseLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><ExternalLink className="h-3.5 w-3.5" /> Preview</a>
             </div>
@@ -246,7 +246,7 @@ function ReferralsPage() {
             <FunnelBar label="Clicks" value={stats.clicks} max={Math.max(stats.clicks, 1)} tone="from-sky-400 to-cyan-500" />
             <FunnelBar label="Signups" value={stats.signups} max={Math.max(stats.clicks, 1)} tone="from-fuchsia-400 to-violet-500" />
             <FunnelBar label="Qualified" value={stats.qualified} max={Math.max(stats.clicks, 1)} tone="from-emerald-400 to-teal-500" />
-            <FunnelBar label="Earning" value={earningReferees.length} max={Math.max(stats.clicks, 1)} tone="from-amber-400 to-orange-500" />
+            <FunnelBar label="Earning" value={earningReferees.length} max={Math.max(stats.clicks, 1)} tone="from-violet-400 to-fuchsia-500" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[11px]">
             <div className="rounded-lg bg-white/5 p-2">
@@ -319,7 +319,7 @@ function ReferralsPage() {
       {/* Payout history */}
       <Panel title="Payout history">
         {payouts.length === 0 ? (
-          <EmptyState icon={Gift} title="No payouts yet" description={`Hit ${fmtUsd(50)} pending and an admin will release it to your wallet.`} />
+          <EmptyState icon={Gift} title="No payouts yet" description={`Once you reach ${fmtUsd(50)} pending, eligible earnings can be released to your wallet.`} />
         ) : (
           <ul className="divide-y divide-white/5">
             {payouts.map((p) => (
@@ -358,7 +358,7 @@ function EventIcon({ kind }: { kind: string }) {
     click:     { i: MousePointerClick, cls: "bg-sky-500/15 text-sky-300 ring-sky-400/30" },
     signup:    { i: Users,             cls: "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30" },
     qualified: { i: ShieldCheck,       cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30" },
-    revenue:   { i: DollarSign,        cls: "bg-amber-500/15 text-amber-300 ring-amber-400/30" },
+    revenue:   { i: DollarSign,        cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30" },
   };
   const { i: Icon, cls } = map[kind] ?? map.click;
   return <span className={`grid h-7 w-7 place-items-center rounded-lg ring-1 ${cls}`}><Icon className="h-3.5 w-3.5" /></span>;

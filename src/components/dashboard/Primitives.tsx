@@ -37,13 +37,13 @@ export function StatCard({
   const accentRing = {
     primary: "ring-primary/25",
     success: "ring-success/25",
-    warning: "ring-warning/25",
+    warning: "ring-fuchsia-400/25",
     destructive: "ring-destructive/25",
   }[accent ?? "primary"];
   const accentBar = {
     primary: "from-violet-500 to-fuchsia-400",
     success: "from-emerald-500 to-cyan-400",
-    warning: "from-amber-500 to-amber-300",
+    warning: "from-violet-500 to-fuchsia-300",
     destructive: "from-rose-600 to-rose-400",
   }[accent ?? "primary"];
   return (
@@ -79,7 +79,7 @@ export function Pill({ children, tone = "default" }: { children: ReactNode; tone
   const map = {
     default: "bg-white/10 text-white/85 ring-white/10",
     success: "bg-success/15 text-success ring-success/20",
-    warning: "bg-warning/15 text-accent ring-warning/20",
+    warning: "bg-fuchsia-500/15 text-fuchsia-200 ring-fuchsia-400/25",
     destructive: "bg-destructive/15 text-destructive ring-destructive/25",
     primary: "bg-primary/15 text-primary ring-primary/25",
   } as const;

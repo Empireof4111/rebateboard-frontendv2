@@ -14,13 +14,13 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
   const isRejected = claim.status === "rejected";
   const steps = [
     { key: "submitted", label: "Submitted", icon: Clock, done: true, sub: claim.submitted },
-    { key: "review", label: "Under review", icon: ShieldCheck, done: claim.status !== "pending", sub: claim.status === "pending" ? "In queue" : "Reviewed by admin" },
+    { key: "review", label: "Under review", icon: ShieldCheck, done: claim.status !== "pending", sub: claim.status === "pending" ? "In queue" : "Review complete" },
     {
       key: "decision",
       label: isRejected ? "Rejected" : isApproved ? "Approved" : "Awaiting decision",
       icon: isRejected ? XCircle : isApproved ? CheckCircle2 : Clock,
       done: claim.status !== "pending",
-      sub: isRejected ? (claim.note ?? "Rejected by admin") : isApproved ? (claim.approvedAt ? `By ${claim.approvedBy ?? "@admin"} · ${claim.approvedAt}` : "Approved by admin") : "—",
+      sub: isRejected ? (claim.note ?? "Rejected after review") : isApproved ? (claim.approvedAt ? `Approved · ${claim.approvedAt}` : "Approved") : "—",
     },
     {
       key: "paid",
@@ -29,7 +29,7 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
       done: isPaid,
       sub: isPaid
         ? `Credited to ${targetLabel[claim.payoutTarget ?? "rebate-wallet"]} via ${claim.payoutMethod ?? "manual"}${claim.payoutTxRef && claim.payoutTxRef !== "auto" ? ` · ${claim.payoutTxRef}` : ""}`
-        : isApproved ? "Admin is processing your payout" : "—",
+        : isApproved ? "Payout is being processed" : "—",
     },
   ];
 
@@ -49,7 +49,7 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
           claim.status === "paid" ? "bg-emerald-500/15 text-emerald-300"
           : claim.status === "approved" ? "bg-sky-500/15 text-sky-300"
           : claim.status === "rejected" ? "bg-rose-500/15 text-rose-300"
-          : "bg-amber-500/15 text-amber-300"
+          : "bg-fuchsia-500/15 text-fuchsia-200"
         }`}>
           {claim.status.toUpperCase()}
         </div>
@@ -95,7 +95,7 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
 
         {claim.note && (
           <section className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <h3 className="mb-1 text-sm font-semibold text-white">Admin note</h3>
+            <h3 className="mb-1 text-sm font-semibold text-white">Review note</h3>
             <p className="text-sm text-white/70">{claim.note}</p>
           </section>
         )}

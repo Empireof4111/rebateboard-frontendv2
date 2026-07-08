@@ -76,7 +76,7 @@ export async function apiRequest<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (error) {
-    throw new ApiError(`Backend API is unavailable at ${API_BASE_URL}`, error);
+    throw new ApiError("RebateBoard services are temporarily unavailable. Please try again.", error);
   }
 
   let data: ApiResponse<T> | null = null;

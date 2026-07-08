@@ -8,28 +8,29 @@ import {
   TrendingUp, Sparkles, AlertTriangle, Activity,
   Plus, Star, Building2, Bot, Lightbulb,
   Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug, Gift,
+  CheckCircle2, Target,
 } from "lucide-react";
 import { openAddTrade } from "@/lib/ui-bus";
-import { tickStreak, getStreakConfig } from "@/lib/rr-rewards";
 import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/finance-api";
 import { completeDailyTask, fetchMyDailyTasks, type DailyTaskUserBoard } from "@/lib/daily-tasks-api";
 import { toast } from "@/components/superadmin/AdminActions";
 import { useI18n } from "@/lib/i18n";
 import { useTrades, useTradingPlan } from "@/lib/trading-plan";
 import { fetchMyReviews } from "@/lib/reviews-api";
+import { getNextUnlock, getTraderLevelProgress, PROGRESSION_TASKS } from "@/lib/trader-levels";
 
 function fmtUSD(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function displayMoney(value: number | null | undefined, hasActivity = true) {
-  if (value === null || value === undefined) return "Loading...";
+  if (value === null || value === undefined) return "Preparing";
   if (!hasActivity && Math.abs(Number(value)) < 0.01) return "No Data Yet";
   return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 function displayCount(value: number | null | undefined, hasActivity = true) {
-  if (value === null || value === undefined) return "Loading...";
+  if (value === null || value === undefined) return "Preparing";
   if (!hasActivity && Number(value) === 0) return "No Data Yet";
   return Number(value).toLocaleString();
 }
@@ -84,12 +85,6 @@ function DashboardHome() {
 
   useEffect(() => { load(); }, [load]);
 
-  useEffect(() => {
-    const cfg = getStreakConfig();
-    if (cfg.enabled && (cfg.qualifier === "login" || cfg.qualifier === "any_activity")) {
-      tickStreak();
-    }
-  }, []);
   const { primaryMarketLabel, goalLabel } = usePersonalization();
   const hasTradingPlan = Boolean(
     tradingPlan.profile || tradingPlan.strategies.length > 0 || tradingPlan.checklist.length > 0,
@@ -133,6 +128,15 @@ function DashboardHome() {
     const strongestAsset = Object.entries(byAsset).sort((a, b) => b[1].pnl - a[1].pnl)[0] ?? null;
     return { winRate, adherence, violations, strongestAsset };
   }, [trades]);
+  const levelProgress = useMemo(() => getTraderLevelProgress(user?.rrBalance), [user?.rrBalance]);
+  const nextUnlock = useMemo(() => getNextUnlock(user?.rrBalance), [user?.rrBalance]);
+  const journeyItems = useMemo(() => [
+    { label: "Profile Completed", done: Boolean(user?.onboardingCompleted || Number(user?.profileCompletion ?? 0) >= 80) },
+    { label: `${reviewCount} Reviews Submitted`, done: reviewCount > 0 },
+    { label: `${linkedAccountsCount} Trading Accounts Linked`, done: linkedAccountsCount > 0 },
+    { label: "Cashback Claimed", done: claimCount > 0 },
+    { label: levelProgress.current.name, done: true },
+  ], [claimCount, levelProgress.current.name, linkedAccountsCount, reviewCount, user?.onboardingCompleted, user?.profileCompletion]);
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return t("dashboard.greetingMorning");
@@ -173,11 +177,54 @@ function DashboardHome() {
         }}
       />
 
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        <Panel title="Trading Journey" action={<Pill tone="primary"><Target className="h-3 w-3" />Current Goal</Pill>}>
+          <div className="grid gap-3 md:grid-cols-[1fr_0.9fr]">
+            <div className="space-y-2">
+              {journeyItems.map((item) => (
+                <div key={item.label} className="flex items-center gap-2 rounded-xl bg-white/[0.035] px-3 py-2 text-xs">
+                  <span className={`grid h-6 w-6 place-items-center rounded-full ${item.done ? "bg-emerald-500/15 text-emerald-300" : "bg-white/10 text-muted-foreground"}`}>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  </span>
+                  <span className={item.done ? "text-white" : "text-muted-foreground"}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Current Goal</div>
+              <div className="mt-1 text-sm font-semibold text-white">{nextUnlock.title}</div>
+              <p className="mt-1 text-xs text-muted-foreground">{nextUnlock.subtitle}</p>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
+              </div>
+              <div className="mt-2 text-[11px] text-muted-foreground">{Math.round(nextUnlock.progress)}% complete</div>
+            </div>
+          </div>
+        </Panel>
+
+        <Panel title="Next Unlock" action={<Pill tone="primary"><Gift className="h-3 w-3" />{nextUnlock.remaining.toLocaleString()} RR left</Pill>}>
+          <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-4">
+            <div className="text-lg font-bold text-white">{nextUnlock.title}</div>
+            <p className="mt-1 text-sm text-muted-foreground">{nextUnlock.subtitle}</p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.07]">
+              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+              {PROGRESSION_TASKS.slice(0, 4).map((task) => (
+                <Link key={task.label} to={task.href as string} className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-white/80 transition hover:bg-white/[0.07] hover:text-white">
+                  {task.label} <span className="text-fuchsia-200">+{task.reward} RR</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </Panel>
+      </div>
+
       {/* Section 1 — Money First */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <StatCard label={t("dashboard.walletBalance")} value={displayMoney(summary?.balance, walletHasActivity)} trend={walletHasActivity ? "up" : "neutral"} accent="success" />
         <StatCard label={t("dashboard.totalCashback")} value={displayMoney(summary?.totalEarned, walletHasActivity)} hint={t("dashboard.allTime")} trend={walletHasActivity ? "up" : "neutral"} accent="success" />
-        <StatCard label={t("dashboard.rrBalance")} value={displayCount(user?.rrBalance, Number(user?.rrBalance ?? 0) > 0)} accent="primary" />
+        <StatCard label={t("dashboard.rrBalance")} value={displayCount(user?.rrBalance, Number(user?.rrBalance ?? 0) > 0)} hint={levelProgress.current.name} accent="primary" />
         <StatCard label={t("dashboard.totalWithdrawn")} value={displayMoney(summary?.totalWithdrawn, walletHasActivity)} hint={t("dashboard.lifetime")} accent="primary" />
         <StatCard label={t("dashboard.pending")} value={displayMoney(summary?.pendingWithdrawals, walletHasActivity)} hint={t("dashboard.withdrawals")} accent="warning" />
         <StatCard label={t("dashboard.referrals")} value={displayCount(referralStats?.total, Number(referralStats?.total ?? 0) > 0)} hint={referralStats && referralStats.thisMonth > 0 ? `+${referralStats.thisMonth} ${t("dashboard.thisMonthPlus")}` : ""} />
@@ -198,7 +245,7 @@ function DashboardHome() {
                   ? `$${Number(summary.availableForWithdrawal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                   : summary
                     ? "Awaiting Activity"
-                    : "Loading..."}
+                    : "Preparing"}
               </div>
               <div className="text-[11px] text-muted-foreground">
                 {summary && walletHasActivity
@@ -254,8 +301,8 @@ function DashboardHome() {
                 </li>
               )}
               {summary && Number(summary.pendingWithdrawals) > 0 ? (
-                <li className="flex gap-2 rounded-lg bg-amber-500/10 p-2.5">
-                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                <li className="flex gap-2 rounded-lg bg-fuchsia-500/10 p-2.5">
+                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-200" />
                   <span className="text-white">You have <b>{fmtUSD(Number(summary.pendingWithdrawals))}</b> in pending withdrawals.</span>
                 </li>
               ) : (
@@ -501,7 +548,7 @@ function DashboardHome() {
             </div>
           </div>
           <div className="mt-4 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
-            Superadmin controls these tasks from <b>/superadmin/daily-tasks</b>. As soon as they publish or disable tasks there, this block updates from the live backend.
+            New missions will appear automatically. Complete them to earn RR and maintain your Trading Streak.
           </div>
         </Panel>
       </div>

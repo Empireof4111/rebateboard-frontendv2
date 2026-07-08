@@ -10,6 +10,7 @@ import {
   type BlogPost,
   type Faq,
 } from "@/lib/admin-api";
+import { resolvePublicFaqContent } from "@/lib/public-faq-content";
 
 export const Route = createFileRoute("/faqs")({
   head: () => ({
@@ -37,6 +38,8 @@ const CATEGORY_BLURBS: Record<string, string> = {
   Wallet: "Withdrawals, balances and supported methods.",
   Cashback: "How rebates are calculated, tracked and paid.",
   Claims: "Submitting and resolving cashback claims.",
+  Rewards: "Rebate Rewards, trader progress and platform missions.",
+  Reviews: "Review verification, moderation and trust signals.",
   TBI: "How the Trust & Brand Index scoring works.",
 };
 
@@ -60,12 +63,12 @@ function FaqsPage() {
           fetchPublicBlogPosts(),
         ]);
         if (!cancelled) {
-          setFaqs(faqRows);
+          setFaqs(resolvePublicFaqContent(faqRows));
           setBlog(articleRows);
         }
       } catch {
         if (!cancelled) {
-          setFaqs([]);
+          setFaqs(resolvePublicFaqContent([]));
           setBlog([]);
         }
       } finally {
@@ -122,7 +125,7 @@ function FaqsPage() {
           </div>
           <h1 className="mt-4 text-3xl font-bold sm:text-5xl">Everything you need to know</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            Browse {loadingFaqs ? "..." : publishedFaqs.length} answers about RebateBoard, our
+            Browse {loadingFaqs ? "trusted" : publishedFaqs.length} answers about RebateBoard, our
             partner brands, prop firms, brokers, exchanges, payouts and the trading industry at
             large.
           </p>
@@ -167,13 +170,11 @@ function FaqsPage() {
         {/* Category sections */}
         <section className="mt-8 space-y-8">
           {loadingFaqs && (
-            <div className="rounded-2xl bg-white/[0.04] p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
-              Loading FAQs...
-            </div>
+            <FaqPageSkeleton />
           )}
           {!loadingFaqs && publishedFaqs.length === 0 && (
             <div className="rounded-2xl bg-white/[0.04] p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
-              No FAQs published yet. Published admin FAQs will appear here automatically.
+              Helpful answers will appear here soon.
             </div>
           )}
           {!loadingFaqs && publishedFaqs.length > 0 && filtered.length === 0 && (
@@ -318,6 +319,35 @@ function FaqsPage() {
         </section>
       </main>
       <SiteFooter />
+    </div>
+  );
+}
+
+function FaqPageSkeleton() {
+  return (
+    <div className="space-y-8">
+      {Array.from({ length: 2 }).map((_, sectionIndex) => (
+        <div key={sectionIndex}>
+          <div className="mb-4">
+            <div className="skeleton h-6 w-40" />
+            <div className="skeleton mt-2 h-3 w-64" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((__, cardIndex) => (
+              <div
+                key={cardIndex}
+                className="rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/10"
+              >
+                <div className="skeleton h-4 w-4/5" />
+                <div className="mt-4 space-y-2">
+                  <div className="skeleton h-3 w-full" />
+                  <div className="skeleton h-3 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

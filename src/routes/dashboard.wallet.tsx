@@ -178,7 +178,6 @@ function WalletPage() {
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.amount > 0;
     }).reduce((s, t) => s + t.amount, 0),
     rrBalance: user?.rrBalance ?? 0,
-    rrCashValue: (user?.rrBalance ?? 0) / 100,
   };
   const kycVerified =
     user?.kycStatus === "verified" ||
@@ -225,7 +224,7 @@ function WalletPage() {
             <div className="mt-2 text-4xl font-bold text-white md:text-5xl">{fmtUSD(walletSummary.balance)}</div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Pill tone="success"><TrendingUp className="h-3 w-3" /> +{fmtUSD(walletSummary.cashbackThisMonth)} this month</Pill>
-              <span>· RR balance: <b className="text-white">{walletSummary.rrBalance}</b> ≈ {fmtUSD(walletSummary.rrCashValue)}</span>
+              <span>· RR balance: <b className="text-white">{Math.round(walletSummary.rrBalance).toLocaleString()} RR</b></span>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <button onClick={() => setWithdrawOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400">
@@ -251,7 +250,7 @@ function WalletPage() {
             <MiniStat label="Available" value={fmtUSD(walletSummary.availableForWithdrawal)} icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} />
           </div>
           <div className="space-y-2">
-            <MiniStat label="Pending Withdrawal" value={fmtUSD(walletSummary.pendingWithdrawals)} icon={<Clock className="h-3.5 w-3.5 text-amber-400" />} />
+            <MiniStat label="Pending Withdrawal" value={fmtUSD(walletSummary.pendingWithdrawals)} icon={<Clock className="h-3.5 w-3.5 text-fuchsia-300" />} />
             <MiniStat label="Total Withdrawn" value={fmtUSD(walletSummary.totalWithdrawn)} icon={<ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />} />
           </div>
         </div>
@@ -294,7 +293,7 @@ function WalletPage() {
                 <Insight tone="primary" text={<>No source-level earnings yet. Linked accounts and approved cashback entries will populate this insight.</>} />
               )}
               {linkedAccts.length > 0 ? (
-                <Insight tone="primary" text={<><b>{linkedAccts.length}</b> linked account request{linkedAccts.length === 1 ? "" : "s"} found. Pending requests update when admin confirms the partner connection.</>} />
+                <Insight tone="primary" text={<><b>{linkedAccts.length}</b> linked account request{linkedAccts.length === 1 ? "" : "s"} found. Pending requests update when the partner connection is confirmed.</>} />
               ) : (
                 <Insight tone="warning" text={<>No linked partner accounts yet. Link a broker, prop firm, or exchange to enable automated cashback tracking.</>} />
               )}
@@ -437,7 +436,7 @@ function WalletPage() {
         <div className="grid gap-2 md:grid-cols-3">
           <PrefOption
             active={pref.default === "rr-wallet"} onClick={() => updatePref({ default: "rr-wallet" })}
-            icon={<Sparkles className="h-4 w-4 text-amber-300" />}
+            icon={<Sparkles className="h-4 w-4 text-fuchsia-300" />}
             title="RR (Reward) wallet"
             desc="System auto-credits — no proof required when you used our affiliate link."
           />
@@ -451,7 +450,7 @@ function WalletPage() {
             active={pref.default === "broker-wallet"} onClick={() => updatePref({ default: "broker-wallet" })}
             icon={<Building2 className="h-4 w-4 text-fuchsia-300" />}
             title="Back to broker wallet"
-            desc="Available only on supported brokers / exchanges with API."
+            desc="Available only on supported brokers / exchanges."
           />
         </div>
       </Panel>
@@ -544,7 +543,7 @@ function MiniStat({ label, value, icon }: { label: string; value: string; icon: 
 }
 
 function Insight({ tone, text }: { tone: "success" | "warning" | "primary"; text: React.ReactNode }) {
-  const ring = tone === "success" ? "ring-emerald-400/30" : tone === "warning" ? "ring-amber-400/30" : "ring-primary/30";
+  const ring = tone === "success" ? "ring-emerald-400/30" : tone === "warning" ? "ring-fuchsia-400/25" : "ring-primary/30";
   return (
     <div className={`rounded-xl bg-white/[0.04] p-3 text-white/85 ring-1 ${ring}`}>{text}</div>
   );
@@ -905,13 +904,13 @@ function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSu
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Partner</label>
           <select value={partner} onChange={(e) => setPartner(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50">
-            {brandsLoading && <option value="">Loading partners...</option>}
+            {brandsLoading && <option value="">Preparing partners...</option>}
             {!brandsLoading && allBrands.length === 0 && <option value="">No cashback partners available</option>}
             {allBrands.map((b) => <option key={b.name} value={b.name}>{b.name} — {b.category}</option>)}
           </select>
           {brandsError && <div className="mt-1 text-[10px] text-rose-300">{brandsError}</div>}
           <div className="mt-1 text-[10px] text-muted-foreground">
-            {cb.supportsApiAuto ? "✓ API auto-payout supported" : "Manual proof required"}
+            {cb.supportsApiAuto ? "✓ Automatic payout supported" : "Manual proof required"}
             {cb.supportsRebateWallet ? " · Rebate wallet supported" : ""}
           </div>
         </div>

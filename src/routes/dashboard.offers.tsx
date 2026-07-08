@@ -134,7 +134,7 @@ function DashboardOffers() {
       {endingSoon.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-400" />
+            <Clock className="h-4 w-4 text-fuchsia-300" />
             <h2 className="text-base font-bold">Ending soon</h2>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">

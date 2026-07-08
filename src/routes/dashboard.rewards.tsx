@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { financeApi } from "@/lib/finance-api";
@@ -6,7 +6,7 @@ import { EmptyState, PageHeader, Panel, StatCard, Pill } from "@/components/dash
 import {
   Gift, Sparkles, Zap, TrendingUp, GraduationCap, Percent, Building2, X,
   CheckCircle2, ArrowRight, Trophy, Flame,
-  Instagram, Youtube, Send, MessageCircle, Mail, Music2, ExternalLink, Check, Clock,
+  Instagram, Youtube, Send, MessageCircle, Mail, Music2, ExternalLink, Check, Clock, Target,
 } from "lucide-react";
 import {
   rrApi,
@@ -19,12 +19,18 @@ import {
   type RrPurchaseCatalog,
   type RrPurchasePackage,
 } from "@/lib/rr-purchase-api";
+import {
+  getNextUnlock,
+  getTraderLevelProgress,
+  PROGRESSION_TASKS,
+  TRADER_LEVELS,
+} from "@/lib/trader-levels";
 
 export const Route = createFileRoute("/dashboard/rewards")({
   head: () => ({
     meta: [
       { title: "Rewards — RebateBoard" },
-      { name: "description", content: "Earn RR for trading and convert it into cash, prop firm discounts, and trading fee reductions." },
+      { name: "description", content: "Earn RR, grow your Trader Level, keep your Trading Streak alive, and unlock RebateBoard rewards." },
     ],
   }),
   component: RewardsPage,
@@ -33,10 +39,10 @@ export const Route = createFileRoute("/dashboard/rewards")({
 type RedeemKind = "cash" | "propfirm" | "fees" | "academy";
 
 const redeemOptions = [
-  { id: "cash" as RedeemKind, title: "Convert to Cash", tagline: "Cash redemption rules from admin", rate: "Configured in admin", icon: TrendingUp, accent: "success" as const, cta: "View options" },
-  { id: "propfirm" as RedeemKind, title: "Partner Discounts", tagline: "Partner spend rules from admin", rate: "Configured in admin", icon: Building2, accent: "primary" as const, cta: "View options" },
-  { id: "fees" as RedeemKind, title: "Trading Fee Discount", tagline: "Fee spend rules from admin", rate: "Configured in admin", icon: Percent, accent: "warning" as const, cta: "View options" },
-  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Learning spend rules from admin", rate: "Configured in admin", icon: GraduationCap, accent: "primary" as const, cta: "View options" },
+  { id: "cash" as RedeemKind, title: "Cashback Boosts", tagline: "Increase eligible cashback rewards when boosts are available.", rate: "Coming Soon", icon: TrendingUp, accent: "success" as const, cta: "Notify Me" },
+  { id: "propfirm" as RedeemKind, title: "Trading Challenges", tagline: "Use RR toward eligible partner challenge opportunities.", rate: "Eligible partners", icon: Building2, accent: "primary" as const, cta: "View eligible partners" },
+  { id: "fees" as RedeemKind, title: "Trading Fee Perks", tagline: "Reduce selected trading costs through future RR perks.", rate: "Coming Soon", icon: Percent, accent: "primary" as const, cta: "Notify Me" },
+  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Unlock learning content, templates, and premium tools.", rate: "Coming Soon", icon: GraduationCap, accent: "primary" as const, cta: "Notify Me" },
 ];
 
 const DEFAULT_CONFIG: RrAllConfig = {
@@ -51,7 +57,6 @@ const DEFAULT_CONFIG: RrAllConfig = {
 function RewardsPage() {
   const { user, token, updateProfile } = useAuth();
   const rrBalance = Math.round(user?.rrBalance ?? 0);
-  const cashValue = (rrBalance / 100).toFixed(2);
 
   const [rrStats, setRrStats] = useState<{ balance: number; earned30d: number; lifetimeEarned: number } | null>(null);
   const [config, setConfig] = useState<RrAllConfig>(DEFAULT_CONFIG);
@@ -84,17 +89,18 @@ function RewardsPage() {
       setPurchaseCatalog(catalog);
       setPurchaseError(null);
     } catch (error) {
-      setPurchaseError(error instanceof Error ? error.message : "Could not load RR purchase options");
+      setPurchaseError(error instanceof Error ? error.message : "Could not load RR top-up options");
     }
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
 
   const streakCfg = config.streak_config;
-  const tiers = [...config.tiers].sort((a, b) => a.rank - b.rank);
   const nextMilestone = streakCfg.milestones
     .filter((m) => m.enabled && m.days > streak.current)
     .sort((a, b) => a.days - b.days)[0];
+  const levelProgress = getTraderLevelProgress(rrBalance);
+  const nextUnlock = getNextUnlock(rrBalance, config.spend_rules);
 
   const pricing = purchaseCatalog?.pricing;
   const walletSnapshot = purchaseCatalog?.wallet;
@@ -123,7 +129,7 @@ function RewardsPage() {
     if (!pricing) return;
     const amount = Number(customAmount);
     if (!amount) {
-      setPurchaseError("Enter how many RR you want to buy.");
+      setPurchaseError("Enter the RR amount you want to add.");
       return;
     }
 
@@ -135,7 +141,7 @@ function RewardsPage() {
       updateProfile({ rrBalance: payload.user.rrBalance });
       setCustomAmount("");
     } catch (error) {
-      setPurchaseError(error instanceof Error ? error.message : "Unable to complete RR purchase");
+      setPurchaseError(error instanceof Error ? error.message : "Unable to complete RR top-up");
     } finally {
       setCustomBuying(false);
     }
@@ -145,7 +151,7 @@ function RewardsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Rebate Rewards"
-        subtitle="Earn RR for every action — convert it into real trader value, not just badges."
+        subtitle="Earn RR through real activity, grow your Trader Level, and unlock better RebateBoard benefits."
       />
 
       {/* RR hero */}
@@ -158,61 +164,111 @@ function RewardsPage() {
             </div>
             <div className="mt-2 flex items-end gap-3">
               <div className="text-5xl font-bold text-white">{rrBalance.toLocaleString()}</div>
-              <div className="pb-2 text-sm text-muted-foreground">≈ <b className="text-emerald-400">${cashValue}</b></div>
+              <div className="pb-2 text-sm font-semibold text-fuchsia-200">RR</div>
+            </div>
+            <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-white">{levelProgress.current.name}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {levelProgress.next
+                      ? `${levelProgress.remaining.toLocaleString()} RR until ${levelProgress.next.name}`
+                      : "Top Trader Level reached"}
+                  </div>
+                </div>
+                <Pill tone="primary">{levelProgress.rr.toLocaleString()} / {levelProgress.next ? levelProgress.next.minRr.toLocaleString() : levelProgress.rr.toLocaleString()} RR</Pill>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${levelProgress.progress}%` }} />
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Pill tone="primary"><Flame className="h-3 w-3" />{streak.current}-day streak</Pill>
+              <Pill tone="primary"><Flame className="h-3 w-3" />Trading Streak: day {streak.current}</Pill>
               <Pill tone="success">Longest: {streak.longest}d</Pill>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button onClick={() => setRedeemOpen("cash")} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white">
-                <TrendingUp className="h-3.5 w-3.5" /> Convert to cash
+              <button onClick={() => setRedeemOpen("propfirm")} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+                <Target className="h-3.5 w-3.5" /> View eligible partners
               </button>
-              <button onClick={() => setRedeemOpen("propfirm")} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-                <Building2 className="h-3.5 w-3.5" /> Buy prop firm
-              </button>
-              <button onClick={() => setRedeemOpen("fees")} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-                <Percent className="h-3.5 w-3.5" /> Cut fees
-              </button>
+              <Link to={"/dashboard/reviews" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Write review
+              </Link>
+              <Link to={"/dashboard/wallet" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
+                <Building2 className="h-3.5 w-3.5" /> Link account
+              </Link>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
-            <StatCard label="Earned (30d)" value={rrStats ? `$${Number(rrStats.earned30d).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "—"} trend="up" accent="success" />
-            <StatCard label="Lifetime" value={rrStats ? `$${Number(rrStats.lifetimeEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"} accent="primary" />
+            <StatCard label="Earned (30d)" value={rrStats ? `${Number(rrStats.earned30d).toLocaleString(undefined, { maximumFractionDigits: 0 })} RR` : "—"} trend="up" accent="success" />
+            <StatCard label="Lifetime RR" value={rrStats ? `${Number(rrStats.lifetimeEarned).toLocaleString(undefined, { maximumFractionDigits: 0 })} RR` : "—"} accent="primary" />
           </div>
         </div>
       </div>
 
-      {/* Contributor Tiers */}
-      {tiers.length > 0 && (
-        <Panel title="Contributor tiers" action={<Pill tone="primary"><Trophy className="h-3 w-3" />How you level up</Pill>}>
-          <p className="mb-3 text-[12px] text-muted-foreground">
-            Tiers are earned by <b>real contribution</b> — approved reviews, daily streaks and verifying your account.
-            Higher tiers earn more RR per action and unlock exclusive spend rewards.
-          </p>
-          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(tiers.length, 5)}, 1fr)` }}>
-            {tiers.map((t) => (
-              <div key={t.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-center text-[10px]">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{t.name}</div>
-                <div className="mt-1 font-mono text-[11px] text-white">×{t.multiplier.toFixed(2)}</div>
-                <div className="text-[9px] text-muted-foreground">{t.dailyCap || "∞"}/d</div>
-                <div className="mt-1 text-[9px] text-muted-foreground">{t.perks.slice(0, 1).join("")}</div>
-              </div>
+      <Panel title="Next Unlock" action={<Pill tone="primary"><Target className="h-3 w-3" />{nextUnlock.remaining.toLocaleString()} RR remaining</Pill>}>
+        <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-4">
+            <div className="text-xl font-bold text-white">{nextUnlock.title}</div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {nextUnlock.subtitle}
+              <span className="mt-1 block text-fuchsia-200">Redeem with any eligible participating partner.</span>
+            </p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.07]">
+              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
+            </div>
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              {rrBalance.toLocaleString()} / {nextUnlock.targetRr.toLocaleString()} RR
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {PROGRESSION_TASKS.map((task) => (
+              <Link key={task.label} to={task.href as string} className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-xs text-white/85 transition hover:bg-white/[0.07] hover:text-white">
+                <div className="font-semibold text-white">{task.label}</div>
+                <div className="mt-0.5 text-fuchsia-200">+{task.reward} RR</div>
+              </Link>
             ))}
+          </div>
+        </div>
+      </Panel>
+
+      {/* Trader Levels */}
+      {TRADER_LEVELS.length > 0 && (
+        <Panel title="Trader Levels" action={<Pill tone="primary"><Trophy className="h-3 w-3" />How you level up</Pill>}>
+          <p className="mb-3 text-[12px] text-muted-foreground">
+            Trader Levels are earned by <b>real contribution</b> — approved reviews, Trading Streak activity, linked accounts, and verified participation.
+            Higher levels unlock stronger marketplace benefits.
+          </p>
+          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {TRADER_LEVELS.map((level) => {
+              const active = level.id === levelProgress.current.id;
+              return (
+                <div key={level.id} className={`rounded-xl border p-3 text-[10px] ${active ? "border-primary/45 bg-primary/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{level.name}</div>
+                  <div className="mt-1 font-mono text-[11px] text-white">{level.minRr.toLocaleString()} RR</div>
+                  <div className="mt-1 text-[9px] leading-relaxed text-muted-foreground">{level.summary}</div>
+                </div>
+              );
+            })}
           </div>
         </Panel>
       )}
 
-      {/* Streak Center */}
+      {/* Trading Streak */}
       {streakCfg.enabled && (
-        <Panel title="Streak Center" action={<Pill tone="primary"><Flame className="h-3 w-3" />{streak.current}-day streak · longest {streak.longest}d</Pill>}>
+        <Panel title="Trading Streak" action={<Pill tone="primary"><Flame className="h-3 w-3" />Day {streak.current} · longest {streak.longest}d</Pill>}>
           <div>
             <p className="text-[12px] text-muted-foreground">
-              Show up every day ({streakCfg.qualifier === "trade_log" ? "log a trade" : streakCfg.qualifier === "login" ? "log in" : "log in or log a trade"}) to grow your streak. Hit a milestone, RR auto-credits to your wallet.
+              Complete at least one eligible activity each day, such as adding a journal entry, submitting a review, linking an account, claiming cashback, using Rebeta AI, or completing a lesson.
               {nextMilestone && (
-                <> Next reward: <b className="text-fuchsia-200">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({nextMilestone.days - streak.current} to go).</>
+                <> Next milestone reward: <b className="text-fuchsia-200">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({Math.max(0, nextMilestone.days - streak.current)} day{nextMilestone.days - streak.current === 1 ? "" : "s"} remaining).</>
               )}
             </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-4">
+              <StatCard label="Current Streak" value={streak.current ? `${streak.current} days` : "No Data Yet"} accent="primary" />
+              <StatCard label="Longest Streak" value={streak.longest ? `${streak.longest} days` : "No Data Yet"} accent="success" />
+              <StatCard label="Today's Reward" value={nextMilestone ? `+${nextMilestone.reward} RR` : "Coming Soon"} accent="primary" />
+              <StatCard label="Next Milestone" value={nextMilestone ? `${nextMilestone.days} days` : "Completed"} accent="primary" />
+            </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {streakCfg.milestones.filter((m) => m.enabled).map((m) => {
                 const claimed = (streak.claimedMilestones ?? []).includes(m.id);
@@ -256,27 +312,21 @@ function RewardsPage() {
         </div>
       </Panel>
 
-      <Panel title="Buy RR" action={pricing ? <Pill tone={pricing.salesActive ? "success" : "destructive"}>{pricing.salesActive ? "Purchases open" : "Paused"}</Pill> : null}>
+      <Panel title="RR Top-ups" action={pricing ? <Pill tone={pricing.salesActive ? "success" : "destructive"}>{pricing.salesActive ? "Top-ups open" : "Paused"}</Pill> : null}>
         <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <StatCard
                 label="USD Wallet"
                 value={`$${Number(walletSnapshot?.usdBalance ?? 0).toFixed(2)}`}
-                hint="Used to fund RR purchases"
+                hint="Available for marketplace actions"
                 accent="success"
               />
               <StatCard
-                label="Price Per RR"
-                value={pricing ? `$${pricing.pricePerRr.toFixed(2)}` : "--"}
-                hint="Global live price"
-                accent="primary"
-              />
-              <StatCard
-                label="RR In Wallet"
+                label="RR Balance"
                 value={String(Math.round(walletSnapshot?.rrBalance ?? rrBalance))}
-                hint="Ready to spend"
-                accent="warning"
+                hint={levelProgress.current.name}
+                accent="primary"
               />
             </div>
 
@@ -315,7 +365,7 @@ function RewardsPage() {
                     onClick={() => void handlePackagePurchase(pkg)}
                     className="mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {buyingPackageId === pkg.id ? "Processing..." : "Buy now"}
+                    {buyingPackageId === pkg.id ? "Processing..." : "Request top-up"}
                   </button>
                 </div>
               ))}
@@ -326,7 +376,7 @@ function RewardsPage() {
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 ring-1 ring-white/5">
               <div className="text-sm font-semibold text-white">Custom RR top-up</div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Buy any RR amount within the live limits set by superadmin. The cost is deducted from your USD wallet instantly.
+                Add a custom RR amount within your available top-up limits. Final confirmation is handled through the wallet flow.
               </p>
               <div className="mt-4">
                 <Field label={`RR amount${pricing ? ` (${pricing.minPurchaseRr} - ${pricing.maxPurchaseRr})` : ""}`}>
@@ -341,26 +391,19 @@ function RewardsPage() {
                   />
                 </Field>
               </div>
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/10 px-3 py-3 text-xs">
-                <Row
-                  label="Estimated cost"
-                  value={pricing && customAmount ? `$${(Number(customAmount || 0) * pricing.pricePerRr).toFixed(2)}` : "--"}
-                  bold
-                />
-              </div>
               <button
                 type="button"
                 disabled={!pricing?.salesActive || customBuying}
                 onClick={() => void handleCustomPurchase()}
                 className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {customBuying ? "Processing..." : "Buy custom amount"}
+                {customBuying ? "Processing..." : "Request custom top-up"}
               </button>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 ring-1 ring-white/5">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-semibold text-white">Recent RR purchases</div>
+                <div className="text-sm font-semibold text-white">Recent top-ups</div>
                 <Pill tone="default">{purchaseCatalog?.purchases.length ?? 0}</Pill>
               </div>
               <div className="mt-3 space-y-2">
@@ -398,7 +441,7 @@ function RewardsPage() {
               <div key={rule.id} className="flex items-start justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3">
                 <div>
                   <div className="text-sm font-semibold text-white">{rule.label}</div>
-                  <p className="text-[11px] text-muted-foreground">{rule.description || "Reward rule configured by RebateBoard."}</p>
+                  <p className="text-[11px] text-muted-foreground">{rule.description || "Complete this mission to earn RR."}</p>
                 </div>
                 <Pill tone="primary"><Gift className="h-3 w-3" />+{rule.freeAmount}</Pill>
               </div>
@@ -407,8 +450,8 @@ function RewardsPage() {
         ) : (
           <EmptyState
             icon={Gift}
-            title="RR earning rules are not configured yet"
-            description="Admin-configured reward actions will appear here when they are enabled."
+            title="No RR missions available yet"
+            description="New missions will appear automatically. Complete them to earn RR and maintain your Trading Streak."
           />
         )}
       </Panel>
@@ -435,11 +478,11 @@ function RewardsPage() {
           </>
         ) : rrBalance > 0 ? (
           <p className="text-sm text-white/85">
-            You have <b>{rrBalance.toLocaleString()} RR</b>. Available spend rules and redemption options will appear when admin enables them.
+            You have <b>{rrBalance.toLocaleString()} RR</b>. New redemption options will appear automatically when they become available.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Earn RR through enabled reward actions, then use it for configured marketplace benefits.
+            Earn RR through available missions, then use it for eligible marketplace benefits.
           </p>
         )}
       </Panel>
@@ -508,7 +551,7 @@ function FollowAndEarnPanel({
                       <Check className="h-3 w-3" /> Claimed
                     </span>
                   ) : pending ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-300 ring-1 ring-amber-400/30">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-3 py-1 text-[11px] font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/25">
                       <Clock className="h-3 w-3" /> Verifying
                     </span>
                   ) : (
@@ -611,23 +654,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Row({
-  label,
-  value,
-  bold = false,
-}: {
-  label: string;
-  value: React.ReactNode;
-  bold?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={bold ? "font-semibold text-white" : "text-white/90"}>{value}</span>
-    </div>
-  );
-}
-
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -654,15 +680,15 @@ function RedeemModal({
   onClose: () => void;
 }) {
   const categoryMap: Record<RedeemKind, string[]> = {
-    cash: ["cash"],
-    propfirm: ["partner"],
+    cash: ["boost", "cashback", "cash"],
+    propfirm: ["partner", "discount", "challenge"],
     fees: ["fees"],
-    academy: ["academy"],
+    academy: ["academy", "tool"],
   };
   const titles: Record<RedeemKind, string> = {
-    cash: "Cash Redemption Options",
-    propfirm: "Partner Discount Options",
-    fees: "Fee Discount Options",
+    cash: "Cashback Boost Options",
+    propfirm: "Eligible Trading Challenges",
+    fees: "Trading Fee Perk Options",
     academy: "Academy & Tool Options",
   };
   const options = spendRules.filter((rule) => categoryMap[kind].includes(String(rule.category).toLowerCase()));
@@ -679,12 +705,12 @@ function RedeemModal({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{rule.label}</div>
-                    <p className="mt-1 text-xs text-muted-foreground">{rule.description || "Configured RR spend option."}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{rule.description || "Redeem with any eligible participating partner."}</p>
                   </div>
                   <Pill tone={affordable && !outOfStock ? "primary" : "default"}><Gift className="h-3 w-3" />{rule.cost} RR</Pill>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                  {rule.tierGate && <Pill>Tier: {rule.tierGate}</Pill>}
+                  {rule.tierGate && <Pill>Trader Level: {rule.tierGate}</Pill>}
                   {rule.stock != null && <Pill>{Math.max(0, rule.stock - rule.redeemed)} left</Pill>}
                   {!affordable && <span>Need {(rule.cost - rrBalance).toLocaleString()} more RR.</span>}
                   {outOfStock && <span>Out of stock.</span>}
@@ -694,14 +720,14 @@ function RedeemModal({
           })
         ) : (
           <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-center">
-            <p className="text-sm font-semibold text-white">No spend options configured</p>
+            <p className="text-sm font-semibold text-white">No options available yet</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Admin-enabled RR spend rules for this category will appear here.
+              New reward options will appear automatically when they become available.
             </p>
           </div>
         )}
-        <div className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100">
-          Redemption request processing is not connected to a backend endpoint yet, so this dashboard does not simulate successful redemptions.
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs leading-relaxed text-muted-foreground">
+          Some rewards require RebateBoard confirmation before they appear in your account.
         </div>
       </div>
     </ModalShell>

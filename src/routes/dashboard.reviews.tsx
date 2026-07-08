@@ -129,7 +129,7 @@ function ReviewsPage() {
                   ) : null}
                   {review.adminNote && (
                     <span className="rounded-full bg-white/10 px-2 py-1 text-white/70 ring-1 ring-white/10">
-                      Admin note available
+                      Moderation note available
                     </span>
                   )}
                 </div>
@@ -162,7 +162,7 @@ function ReviewsPage() {
 function ReviewStat({ label, value, tone }: { label: string; value: number; tone: "success" | "warning" | "destructive" | "primary" }) {
   const toneClass = {
     success: "ring-emerald-400/25 text-emerald-300",
-    warning: "ring-amber-400/25 text-amber-300",
+    warning: "ring-fuchsia-400/25 text-fuchsia-200",
     destructive: "ring-rose-400/25 text-rose-300",
     primary: "ring-fuchsia-400/25 text-fuchsia-300",
   }[tone];

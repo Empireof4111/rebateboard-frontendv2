@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Megaphone, Flame, ArrowRight } from "lucide-react";
+import { Sparkles, Megaphone, ArrowRight } from "lucide-react";
 import {
   type DashboardAd,
   type AdSlide,
@@ -182,13 +182,13 @@ function Carousel({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   if (slides.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
-      <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white ring-1 ring-white/10">
-        <Flame className="h-3 w-3 text-fuchsia-200" /> Featured
-      </div>
+    <div className="group overflow-hidden py-1">
+      <div className="flex w-max items-center gap-2 overflow-x-auto scrollbar-none motion-safe:animate-[dashboard-brand-drift_18s_ease-in-out_infinite_alternate] group-hover:[animation-play-state:paused]">
       {slides.map((s, i) => (
-        <SlideChip key={i} slide={s} onClick={onClick} />
+        <SlideChip key={i} slide={s} badge="Featured" onClick={onClick} />
       ))}
+      </div>
+      <style>{`@keyframes dashboard-brand-drift { from { transform: translateX(0); } to { transform: translateX(-18px); } }`}</style>
     </div>
   );
 }
@@ -208,19 +208,19 @@ function Trending({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   }, [ad.trendingLimit]);
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
-      <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white ring-1 ring-white/10">
-        <Flame className="h-3 w-3 text-fuchsia-200" /> Trending
-      </div>
+    <div className="group overflow-hidden py-1">
+      <div className="flex w-max items-center gap-2 overflow-x-auto scrollbar-none motion-safe:animate-[dashboard-brand-drift_18s_ease-in-out_infinite_alternate] group-hover:[animation-play-state:paused]">
       {liveSlides.length > 0 ? (
         liveSlides.map((s, i) => (
-          <SlideChip key={i} slide={s} onClick={onClick} />
+          <SlideChip key={i} slide={s} badge="Recommended" onClick={onClick} />
         ))
       ) : (
         <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/70 ring-1 ring-white/15">
           Published brand data will appear here
         </span>
       )}
+      </div>
+      <style>{`@keyframes dashboard-brand-drift { from { transform: translateX(0); } to { transform: translateX(-18px); } }`}</style>
     </div>
   );
 }
@@ -251,20 +251,27 @@ function trendingSlidesFromBrands(brands: AdminBrandRecord[], limit: number): Ad
     });
 }
 
-function SlideChip({ slide, onClick }: { slide: AdSlide; onClick: () => void }) {
+function SlideChip({ slide, badge, onClick }: { slide: AdSlide; badge: string; onClick: () => void }) {
   return (
     <Link
       to={slide.href}
       onClick={onClick}
-      className="group inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition hover:bg-white/20"
+      className="group/slide relative inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition hover:bg-white/20"
     >
       <span
-        className={`grid h-5 w-5 place-items-center rounded-full text-[9px] font-bold text-white ${slide.accent?.includes("bg-gradient") ? slide.accent : `bg-gradient-to-r ${slide.accent ?? "from-fuchsia-500 to-violet-600"}`}`}
+        className={`relative grid h-7 w-7 place-items-center overflow-hidden rounded-full text-[9px] font-bold text-white ring-1 ring-white/10 ${slide.image ? "bg-white/[0.04]" : slide.accent?.includes("bg-gradient") ? slide.accent : `bg-gradient-to-r ${slide.accent ?? "from-fuchsia-500 to-violet-600"}`}`}
       >
-        {slide.label.slice(0, 1)}
+        {slide.image ? (
+          <img src={slide.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          slide.label.slice(0, 1)
+        )}
       </span>
       <span className="font-semibold">{slide.label}</span>
       {slide.sub && <span className="text-[10px] text-white/70">· {slide.sub}</span>}
+      <span className="pointer-events-none absolute -top-1 right-2 rounded-full bg-primary/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-[0_4px_14px_rgba(168,85,247,0.3)]">
+        {badge}
+      </span>
       <ArrowRight className="h-3 w-3 text-white/60 transition group-hover:translate-x-0.5" />
     </Link>
   );

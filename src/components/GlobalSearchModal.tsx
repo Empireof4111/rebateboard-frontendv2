@@ -58,11 +58,21 @@ const QUICK_LINKS: Hit[] = [
   { id: "ql-brokers", label: "Brokers", sub: "Browse public broker rankings", group: "Jump to", to: "/brokers", icon: Building2 },
   { id: "ql-prop", label: "Prop Firms", sub: "Funding programs and challenges", group: "Jump to", to: "/programs", icon: Trophy },
   { id: "ql-ex", label: "Crypto Exchanges", sub: "Crypto platforms and fee rebates", group: "Jump to", to: "/exchanges", icon: Coins },
+  { id: "ql-offers", label: "Offers", sub: "Active promos and cashback deals", group: "Jump to", to: "/offers", icon: BadgePercent },
   { id: "ql-pay", label: "Payouts", sub: "Verified payout tracker", group: "Jump to", to: "/payouts", icon: Wallet },
   { id: "ql-tbi", label: "TBI Explorer", sub: "Trust Brand Index", group: "Jump to", to: "/tbi/explore", icon: BarChart3 },
   { id: "ql-cal", label: "Economic Calendar", sub: "Macro events and releases", group: "Jump to", to: "/economic-calendar", icon: Calendar },
   { id: "ql-acad", label: "Academy", sub: "Trading lessons and guides", group: "Jump to", to: "/academy", icon: BookOpen },
   { id: "ql-comp", label: "Compare", sub: "Compare brands side by side", group: "Jump to", to: "/compare", icon: Calculator },
+];
+
+const EMPTY_BROWSE_LINKS: Hit[] = [
+  { id: "empty-programs", label: "Programs", sub: "Explore funded trader programs", group: "Browse", to: "/programs", icon: Trophy },
+  { id: "empty-reviews", label: "Reviews", sub: "Read verified trader feedback", group: "Browse", to: "/reviews", icon: Sparkles },
+  { id: "empty-cashback", label: "Cashback", sub: "Find active rebate offers", group: "Browse", to: "/offers", icon: BadgePercent },
+  { id: "empty-blogs", label: "Blogs", sub: "Learn from trader guides", group: "Browse", to: "/blog", icon: Newspaper },
+  { id: "empty-offers", label: "Offers", sub: "Browse bonuses and deals", group: "Browse", to: "/offers", icon: Flame },
+  { id: "empty-tools", label: "Tools", sub: "Use calculators and analytics", group: "Browse", to: "/trading-tools", icon: Calculator },
 ];
 
 const HISTORY_KEY = "rb_global_search_history";
@@ -193,7 +203,7 @@ function buildBlogHit(post: BlogPost): Hit {
     id: `blog-${post.id}`,
     label: post.title,
     sub: `${post.tag || "Blog"}${post.readTime ? ` | ${post.readTime}` : ""}`,
-    group: "Articles",
+    group: "Blogs",
     to: `/articles/${articleRouteId(post)}`,
     icon: Newspaper,
     logo: post.cover,
@@ -206,7 +216,7 @@ function buildFaqHit(faq: Faq): Hit {
     id: `faq-${faq.id}`,
     label: faq.question,
     sub: `${faq.category || "FAQ"} | Help center`,
-    group: "FAQs",
+    group: "FAQ",
     to: "/faqs",
     icon: HelpCircle,
     terms: [faq.question, faq.answer, faq.category],
@@ -448,10 +458,10 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
             </div>
           ) : (
             <div>
-              {Object.entries(grouped).length === 0 ? (
-                <div className="px-4 py-14 text-center text-sm text-white/50">
-                  No matches for <span className="text-white">"{q}"</span>.
-                </div>
+              {loading ? (
+                <LoadingRows />
+              ) : Object.entries(grouped).length === 0 ? (
+                <NoSearchResults query={q} onBrowse={go} />
               ) : (
                 Object.entries(grouped).map(([group, hits]) => (
                   <div key={group} className="mb-5 last:mb-0">
@@ -478,8 +488,8 @@ function groupIcon(group: string): SearchIcon {
   if (group === "Prop Firms") return Trophy;
   if (group === "Exchanges") return Coins;
   if (group === "Offers") return BadgePercent;
-  if (group === "Articles") return Newspaper;
-  if (group === "FAQs") return HelpCircle;
+  if (group === "Blogs") return Newspaper;
+  if (group === "FAQ") return HelpCircle;
   if (group === "Tools") return Calculator;
   return Search;
 }
@@ -606,7 +616,13 @@ function LoadingRows() {
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       {[0, 1, 2, 3].map((index) => (
-        <div key={index} className="h-16 animate-pulse rounded-2xl bg-white/[0.035]" />
+        <div key={index} className="flex items-center gap-3 rounded-2xl bg-white/[0.035] p-3">
+          <div className="skeleton h-10 w-10 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="skeleton h-3 w-3/5" />
+            <div className="skeleton h-2.5 w-4/5" />
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -616,6 +632,50 @@ function EmptyState({ label }: { label: string }) {
   return (
     <div className="rounded-2xl bg-white/[0.03] p-5 text-center text-xs text-white/42">
       {label}
+    </div>
+  );
+}
+
+function NoSearchResults({
+  query,
+  onBrowse,
+}: {
+  query: string;
+  onBrowse: (hit: Hit) => void;
+}) {
+  return (
+    <div className="px-1 py-8">
+      <div className="mx-auto max-w-xl text-center">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/25">
+          <Search className="h-5 w-5" />
+        </div>
+        <h3 className="mt-4 text-base font-bold text-white">Couldn't find what you're looking for?</h3>
+        <p className="mt-2 text-sm text-white/50">
+          No direct match for <span className="text-white">"{query.trim()}"</span>. Browse one of
+          these sections instead.
+        </p>
+      </div>
+      <div className="mx-auto mt-5 grid max-w-2xl gap-2 sm:grid-cols-2">
+        {EMPTY_BROWSE_LINKS.map((link) => {
+          const Icon = link.icon ?? ArrowRight;
+          return (
+            <button
+              key={link.id}
+              onClick={() => onBrowse(link)}
+              className="group flex items-center gap-3 rounded-2xl bg-white/[0.035] p-3 text-left transition hover:bg-white/[0.075]"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20">
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-white">{link.label}</span>
+                <span className="mt-0.5 block truncate text-[11px] text-white/45">{link.sub}</span>
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/32 transition group-hover:text-white" />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -14,7 +14,8 @@ function CommunityPage() {
         <EmptyState
           icon={MessageCircle}
           title="No community discussions yet"
-          description="Community posts will appear here after the discussion backend is enabled and users start posting."
+          description="Start a discussion when you want feedback on a setup, journal habit, or trading plan."
+          action={<button className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">Start a Discussion</button>}
         />
       </Panel>
     </div>

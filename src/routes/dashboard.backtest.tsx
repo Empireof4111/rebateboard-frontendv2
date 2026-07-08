@@ -77,7 +77,7 @@ function BacktestLab() {
       .catch((error) => {
         if (cancelled) return;
         setSyncState("offline");
-        setSyncMessage(error?.message ?? "Backtest API unavailable. Showing local lab data.");
+        setSyncMessage(error?.message ?? "Backtest sync is temporarily unavailable. Your saved local lab data is still available.");
       });
 
     return () => {
@@ -102,7 +102,7 @@ function BacktestLab() {
           className={`rounded-xl border px-3 py-2 text-xs ${
             syncState === "loading"
               ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-200"
-              : "border-amber-400/20 bg-amber-500/10 text-amber-200"
+              : "border-fuchsia-400/20 bg-fuchsia-500/10 text-fuchsia-100"
           }`}
         >
           {syncState === "loading" ? "Syncing Backtest Lab with your dashboard data..." : syncMessage}
@@ -174,7 +174,7 @@ function Overview({ onNav }: { onNav: (t: Tab) => void }) {
           {[
             { label: "Run New Backtest", icon: Play, t: "new" as Tab, color: "from-emerald-500 to-teal-600" },
             { label: "Upload Trade History", icon: Upload, t: "real" as Tab, color: "from-fuchsia-500 to-violet-600" },
-            { label: "Connect Wallet", icon: Wallet, t: "real" as Tab, color: "from-amber-500 to-orange-600" },
+            { label: "Connect Wallet", icon: Wallet, t: "real" as Tab, color: "from-violet-500 to-fuchsia-600" },
             { label: "Compare Strategy vs Real", icon: GitCompare, t: "compare" as Tab, color: "from-cyan-500 to-blue-600" },
             { label: "View AI Insights", icon: Brain, t: "insights" as Tab, color: "from-pink-500 to-rose-600" },
           ].map((a) => {
@@ -749,7 +749,7 @@ function Reports() {
 
       <Panel title="Trade-by-trade">
         {tradeError && (
-          <div className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200 ring-1 ring-amber-400/20">
+          <div className="mb-3 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-100 ring-1 ring-rose-400/20">
             {tradeError}
           </div>
         )}
@@ -809,7 +809,7 @@ function CalendarView() {
   const tone = (t: typeof cells[number]["tone"]) =>
     t === "up" ? "bg-emerald-500/30 ring-emerald-400/40"
     : t === "down" ? "bg-rose-500/30 ring-rose-400/40"
-    : t === "warn" ? "bg-amber-500/30 ring-amber-400/40"
+    : t === "warn" ? "bg-fuchsia-500/25 ring-fuchsia-400/35"
     : "bg-white/5 ring-white/10";
 
   return (
@@ -824,7 +824,7 @@ function CalendarView() {
       <div className="mb-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
         <Legend color="bg-emerald-500/40" label="Profitable" />
         <Legend color="bg-rose-500/40" label="Losing" />
-        <Legend color="bg-amber-500/40" label="Big loss" />
+        <Legend color="bg-fuchsia-500/35" label="Big loss" />
         <Legend color="bg-white/10" label="No trades" />
       </div>
       <div className="grid grid-cols-7 gap-2">
@@ -889,7 +889,7 @@ function Insights() {
 
   const map = {
     success: { ring: "ring-emerald-400/40", icon: CheckCircle2, color: "text-emerald-300" },
-    warn: { ring: "ring-amber-400/40", icon: AlertTriangle, color: "text-amber-300" },
+    warn: { ring: "ring-fuchsia-400/35", icon: AlertTriangle, color: "text-fuchsia-200" },
     info: { ring: "ring-cyan-400/40", icon: Info, color: "text-cyan-300" },
     danger: { ring: "ring-rose-400/40", icon: ShieldAlert, color: "text-rose-300" },
   } as const;

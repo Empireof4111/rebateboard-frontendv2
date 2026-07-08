@@ -31,7 +31,7 @@ type ToolMeta = {
 
 const TOOLS: ToolMeta[] = [
   { key: "rebate",   title: "Rebate Calculator",   description: "Estimate how much cashback you earn per trade", icon: Gift,           preview: "Cashback estimate", accent: "from-fuchsia-500 to-violet-600" },
-  { key: "fees",     title: "Fees Calculator",     description: "Calculate spread + commission cost",            icon: DollarSign,     preview: "Fee estimate",      accent: "from-amber-400 to-orange-500" },
+  { key: "fees",     title: "Fees Calculator",     description: "Calculate spread + commission cost",            icon: DollarSign,     preview: "Fee estimate",      accent: "from-violet-400 to-fuchsia-500" },
   { key: "margin",   title: "Margin Calculator",   description: "Required margin for any position",              icon: Calculator,     preview: "Margin estimate",   accent: "from-cyan-400 to-blue-600" },
   { key: "profit",   title: "Profit Calculator",   description: "Profit, loss, pips and RR ratio",               icon: TrendingUp,     preview: "PnL scenario",      accent: "from-emerald-400 to-teal-600" },
   { key: "currency", title: "Currency Converter",  description: "Convert across 20+ currencies",                 icon: ArrowLeftRight, preview: "Manual rate mode",   accent: "from-pink-400 to-rose-600" },

@@ -193,8 +193,19 @@ export function DashboardLayout() {
 
   if (loading || !user) {
     return (
-        <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">
-        {t("dashboard.loading")}
+      <div className="grid min-h-screen place-items-center bg-[#12051f] p-6">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
+          <Logo heightClass="h-9" />
+          <div className="mt-6 space-y-3">
+            <div className="h-3 w-40 animate-pulse rounded-full bg-white/15" />
+            <div className="h-10 animate-pulse rounded-2xl bg-white/10" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="h-16 animate-pulse rounded-2xl bg-white/10" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/10" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/10" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

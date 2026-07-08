@@ -209,7 +209,7 @@ export function LinkAccountModal({
                   </button>
                 ))}
               </div>
-              <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200 ring-1 ring-amber-400/20">
+              <p className="mt-3 rounded-lg bg-fuchsia-500/10 px-3 py-2 text-[11px] text-fuchsia-100 ring-1 ring-fuchsia-400/20">
                 Prop firms, tools and education don't need linking — just use our official link, then claim cashback after purchase.
               </p>
             </div>
@@ -230,7 +230,7 @@ export function LinkAccountModal({
               <div className="grid grid-cols-2 gap-1.5">
                 {loadingBrands && (
                   <div className="col-span-2 rounded-lg border border-white/10 bg-white/5 p-4 text-center text-[11px] text-muted-foreground">
-                    Loading supported partners...
+                    Preparing supported partners...
                   </div>
                 )}
                 {!loadingBrands && brandError && (
@@ -292,14 +292,14 @@ export function LinkAccountModal({
               {mode === "new" && (
                 <div className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-3">
                   <div className="text-xs font-semibold text-white">Step 1 — Sign up at {brand.name}</div>
-                  <p className="mt-1 text-[11px] text-white/80">Use the official partner link if available, then return with your account ID for admin verification.</p>
+                  <p className="mt-1 text-[11px] text-white/80">Use the official partner link if available, then return with your account ID for verification.</p>
                   {affiliateLink ? (
                     <a href={affiliateLink} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
                       <ExternalLink className="h-3 w-3" /> Open {brand.name}
                     </a>
                   ) : (
                     <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-[11px] text-muted-foreground">
-                      Official signup link has not been configured for this partner.
+                      Official signup link is not available for this partner yet.
                     </div>
                   )}
                 </div>
@@ -325,20 +325,20 @@ export function LinkAccountModal({
                 disabled={!supportsRebateWallet}
                 icon={<Banknote className="h-4 w-4 text-emerald-300" />}
                 title="My Rebate USD wallet"
-                desc={supportsRebateWallet ? "Auto-credited via API. Withdrawable to USDT / Bank." : "Not supported by this partner — pick another."}
+                desc={supportsRebateWallet ? "Auto-credited to your RebateBoard wallet when supported. Withdrawable to USDT / Bank." : "Not supported by this partner — pick another."}
               />
               <PrefRow
                 active={pref === "broker-wallet"} onClick={() => setPref("broker-wallet")}
                 disabled={!supportsApiAuto}
                 icon={<Building2 className="h-4 w-4 text-fuchsia-300" />}
                 title="Back to my broker trading account"
-                desc={supportsApiAuto ? "Auto-credited into your trading balance — trade with it." : "API not available for this partner."}
+                desc={supportsApiAuto ? "Auto-credited into your trading balance when supported." : "Direct partner credit is not available for this partner."}
               />
               <PrefRow
                 active={pref === "rr-wallet"} onClick={() => setPref("rr-wallet")}
-                icon={<Coins className="h-4 w-4 text-amber-300" />}
+                icon={<Coins className="h-4 w-4 text-fuchsia-300" />}
                 title="RR (Reward) points"
-                desc="Earn loyalty points instead of cash. Convert later inside Rewards."
+                desc="Earn RR toward Trader Levels, unlocks, and platform rewards."
               />
 
               <div className="flex justify-between pt-2">
@@ -363,7 +363,7 @@ export function LinkAccountModal({
               <Label>Body</Label>
               <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} className={inputCls + " font-mono text-[12px]"} />
               <p className="rounded-lg bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-200 ring-1 ring-emerald-400/20">
-                We'll record this request in our admin queue and also try to open your mail app as a backup. Once the partner confirms, your account moves to <b>Active</b>.
+                We'll record this request and also try to open your mail app as a backup. Once the partner confirms, your account moves to <b>Active</b>.
               </p>
               <div className="flex justify-between pt-1">
                 <BackBtn onClick={() => setStep("preference")} />
@@ -428,7 +428,7 @@ function PrefRow({ active, onClick, disabled, icon, title, desc }: { active: boo
         {icon}
         <span className="text-sm font-semibold text-white">{title}</span>
         {active && <CheckCircle2 className="ml-auto h-4 w-4 text-emerald-300" />}
-        {disabled && <AlertTriangle className="ml-auto h-3.5 w-3.5 text-amber-400" />}
+        {disabled && <AlertTriangle className="ml-auto h-3.5 w-3.5 text-fuchsia-300" />}
       </div>
       <div className="mt-1 text-[11px] text-muted-foreground">{desc}</div>
     </button>

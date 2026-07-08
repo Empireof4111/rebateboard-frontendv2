@@ -11,7 +11,7 @@ export const Route = createFileRoute("/dashboard/claims")({
   head: () => ({
     meta: [
       { title: "My Claims — RebateBoard" },
-      { name: "description", content: "Track every cashback claim you've submitted, see status, evidence and admin notes." },
+      { name: "description", content: "Track every cashback claim you've submitted, see status, evidence and review notes." },
     ],
   }),
   component: ClaimsPage,
@@ -152,7 +152,7 @@ function ClaimsPage() {
       </header>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Pending" value={`$${totals.pending.toFixed(2)}`} tone="amber" />
+        <Stat label="Pending" value={`$${totals.pending.toFixed(2)}`} tone="violet" />
         <Stat label="Approved (awaiting)" value={`$${totals.approved.toFixed(2)}`} tone="sky" />
         <Stat label="Paid" value={`$${totals.paid.toFixed(2)}`} tone="emerald" />
         <Stat label="Rejected" value={`${totals.rejected}`} tone="rose" />
@@ -175,7 +175,7 @@ function ClaimsPage() {
               </div>
               <div className="mt-1 text-xs text-white/60">{row.program}</div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-amber-300">${row.amountUsd.toFixed(2)}</span>
+                <span className="text-fuchsia-200">${row.amountUsd.toFixed(2)}</span>
                 <span className="text-white/50">{new Date(row.when).toLocaleDateString()}</span>
               </div>
             </div>
@@ -214,7 +214,11 @@ function ClaimsPage() {
           </button>
         </div>
       ) : loading && claims.length === 0 ? (
-        <div className="py-12 text-center text-sm text-white/50">Loading your claims…</div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="h-20 animate-pulse rounded-xl border border-white/10 bg-white/[0.04]" />
+          ))}
+        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
           <div className="hidden grid-cols-12 gap-2 border-b border-white/10 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-wide text-white/50 sm:grid">
@@ -246,7 +250,7 @@ function ClaimsPage() {
                   c.status === "paid" ? "bg-emerald-500/15 text-emerald-300"
                   : c.status === "approved" ? "bg-sky-500/15 text-sky-300"
                   : c.status === "rejected" ? "bg-rose-500/15 text-rose-300"
-                  : "bg-amber-500/15 text-amber-300"
+                  : "bg-fuchsia-500/15 text-fuchsia-200"
                 }`}>{c.status}</span>
               </div>
             </button>
@@ -257,7 +261,7 @@ function ClaimsPage() {
       {totalPages > 1 && page < totalPages - 1 && (
         <div className="flex justify-center">
           <button onClick={() => load(page + 1)} disabled={loading} className="rounded-full bg-white/10 px-4 py-1.5 text-xs text-white disabled:opacity-40">
-            {loading ? "Loading…" : "Load more"}
+            {loading ? "Preparing…" : "Load more"}
           </button>
         </div>
       )}
@@ -267,8 +271,8 @@ function ClaimsPage() {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone: "amber" | "emerald" | "rose" | "sky" }) {
-  const ring = tone === "emerald" ? "from-emerald-500/20" : tone === "amber" ? "from-amber-500/20" : tone === "sky" ? "from-sky-500/20" : "from-rose-500/20";
+function Stat({ label, value, tone }: { label: string; value: string; tone: "violet" | "emerald" | "rose" | "sky" }) {
+  const ring = tone === "emerald" ? "from-emerald-500/20" : tone === "violet" ? "from-fuchsia-500/20" : tone === "sky" ? "from-sky-500/20" : "from-rose-500/20";
   return (
     <div className={`rounded-xl border border-white/10 bg-gradient-to-br ${ring} to-transparent p-4`}>
       <div className="text-[11px] uppercase tracking-wide text-white/60">{label}</div>

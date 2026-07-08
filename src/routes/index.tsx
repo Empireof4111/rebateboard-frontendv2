@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Search,
   ChevronDown,
@@ -16,6 +16,8 @@ import {
   Trophy,
   Rocket,
   ShieldCheck,
+  Users,
+  Gift,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
@@ -47,9 +49,15 @@ import {
   LandingSponsorsStrip,
   LandingAdvertiseBox,
 } from "@/components/landing/LandingAdSlots";
+import { LiveCashbackActivityCard } from "@/components/landing/LiveCashbackActivityCard";
 import { fetchPublicAdverts } from "@/lib/public-adverts-api";
 import type { DashboardAd } from "@/lib/dashboard-ads";
 import { Flame } from "lucide-react";
+import {
+  fetchHomepageCashbackActivityStats,
+  type HomepageCashbackActivityStats,
+} from "@/lib/cashback-activity-api";
+import { resolvePublicFaqContent } from "@/lib/public-faq-content";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -581,7 +589,7 @@ function HomepageVideoSlider() {
             </div>
             <p className="mt-3 text-sm font-semibold text-white">Homepage videos coming soon</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add active videos from Content Management.
+              Fresh trading walkthroughs and platform guides will appear here soon.
             </p>
           </div>
         </div>
@@ -678,6 +686,134 @@ function HomepageVideoSlider() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type TrustMetric = {
+  label: string;
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  icon: ReactNode;
+};
+
+function useInViewOnce<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) return;
+    const node = ref.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.25 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return [ref, visible] as const;
+}
+
+function AnimatedMetricValue({
+  value,
+  active,
+  prefix = "",
+  suffix = "",
+}: {
+  value: number;
+  active: boolean;
+  prefix?: string;
+  suffix?: string;
+}) {
+  const [display, setDisplay] = useState(0);
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    if (!active || hasRun.current) return;
+    hasRun.current = true;
+    const duration = 950;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(value * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+  }, [active, value]);
+
+  return (
+    <span>
+      {prefix}
+      {display.toLocaleString()}
+      {suffix}
+    </span>
+  );
+}
+
+function TrustMetricsStrip({ metrics }: { metrics: TrustMetric[] }) {
+  const [ref, visible] = useInViewOnce<HTMLDivElement>();
+
+  return (
+    <section ref={ref} className="mt-6 sm:mt-8">
+      <div className="glass rounded-[1.75rem] p-3 sm:p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {metrics.map((metric) => (
+            <div
+              key={metric.label}
+              className="flex items-center gap-3 rounded-2xl bg-white/[0.035] px-4 py-4 ring-1 ring-white/10 transition duration-300 hover:bg-white/[0.055]"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/25">
+                {metric.icon}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-2xl font-black leading-none text-white sm:text-3xl">
+                  <AnimatedMetricValue
+                    active={visible}
+                    value={metric.value}
+                    prefix={metric.prefix}
+                    suffix={metric.suffix}
+                  />
+                </span>
+                <span className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  {metric.label}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FaqSkeletonGrid() {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="glass rounded-2xl p-4">
+          <div className="skeleton h-3 w-4/5" />
+          <div className="mt-4 space-y-2">
+            <div className="skeleton h-2.5 w-full" />
+            <div className="skeleton h-2.5 w-2/3" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -842,6 +978,9 @@ function Index() {
   const [tbiProfiles, setTbiProfiles] = useState<TbiProfile[]>([]);
   const [homeFaqs, setHomeFaqs] = useState<Faq[]>([]);
   const [homeFaqsLoading, setHomeFaqsLoading] = useState(true);
+  const [cashbackActivityStats, setCashbackActivityStats] =
+    useState<HomepageCashbackActivityStats | null>(null);
+  const [calculatorBrand, setCalculatorBrand] = useState<AdminBrandRecord | null>(null);
   const [offerCategory, setOfferCategory] = useState<OfferCategory>("Prop Firms");
   const [brokerExchangeTab, setBrokerExchangeTab] = useState<BrokerExchangeTabId>("brokers");
   const [proFirmTab, setProFirmTab] = useState<ProFirmTabId>("forex");
@@ -910,15 +1049,33 @@ function Index() {
       setHomeFaqsLoading(true);
       try {
         const rows = await fetchPublicFaqs();
-        if (!cancelled) setHomeFaqs(rows.slice(0, 8));
+        if (!cancelled) setHomeFaqs(resolvePublicFaqContent(rows, 8));
       } catch {
-        if (!cancelled) setHomeFaqs([]);
+        if (!cancelled) setHomeFaqs(resolvePublicFaqContent([], 8));
       } finally {
         if (!cancelled) setHomeFaqsLoading(false);
       }
     }
 
     void loadFaqs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCashbackStats() {
+      try {
+        const stats = await fetchHomepageCashbackActivityStats();
+        if (!cancelled) setCashbackActivityStats(stats);
+      } catch {
+        if (!cancelled) setCashbackActivityStats(null);
+      }
+    }
+
+    void loadCashbackStats();
     return () => {
       cancelled = true;
     };
@@ -953,6 +1110,38 @@ function Index() {
     .filter((o) => o.status === "active")
     .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned))
     .slice(0, 6);
+  const publishedBrandCount = liveBrands.filter(isPublishedBrand).length;
+  const trustMetrics = useMemo(
+    () => [
+      {
+        label: "Traders Joined",
+        value: Math.max(1000, cashbackActivityStats?.active_cashback_traders ?? 1000),
+        suffix: "+",
+        icon: <Users className="h-4 w-4" />,
+      },
+      {
+        label: "Trading Brands Listed",
+        value: Math.max(20, publishedBrandCount || 0),
+        suffix: "+",
+        icon: <Building2 className="h-4 w-4" />,
+      },
+      {
+        label: "Cashback Paid",
+        value: Math.max(2000, cashbackActivityStats?.lifetime_cashback_paid ?? 2000),
+        prefix: "$",
+        suffix: "+",
+        icon: <BadgePercent className="h-4 w-4" />,
+      },
+      {
+        label: "Giveaways Distributed",
+        value: 80000,
+        prefix: "$",
+        suffix: "+",
+        icon: <Gift className="h-4 w-4" />,
+      },
+    ],
+    [cashbackActivityStats, publishedBrandCount],
+  );
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -991,12 +1180,14 @@ function Index() {
           </div>
 
           <div>
-            {/* Hero rotating ad card — managed in Superadmin → Dashboard Ads */}
+            {/* Hero rotating ad card */}
             <LandingHeroAdCard fallbackImage={heroChart} className="lg:h-[22rem] xl:h-[23.5rem]" />
-            {/* Sponsored company logos — managed in Superadmin → Dashboard Ads */}
+            {/* Sponsored company logos */}
             <LandingSponsorsStrip />
           </div>
         </section>
+
+        <TrustMetricsStrip metrics={trustMetrics} />
 
         {/* EXCLUSIVE OFFERS / RANKINGS */}
         <section className="mt-8 grid gap-4 xl:grid-cols-3">
@@ -1030,13 +1221,16 @@ function Index() {
         <section className="mt-10 sm:mt-12">
           <h2 className="mb-6 text-center text-2xl font-bold sm:text-3xl">Latest YouTube Videos</h2>
           <div className="grid items-stretch gap-4 lg:grid-cols-2">
-            <div className="flex h-full flex-col gap-4">
-              <HomepageVideoSlider />
-              {/* Advertise Here — managed in Superadmin → Dashboard Ads */}
-              <LandingAdvertiseBox />
+            <div className="flex h-full min-h-0 flex-col gap-4">
+              <div className="shrink-0">
+                <HomepageVideoSlider />
+              </div>
+              {/* Featured partner banner */}
+              <LandingAdvertiseBox className="lg:min-h-[10rem] lg:flex-1 lg:aspect-auto" />
             </div>
 
-            <div className="glass h-full rounded-3xl p-5 sm:p-6">
+            <div className="flex h-full min-h-0 flex-col gap-4">
+              <div className="glass rounded-3xl p-5 sm:p-6">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/20 text-primary ring-1 ring-primary/30">
                     <BadgePercent className="h-5 w-5" />
@@ -1048,7 +1242,13 @@ function Index() {
                     </p>
                   </div>
                 </div>
-                <RebateCalculator compact showSaveAction={false} />
+                <RebateCalculator
+                  compact
+                  showSaveAction={false}
+                  onSelectedBrandChange={setCalculatorBrand}
+                />
+              </div>
+              <LiveCashbackActivityCard selectedBrand={calculatorBrand} />
             </div>
           </div>
         </section>
@@ -1344,12 +1544,10 @@ function Index() {
             Frequently Asked Questions (FAQs)
           </h2>
           {homeFaqsLoading ? (
-            <div className="glass rounded-2xl p-6 text-center text-xs text-muted-foreground">
-              Loading FAQs...
-            </div>
+            <FaqSkeletonGrid />
           ) : homeFaqs.length === 0 ? (
             <div className="glass rounded-2xl p-6 text-center text-xs text-muted-foreground">
-              Published admin FAQs will appear here automatically.
+              Helpful trading answers will appear here soon.
             </div>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">

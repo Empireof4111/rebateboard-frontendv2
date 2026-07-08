@@ -228,7 +228,8 @@ function ProgramsPage() {
         <EmptyState
           icon={Layers}
           title="No published programs yet"
-          description="Published brands from the admin dashboard will appear here as soon as they are available."
+          description="Browse Programs to find supported brokers, prop firms, exchanges, and tools as they become available."
+          action={<Link to="/programs" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">Browse Programs</Link>}
         />
       )}
     </div>

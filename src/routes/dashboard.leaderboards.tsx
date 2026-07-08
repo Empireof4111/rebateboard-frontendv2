@@ -11,7 +11,7 @@ function LeaderboardsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Leaderboards"
-        subtitle="Season rankings will appear once the leaderboard backend is enabled."
+        subtitle="Season rankings will appear as traders build enough verified activity."
         actions={<Pill tone="primary"><Trophy className="h-3 w-3" />Season pending</Pill>}
       />
       <div className="flex flex-wrap gap-2">
@@ -25,7 +25,8 @@ function LeaderboardsPage() {
         <EmptyState
           icon={Trophy}
           title="No leaderboard data yet"
-          description="Public rankings require a real leaderboard service. No synthetic trader rankings are shown."
+          description="Keep logging trades and completing missions to qualify for future season rankings."
+          action={<button className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">Add Your First Trade</button>}
         />
       </Panel>
     </div>
