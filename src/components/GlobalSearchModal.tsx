@@ -194,7 +194,7 @@ function buildOfferHit(offer: AdminOffer, brand?: Hit): Hit {
     country: brand?.country,
     countryFlag: brand?.countryFlag,
     brandName: offer.brand,
-    terms: [offer.brand, offer.title, offer.description, offer.discount, offer.code, offer.category],
+    terms: [offer.brand, offer.title, text(offer.description), text(offer.discount), text(offer.code), offer.category],
   };
 }
 

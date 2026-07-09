@@ -588,22 +588,22 @@ function TbiScoreCard({
   brand,
   profile,
   score,
+  onViewBreakdown,
 }: {
   brand: SavedBrand | null;
   profile: TbiProfile | null;
   score: number;
+  onViewBreakdown?: () => void;
 }) {
-  const metrics = tbiMetricsForProfile(brand, profile, score);
   const score100 = scoreOutOf100(score);
-  const center = 128;
-  const radarRadius = 72;
   const stage = brand ? resolveBrandTbiState(brand, profile) : (profile?.state ?? "preliminary");
   const theme = tbiStageTheme(stage);
   const trustLabel = profile?.trustLabel || "Trust intelligence review";
+  const confidence = profile?.confidence || "Preliminary confidence";
 
   return (
     <aside
-      className={`relative flex h-full flex-col overflow-hidden rounded-3xl p-5 text-white shadow-2xl shadow-black/25 ring-1 ${theme.ring}`}
+      className={`relative self-start overflow-hidden rounded-3xl p-5 text-white shadow-2xl shadow-black/25 ring-1 ${theme.ring}`}
       style={{ background: theme.background }}
     >
       <div className={`absolute -right-20 -top-20 h-56 w-56 rounded-full ${theme.glow} blur-3xl`} />
@@ -637,116 +637,30 @@ function TbiScoreCard({
         </div>
       </div>
 
-      <div className="relative mt-5 overflow-hidden rounded-3xl bg-black/[0.12] ring-1 ring-white/10">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:32px_32px] opacity-30" />
-        <svg
-          viewBox="0 0 256 256"
-          role="img"
-          aria-label={`${brand?.name ?? "Brand"} TBI component radar`}
-          className="mx-auto h-60 w-full max-w-[340px] sm:h-64"
-        >
-          <defs>
-            <radialGradient id="tbiRadarGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={theme.radarFillA} stopOpacity="0.92" />
-              <stop offset="100%" stopColor={theme.radarFillB} stopOpacity="0.25" />
-            </radialGradient>
-            <linearGradient id="tbiRadarStroke" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stopColor={theme.radarA} />
-              <stop offset="100%" stopColor={theme.radarB} />
-            </linearGradient>
-          </defs>
-
-          {[0.25, 0.5, 0.75, 1].map((step) => (
-            <polygon
-              key={step}
-              points={polygonPoints(metrics.length, radarRadius * step, center)}
-              fill="none"
-              stroke="rgba(255,255,255,0.18)"
-              strokeWidth="1"
-            />
-          ))}
-          {metrics.map((metric, index) => {
-            const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
-            return (
-              <line
-                key={metric.key}
-                x1={center}
-                y1={center}
-                x2={center + Math.cos(angle) * radarRadius}
-                y2={center + Math.sin(angle) * radarRadius}
-                stroke="rgba(255,255,255,0.16)"
-                strokeWidth="1"
-              />
-            );
-          })}
-          <polygon
-            points={valuePolygonPoints(metrics, radarRadius, center)}
-            fill="url(#tbiRadarGlow)"
-            stroke="url(#tbiRadarStroke)"
-            strokeWidth="2"
-          />
-          {metrics.map((metric, index) => {
-            const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
-            const dotRadius = radarRadius * (metric.value / 10);
-            const labelRadius = 108;
-            const labelX = center + Math.cos(angle) * labelRadius;
-            const labelY = center + Math.sin(angle) * labelRadius;
-            return (
-              <g key={metric.key}>
-                <title>{`${metric.label}: ${metric.value.toFixed(1)}/10`}</title>
-                <circle
-                  cx={center + Math.cos(angle) * dotRadius}
-                  cy={center + Math.sin(angle) * dotRadius}
-                  r="3"
-                  fill={theme.radarA}
-                  stroke="#ffffff"
-                  strokeWidth="1"
-                />
-                <text
-                  x={labelX}
-                  y={labelY}
-                  textAnchor={
-                    labelX > center + 12 ? "start" : labelX < center - 12 ? "end" : "middle"
-                  }
-                  dominantBaseline="middle"
-                  fill="rgba(255,255,255,0.72)"
-                  fontSize="10"
-                  fontWeight="600"
-                >
-                  {metric.short}
-                </text>
-              </g>
-            );
-          })}
-          <circle cx={center} cy={center} r="6" fill={theme.radarA} stroke="#fff" strokeWidth="2" />
-        </svg>
-      </div>
-
-      <div className="mt-auto grid gap-2 pt-4">
-        {metrics.map((metric) => (
-          <div
-            key={metric.key}
-            className="grid grid-cols-[minmax(132px,1fr)_96px_42px] items-center gap-2 text-[11px] text-white/65"
-          >
-            <span
-              className="min-w-0 truncate font-semibold text-white/75"
-              title={`${metric.short} - ${metric.label}`}
-            >
-              <span className="mr-1 rounded bg-white/10 px-1.5 py-0.5 text-[9px] text-white">
-                {metric.short}
-              </span>
-              {metric.label}
-            </span>
-            <span className="h-1.5 overflow-hidden rounded-full bg-white/10">
-              <span
-                className={`block h-full rounded-full bg-gradient-to-r ${theme.bar}`}
-                style={{ width: `${metric.value * 10}%` }}
-              />
-            </span>
-            <span className="text-right font-semibold text-white">{metric.value.toFixed(1)}</span>
+      <div className="relative mt-5 overflow-hidden rounded-2xl bg-black/[0.12] p-4 ring-1 ring-white/10">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:32px_32px] opacity-30" />
+        <div className="relative">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50">
+            Trust summary
           </div>
-        ))}
+          <p className="mt-2 text-sm font-semibold leading-6 text-white/90">{trustLabel}</p>
+          <p className="mt-1 text-xs leading-5 text-white/62">
+            {confidence}. Open the complete breakdown for methodology, component scores,
+            weighted reviews, and complaint impact.
+          </p>
+        </div>
       </div>
+
+      {onViewBreakdown ? (
+        <button
+          type="button"
+          onClick={onViewBreakdown}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-[#1a0b2e] transition duration-200 hover:bg-white/90 active:scale-[0.99]"
+        >
+          <ListChecks className="h-4 w-4" />
+          View Full TBI Breakdown
+        </button>
+      ) : null}
     </aside>
   );
 }
@@ -946,7 +860,7 @@ const sectionIconMap: Record<string, LucideIcon> = {
   "Customer Support": Headphones,
   "Restricted Countries": Ban,
   "Pros & Cons": ThumbsUp,
-  "TBI Index": ListChecks,
+  "TBI Breakdown": ListChecks,
 };
 
 function FormattedText({ value, className = "" }: { value: string; className?: string }) {
@@ -1344,7 +1258,7 @@ function TbiIndexContent({
   return (
     <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px]">
       <div className="min-w-0">
-        <Section title="TBI Index">
+        <Section title="TBI Breakdown">
           <div className="mb-5 rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1577,7 +1491,9 @@ function TbiIndexContent({
           </div>
         </Section>
       </div>
-      <TbiScoreCard brand={brand} profile={profile} score={score} />
+      <div className="self-start lg:sticky lg:top-[198px]">
+        <TbiScoreCard brand={brand} profile={profile} score={score} />
+      </div>
     </div>
   );
 }
@@ -1733,7 +1649,7 @@ function FirmDetailsPage() {
     "Complaints",
     "Payouts",
     "Announcement",
-    "TBI Index",
+    "TBI Breakdown",
   ] as const;
   const [topTab, setTopTab] = useState<(typeof topTabs)[number]>("Overview");
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -1938,7 +1854,7 @@ function FirmDetailsPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
       <SiteHeader />
       <div className="glow-orb h-[600px] w-[600px] -left-40 top-20" />
       <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-60" />
@@ -1946,7 +1862,7 @@ function FirmDetailsPage() {
       <div className="container-app relative pb-6 pt-3 sm:pt-4">
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
           <div className="glass-strong h-full overflow-hidden rounded-3xl bg-[#130824]/90 ring-1 ring-violet-400/20">
-            <div className="relative h-48 overflow-hidden bg-[#07131f] sm:h-56 lg:h-[260px] xl:h-[270px]">
+            <div className="relative h-24 overflow-hidden bg-[#07131f] sm:h-28 lg:h-32 xl:h-[136px]">
               {displayBanner ? (
                 <img
                   src={displayBanner}
@@ -2229,19 +2145,24 @@ function FirmDetailsPage() {
             </div>
           </div>
 
-          <TbiScoreCard brand={brand} profile={tbiProfile} score={tbiScore} />
+          <TbiScoreCard
+            brand={brand}
+            profile={tbiProfile}
+            score={tbiScore}
+            onViewBreakdown={() => setTopTab("TBI Breakdown")}
+          />
         </div>
 
-        <div className="mt-4 flex justify-center">
-          <div className="flex max-w-full flex-wrap items-center justify-center gap-2 overflow-x-auto">
+        <div className="mt-4 flex justify-center lg:sticky lg:top-[140px] lg:z-40 lg:rounded-2xl lg:bg-[#16082a]/88 lg:px-3 lg:py-2 lg:shadow-xl lg:shadow-black/20 lg:ring-1 lg:ring-white/10 lg:backdrop-blur-2xl">
+          <div className="flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto py-0.5 lg:justify-center">
             {topTabs.map((t) => (
               <button
                 key={t}
                 onClick={() => setTopTab(t)}
                 className={
-                  "rounded-full px-4 py-1.5 text-[11px] font-semibold ring-1 transition " +
+                  "shrink-0 rounded-full px-4 py-1.5 text-[11px] font-semibold ring-1 transition duration-200 " +
                   (topTab === t
-                    ? "bg-white text-[#1a0b2e] ring-white/40"
+                    ? "bg-white text-[#1a0b2e] ring-white/60 shadow-[0_0_20px_rgba(255,255,255,0.16)]"
                     : "bg-fuchsia-300/20 text-white ring-fuchsia-300/20 hover:bg-fuchsia-300/30")
                 }
               >
@@ -2275,7 +2196,7 @@ function FirmDetailsPage() {
           <div className="mt-4">
             <FirmAnnouncements firmName={name} />
           </div>
-        ) : topTab === "TBI Index" ? (
+        ) : topTab === "TBI Breakdown" ? (
           <TbiIndexContent brand={brand} profile={tbiProfile} score={tbiScore} />
         ) : topTab !== "Overview" ? (
           <div className="mt-4 glass rounded-2xl p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
@@ -2283,8 +2204,8 @@ function FirmDetailsPage() {
             <p className="mt-2">This section is coming soon.</p>
           </div>
         ) : (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-            <aside className="self-start lg:sticky lg:top-[170px]">
+          <div className="mt-4 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
+            <aside className="self-start lg:sticky lg:top-[198px]">
               <div className="mb-3 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block">
                 Overview
               </div>

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type LucideIcon } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AppWindow,
   BarChart3,
@@ -30,6 +30,7 @@ import {
   TrendingUp,
   User as UserIcon,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import {
   DropdownMenu,

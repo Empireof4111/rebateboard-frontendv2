@@ -21,8 +21,95 @@ const socialLinks = [
   },
 ] as const;
 
+type FooterLinkItem = {
+  label: string;
+  to: string;
+  params?: Record<string, string>;
+};
+
+type FooterColumn = {
+  col: string;
+  items: FooterLinkItem[];
+};
+
 export function SiteFooter() {
   const { t } = useI18n();
+
+  const footerColumns: FooterColumn[] = [
+    {
+      col: t("footer.marketplace"),
+      items: [
+        { label: "Offers", to: "/offers" },
+        { label: "Top Prop Firm Sellers", to: "/top-prop-firm-sellers" },
+        { label: "Reviews", to: "/reviews" },
+        { label: "Bonuses", to: "/bonuses" },
+        { label: "Promotions", to: "/promotions" },
+        { label: "Coupons", to: "/coupons" },
+        { label: "Deals", to: "/deals" },
+      ],
+    },
+    {
+      col: "Products",
+      items: [
+        { label: "Trading Journal", to: "/trading-journals" },
+        { label: "Trading Plan", to: "/trading-plan" },
+        { label: "AI Backtesting Lab", to: "/ai-backtesting-lab" },
+        { label: "Trader TBI", to: "/trader-tbi" },
+        { label: "TRT", to: "/trt" },
+        { label: "Rebeta AI", to: "/rebeta-ai" },
+        { label: "Rebate Rewards", to: "/rebate-rewards" },
+        { label: "Cashback Calculator", to: "/cashback-calculator" },
+        { label: "Payout Tracker", to: "/payouts" },
+      ],
+    },
+    {
+      col: t("footer.insights"),
+      items: [
+        { label: "Economic Calendar", to: "/economic-calendar" },
+        { label: "Trading Academy", to: "/academy" },
+        { label: "Market News", to: "/market-news" },
+        { label: "Analytics", to: "/analytics" },
+        { label: "Reports", to: "/reports" },
+        { label: "Demo Accounts", to: "/demo-accounts" },
+        { label: "Blog", to: "/blog" },
+      ],
+    },
+    {
+      col: t("footer.company"),
+      items: [
+        { label: "About", to: "/about" },
+        { label: "How We Make Money", to: "/how-we-make-money" },
+        { label: "Pricing", to: "/pricing" },
+        { label: "Careers", to: "/careers" },
+        { label: "Press", to: "/press" },
+        { label: "Contact", to: "/contact" },
+        { label: "List Your Brand", to: "/business/join" },
+        { label: "Affiliate Program", to: "/affiliate-program" },
+        { label: "Merit Awards", to: "/merit-awards" },
+      ],
+    },
+    {
+      col: t("footer.support"),
+      items: [
+        { label: "Help Center", to: "/help-center" },
+        { label: "Docs", to: "/docs" },
+        { label: "Status", to: "/status" },
+        { label: "Community", to: "/community" },
+        { label: "FAQ", to: "/faqs" },
+        { label: "Bug Bounty", to: "/bug-bounty" },
+      ],
+    },
+    {
+      col: t("footer.legal"),
+      items: [
+        { label: "Terms", to: "/legal/$slug", params: { slug: "terms" } },
+        { label: "Privacy", to: "/legal/$slug", params: { slug: "privacy" } },
+        { label: "Cookies", to: "/legal/$slug", params: { slug: "cookies" } },
+        { label: "Disclaimer", to: "/legal/$slug", params: { slug: "disclaimer" } },
+        { label: "Compliance", to: "/legal/$slug", params: { slug: "compliance" } },
+      ],
+    },
+  ];
 
   return (
     <div className="container-app relative">
@@ -58,7 +145,7 @@ export function SiteFooter() {
 
       {/* FOOTER */}
       <footer className="mt-8 glass rounded-3xl p-5 sm:p-6 lg:p-7">
-        <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-[1.35fr_repeat(5,minmax(0,1fr))]">
+        <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-[1.35fr_repeat(6,minmax(0,1fr))]">
           <div>
             <div className="flex items-center gap-2">
               <Logo heightClass="h-9" />
@@ -67,72 +154,15 @@ export function SiteFooter() {
               {t("footer.about")}
             </p>
           </div>
-          {[
-            {
-              col: t("footer.marketplace"),
-              items: [
-                { label: "Offers" },
-                { label: "Reviews", to: "/reviews" },
-                { label: "Bonuses" },
-                { label: "Promotions" },
-                { label: "Coupons" },
-                { label: "Deals" },
-              ],
-            },
-            {
-              col: t("footer.insights"),
-              items: [
-                { label: "Economic Calendar", to: "/economic-calendar" },
-                { label: "Trading Academy", to: "/academy" },
-                { label: "Market News" },
-                { label: "Analytics" },
-                { label: "Reports" },
-              ],
-            },
-            {
-              col: t("footer.company"),
-              items: [
-                { label: "About" },
-                { label: "Careers" },
-                { label: "Press" },
-                { label: "Contact" },
-                { label: "Blog", to: "/blog" },
-                { label: "List your brand", to: "/business/join" },
-              ],
-            },
-            {
-              col: t("footer.support"),
-              items: [
-                { label: "Help Center" },
-                { label: "Docs" },
-                { label: "Status" },
-                { label: "Community" },
-                { label: "FAQ", to: "/faqs" },
-              ],
-            },
-            {
-              col: t("footer.legal"),
-              items: [
-                { label: "Terms", to: "/legal/$slug", params: { slug: "terms" } },
-                { label: "Privacy", to: "/legal/$slug", params: { slug: "privacy" } },
-                { label: "Cookies", to: "/legal/$slug", params: { slug: "cookies" } },
-                { label: "Disclaimer", to: "/legal/$slug", params: { slug: "disclaimer" } },
-                { label: "Compliance", to: "/legal/$slug", params: { slug: "compliance" } },
-              ],
-            },
-          ].map(({ col, items }) => (
+          {footerColumns.map(({ col, items }) => (
             <div key={col}>
               <div className="mb-3 text-sm font-semibold">{col}</div>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 {items.map((item) => (
-                  <li key={item.label} className="hover:text-foreground">
-                    {item.to ? (
-                      <Link to={item.to} params={item.params}>
-                        {item.label}
-                      </Link>
-                    ) : (
-                      <span className="cursor-pointer">{item.label}</span>
-                    )}
+                  <li key={`${col}-${item.label}`} className="hover:text-foreground">
+                    <Link to={item.to as any} params={item.params as any}>
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

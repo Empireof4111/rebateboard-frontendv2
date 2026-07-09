@@ -23,6 +23,12 @@ export type RebetaAction = {
   module?: string;
 };
 
+export type RebetaNextAction = {
+  label: string;
+  action: string;
+  route?: string;
+};
+
 export type RebetaChatResponse = {
   reply: string;
   provider: "gemini" | "groq" | "mock";
@@ -31,10 +37,12 @@ export type RebetaChatResponse = {
   disclaimer: string;
   intent?: string;
   module?: string;
+  language?: string;
   insights?: string[];
   warnings?: string[];
   predictions?: string[];
   actions?: RebetaAction[];
+  nextActions?: RebetaNextAction[];
 };
 
 export async function sendRebetaMessage(
@@ -44,6 +52,7 @@ export async function sendRebetaMessage(
     messages?: RebetaChatMessage[];
     mode?: string;
     language?: string;
+    currentPage?: string;
     context?: Record<string, unknown>;
     attachments?: RebetaAttachment[];
   },
