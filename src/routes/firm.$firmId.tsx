@@ -1737,6 +1737,11 @@ function FirmDetailsPage() {
     "TBI Breakdown",
   ] as const;
   const [topTab, setTopTab] = useState<(typeof topTabs)[number]>("Overview");
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [stickyMetrics, setStickyMetrics] = useState({
+    headerHeight: 142,
+    tabsHeight: 48,
+  });
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profileAssets, setProfileAssets] = useState<ProfileAssets>(() =>
@@ -1793,6 +1798,8 @@ function FirmDetailsPage() {
   const isBrandOwner = brandOwnerSession?.slug?.toLowerCase() === brandSlug.toLowerCase();
   const canEditProfile = isAdmin || isBrandOwner;
   const followerCount = compactCount(followState.followersCount);
+  const stickyTabsTop = stickyMetrics.headerHeight + 6;
+  const stickySidebarTop = stickyTabsTop + stickyMetrics.tabsHeight + 10;
 
   useEffect(() => {
     setProfileAssets(readStoredProfileAssets(firmId));
@@ -1832,13 +1839,45 @@ function FirmDetailsPage() {
   }, [brand?.slug, firmId]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const header = document.querySelector<HTMLElement>("header.fixed");
+    const tabs = tabsRef.current;
+
+    const updateStickyMetrics = () => {
+      const headerHeight = Math.ceil(header?.getBoundingClientRect().bottom ?? 142);
+      const tabsHeight = Math.ceil(tabs?.getBoundingClientRect().height ?? 48);
+
+      setStickyMetrics((current) =>
+        current.headerHeight === headerHeight && current.tabsHeight === tabsHeight
+          ? current
+          : { headerHeight, tabsHeight },
+      );
+    };
+
+    updateStickyMetrics();
+    const observer = new ResizeObserver(updateStickyMetrics);
+    if (header) observer.observe(header);
+    if (tabs) observer.observe(tabs);
+    window.addEventListener("resize", updateStickyMetrics);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateStickyMetrics);
+    };
+  }, []);
+
+  useEffect(() => {
     if (topTab !== "Overview" || typeof window === "undefined") return;
 
     let frame = 0;
     const updateActiveSection = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const marker = window.scrollY + 220;
+        const offset = window.matchMedia("(min-width: 1024px)").matches
+          ? stickySidebarTop + 8
+          : stickyMetrics.headerHeight + 12;
+        const marker = window.scrollY + offset;
         let nextIndex = 0;
 
         sideTabs.forEach((section, index) => {
@@ -1859,13 +1898,16 @@ function FirmDetailsPage() {
       window.removeEventListener("scroll", updateActiveSection);
       window.removeEventListener("resize", updateActiveSection);
     };
-  }, [topTab]);
+  }, [stickyMetrics.headerHeight, stickySidebarTop, topTab]);
 
   function scrollToProfileSection(section: (typeof sideTabs)[number], index: number) {
     setActiveIdx(index);
     const node = document.getElementById(profileSectionDomId(section.id));
     if (!node || typeof window === "undefined") return;
-    const top = node.getBoundingClientRect().top + window.scrollY - 212;
+    const offset = window.matchMedia("(min-width: 1024px)").matches
+      ? stickySidebarTop + 8
+      : stickyMetrics.headerHeight + 12;
+    const top = node.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top, behavior: "smooth" });
   }
 
@@ -1939,7 +1981,7 @@ function FirmDetailsPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
+    <div className="relative min-h-screen overflow-x-clip bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
       <SiteHeader />
       <div className="glow-orb h-[600px] w-[600px] -left-40 top-20" />
       <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-60" />
@@ -2238,7 +2280,11 @@ function FirmDetailsPage() {
           />
         </div>
 
-        <div className="mt-4 flex justify-center lg:sticky lg:top-[146px] lg:z-40 lg:rounded-2xl lg:bg-[#16082a]/88 lg:px-3 lg:py-2 lg:shadow-xl lg:shadow-black/20 lg:ring-1 lg:ring-white/10 lg:backdrop-blur-2xl">
+        <div
+          ref={tabsRef}
+          className="mt-4 flex justify-center lg:sticky lg:z-40 lg:rounded-2xl lg:bg-[#16082a]/88 lg:px-3 lg:py-2 lg:shadow-xl lg:shadow-black/20 lg:ring-1 lg:ring-white/10 lg:backdrop-blur-2xl"
+          style={{ top: `${stickyTabsTop}px` }}
+        >
           <div className="flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto py-0.5 lg:justify-center">
             {topTabs.map((t) => (
               <button
@@ -2290,7 +2336,10 @@ function FirmDetailsPage() {
           </div>
         ) : (
           <div className="mt-4 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-            <aside className="self-start lg:sticky lg:top-[206px]">
+            <aside
+              className="self-start lg:sticky"
+              style={{ top: `${stickySidebarTop}px` }}
+            >
               <div className="mb-3 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block">
                 Overview
               </div>
@@ -2321,7 +2370,8 @@ function FirmDetailsPage() {
                 <div
                   key={section.id}
                   id={profileSectionDomId(section.id)}
-                  className={`scroll-mt-[218px] transition duration-500 motion-safe:transform ${
+                  style={{ scrollMarginTop: `${stickySidebarTop + 8}px` }}
+                  className={`transition duration-500 motion-safe:transform ${
                     index === activeIdx
                       ? "translate-y-0 opacity-100"
                       : "opacity-85 lg:translate-y-1 lg:opacity-75"
