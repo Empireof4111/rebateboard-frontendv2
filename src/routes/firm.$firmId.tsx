@@ -595,7 +595,10 @@ function TbiScoreCard({
   score: number;
   onViewBreakdown?: () => void;
 }) {
+  const metrics = tbiMetricsForProfile(brand, profile, score);
   const score100 = scoreOutOf100(score);
+  const center = 112;
+  const radarRadius = 62;
   const stage = brand ? resolveBrandTbiState(brand, profile) : (profile?.state ?? "preliminary");
   const theme = tbiStageTheme(stage);
   const trustLabel = profile?.trustLabel || "Trust intelligence review";
@@ -635,6 +638,93 @@ function TbiScoreCard({
         >
           <BadgeCheck className="h-5 w-5" />
         </div>
+      </div>
+
+      <div className="relative mt-4 overflow-hidden rounded-2xl bg-black/[0.12] ring-1 ring-white/10">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:28px_28px] opacity-30" />
+        <svg
+          viewBox="0 0 224 224"
+          role="img"
+          aria-label={`${brand?.name ?? "Brand"} TBI component radar`}
+          className="relative mx-auto h-44 w-full max-w-[300px] motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-700 sm:h-48"
+        >
+          <defs>
+            <radialGradient id="tbiSummaryRadarGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={theme.radarFillA} stopOpacity="0.92" />
+              <stop offset="100%" stopColor={theme.radarFillB} stopOpacity="0.24" />
+            </radialGradient>
+            <linearGradient id="tbiSummaryRadarStroke" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stopColor={theme.radarA} />
+              <stop offset="100%" stopColor={theme.radarB} />
+            </linearGradient>
+          </defs>
+
+          {[0.25, 0.5, 0.75, 1].map((step) => (
+            <polygon
+              key={step}
+              points={polygonPoints(metrics.length, radarRadius * step, center)}
+              fill="none"
+              stroke="rgba(255,255,255,0.17)"
+              strokeWidth="1"
+            />
+          ))}
+          {metrics.map((metric, index) => {
+            const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
+            return (
+              <line
+                key={metric.key}
+                x1={center}
+                y1={center}
+                x2={center + Math.cos(angle) * radarRadius}
+                y2={center + Math.sin(angle) * radarRadius}
+                stroke="rgba(255,255,255,0.14)"
+                strokeWidth="1"
+              />
+            );
+          })}
+          <polygon
+            points={valuePolygonPoints(metrics, radarRadius, center)}
+            fill="url(#tbiSummaryRadarGlow)"
+            stroke="url(#tbiSummaryRadarStroke)"
+            strokeWidth="2"
+            className="transition-all duration-700 ease-out"
+          />
+          {metrics.map((metric, index) => {
+            const angle = -Math.PI / 2 + (index * 2 * Math.PI) / metrics.length;
+            const dotRadius = radarRadius * (metric.value / 10);
+            const labelRadius = 88;
+            const labelX = center + Math.cos(angle) * labelRadius;
+            const labelY = center + Math.sin(angle) * labelRadius;
+            return (
+              <g key={metric.key}>
+                <title>{`${metric.label}: ${metric.value.toFixed(1)}/10`}</title>
+                <circle
+                  cx={center + Math.cos(angle) * dotRadius}
+                  cy={center + Math.sin(angle) * dotRadius}
+                  r="3"
+                  fill={theme.radarA}
+                  stroke="#fff"
+                  strokeWidth="1"
+                  className="transition-all duration-700 ease-out"
+                />
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor={
+                    labelX > center + 10 ? "start" : labelX < center - 10 ? "end" : "middle"
+                  }
+                  dominantBaseline="middle"
+                  fill="rgba(255,255,255,0.72)"
+                  fontSize="9"
+                  fontWeight="700"
+                >
+                  {metric.short}
+                </text>
+              </g>
+            );
+          })}
+          <circle cx={center} cy={center} r="5" fill={theme.radarA} stroke="#fff" strokeWidth="2" />
+        </svg>
       </div>
 
       <div className="relative mt-5 overflow-hidden rounded-2xl bg-black/[0.12] p-4 ring-1 ring-white/10">
@@ -1256,8 +1346,7 @@ function TbiIndexContent({
   ];
 
   return (
-    <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px]">
-      <div className="min-w-0">
+    <div className="mt-4 min-w-0">
         <Section title="TBI Breakdown">
           <div className="mb-5 rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/10">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1490,10 +1579,6 @@ function TbiIndexContent({
             </div>
           </div>
         </Section>
-      </div>
-      <div className="self-start lg:sticky lg:top-[198px]">
-        <TbiScoreCard brand={brand} profile={profile} score={score} />
-      </div>
     </div>
   );
 }
@@ -1753,7 +1838,7 @@ function FirmDetailsPage() {
     const updateActiveSection = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const marker = window.scrollY + 190;
+        const marker = window.scrollY + 220;
         let nextIndex = 0;
 
         sideTabs.forEach((section, index) => {
@@ -1780,7 +1865,7 @@ function FirmDetailsPage() {
     setActiveIdx(index);
     const node = document.getElementById(profileSectionDomId(section.id));
     if (!node || typeof window === "undefined") return;
-    const top = node.getBoundingClientRect().top + window.scrollY - 170;
+    const top = node.getBoundingClientRect().top + window.scrollY - 212;
     window.scrollTo({ top, behavior: "smooth" });
   }
 
@@ -2153,7 +2238,7 @@ function FirmDetailsPage() {
           />
         </div>
 
-        <div className="mt-4 flex justify-center lg:sticky lg:top-[140px] lg:z-40 lg:rounded-2xl lg:bg-[#16082a]/88 lg:px-3 lg:py-2 lg:shadow-xl lg:shadow-black/20 lg:ring-1 lg:ring-white/10 lg:backdrop-blur-2xl">
+        <div className="mt-4 flex justify-center lg:sticky lg:top-[146px] lg:z-40 lg:rounded-2xl lg:bg-[#16082a]/88 lg:px-3 lg:py-2 lg:shadow-xl lg:shadow-black/20 lg:ring-1 lg:ring-white/10 lg:backdrop-blur-2xl">
           <div className="flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto py-0.5 lg:justify-center">
             {topTabs.map((t) => (
               <button
@@ -2205,7 +2290,7 @@ function FirmDetailsPage() {
           </div>
         ) : (
           <div className="mt-4 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-            <aside className="self-start lg:sticky lg:top-[198px]">
+            <aside className="self-start lg:sticky lg:top-[206px]">
               <div className="mb-3 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block">
                 Overview
               </div>
@@ -2236,7 +2321,7 @@ function FirmDetailsPage() {
                 <div
                   key={section.id}
                   id={profileSectionDomId(section.id)}
-                  className={`scroll-mt-[190px] transition duration-500 motion-safe:transform ${
+                  className={`scroll-mt-[218px] transition duration-500 motion-safe:transform ${
                     index === activeIdx
                       ? "translate-y-0 opacity-100"
                       : "opacity-85 lg:translate-y-1 lg:opacity-75"
