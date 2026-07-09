@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Coins, Download, Funnel, Search, Sparkles, Trophy } from "lucide-react";
+import { Coins, Download, ExternalLink, Funnel, Search, Sparkles, Trophy } from "lucide-react";
 import { DataTable, PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
 import {
@@ -19,6 +19,15 @@ const FUNNEL_LABELS: Record<ChallengePurchaseStep, string> = {
   finalized: "Finalized",
   reward_chosen: "Reward chosen",
   claim_guide_viewed: "Claim guide viewed",
+  intent_created: "Started",
+  redirected_to_partner: "Sent to partner",
+  pending_purchase: "Waiting for purchase",
+  user_marked_completed: "Purchase marked complete",
+  proof_submitted: "Proof submitted",
+  under_review: "Under review",
+  approved: "Approved",
+  rejected: "Rejected",
+  reward_credited: "Reward credited",
 };
 
 const STEP_OPTIONS: Array<{ value: ChallengePurchaseStep | "all"; label: string }> = [
@@ -28,6 +37,15 @@ const STEP_OPTIONS: Array<{ value: ChallengePurchaseStep | "all"; label: string 
   { value: "finalized", label: "Finalized" },
   { value: "reward_chosen", label: "Reward chosen" },
   { value: "claim_guide_viewed", label: "Claim guide viewed" },
+  { value: "intent_created", label: "Started" },
+  { value: "redirected_to_partner", label: "Sent to partner" },
+  { value: "pending_purchase", label: "Waiting for purchase" },
+  { value: "user_marked_completed", label: "Purchase marked complete" },
+  { value: "proof_submitted", label: "Proof submitted" },
+  { value: "under_review", label: "Under review" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+  { value: "reward_credited", label: "Reward credited" },
 ];
 
 function ChallengePurchasesPage() {
@@ -96,7 +114,7 @@ function ChallengePurchasesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Challenge Purchases"
-        subtitle='Live funnel from "Buy" click to claimed cashback — synced from challenge checkout events and prop-firm cashback claims.'
+        subtitle="Tracked funding-account checkout sessions, confirmations, proof and reward decisions."
         actions={<Pill tone="good">Tracking live</Pill>}
       />
 
@@ -147,7 +165,7 @@ function ChallengePurchasesPage() {
                 <div className="mb-1 flex items-center justify-between text-xs">
                   <span className="font-semibold text-white">{FUNNEL_LABELS[item.step]}</span>
                   <span className="text-muted-foreground">
-                    {item.count} · {item.pct}%
+                    {item.count} Â· {item.pct}%
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-white/10">
@@ -215,32 +233,75 @@ function ChallengePurchasesPage() {
             <>
               <th>Buyer</th>
               <th>Firm</th>
-              <th>Program</th>
-              <th>Step</th>
-              <th>GMV</th>
-              <th>RR</th>
+              <th>Account</th>
+              <th>Status</th>
+              <th>Price</th>
               <th>Reward</th>
+              <th>Proof / Claim</th>
+              <th>Reference</th>
               <th>When</th>
             </>
           }
         >
           {filteredRows.length === 0 ? (
             <tr>
-              <td colSpan={8} className="text-center text-sm text-muted-foreground">
+              <td colSpan={9} className="text-center text-sm text-muted-foreground">
                 {loading ? "Loading challenge purchase records..." : "No challenge purchase records yet."}
               </td>
             </tr>
           ) : (
             filteredRows.map((row) => (
               <tr key={row.id}>
-                <td className="font-mono text-xs">{row.buyerEmail ?? "-"}</td>
+                <td>
+                  <div className="text-xs font-semibold text-white">{row.buyerName || "Guest checkout"}</div>
+                  <div className="font-mono text-[10px] text-muted-foreground">{row.buyerEmail ?? "-"}</div>
+                  {row.guestSessionId ? (
+                    <div className="max-w-[140px] truncate font-mono text-[9px] text-muted-foreground" title={row.guestSessionId}>
+                      Guest {row.guestSessionId}
+                    </div>
+                  ) : null}
+                </td>
                 <td className="font-semibold text-white">{row.firm}</td>
-                <td className="text-white/80">{row.program}</td>
+                <td>
+                  <div className="text-white/80">{row.program}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {[row.accountSize, row.accountId].filter(Boolean).join(" Â· ") || "Account not specified"}
+                  </div>
+                </td>
                 <td><Pill tone="neutral">{FUNNEL_LABELS[row.step]}</Pill></td>
-                <td className="font-semibold text-amber-300">${row.amountUsd.toFixed(2)}</td>
-                <td className="font-semibold text-fuchsia-300">{row.rrPoints}</td>
+                <td className="font-semibold text-violet-200">${row.amountUsd.toFixed(2)}</td>
                 <td>
                   <div className="capitalize text-white/80">{row.rewardPreference}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {row.rrPoints > 0 ? `${row.rrPoints} RR` : row.cashbackLabel || "Eligibility pending"}
+                  </div>
+                </td>
+                <td>
+                  <div className="text-xs text-white/80">{row.proofUrls?.length ?? 0} file(s)</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {row.linkedClaimId ? `Claim #${row.linkedClaimId} Â· ${row.linkedClaimStatus}` : "No linked claim"}
+                  </div>
+                </td>
+                <td>
+                  <div className="max-w-[150px] truncate font-mono text-[10px] text-fuchsia-200" title={row.reference}>
+                    {row.reference || "-"}
+                  </div>
+                  <div
+                    className="text-[10px] text-muted-foreground"
+                    title={row.statusHistory?.map((item) => `${item.status}: ${item.note || "No note"}`).join("\n")}
+                  >
+                    {row.statusHistory?.length ?? 0} updates
+                  </div>
+                  {row.partnerTrackingUrl ? (
+                    <a
+                      href={row.partnerTrackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-[10px] text-violet-200 hover:text-white"
+                    >
+                      Tracking link <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  ) : null}
                 </td>
                 <td className="text-xs text-muted-foreground">{new Date(row.when).toLocaleString()}</td>
               </tr>

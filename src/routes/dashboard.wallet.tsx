@@ -84,6 +84,21 @@ function WalletPage() {
   const [claimOpen, setClaimOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [pref, setPref] = useState<PayoutPref>(defaultPref);
+  const checkoutClaim = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("claim") !== "1") return null;
+    return {
+      purchaseSessionReference: params.get("purchaseSession") || "",
+      partner: params.get("partner") || "",
+      amount: params.get("amount") || "",
+      email: params.get("email") || "",
+    };
+  }, []);
+
+  useEffect(() => {
+    if (checkoutClaim?.purchaseSessionReference) setClaimOpen(true);
+  }, [checkoutClaim]);
 
   // Map backend WalletLog to the UI's WalletTransaction shape
   const mapLog = useCallback((log: import("@/lib/finance-api").WalletTransaction): WalletTransaction => {
@@ -503,7 +518,16 @@ function WalletPage() {
         />
       )}
       {transferOpen && token && <TransferModal token={token} onClose={() => setTransferOpen(false)} onSuccess={loadData} />}
-      {claimOpen && token && user && <ClaimCashbackModal token={token} userId={user.id} defaultPref={pref.default} onClose={() => setClaimOpen(false)} onSuccess={loadData} />}
+      {claimOpen && token && user && (
+        <ClaimCashbackModal
+          token={token}
+          userId={user.id}
+          defaultPref={pref.default}
+          purchaseContext={checkoutClaim ?? undefined}
+          onClose={() => setClaimOpen(false)}
+          onSuccess={loadData}
+        />
+      )}
       {linkOpen && token && (
         <LinkAccountModal
           token={token}
@@ -794,15 +818,34 @@ function mapClaimBrand(brand: AdminBrandRecord): BrandLike {
   };
 }
 
-function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSuccess }: { token: string; userId: string; defaultPref: PayoutTarget; onClose: () => void; onSuccess: () => void }) {
+function ClaimCashbackModal({
+  token,
+  userId: _userId,
+  defaultPref,
+  purchaseContext,
+  onClose,
+  onSuccess,
+}: {
+  token: string;
+  userId: string;
+  defaultPref: PayoutTarget;
+  purchaseContext?: {
+    purchaseSessionReference: string;
+    partner: string;
+    amount: string;
+    email: string;
+  };
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [allBrands, setAllBrands] = useState<BrandLike[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(true);
   const [brandsError, setBrandsError] = useState("");
-  const [partner, setPartner] = useState("");
+  const [partner, setPartner] = useState(purchaseContext?.partner ?? "");
   const [accountId, setAccountId] = useState("");
-  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState(purchaseContext?.email ?? "");
   const [orderId, setOrderId] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(purchaseContext?.amount ?? "");
   const [note, setNote] = useState("");
   const [files, setFiles] = useState<string[]>([]);
   const [target, setTarget] = useState<PayoutTarget>(defaultPref);
@@ -819,7 +862,11 @@ function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSu
           .filter((brand) => Boolean(brand.cashback) || ["Prop Firm", "Forex Broker", "Crypto Exchange", "Futures Prop Firm", "Crypto Prop Firm"].includes(brand.category))
           .map(mapClaimBrand);
         setAllBrands(supported);
-        setPartner((current) => current || supported[0]?.name || "");
+        setPartner((current) =>
+          current && supported.some((brand) => brand.name === current)
+            ? current
+            : supported[0]?.name || "",
+        );
         setBrandsError("");
       })
       .catch((err) => {
@@ -882,6 +929,7 @@ function ClaimCashbackModal({ token, userId: _userId, defaultPref, onClose, onSu
         accountId: accountId.trim() || undefined,
         registeredEmail: registeredEmail.trim() || undefined,
         orderId: orderId.trim() || undefined,
+        purchaseSessionReference: purchaseContext?.purchaseSessionReference || undefined,
         type: "Cashback",
         amount: amt,
         evidenceUrls: files,

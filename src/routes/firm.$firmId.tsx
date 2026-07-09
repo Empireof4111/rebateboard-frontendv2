@@ -2311,6 +2311,9 @@ function FirmDetailsPage() {
           <div className="mt-4">
             <FirmChallenges
               firmName={name}
+              brandId={brand?.id == null ? undefined : String(brand.id)}
+              brandLogo={displayAvatar}
+              category={brand?.category || "Prop Firm"}
               checkoutLink={signupUrl}
               challenges={brand?.challenges}
             />

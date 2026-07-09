@@ -35,6 +35,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CryptoPropFirmsRouteImport } from './routes/crypto-prop-firms'
 import { Route as CopyTradingPlatformsRouteImport } from './routes/copy-trading-platforms'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as CashbackRouteImport } from './routes/cashback'
 import { Route as BugBountyRouteImport } from './routes/bug-bounty'
 import { Route as BrokersRouteImport } from './routes/brokers'
 import { Route as BrandRouteImport } from './routes/brand'
@@ -270,6 +271,11 @@ const CopyTradingPlatformsRoute = CopyTradingPlatformsRouteImport.update({
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CashbackRoute = CashbackRouteImport.update({
+  id: '/cashback',
+  path: '/cashback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BugBountyRoute = BugBountyRouteImport.update({
@@ -819,6 +825,7 @@ export interface FileRoutesByFullPath {
   '/brand': typeof BrandRouteWithChildren
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
+  '/cashback': typeof CashbackRoute
   '/compare': typeof CompareRoute
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
@@ -952,6 +959,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogRoute
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
+  '/cashback': typeof CashbackRoute
   '/compare': typeof CompareRoute
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
@@ -1084,6 +1092,7 @@ export interface FileRoutesById {
   '/brand': typeof BrandRouteWithChildren
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
+  '/cashback': typeof CashbackRoute
   '/compare': typeof CompareRoute
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
@@ -1220,6 +1229,7 @@ export interface FileRouteTypes {
     | '/brand'
     | '/brokers'
     | '/bug-bounty'
+    | '/cashback'
     | '/compare'
     | '/copy-trading-platforms'
     | '/crypto-prop-firms'
@@ -1353,6 +1363,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/brokers'
     | '/bug-bounty'
+    | '/cashback'
     | '/compare'
     | '/copy-trading-platforms'
     | '/crypto-prop-firms'
@@ -1484,6 +1495,7 @@ export interface FileRouteTypes {
     | '/brand'
     | '/brokers'
     | '/bug-bounty'
+    | '/cashback'
     | '/compare'
     | '/copy-trading-platforms'
     | '/crypto-prop-firms'
@@ -1619,6 +1631,7 @@ export interface RootRouteChildren {
   BrandRoute: typeof BrandRouteWithChildren
   BrokersRoute: typeof BrokersRoute
   BugBountyRoute: typeof BugBountyRoute
+  CashbackRoute: typeof CashbackRoute
   CompareRoute: typeof CompareRoute
   CopyTradingPlatformsRoute: typeof CopyTradingPlatformsRoute
   CryptoPropFirmsRoute: typeof CryptoPropFirmsRoute
@@ -1840,6 +1853,13 @@ declare module '@tanstack/react-router' {
       path: '/compare'
       fullPath: '/compare'
       preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cashback': {
+      id: '/cashback'
+      path: '/cashback'
+      fullPath: '/cashback'
+      preLoaderRoute: typeof CashbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bug-bounty': {
@@ -2826,6 +2846,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrandRoute: BrandRouteWithChildren,
   BrokersRoute: BrokersRoute,
   BugBountyRoute: BugBountyRoute,
+  CashbackRoute: CashbackRoute,
   CompareRoute: CompareRoute,
   CopyTradingPlatformsRoute: CopyTradingPlatformsRoute,
   CryptoPropFirmsRoute: CryptoPropFirmsRoute,

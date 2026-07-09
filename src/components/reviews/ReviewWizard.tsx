@@ -8,7 +8,7 @@
  * Used inside /review route AND directly inline if needed.
  */
 import { useMemo, useState, useCallback, useEffect, type ChangeEvent, type ReactNode } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   Check,
   ChevronLeft,
@@ -17,15 +17,10 @@ import {
   Search,
   Upload,
   X,
-  ShieldCheck,
-  Bookmark,
-  Layers,
   Info,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
+  BadgeCheck,
+  Gift,
 } from "lucide-react";
-import { TBI_BRANDS } from "@/lib/tbi-data";
 import { type ReviewProviderType, type ReviewProof, type ReviewRatings } from "@/lib/reviews-store";
 import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
 import { submitPublicReview } from "@/lib/reviews-api";
@@ -42,6 +37,14 @@ const EXPERIENCES = [
   "More than 1 year",
 ];
 const EVAL_STEPS = ["Instant", "1 Step", "2 Step", "3 Step", "4 Step"];
+const REVIEW_TYPES = [
+  "Trading Experience",
+  "Payout Experience",
+  "Support Experience",
+  "Platform Experience",
+  "Cashback Experience",
+  "Complaint / Issue Experience",
+] as const;
 
 type Props = {
   initialProviderType?: ReviewProviderType;
@@ -55,6 +58,9 @@ type ReviewBrandOption = {
   score: number;
   maxScore: number;
   logoColor: string;
+  logo?: string;
+  country?: string;
+  reviewCount: number;
 };
 
 const CATEGORY_GRADIENTS: Record<ReviewProviderType, string> = {
@@ -75,31 +81,81 @@ function reviewCategoryForBrand(category?: string): ReviewProviderType {
 }
 
 function normalizeTbiScore(value?: number) {
-  if (!value || Number.isNaN(value)) return 7.3;
+  if (!value || Number.isNaN(value)) return 0;
   if (value > 100) return 10;
   return value > 10 ? value / 10 : value;
 }
 
-function staticBrandOption(brand: (typeof TBI_BRANDS)[number]): ReviewBrandOption {
-  return {
-    slug: brand.slug,
-    name: brand.name,
-    category: brand.category,
-    score: brand.score,
-    maxScore: brand.maxScore,
-    logoColor: brand.logoColor,
-  };
+function stringField(source: unknown, key: string) {
+  if (!source || typeof source !== "object") return "";
+  const value = (source as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : "";
 }
 
-function previewReviewImpact(currentScore: number, ratings: ReviewRatings) {
-  if (!ratings.overall) return 0;
-  const reviewScore10 = (ratings.overall / 5) * 10;
-  const raw = (reviewScore10 - currentScore) * 0.06;
-  return Math.round(raw * 100) / 100;
+type ReviewType = (typeof REVIEW_TYPES)[number];
+type RatingQuestion = { key: string; label: string; pillar: "UT" | "PR" | "TS" | "RC" | "TC" | "CX" };
+
+const CATEGORY_QUESTIONS: Record<ReviewProviderType, RatingQuestion[]> = {
+  Broker: [
+    { key: "spreadsFees", label: "Spreads & Fees", pillar: "TC" },
+    { key: "executionQuality", label: "Execution Quality", pillar: "TC" },
+    { key: "depositsWithdrawals", label: "Deposits & Withdrawals", pillar: "PR" },
+    { key: "customerCare", label: "Customer Support", pillar: "CX" },
+    { key: "platformStability", label: "Platform Stability", pillar: "CX" },
+    { key: "regulationTrust", label: "Regulation & Trust", pillar: "RC" },
+  ],
+  "Prop Firm": [
+    { key: "challengeRules", label: "Challenge Rules", pillar: "TC" },
+    { key: "evaluationFairness", label: "Evaluation Fairness", pillar: "UT" },
+    { key: "payoutSpeed", label: "Payout Reliability", pillar: "PR" },
+    { key: "customerCare", label: "Support Experience", pillar: "CX" },
+    { key: "userFriendliness", label: "Dashboard Experience", pillar: "CX" },
+    { key: "transparency", label: "Transparency", pillar: "TS" },
+  ],
+  Exchange: [
+    { key: "security", label: "Security", pillar: "RC" },
+    { key: "liquidity", label: "Liquidity", pillar: "TC" },
+    { key: "tradingFees", label: "Trading Fees", pillar: "TC" },
+    { key: "payoutSpeed", label: "Withdrawals", pillar: "PR" },
+    { key: "userFriendliness", label: "App / Platform Experience", pillar: "CX" },
+    { key: "customerCare", label: "Support", pillar: "CX" },
+  ],
+  Tool: [
+    { key: "easeOfUse", label: "Ease of Use", pillar: "CX" },
+    { key: "reliability", label: "Reliability", pillar: "UT" },
+    { key: "featureQuality", label: "Feature Quality", pillar: "TC" },
+    { key: "value", label: "Value", pillar: "UT" },
+    { key: "customerCare", label: "Support", pillar: "CX" },
+  ],
+};
+
+function questionsFor(category: ReviewProviderType, reviewType: ReviewType) {
+  const questions = CATEGORY_QUESTIONS[category];
+  if (reviewType === "Payout Experience") {
+    return questions.filter((item) => item.pillar === "PR" || item.pillar === "TS" || item.pillar === "CX");
+  }
+  if (reviewType === "Support Experience") return questions.filter((item) => item.pillar === "CX");
+  if (reviewType === "Platform Experience") {
+    return questions.filter((item) => ["platformStability", "userFriendliness", "easeOfUse", "reliability", "featureQuality", "executionQuality"].includes(item.key));
+  }
+  if (reviewType === "Cashback Experience") {
+    return [
+      { key: "cashbackAccuracy", label: "Cashback Accuracy", pillar: "TS" as const },
+      { key: "cashbackSpeed", label: "Cashback Speed", pillar: "PR" as const },
+      { key: "cashbackSupport", label: "Cashback Support", pillar: "CX" as const },
+    ];
+  }
+  if (reviewType === "Complaint / Issue Experience") {
+    return [
+      { key: "issueTransparency", label: "Issue Transparency", pillar: "TS" as const },
+      { key: "resolutionFairness", label: "Resolution Fairness", pillar: "UT" as const },
+      { key: "resolutionSupport", label: "Resolution Support", pillar: "CX" as const },
+    ];
+  }
+  return questions;
 }
 
 export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   // step 1 state
@@ -110,6 +166,8 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
   const [search, setSearch] = useState("");
   const [adminBrandOptions, setAdminBrandOptions] = useState<ReviewBrandOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [reviewType, setReviewType] = useState<ReviewType>("Trading Experience");
 
   // step 2 state
   const [fullName, setFullName] = useState(user?.fullName ?? user?.name ?? "");
@@ -156,6 +214,9 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
               ),
               maxScore: 10,
               logoColor: CATEGORY_GRADIENTS[category],
+              logo: brand.thumbnail,
+              country: stringField(brand.identity, "country") || stringField(brand.profile, "country"),
+              reviewCount: Number(brand.reviewsCount ?? 0),
             };
           }),
         );
@@ -170,10 +231,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
   }, []);
 
   const brandOptions = useMemo(() => {
-    const bySlug = new Map<string, ReviewBrandOption>();
-    TBI_BRANDS.forEach((brand) => bySlug.set(brand.slug, staticBrandOption(brand)));
-    adminBrandOptions.forEach((brand) => bySlug.set(brand.slug, brand));
-    return Array.from(bySlug.values());
+    return adminBrandOptions;
   }, [adminBrandOptions]);
 
   const selectedBrand = useMemo(
@@ -188,20 +246,35 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
     return list.filter((b) => b.name.toLowerCase().includes(search.toLowerCase()));
   }, [providerType, search, brandOptions]);
 
-  const tbiDelta = useMemo(
-    () => (selectedBrand ? previewReviewImpact(selectedBrand.score, ratings) : 0),
-    [selectedBrand, ratings],
+  const ratingQuestions = useMemo(
+    () => questionsFor(selectedBrand?.category ?? (providerType || "Prop Firm"), reviewType),
+    [providerType, reviewType, selectedBrand],
   );
+
+  const tbiPillars = useMemo(() => {
+    const grouped: Record<string, number[]> = {};
+    ratingQuestions.forEach((question) => {
+      const value = Number(ratings[question.key] || 0);
+      if (value > 0) (grouped[question.pillar] ||= []).push(value);
+    });
+    return Object.fromEntries(
+      Object.entries(grouped).map(([pillar, values]) => [
+        pillar,
+        Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)),
+      ]),
+    );
+  }, [ratingQuestions, ratings]);
 
   /* ---------- validation ---------- */
   const canContinue = useMemo(() => {
     if (step === 1) return Boolean(providerType && brandSlug);
-    if (step === 2) return Boolean(fullName && email && (accountSize || customSize) && experience);
+    if (step === 2) return Boolean(fullName && email && experience);
     if (step === 3) {
-      const all = Object.values(ratings);
-      return all.every((v) => v > 0) && body.trim().length >= 100;
+      return ratingQuestions.every(({ key }) => Number(ratings[key]) > 0) &&
+        ratings.overall > 0 &&
+        body.trim().length >= 100;
     }
-    return proofs.length > 0;
+    return true;
   }, [
     step,
     providerType,
@@ -212,6 +285,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
     customSize,
     experience,
     ratings,
+    ratingQuestions,
     body,
     proofs,
   ]);
@@ -259,6 +333,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
     try {
       await submitPublicReview({
         providerType: selectedBrand.category,
+        reviewType,
         brandSlug: selectedBrand.slug,
         brandName: selectedBrand.name,
         userId: user?.id,
@@ -271,6 +346,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
         evaluationSteps: evalSteps || undefined,
         eveluationStep: evalSteps || undefined,
         ratings,
+        tbiPillars,
         body,
         title: `${selectedBrand.name} review`,
         category: selectedBrand.category,
@@ -280,16 +356,54 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
         likedLeast: likedLeast || undefined,
         proofs,
       });
-      toast.success("Review submitted! It's now in moderation.", {
-        description: "You'll earn 50 RR once approved.",
-      });
-      navigate({ to: "/firm/$firmId", params: { firmId: selectedBrand.slug } });
+      setSubmitted(true);
+      toast.success("Review submitted successfully");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Review submission failed.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (submitted && selectedBrand) {
+    const seriousIssue = ratings.overall <= 2 || reviewType === "Complaint / Issue Experience";
+    return (
+      <div className="glass mx-auto max-w-3xl rounded-2xl p-6 text-center ring-1 ring-white/10 sm:p-10">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-300/30">
+          <Check className="h-7 w-7 text-emerald-300" />
+        </div>
+        <h2 className="mt-4 text-2xl font-bold text-white">Review Submitted Successfully</h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Thank you for helping improve transparency on RebateBoard. Your review is pending verification. Once approved, it can contribute to {selectedBrand.name}'s Trusted Brand Index.
+        </p>
+        <div className="mx-auto mt-5 flex max-w-sm items-center justify-center gap-2 rounded-xl bg-fuchsia-500/10 p-3 text-sm text-fuchsia-100 ring-1 ring-fuchsia-300/25">
+          <Gift className="h-4 w-4" />
+          <span><strong>Possible RR reward</strong> after verification</span>
+        </div>
+        {seriousIssue && (
+          <div className="mx-auto mt-5 max-w-xl rounded-xl bg-rose-500/10 p-4 text-left ring-1 ring-rose-300/25">
+            <div className="font-semibold text-white">Need help resolving this issue?</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Open a formal complaint and attach supporting evidence for a structured review.
+            </p>
+            <Link
+              to="/firm/$firmId"
+              params={{ firmId: selectedBrand.slug }}
+              hash="complaints"
+              className="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15"
+            >
+              Open Complaint
+            </Link>
+          </div>
+        )}
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <Link to="/dashboard/reviews" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">View My Reviews</Link>
+          <Link to="/programs" className="rounded-full bg-white/5 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/15">Browse More Brands</Link>
+          <button type="button" onClick={() => window.location.reload()} className="rounded-full bg-white/5 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/15">Submit Another Review</button>
+        </div>
+      </div>
+    );
+  }
 
   /* ---------- render ---------- */
   return (
@@ -330,7 +444,18 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
             />
           )}
           {step === 3 && (
-            <Step3 ratings={ratings} setRatings={setRatings} body={body} setBody={setBody} />
+            <Step3
+              reviewType={reviewType}
+              setReviewType={(value) => {
+                setReviewType(value);
+                setRatings({ ...ratings, overall: 0 });
+              }}
+              questions={ratingQuestions}
+              ratings={ratings}
+              setRatings={setRatings}
+              body={body}
+              setBody={setBody}
+            />
           )}
           {step === 4 && (
             <Step4
@@ -350,11 +475,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
           {selectedBrand && (
             <div className="glass rounded-2xl p-4 ring-1 ring-white/10">
               <div className="flex items-center gap-3">
-                <div
-                  className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${selectedBrand.logoColor} text-white text-sm font-bold`}
-                >
-                  {selectedBrand.name[0]}
-                </div>
+                <BrandMark brand={selectedBrand} className="h-10 w-10" />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-bold text-white">{selectedBrand.name}</div>
                   <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -371,24 +492,10 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
                   </span>
                 </div>
               </div>
-              {step >= 3 && ratings.overall > 0 && (
-                <div className="mt-2 flex items-center justify-between rounded-xl bg-fuchsia-500/10 p-2.5 ring-1 ring-fuchsia-300/30">
-                  <div className="inline-flex items-center gap-1 text-[10px] uppercase text-fuchsia-200">
-                    {tbiDelta >= 0 ? (
-                      <TrendingUp className="h-3 w-3" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3" />
-                    )}
-                    Your impact
-                  </div>
-                  <div
-                    className={`text-sm font-bold ${tbiDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}
-                  >
-                    {tbiDelta >= 0 ? "+" : ""}
-                    {tbiDelta.toFixed(2)}
-                  </div>
-                </div>
-              )}
+              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-fuchsia-200">
+                <BadgeCheck className="h-3.5 w-3.5" />
+                Approved reviews may contribute to TBI
+              </div>
             </div>
           )}
 
@@ -551,14 +658,13 @@ function Step1({
                     : "bg-white/[0.03] ring-white/10 hover:bg-white/[0.06]")
                 }
               >
-                <div
-                  className={`grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br ${b.logoColor} text-white text-xs font-bold`}
-                >
-                  {b.name[0]}
-                </div>
+                <BrandMark brand={b} className="h-9 w-9" />
                 <div className="min-w-0">
                   <div className="truncate text-xs font-semibold text-white">{b.name}</div>
-                  <div className="text-[10px] text-muted-foreground">TBI {b.score.toFixed(1)}</div>
+                  <div className="truncate text-[10px] text-muted-foreground">
+                    {b.country ? `${b.country} · ` : ""}
+                    {b.score > 0 ? `TBI ${b.score.toFixed(1)}` : "TBI Pending"} · {b.reviewCount} reviews
+                  </div>
                 </div>
               </button>
             ))}
@@ -678,23 +784,25 @@ function Step2({
 }
 
 function Step3({
+  reviewType,
+  setReviewType,
+  questions,
   ratings,
   setRatings,
   body,
   setBody,
 }: {
+  reviewType: ReviewType;
+  setReviewType: (value: ReviewType) => void;
+  questions: RatingQuestion[];
   ratings: ReviewRatings;
   setRatings: (r: ReviewRatings) => void;
   body: string;
   setBody: (s: string) => void;
 }) {
-  const items: { key: keyof ReviewRatings; label: string }[] = [
-    { key: "customerCare", label: "1. Customer Care" },
-    { key: "tradingConditions", label: "2. Trading conditions (Spread, Leverage, execution)" },
-    { key: "paymentSpeed", label: "3. Deposit / Withdrawal Speed" },
-    { key: "userFriendliness", label: "4. Dashboard / User Friendliness" },
-    { key: "payoutSpeed", label: "5. Credentials / Payout Times / Process" },
-    { key: "overall", label: "Overall Rating" },
+  const items = [
+    ...questions,
+    { key: "overall", label: "Overall Experience", pillar: "UT" as const },
   ];
   return (
     <div className="space-y-5">
@@ -705,10 +813,25 @@ function Step3({
         </p>
       </div>
 
+      <Field label="What experience are you reviewing?">
+        <div className="flex flex-wrap gap-2">
+          {REVIEW_TYPES.map((type) => (
+            <ChipBtn key={type} active={reviewType === type} onClick={() => setReviewType(type)}>
+              {type}
+            </ChipBtn>
+          ))}
+        </div>
+      </Field>
+
       <div className="space-y-3">
-        {items.map(({ key, label }) => (
+        {items.map(({ key, label, pillar }) => (
           <div key={key} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
-            <div className="text-xs font-semibold text-white">{label}</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-semibold text-white">{label}</div>
+              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-semibold text-fuchsia-200 ring-1 ring-white/10">
+                {pillar}
+              </span>
+            </div>
             <div className="mt-2 flex items-center gap-2">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
@@ -718,7 +841,7 @@ function Step3({
                   aria-label={`${n} stars`}
                 >
                   <Star
-                    className={`h-5 w-5 ${n <= ratings[key] ? "fill-fuchsia-400 text-fuchsia-400" : "text-white/20"}`}
+                    className={`h-5 w-5 ${n <= Number(ratings[key] || 0) ? "fill-fuchsia-400 text-fuchsia-400" : "text-white/20"}`}
                   />
                 </button>
               ))}
@@ -745,6 +868,18 @@ function Step3({
           className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
         />
       </div>
+    </div>
+  );
+}
+
+function BrandMark({ brand, className }: { brand: ReviewBrandOption; className: string }) {
+  return (
+    <div className={`grid shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br ${brand.logoColor} ${className}`}>
+      {brand.logo ? (
+        <img src={brand.logo} alt="" className="h-full w-full object-cover" loading="lazy" />
+      ) : (
+        <span className="text-xs font-bold text-white">{brand.name[0]}</span>
+      )}
     </div>
   );
 }
@@ -776,7 +911,7 @@ function Step4({
         </p>
       </div>
 
-      <Field label={`Attachments (Required) — ${proofs.length}/5`}>
+      <Field label={`Supporting evidence (optional) — ${proofs.length}/5`}>
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 bg-white/[0.02] p-6 text-center transition hover:border-fuchsia-300/40 hover:bg-fuchsia-500/5">
           <Upload className="h-6 w-6 text-fuchsia-300" />
           <div className="text-sm font-semibold text-white">

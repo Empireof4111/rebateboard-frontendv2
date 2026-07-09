@@ -18,6 +18,14 @@ import {
   ShieldCheck,
   Users,
   Gift,
+  WalletCards,
+  BrainCircuit,
+  Headphones,
+  Target,
+  BarChart3,
+  Megaphone,
+  Handshake,
+  Globe2,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
@@ -802,6 +810,160 @@ function TrustMetricsStrip({ metrics }: { metrics: TrustMetric[] }) {
   );
 }
 
+const traderBenefits = [
+  {
+    title: "Real Cashback on Every Trade",
+    copy: "Automatic rebates paid into your wallet with clear tracking and no chasing.",
+    icon: WalletCards,
+  },
+  {
+    title: "Verified Brands Only",
+    copy: "Independent TBI signals help traders assess brands with greater confidence.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Rewards That Compound",
+    copy: "Earn RR from meaningful activity and progress toward tools, perks, and rewards.",
+    icon: Gift,
+  },
+  {
+    title: "Pro-Grade Tools, Free",
+    copy: "Backtesting, analytics, calculators, trading journals, and intelligent insights.",
+    icon: BrainCircuit,
+  },
+  {
+    title: "Community of Traders",
+    copy: "Real reviews, shared payout insight, and experiences traders can verify.",
+    icon: Users,
+  },
+  {
+    title: "Human Support, Always",
+    copy: "Practical help for cashback, claims, rewards, and partner-related questions.",
+    icon: Headphones,
+  },
+];
+
+const partnerBenefits = [
+  {
+    title: "Qualified Trader Audience",
+    copy: "Reach intent-driven traders actively evaluating brands and trading products.",
+    icon: Target,
+  },
+  {
+    title: "Trust You Can Showcase",
+    copy: "Independent trust signals help credible brands stand out clearly.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Transparent Performance",
+    copy: "Follow clicks, signups, conversions, rewards, and payouts with clearer visibility.",
+    icon: BarChart3,
+  },
+  {
+    title: "Marketing That Scales",
+    copy: "Offers, reviews, awards, and editorial visibility build value over time.",
+    icon: Megaphone,
+  },
+  {
+    title: "Fair, Pay-for-Results",
+    copy: "Grow through measurable trader actions and meaningful conversions.",
+    icon: Handshake,
+  },
+  {
+    title: "Global Reach, Local Fit",
+    copy: "Country-aware discovery helps brands appear where they matter most.",
+    icon: Globe2,
+  },
+];
+
+function WhyRebateBoardSection() {
+  const sides = [
+    {
+      eyebrow: "For Traders",
+      title: "Trade smarter. Earn more back.",
+      benefits: traderBenefits,
+      primary: { label: "Create Free Trader Account", to: "/signup" },
+      secondary: { label: "Browse Cashback Offers", to: "/cashback" },
+    },
+    {
+      eyebrow: "For Brands & Partners",
+      title: "Grow with trust. Pay for results.",
+      benefits: partnerBenefits,
+      primary: { label: "List Your Brand", to: "/business/join" },
+      secondary: { label: "Become an Affiliate", to: "/business/join" },
+    },
+  ] as const;
+
+  return (
+    <section className="mt-10 sm:mt-12">
+      <div className="text-center">
+        <span className="inline-flex rounded-full bg-primary/12 px-3 py-1 text-[11px] font-bold text-primary ring-1 ring-primary/25">
+          Why RebateBoard
+        </span>
+        <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+          One platform. <span className="text-gradient">Two winning sides.</span>
+        </h2>
+        <p className="mx-auto mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Whether you trade the markets or run a brand that serves them, RebateBoard is built to
+          make the relationship fairer, faster, and more rewarding.
+        </p>
+      </div>
+      <div className="mt-7 grid gap-4 lg:grid-cols-2">
+        {sides.map((side, sideIndex) => (
+          <article
+            key={side.eyebrow}
+            className="glass-strong rounded-3xl p-5 ring-1 ring-white/10 sm:p-7"
+          >
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-primary/18 text-primary ring-1 ring-primary/30">
+                {sideIndex === 0 ? <Users className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                  {side.eyebrow}
+                </p>
+                <h3 className="mt-1 text-xl font-bold sm:text-2xl">{side.title}</h3>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-x-5 sm:grid-cols-2">
+              {side.benefits.map(({ title, copy, icon: Icon }) => (
+                <div
+                  key={title}
+                  className="flex gap-3 border-b border-white/8 py-4 transition duration-300 hover:translate-x-1"
+                >
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/20">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-white">{title}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                      {copy}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to={side.primary.to}
+                className="rounded-full bg-primary px-5 py-2.5 text-xs font-bold text-white transition hover:brightness-110"
+              >
+                {side.primary.label}
+              </Link>
+              <Link
+                to={side.secondary.to}
+                className="rounded-full bg-white/5 px-5 py-2.5 text-xs font-bold text-white ring-1 ring-white/15 transition hover:bg-white/10"
+              >
+                {side.secondary.label}
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function FaqSkeletonGrid() {
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -1187,8 +1349,6 @@ function Index() {
           </div>
         </section>
 
-        <TrustMetricsStrip metrics={trustMetrics} />
-
         {/* EXCLUSIVE OFFERS / RANKINGS */}
         <section className="mt-8 grid gap-4 xl:grid-cols-3">
           <ExclusiveOffersPanel
@@ -1217,8 +1377,11 @@ function Index() {
           />
         </section>
 
+        <WhyRebateBoardSection />
+        <TrustMetricsStrip metrics={trustMetrics} />
+
         {/* YOUTUBE / ADVERTISE / CASHBACK */}
-        <section className="mt-10 sm:mt-12">
+        <section id="cashback-calculator" className="mt-10 scroll-mt-32 sm:mt-12">
           <h2 className="mb-6 text-center text-2xl font-bold sm:text-3xl">Latest YouTube Videos</h2>
           <div className="grid items-stretch gap-4 lg:grid-cols-2">
             <div className="flex h-full min-h-0 flex-col gap-4">
@@ -1279,8 +1442,8 @@ function Index() {
           </div>
         </section>
 
-        {/* OFFERS */}
-        <section className="mt-10 sm:mt-12">
+        {/* Legacy marketplace preview retained in source for migration reference only. */}
+        {false && <section className="mt-10 sm:mt-12">
           <div className="mb-6 text-center">
             <div className="text-xs uppercase tracking-widest text-muted-foreground">
               Marketplace
@@ -1510,10 +1673,10 @@ function Index() {
               </div>
             )}
           </div>
-        </section>
+        </section>}
 
         {/* TOP OFFERS PREVIEW */}
-        <section className="mt-10 sm:mt-12">
+        {false && <section className="mt-10 sm:mt-12">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-500/15 px-3 py-1 text-[11px] font-semibold text-fuchsia-300 ring-1 ring-fuchsia-400/30">
@@ -1536,7 +1699,7 @@ function Index() {
               <OfferCard key={o.id} offer={o} onOpen={setActiveOffer} />
             ))}
           </div>
-        </section>
+        </section>}
 
         {/* FAQ */}
         <section className="mt-10 sm:mt-12">

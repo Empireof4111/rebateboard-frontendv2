@@ -146,6 +146,7 @@ export type CashbackClaim = {
   accountId?: string;
   registeredEmail?: string;
   orderId?: string;
+  purchaseSessionReference?: string;
   type: string;
   amount: number;
   evidence: number;
@@ -421,6 +422,7 @@ export const financeApi = {
   submitClaim(token: string, body: {
     partner: string; partnerCategory?: string; amount: number;
     accountId?: string; registeredEmail?: string; orderId?: string;
+    purchaseSessionReference?: string;
     evidenceUrls?: string[]; payoutTarget?: string; note?: string; type?: string;
   }): Promise<ApiResponse<CashbackClaim>> {
     return apiRequest<CashbackClaim>("/cashback/claim", { method: "POST", body, token });

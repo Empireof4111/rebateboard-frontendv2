@@ -171,7 +171,9 @@ function ClaimsPage() {
             <div key={row.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-semibold text-white">{row.firm}</div>
-                <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] uppercase text-fuchsia-200">{row.step.replaceAll("_", " ")}</span>
+                <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] text-fuchsia-200">
+                  {purchaseStatusLabel(row.step)}
+                </span>
               </div>
               <div className="mt-1 text-xs text-white/60">{row.program}</div>
               <div className="mt-2 flex items-center justify-between text-xs">
@@ -269,6 +271,26 @@ function ClaimsPage() {
       {open && <ClaimDetailDrawer claim={open as any} onClose={() => setOpenId(null)} />}
     </div>
   );
+}
+
+function purchaseStatusLabel(step: string) {
+  const labels: Record<string, string> = {
+    buy_click: "Program selected",
+    checkout: "Checkout opened",
+    reward_chosen: "Reward selected",
+    claim_guide_viewed: "Claim guide viewed",
+    finalized: "Completed",
+    intent_created: "Started",
+    redirected_to_partner: "Sent to partner",
+    pending_purchase: "Waiting for purchase",
+    user_marked_completed: "Purchase marked complete",
+    proof_submitted: "Proof submitted",
+    under_review: "Under review",
+    approved: "Approved",
+    rejected: "Rejected",
+    reward_credited: "Reward credited",
+  };
+  return labels[step] || "In progress";
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: "violet" | "emerald" | "rose" | "sky" }) {

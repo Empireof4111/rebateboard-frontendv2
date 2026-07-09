@@ -53,15 +53,11 @@ export async function fetchPublicReviews(brandSlug?: string) {
   const path = brandSlug
     ? `/review/public-list?brandSlug=${encodeURIComponent(brandSlug)}`
     : "/review/public-list";
-  try {
-    const response = await apiRequest<ReviewRecord[]>(path, {
-      method: "GET",
-      cache: "no-store",
-    });
-    return response.payload ?? [];
-  } catch {
-    return [];
-  }
+  const response = await apiRequest<ReviewRecord[]>(path, {
+    method: "GET",
+    cache: "no-store",
+  });
+  return response.payload ?? [];
 }
 
 export type SubmitPublicReviewInput = Omit<

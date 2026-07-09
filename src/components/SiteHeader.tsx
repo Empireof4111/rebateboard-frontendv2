@@ -4,6 +4,7 @@ import {
   AppWindow,
   BarChart3,
   Bitcoin,
+  BookOpen,
   Building2,
   Calculator,
   CalendarDays,
@@ -20,6 +21,7 @@ import {
   LayoutGrid,
   LineChart,
   LogOut,
+  MessageSquare,
   MonitorUp,
   Network,
   NotebookTabs,
@@ -27,8 +29,10 @@ import {
   Scale,
   Search,
   ShieldCheck,
+  Tags,
   TrendingUp,
   User as UserIcon,
+  WalletCards,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -67,7 +71,7 @@ function UserPill() {
   const initials = initialsOf(user.fullName || user.name);
   const dashboardHref = `/login?reauth=1&email=${encodeURIComponent(user.email)}&redirect=/dashboard`;
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-3 text-left transition hover:border-white/20 hover:bg-white/[0.08] outline-none">
         <Avatar className="h-8 w-8 shrink-0 shadow-[0_0_18px_rgba(192,132,252,0.38)]">
           <AvatarImage
@@ -89,7 +93,8 @@ function UserPill() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="glass-strong w-56 border-2 border-white/40 backdrop-blur-3xl text-foreground shadow-2xl"
+        sideOffset={10}
+        className="glass-strong w-56 border border-white/18 bg-[#16072b]/95 p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
       >
         <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
           <span className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
@@ -228,8 +233,9 @@ const navItems: HeaderNavItem[] = [
   },
   { labelKey: "nav.payouts", to: "/payouts" },
   { labelKey: "nav.tbi", to: "/tbi" },
+  { labelKey: "nav.reviews", to: "/reviews" },
   { labelKey: "nav.topSellers", to: "/offers" },
-  { labelKey: "nav.rebates", to: "/offers" },
+  { labelKey: "nav.rebates", to: "/cashback" },
   { labelKey: "nav.comparisons", to: "/compare" },
   {
     labelKey: "nav.tools",
@@ -444,7 +450,7 @@ function LanguageSelector() {
   const { language, languageMeta, languages, setLanguage, t } = useI18n();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-label={t("common.language")}
         className="flex h-9 items-center gap-1 rounded-full bg-white/[0.045] px-2 text-xs font-semibold text-white outline-none ring-1 ring-white/10 transition hover:bg-white/[0.08] sm:px-3"
@@ -455,7 +461,8 @@ function LanguageSelector() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="glass-strong w-48 border-2 border-white/40 backdrop-blur-3xl text-foreground shadow-2xl"
+        sideOffset={10}
+        className="glass-strong w-56 border border-white/18 bg-[#16072b]/95 p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
       >
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {t("common.language")}
@@ -474,6 +481,116 @@ function LanguageSelector() {
             {language === item.code && <Check className="h-3.5 w-3.5 text-fuchsia-200" />}
           </DropdownMenuItem>
         ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const utilityLinks: {
+  label: string;
+  description: string;
+  to: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    label: "Dashboard",
+    description: "Wallet, RR, claims, journal, and trader tools",
+    to: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Programs",
+    description: "Compare brokers, prop firms, exchanges, and tools",
+    to: "/programs",
+    icon: TrendingUp,
+  },
+  {
+    label: "Cashback",
+    description: "Learn how rebates, claims, and withdrawals work",
+    to: "/cashback",
+    icon: WalletCards,
+  },
+  {
+    label: "Offers",
+    description: "Promotions, rebates, and partner rewards",
+    to: "/offers",
+    icon: Tags,
+  },
+  {
+    label: "Reviews",
+    description: "Read verified trader experiences and trust signals",
+    to: "/reviews",
+    icon: MessageSquare,
+  },
+  {
+    label: "Compare",
+    description: "Review brands side by side before you choose",
+    to: "/compare",
+    icon: Scale,
+  },
+  {
+    label: "Blogs",
+    description: "Guides, platform updates, and trader education",
+    to: "/blog",
+    icon: BookOpen,
+  },
+  {
+    label: "FAQ",
+    description: "Quick answers about cashback, reviews, and TBI",
+    to: "/faqs",
+    icon: CircleHelp,
+  },
+];
+
+function UtilityMenu() {
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger
+        aria-label="Open RebateBoard menu"
+        className="hidden h-10 w-10 place-items-center rounded-full bg-white/[0.045] text-white outline-none ring-1 ring-white/10 transition hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring sm:grid"
+      >
+        <LayoutGrid className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={10}
+        className="glass-strong w-[min(34rem,calc(100vw-2rem))] border border-white/18 bg-[#16072b]/95 p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+      >
+        <DropdownMenuLabel className="px-2 pb-2 pt-1">
+          <span className="block text-[10px] uppercase tracking-[0.22em] text-violet-100/55">
+            Explore RebateBoard
+          </span>
+          <span className="mt-1 block text-xs font-semibold text-white">
+            Fast paths for traders and partners
+          </span>
+        </DropdownMenuLabel>
+        <div className="grid gap-1 sm:grid-cols-2">
+          {utilityLinks.map((item) => {
+            const Icon = item.icon;
+            return (
+              <DropdownMenuItem
+                key={item.label}
+                asChild
+                className="cursor-pointer rounded-xl p-0 focus:bg-transparent"
+              >
+                <Link
+                  to={item.to}
+                  className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200 ring-1 ring-violet-300/18 transition group-hover/menu:bg-violet-400/20 group-hover/menu:text-white">
+                    <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                  </span>
+                  <span className="min-w-0 pt-0.5">
+                    <span className="block text-xs font-semibold text-white">{item.label}</span>
+                    <span className="mt-1 block text-[10px] leading-4 text-white/48">
+                      {item.description}
+                    </span>
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -544,13 +661,7 @@ export function SiteHeader() {
                   <Search className="h-4 w-4" />
                 </button>
                 {user ? <UserPill /> : <GuestActions />}
-                <Link
-                  to="/dashboard"
-                  aria-label="Open dashboard"
-                  className="hidden h-10 w-10 place-items-center rounded-full bg-white/[0.045] text-white transition hover:bg-white/[0.08] sm:grid"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Link>
+                <UtilityMenu />
               </div>
             </nav>
 

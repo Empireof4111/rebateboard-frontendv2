@@ -22,20 +22,45 @@ export type ChallengePurchaseStep =
   | "checkout"
   | "reward_chosen"
   | "claim_guide_viewed"
-  | "finalized";
+  | "finalized"
+  | "intent_created"
+  | "redirected_to_partner"
+  | "pending_purchase"
+  | "user_marked_completed"
+  | "proof_submitted"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "reward_credited";
 
 export type ChallengePurchaseRow = {
   id: string;
+  buyerName?: string | null;
   buyerEmail?: string;
   firm: string;
   program: string;
   step: ChallengePurchaseStep;
   amountUsd: number;
+  originalAmountUsd?: number;
   rrPoints: number;
   rewardPreference: "cashback" | "rr" | "mixed";
   when: string;
   source?: string;
   reference?: string;
+  brandId?: string | null;
+  programId?: string | null;
+  accountId?: string | null;
+  accountSize?: string | null;
+  market?: string | null;
+  promoCode?: string | null;
+  cashbackLabel?: string | null;
+  partnerTrackingUrl?: string | null;
+  guestSessionId?: string | null;
+  purchaseSessionReference?: string | null;
+  proofUrls?: string[];
+  statusHistory?: Array<{ status: string; at: string; note?: string }>;
+  linkedClaimId?: number | null;
+  linkedClaimStatus?: string | null;
 };
 
 export type ChallengePurchaseAdminBoard = {
@@ -97,5 +122,71 @@ export async function trackChallengePurchaseEvent(input: {
     token: readToken(),
     body: input,
   });
+  return response.payload;
+}
+
+export type PurchaseRewardPreference = "cashback" | "rr" | "mixed";
+
+export async function createChallengePurchaseSession(input: {
+  firm: string;
+  category?: string;
+  brandId?: string;
+  program?: string;
+  programId?: string;
+  accountId?: string;
+  accountSize?: string;
+  market?: string;
+  amountUsd?: number;
+  originalAmountUsd?: number;
+  rrPoints?: number;
+  cashbackLabel?: string;
+  promoCode?: string;
+  rewardPreference?: PurchaseRewardPreference;
+  partnerTrackingUrl: string;
+  source?: string;
+  guestSessionId?: string;
+  email?: string;
+  attribution?: Record<string, unknown>;
+  deviceMetadata?: Record<string, unknown>;
+}) {
+  const response = await apiRequest<{
+    id: number;
+    reference: string;
+    status: ChallengePurchaseStep;
+    partnerTrackingUrl: string;
+  }>("/challenge-purchase/session", {
+    method: "POST",
+    token: readToken(),
+    body: input,
+  });
+  if (!response.payload) throw new Error("Checkout session could not be prepared");
+  return response.payload;
+}
+
+export async function updateChallengePurchaseSession(input: {
+  reference: string;
+  status:
+    | "redirected_to_partner"
+    | "pending_purchase"
+    | "user_marked_completed"
+    | "proof_submitted"
+    | "under_review"
+    | "approved"
+    | "rejected"
+    | "reward_credited";
+  email?: string;
+  proofUrls?: string[];
+  note?: string;
+}) {
+  const response = await apiRequest<{
+    id: number;
+    reference: string;
+    status: ChallengePurchaseStep;
+  }>("/challenge-purchase/session/status", {
+    method: "POST",
+    token: readToken(),
+    body: input,
+  });
+  if (!response.payload) throw new Error("Checkout status could not be updated");
   return response.payload;
 }

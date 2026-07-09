@@ -68,6 +68,10 @@ const empty = (): AdminOffer => ({
   discount: "",
   code: "",
   ctaUrl: "",
+  partnerTrackingUrl: "",
+  offerType: "",
+  eligibility: "",
+  howToClaim: "",
   startDate: new Date().toISOString().slice(0, 10),
   expires: "",
   limitedTime: false,
@@ -612,6 +616,39 @@ function OffersAdmin() {
                   value={editing.ctaUrl ?? ""}
                   onChange={(e) => setEditing({ ...editing, ctaUrl: e.target.value })}
                   placeholder="https://brand.com/?ref=rebateboard"
+                />
+              </Field>
+              <Field label="Tracked partner URL" span={2}>
+                <input
+                  className={fieldCls}
+                  value={editing.partnerTrackingUrl ?? ""}
+                  onChange={(e) => setEditing({ ...editing, partnerTrackingUrl: e.target.value })}
+                  placeholder="Optional affiliate or campaign tracking link"
+                />
+              </Field>
+              <Field label="Offer type">
+                <input
+                  className={fieldCls}
+                  value={editing.offerType ?? ""}
+                  onChange={(e) => setEditing({ ...editing, offerType: e.target.value })}
+                  placeholder="Discount, cashback, bonus..."
+                />
+              </Field>
+              <Field label="Eligibility">
+                <input
+                  className={fieldCls}
+                  value={editing.eligibility ?? ""}
+                  onChange={(e) => setEditing({ ...editing, eligibility: e.target.value })}
+                  placeholder="New users, selected regions..."
+                />
+              </Field>
+              <Field label="How to claim" span={2}>
+                <textarea
+                  rows={2}
+                  className={fieldCls}
+                  value={editing.howToClaim ?? ""}
+                  onChange={(e) => setEditing({ ...editing, howToClaim: e.target.value })}
+                  placeholder="Use the tracked link, enter the code, and complete checkout."
                 />
               </Field>
 

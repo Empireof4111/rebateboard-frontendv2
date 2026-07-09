@@ -64,7 +64,7 @@ function BrandLogo({
         <img
           src={offer.brandLogo}
           alt={`${offer.brand} logo`}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           loading="lazy"
         />
       ) : (
@@ -94,10 +94,6 @@ function offerDiscount(offer: DisplayOffer) {
 }
 
 function openOffer(offer: DisplayOffer, onOpen?: (o: DisplayOffer) => void) {
-  if (offer.ctaUrl) {
-    window.open(offer.ctaUrl, "_blank", "noopener,noreferrer");
-    return;
-  }
   onOpen?.(offer);
 }
 
@@ -158,7 +154,7 @@ export function OfferCard({
                 </div>
               )}
             </div>
-            <BrandLogo offer={offer} className="h-16 w-16 rounded-3xl sm:h-20 sm:w-20" />
+            <Sparkles className="h-16 w-16 text-white/25 sm:h-20 sm:w-20" />
           </div>
         )}
 
@@ -228,7 +224,7 @@ export function OfferCard({
               }}
               className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white px-4 py-2 text-sm font-black text-[#13051f] transition hover:scale-[1.02]"
             >
-              Claim
+              View Offer
               <ArrowUpRight className="h-4 w-4" />
             </button>
           </div>
@@ -331,7 +327,7 @@ export function OfferDetailModal({
         <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-6">
           <div className="flex flex-wrap gap-1.5">
             <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-bold text-white/70 ring-1 ring-white/10">
-              {offer.category}
+              {offer.offerType || offer.category}
             </span>
             {offer.tags?.map((tag) => (
               <OfferTag key={tag} tag={tag} />
@@ -370,12 +366,26 @@ export function OfferDetailModal({
             </div>
           )}
 
-          {offer.terms && (
-            <div className="mt-4 rounded-2xl bg-white/[0.04] p-4 text-xs leading-relaxed text-white/65 ring-1 ring-white/10">
-              <div className="mb-1 font-semibold text-white/90">Terms and conditions</div>
-              {offer.terms}
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-2xl bg-white/[0.04] p-4 text-xs leading-relaxed text-white/65 ring-1 ring-white/10">
+              <div className="mb-1 font-semibold text-white/90">Eligibility</div>
+              {offer.eligibility || "Eligibility is confirmed during partner checkout."}
             </div>
-          )}
+            <div className="rounded-2xl bg-white/[0.04] p-4 text-xs leading-relaxed text-white/65 ring-1 ring-white/10">
+              <div className="mb-1 font-semibold text-white/90">How to claim</div>
+              {offer.howToClaim ||
+                "Open the tracked partner page, apply the promo code when available, and complete the required signup or purchase."}
+            </div>
+            <details className="rounded-2xl bg-white/[0.04] p-4 text-xs leading-relaxed text-white/65 ring-1 ring-white/10">
+              <summary className="cursor-pointer font-semibold text-white/90">
+                Terms and conditions
+              </summary>
+              <p className="mt-2">
+                {offer.terms ||
+                  "No additional terms have been provided for this offer. Please confirm final eligibility on the partner checkout page."}
+              </p>
+            </details>
+          </div>
 
           <div className="mt-5 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
             {offer.code && (
@@ -398,9 +408,9 @@ export function OfferDetailModal({
               </button>
             )}
 
-            {offer.ctaUrl ? (
+            {offer.partnerTrackingUrl || offer.ctaUrl ? (
               <a
-                href={offer.ctaUrl}
+                href={offer.partnerTrackingUrl || offer.ctaUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#13051f] transition hover:scale-[1.02]"

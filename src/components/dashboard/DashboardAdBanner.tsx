@@ -262,7 +262,7 @@ function SlideChip({ slide, badge, onClick }: { slide: AdSlide; badge: string; o
         className={`relative grid h-7 w-7 place-items-center overflow-hidden rounded-full text-[9px] font-bold text-white ring-1 ring-white/10 ${slide.image ? "bg-white/[0.04]" : slide.accent?.includes("bg-gradient") ? slide.accent : `bg-gradient-to-r ${slide.accent ?? "from-fuchsia-500 to-violet-600"}`}`}
       >
         {slide.image ? (
-          <img src={slide.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <img src={slide.image} alt="" className="h-full w-full object-contain" loading="lazy" />
         ) : (
           slide.label.slice(0, 1)
         )}

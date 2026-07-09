@@ -62,7 +62,7 @@ function ReviewsPage() {
                 status === next ? "bg-white/15 text-white" : "bg-white/5 text-white/60 hover:text-white"
               }`}
             >
-              {next.replace("_", " ")}
+              {next === "all" ? "All" : REVIEW_STATUS_LABELS[next]}
             </button>
           ))}
         </div>
@@ -107,7 +107,7 @@ function ReviewsPage() {
                           key={i}
                           className={`h-3.5 w-3.5 ${
                             i < Math.round(review.ratings.overall)
-                              ? "fill-accent text-accent"
+                              ? "fill-fuchsia-300 text-fuchsia-300"
                               : "text-white/15"
                           }`}
                         />
@@ -176,8 +176,15 @@ function ReviewStat({ label, value, tone }: { label: string; value: number; tone
 
 function StatusPill({ status }: { status: ReviewStatus }) {
   const tone = status === "approved" ? "success" : status === "rejected" ? "destructive" : "warning";
-  return <Pill tone={tone}>{status.replace("_", " ")}</Pill>;
+  return <Pill tone={tone}>{REVIEW_STATUS_LABELS[status] ?? "Pending Verification"}</Pill>;
 }
+
+const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
+  pending: "Pending Verification",
+  approved: "Published",
+  rejected: "Rejected",
+  needs_info: "Needs More Information",
+};
 
 function Impact({ label, value }: { label: string; value: string }) {
   return (

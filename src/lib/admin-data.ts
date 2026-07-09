@@ -289,6 +289,10 @@ export type AdminOffer = {
   discount?: string;        // e.g. "20% OFF" or "FREE ACCOUNT"
   code?: string;
   ctaUrl?: string;
+  partnerTrackingUrl?: string;
+  offerType?: string;
+  eligibility?: string;
+  howToClaim?: string;
   startDate?: string;       // ISO
   expires: string;          // human label ("May 30") or ISO
   limitedTime?: boolean;

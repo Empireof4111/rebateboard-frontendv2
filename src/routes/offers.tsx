@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -64,6 +64,7 @@ function SectionHeader({
 
 function PublicOffers() {
   const [items, setItems] = useState<AdminOffer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<AdminOffer | null>(null);
   const [filter, setFilter] = useState<(typeof CATEGORIES)[number]>("All");
   const [q, setQ] = useState("");
@@ -80,6 +81,8 @@ function PublicOffers() {
         if (!cancelled) setItems(enrichOffersWithBrandAssets(offers, brands));
       } catch {
         if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -143,8 +146,38 @@ function PublicOffers() {
           </div>
         </header>
 
+        {loading && (
+          <section aria-label="Loading offers">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="glass min-h-[360px] animate-pulse rounded-3xl p-4">
+                  <div className="h-40 rounded-2xl bg-white/[0.06]" />
+                  <div className="mt-5 h-4 w-2/3 rounded bg-white/[0.08]" />
+                  <div className="mt-3 h-3 w-full rounded bg-white/[0.05]" />
+                  <div className="mt-2 h-3 w-4/5 rounded bg-white/[0.05]" />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!loading && live.length === 0 && (
+          <section className="glass rounded-3xl p-10 text-center">
+            <h2 className="text-xl font-bold">No active offers right now.</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-white/60">
+              New broker, prop firm, and trading rewards offers will appear here when available.
+            </p>
+            <Link
+              to="/programs"
+              className="mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white"
+            >
+              Browse Programs
+            </Link>
+          </section>
+        )}
+
         {/* Exclusive */}
-        {exclusive.length > 0 && (
+        {!loading && exclusive.length > 0 && (
           <section>
             <SectionHeader
               icon={Flame}
@@ -161,7 +194,7 @@ function PublicOffers() {
         )}
 
         {/* Latest */}
-        <section>
+        {!loading && latest.length > 0 && <section>
           <SectionHeader
             icon={Sparkles}
             title="Latest offers"
@@ -173,10 +206,10 @@ function PublicOffers() {
               <OfferCard key={o.id} offer={o} onOpen={setActive} />
             ))}
           </div>
-        </section>
+        </section>}
 
         {/* Ending soon */}
-        {endingSoon.length > 0 && (
+        {!loading && endingSoon.length > 0 && (
           <section>
             <SectionHeader
               icon={Clock}
@@ -193,7 +226,7 @@ function PublicOffers() {
         )}
 
         {/* By Category */}
-        <section>
+        {!loading && live.length > 0 && <section>
           <SectionHeader
             icon={LayoutGrid}
             title="Browse by category"
@@ -227,7 +260,7 @@ function PublicOffers() {
               ))}
             </div>
           )}
-        </section>
+        </section>}
       </main>
 
       <SiteFooter />

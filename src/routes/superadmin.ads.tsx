@@ -298,7 +298,7 @@ function slideFromBrand(brand: AdminBrandRecord): Partial<AdSlide> {
     sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
     href: brandHref(brand),
     accent: brandAccent(brand),
-    image: brand.cover || brand.thumbnail,
+    image: brand.thumbnail || brand.cover,
   };
 }
 
@@ -347,7 +347,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
           sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
           href: brandHref(brand),
           accent: brandAccent(brand),
-          image: brand.cover || brand.thumbnail,
+          image: brand.thumbnail || brand.cover,
           brandSlug: slugFromBrand(brand),
         }
       : {
@@ -363,7 +363,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
   const removeSlide = (i: number) => set("slides", (draft.slides ?? []).filter((_, idx) => idx !== i));
 
   const applySingleBrand = (brand: AdminBrandRecord) => {
-    const image = brand.cover || brand.thumbnail || draft.thumbnail;
+    const image = brand.thumbnail || brand.cover || draft.thumbnail;
     setDraft((current) => ({
       ...current,
       name:

@@ -28,12 +28,13 @@ export type ReviewProof = {
 };
 
 export type ReviewRatings = {
-  customerCare: number;        // 0-5
-  tradingConditions: number;   // 0-5
-  paymentSpeed: number;        // 0-5
-  userFriendliness: number;    // 0-5
-  payoutSpeed: number;         // 0-5
-  overall: number;             // 0-5
+  [key: string]: number;
+  customerCare: number;
+  tradingConditions: number;
+  paymentSpeed: number;
+  userFriendliness: number;
+  payoutSpeed: number;
+  overall: number;
 };
 
 export type ReviewStatus = "pending" | "approved" | "rejected" | "needs_info";
@@ -42,8 +43,14 @@ export type ReviewRecord = {
   id: string;
   /** brand identity */
   providerType: ReviewProviderType;
+  reviewType?: string;
   brandSlug: string;
   brandName: string;
+  brandLogo?: string;
+  brandCategory?: string;
+  brandCountry?: string;
+  brandTbi?: number;
+  brandReviewCount?: number;
   /** reviewer */
   userId?: string;
   userName: string;
@@ -55,6 +62,7 @@ export type ReviewRecord = {
   evaluationSteps?: string;  // "Instant" / "1 Step" ...
   /** ratings + body */
   ratings: ReviewRatings;
+  tbiPillars?: Record<string, number>;
   body: string;
   likedMost?: string;
   likedLeast?: string;
@@ -70,6 +78,12 @@ export type ReviewRecord = {
   tbiDelta?: number;
   /** RR awarded */
   rrAwarded?: number;
+  helpfulCount?: number;
+  verifiedTrader?: boolean;
+  activeTrader?: boolean;
+  verifiedPayout?: boolean;
+  verifiedCashback?: boolean;
+  contributedToTbi?: boolean;
   /** brand response */
   brandReply?: { body: string; repliedAt: string; author: string };
   /** admin routing (assigned to brand inbox) */
