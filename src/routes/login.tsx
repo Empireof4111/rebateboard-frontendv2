@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate, Link, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "../lib/auth";
 import { Sparkles, Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import { useI18n } from "@/lib/i18n";
+import { Logo } from "../components/Logo";
+import { useI18n } from "../lib/i18n";
 
 type LoginSearch = { reauth?: string; email?: string; redirect?: string };
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/login" as any)({
   head: () => ({
     meta: [
       { title: "Login - RebateBoard" },
@@ -66,9 +66,12 @@ function LoginPage() {
       <div className="container-app relative z-10 flex min-h-screen max-w-6xl items-center justify-center py-10">
         <div className="grid w-full gap-8 lg:grid-cols-2 lg:gap-16">
           <div className="hidden flex-col justify-center lg:flex">
-            <Link to="/" className="mb-8 inline-flex items-center gap-3" aria-label="RebateBoard home">
+            <Link to="/" className="mb-3 inline-flex items-center gap-3" aria-label="RebateBoard home">
               <Logo heightClass="h-11" />
             </Link>
+            <p className="mb-8 max-w-md text-sm text-muted-foreground">
+              Sign in to continue earning cashback and making smarter trading decisions.
+            </p>
             <h1 className="text-gradient text-4xl font-bold leading-tight md:text-5xl">
               {t("auth.heroTitle")}
             </h1>
@@ -86,7 +89,7 @@ function LoginPage() {
           </div>
 
           <div className="glass-strong rounded-3xl p-6 md:p-8">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white">
                 {isReauth
                   ? `${t("auth.welcomeBack")}, ${(user!.fullName || user!.name).split(" ")[0]}`
@@ -96,6 +99,9 @@ function LoginPage() {
                 &larr; {t("auth.home")}
               </Link>
             </div>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Welcome back. Keep tracking rewards, cashback, and trusted brand insights.
+            </p>
 
             {isReauth && (
               <div className="mb-5 flex items-start gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-3 py-2.5 text-[11px] text-emerald-100">

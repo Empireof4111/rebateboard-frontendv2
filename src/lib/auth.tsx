@@ -10,9 +10,20 @@ export type PrimaryGoal =
   | "reduce_costs" | "find_brokers" | "track_performance" | "earn_rewards" | "improve_strategy";
 export type Market = "forex" | "crypto" | "indices" | "stocks" | "commodities" | "propfirms";
 
+export type OnboardingBrandSelection = {
+  id: string;
+  name: string;
+  category: string;
+  slug?: string;
+  logo?: string;
+};
+
 export type OnboardingAnswers = {
   preferredMarkets: Market[];
   currentPlatform: string;
+  selectedBrandIds: string[];
+  currentBrands: OnboardingBrandSelection[];
+  otherBrands: string[];
   tradingExperience: TradingExperience | null;
   monthlyVolume: MonthlyVolume | null;
   acquisitionSource: AcquisitionSource | null;
@@ -111,6 +122,9 @@ function emptyAnswers(): OnboardingAnswers {
   return {
     preferredMarkets: [],
     currentPlatform: "",
+    selectedBrandIds: [],
+    currentBrands: [],
+    otherBrands: [],
     tradingExperience: null,
     monthlyVolume: null,
     acquisitionSource: null,
@@ -122,6 +136,9 @@ function normalizeAnswers(raw?: Partial<OnboardingAnswers> | null): OnboardingAn
   return {
     preferredMarkets: Array.isArray(raw?.preferredMarkets) ? raw!.preferredMarkets as Market[] : [],
     currentPlatform: raw?.currentPlatform ?? "",
+    selectedBrandIds: Array.isArray(raw?.selectedBrandIds) ? raw!.selectedBrandIds.map(String) : [],
+    currentBrands: Array.isArray(raw?.currentBrands) ? raw!.currentBrands as OnboardingBrandSelection[] : [],
+    otherBrands: Array.isArray(raw?.otherBrands) ? raw!.otherBrands.map(String) : [],
     tradingExperience: raw?.tradingExperience ?? null,
     monthlyVolume: raw?.monthlyVolume ?? null,
     acquisitionSource: raw?.acquisitionSource ?? null,
@@ -392,6 +409,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: {
         preferredMarkets: answers.preferredMarkets,
         currentPlatform: answers.currentPlatform,
+        selectedBrandIds: answers.selectedBrandIds,
+        currentBrands: answers.currentBrands,
+        otherBrands: answers.otherBrands,
         tradingExperience: answers.tradingExperience,
         monthlyVolume: answers.monthlyVolume,
         acquisitionSource: answers.acquisitionSource,

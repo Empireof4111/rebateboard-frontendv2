@@ -3,15 +3,16 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowRight, ArrowLeft, Check, Sparkles, Mail, Lock, User as UserIcon,
   Globe, AtSign, ShieldCheck, Wallet, Gift, Compass, Building2,
-  Eye, EyeOff, MailCheck, RefreshCcw,
+  Eye, EyeOff, MailCheck, RefreshCcw, Search, CircleAlert, CheckCircle2,
 } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { Logo } from "../components/Logo";
 import {
   useAuth, type Market, type TradingExperience, type MonthlyVolume,
   type AcquisitionSource, type PrimaryGoal, type OnboardingAnswers,
-} from "@/lib/auth";
+} from "../lib/auth";
+import { fetchPublicAdminBrands, type AdminBrandRecord } from "../lib/admin-brands-api";
 
-export const Route = createFileRoute("/signup")({
+export const Route = createFileRoute("/signup" as any)({
   head: () => ({
     meta: [
       { title: "Create your account - RebateBoard" },
@@ -26,10 +27,29 @@ export const Route = createFileRoute("/signup")({
 type Step = 1 | "verify" | 2 | 3;
 
 const COUNTRIES = [
-  "United States", "United Kingdom", "Canada", "Australia", "South Africa",
-  "Nigeria", "Kenya", "Germany", "France", "Spain", "Italy", "Netherlands",
-  "United Arab Emirates", "Saudi Arabia", "India", "Pakistan", "Singapore",
-  "Hong Kong", "Japan", "Brazil", "Mexico", "Argentina", "Other",
+  { name: "United States", flag: "🇺🇸" },
+  { name: "United Kingdom", flag: "🇬🇧" },
+  { name: "Canada", flag: "🇨🇦" },
+  { name: "Australia", flag: "🇦🇺" },
+  { name: "South Africa", flag: "🇿🇦" },
+  { name: "Nigeria", flag: "🇳🇬" },
+  { name: "Kenya", flag: "🇰🇪" },
+  { name: "Germany", flag: "🇩🇪" },
+  { name: "France", flag: "🇫🇷" },
+  { name: "Spain", flag: "🇪🇸" },
+  { name: "Italy", flag: "🇮🇹" },
+  { name: "Netherlands", flag: "🇳🇱" },
+  { name: "United Arab Emirates", flag: "🇦🇪" },
+  { name: "Saudi Arabia", flag: "🇸🇦" },
+  { name: "India", flag: "🇮🇳" },
+  { name: "Pakistan", flag: "🇵🇰" },
+  { name: "Singapore", flag: "🇸🇬" },
+  { name: "Hong Kong", flag: "🇭🇰" },
+  { name: "Japan", flag: "🇯🇵" },
+  { name: "Brazil", flag: "🇧🇷" },
+  { name: "Mexico", flag: "🇲🇽" },
+  { name: "Argentina", flag: "🇦🇷" },
+  { name: "Other", flag: "🌍" },
 ];
 
 const MARKETS: { id: Market; label: string; emoji: string }[] = [
@@ -41,11 +61,22 @@ const MARKETS: { id: Market; label: string; emoji: string }[] = [
   { id: "propfirms", label: "Prop Firms", emoji: "\u{1F3C6}" },
 ];
 
-const PLATFORMS = [
-  "FTMO", "MyForexFunds", "The5ers", "FundedNext", "E8 Funding",
-  "IC Markets", "Pepperstone", "Exness", "OANDA", "XM",
-  "Binance", "Bybit", "OKX", "Bitget", "Coinbase", "Kraken",
-];
+type LiveOnboardingBrand = {
+  id: string;
+  name: string;
+  category: string;
+  slug?: string;
+  logo?: string;
+};
+
+const MARKET_CATEGORY_PRIORITY: Record<Market, string[]> = {
+  forex: ["Forex Broker"],
+  crypto: ["Crypto Exchange", "Crypto Prop Firm"],
+  propfirms: ["Prop Firm", "Futures Prop Firm", "Crypto Prop Firm"],
+  indices: ["Forex Broker", "Prop Firm"],
+  stocks: ["Stock Prop Firm", "Trading Platform", "Forex Broker"],
+  commodities: ["Forex Broker", "Prop Firm"],
+};
 
 const EXPERIENCE: { id: TradingExperience; label: string; hint: string }[] = [
   { id: "beginner", label: "Beginner", hint: "0-6 months" },
@@ -106,6 +137,9 @@ function SignupPage() {
         <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="RebateBoard home">
           <Logo heightClass="h-10" />
         </Link>
+        <p className="mb-5 max-w-md text-center text-sm text-muted-foreground">
+          Create your account, earn cashback, and build your trading edge.
+        </p>
 
         <Stepper step={step} />
 
@@ -153,8 +187,8 @@ function SignupPage() {
               name={user?.name ?? "Trader"}
               walletId={user?.walletId ?? "-"}
               onExplore={() => navigate({ to: "/dashboard" })}
-              onConnect={() => navigate({ to: "/dashboard/accounts" })}
-              onOffers={() => navigate({ to: "/dashboard/wallet" })}
+              onConnect={() => navigate({ to: "/programs" as any })}
+              onOffers={() => navigate({ to: "/dashboard/offers" as any })}
             />
           )}
         </div>
@@ -174,6 +208,9 @@ function emptyAnswers(): OnboardingAnswers {
   return {
     preferredMarkets: [],
     currentPlatform: "",
+    selectedBrandIds: [],
+    currentBrands: [],
+    otherBrands: [],
     tradingExperience: null,
     monthlyVolume: null,
     acquisitionSource: null,
@@ -184,9 +221,9 @@ function emptyAnswers(): OnboardingAnswers {
 function Stepper({ step }: { step: Step }) {
   const stepNum: number = step === "verify" ? 1 : (step as number);
   const items = [
-    { n: 1, label: step === "verify" ? "Verify email" : "Account" },
-    { n: 2, label: "Personalize" },
-    { n: 3, label: "Done" },
+    { n: 1, label: step === "verify" ? "Verify email" : "Account", desc: step === "verify" ? "Confirm access" : "Create your account" },
+    { n: 2, label: "Personalize", desc: "Tell us about your trading" },
+    { n: 3, label: "Done", desc: "Start exploring" },
   ];
   return (
     <div className="flex w-full max-w-md items-center justify-between">
@@ -207,7 +244,8 @@ function Stepper({ step }: { step: Step }) {
               >
                 {done ? <Check className="h-4 w-4" /> : it.n}
               </div>
-              <div className={`mt-1 text-[10px] ${active ? "text-white" : "text-white/50"}`}>{it.label}</div>
+              <div className={`mt-1 text-[10px] font-medium ${active ? "text-white" : "text-white/50"}`}>{it.label}</div>
+              <div className={`hidden text-center text-[9px] sm:block ${active ? "text-white/60" : "text-white/35"}`}>{it.desc}</div>
             </div>
             {i < items.length - 1 && (
               <div className={`mx-2 h-px flex-1 ${stepNum > it.n ? "bg-emerald-500/60" : "bg-white/10"}`} />
@@ -261,9 +299,7 @@ function StepAccount({
   function validate(): string | null {
     if (!fullName.trim()) return "Please enter your full name.";
     if (!/^\S+@\S+\.\S+$/.test(email)) return "Enter a valid email address.";
-    if (password.length < 8) return "Password must be at least 8 characters.";
-    if (!/[A-Z]/.test(password) || !/\d/.test(password))
-      return "Password needs at least 1 uppercase letter and 1 number.";
+    if (!isStrongPassword(password)) return "Please complete the password checklist.";
     if (password !== confirm) return "Passwords do not match.";
     if (!agree) return "You must agree to the Terms & Privacy.";
     return null;
@@ -288,8 +324,8 @@ function StepAccount({
         country: country || undefined,
         marketingOptIn: marketing,
       });
-    } catch (ex) {
-      setError(ex instanceof Error ? ex.message : "Unable to create your account.");
+    } catch {
+      setError("We couldn’t create your account right now. Please check your details and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -298,7 +334,7 @@ function StepAccount({
   return (
     <div>
       <h2 className="text-2xl font-bold text-white">Create your account</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Fast to start. Smart to personalize.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Join RebateBoard and start making smarter trading decisions.</p>
 
       <button
         type="button"
@@ -307,7 +343,7 @@ function StepAccount({
       >
         <GoogleIcon />
         Continue with Google
-        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Soon</span>
+        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Coming Soon</span>
       </button>
       <div className="my-5 flex items-center gap-3 text-[11px] text-white/40">
         <div className="h-px flex-1 bg-white/10" /> or sign up with email <div className="h-px flex-1 bg-white/10" />
@@ -320,22 +356,24 @@ function StepAccount({
         <Field label="Email" icon={<Mail className="h-4 w-4" />} required>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@trader.com" className={inputCls} />
         </Field>
-        <Field label="Username (optional)" icon={<AtSign className="h-4 w-4" />}>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="@janetrader" className={inputCls} />
+        <Field
+          label="Username (optional)"
+          icon={<AtSign className="h-4 w-4" />}
+          helper="Used for your public profile, reviews, and community identity."
+        >
+          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="janetrader" className={inputCls} />
         </Field>
-        <Field label="Country" icon={<Globe className="h-4 w-4" />}>
-          <select value={country} onChange={(e) => setCountry(e.target.value)} className={inputCls}>
-            <option value="">Select country...</option>
-            {COUNTRIES.map((c) => <option key={c} value={c} className="bg-[#150829]">{c}</option>)}
-          </select>
-        </Field>
-        <PasswordField
-          label="Password"
-          value={password}
-          onChange={setPassword}
-          placeholder="At least 8 chars, 1 uppercase, 1 number"
-          required
-        />
+        <CountrySelect value={country} onChange={setCountry} />
+        <div>
+          <PasswordField
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            placeholder="8+ chars, number, uppercase, special"
+            required
+          />
+          <PasswordChecklist password={password} />
+        </div>
         <PasswordField
           label="Confirm password"
           value={confirm}
@@ -374,6 +412,88 @@ function StepAccount({
   );
 }
 
+
+function isStrongPassword(password: string) {
+  return (
+    password.length >= 8 &&
+    /[0-9]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  );
+}
+
+function PasswordChecklist({ password }: { password: string }) {
+  const rules = [
+    { label: "8+ characters", ok: password.length >= 8 },
+    { label: "One number", ok: /[0-9]/.test(password) },
+    { label: "One uppercase letter", ok: /[A-Z]/.test(password) },
+    { label: "One special character", ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+
+  return (
+    <div className="mt-2 grid gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-2">
+      {rules.map((rule) => (
+        <div key={rule.label} className={`flex items-center gap-2 text-[11px] ${rule.ok ? "text-emerald-200" : "text-white/45"}`}>
+          {rule.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <CircleAlert className="h-3.5 w-3.5" />}
+          {rule.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CountrySelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const selected = COUNTRIES.find((country) => country.name === value);
+  const [query, setQuery] = useState(selected ? `${selected.flag} ${selected.name}` : "");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const next = COUNTRIES.find((country) => country.name === value);
+    setQuery(next ? `${next.flag} ${next.name}` : "");
+  }, [value]);
+
+  const filtered = COUNTRIES.filter((country) =>
+    country.name.toLowerCase().includes(query.replace(/^[^A-Za-z]+/, "").trim().toLowerCase()),
+  ).slice(0, 8);
+
+  return (
+    <Field label="Country" icon={<Globe className="h-4 w-4" />}>
+      <input
+        value={query}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setOpen(true);
+          if (!event.target.value.trim()) onChange("");
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 140)}
+        placeholder="Search country..."
+        className={inputCls}
+      />
+      {open && filtered.length > 0 && (
+        <div className="glass-strong absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl p-1 text-sm">
+          {filtered.map((country) => (
+            <button
+              key={country.name}
+              type="button"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                onChange(country.name);
+                setQuery(`${country.flag} ${country.name}`);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-white/90 hover:bg-white/10"
+            >
+              <span>{country.flag}</span>
+              <span>{country.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </Field>
+  );
+}
+
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
@@ -386,8 +506,8 @@ const inputCls =
   "w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-muted-foreground outline-none focus:border-primary/60";
 
 function Field({
-  label, icon, required, children,
-}: { label: string; icon?: React.ReactNode; required?: boolean; children: React.ReactNode }) {
+  label, icon, required, helper, children,
+}: { label: string; icon?: React.ReactNode; required?: boolean; helper?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs text-muted-foreground">
@@ -397,6 +517,7 @@ function Field({
         {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</div>}
         {children}
       </div>
+      {helper && <p className="mt-1 text-[11px] text-white/40">{helper}</p>}
     </div>
   );
 }
@@ -458,8 +579,8 @@ function StepVerifyEmail({
       await onResend();
       setEntered("");
       setResent(true);
-    } catch (ex) {
-      setError(ex instanceof Error ? ex.message : "Unable to resend your code.");
+    } catch {
+      setError("We couldn’t send your verification email right now. Please try again shortly.");
     } finally {
       setResending(false);
     }
@@ -476,8 +597,8 @@ function StepVerifyEmail({
     setVerifying(true);
     try {
       await onVerified(entered);
-    } catch (ex) {
-      setError(ex instanceof Error ? ex.message : "Unable to verify your account.");
+    } catch {
+      setError("That code didn’t work. Please check it or request a fresh code.");
     } finally {
       setVerifying(false);
     }
@@ -500,7 +621,7 @@ function StepVerifyEmail({
       </div>
 
       <div className="mb-5 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.06] px-3 py-2.5 text-[11px] text-cyan-100">
-        Use the 6-digit code we sent to your inbox. If you're testing locally, the code may also appear in the backend terminal.
+        Use the 6-digit code we sent to your inbox.
         {resent && <span className="ml-2 text-cyan-200/80">A fresh code has been sent.</span>}
       </div>
 
@@ -561,19 +682,58 @@ function StepQuestionnaire({
 }) {
   const [markets, setMarkets] = useState<Market[]>(initial?.preferredMarkets ?? []);
   const [platform, setPlatform] = useState<string>(initial?.currentPlatform ?? "");
+  const [selectedBrandId, setSelectedBrandId] = useState<string>(initial?.selectedBrandIds?.[0] ?? "");
+  const [otherBrandName, setOtherBrandName] = useState<string>(initial?.otherBrands?.[0] ?? "");
+  const [brandQuery, setBrandQuery] = useState("");
+  const [liveBrands, setLiveBrands] = useState<LiveOnboardingBrand[]>([]);
+  const [brandsLoading, setBrandsLoading] = useState(true);
   const [exp, setExp] = useState<TradingExperience | null>(initial?.tradingExperience ?? null);
   const [vol, setVol] = useState<MonthlyVolume | null>(initial?.monthlyVolume ?? null);
   const [src, setSrc] = useState<AcquisitionSource | null>(initial?.acquisitionSource ?? null);
   const [goal, setGoal] = useState<PrimaryGoal | null>(initial?.primaryGoal ?? null);
-  const [showSuggest, setShowSuggest] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const platformSuggestions = useMemo(() => {
-    if (!platform) return [];
-    const q = platform.toLowerCase();
-    return PLATFORMS.filter((p) => p.toLowerCase().includes(q)).slice(0, 6);
-  }, [platform]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBrands() {
+      setBrandsLoading(true);
+      try {
+        const records = await fetchPublicAdminBrands();
+        if (cancelled) return;
+        setLiveBrands(records.map(toLiveOnboardingBrand).filter(Boolean) as LiveOnboardingBrand[]);
+      } catch {
+        if (!cancelled) setLiveBrands([]);
+      } finally {
+        if (!cancelled) setBrandsLoading(false);
+      }
+    }
+
+    void loadBrands();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const brandOptions = useMemo(() => {
+    const priority = new Set(markets.flatMap((market) => MARKET_CATEGORY_PRIORITY[market] || []));
+    const query = brandQuery.trim().toLowerCase();
+
+    return [...liveBrands]
+      .filter((brand) =>
+        !query ||
+        brand.name.toLowerCase().includes(query) ||
+        brand.category.toLowerCase().includes(query),
+      )
+      .sort((a, b) => {
+        const aPriority = priority.has(a.category) ? 0 : 1;
+        const bPriority = priority.has(b.category) ? 0 : 1;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 9);
+  }, [brandQuery, liveBrands, markets]);
 
   const canSubmit = markets.length > 0 && exp && goal;
 
@@ -589,14 +749,17 @@ function StepQuestionnaire({
     try {
       await onSubmit({
         preferredMarkets: markets,
-        currentPlatform: platform.trim(),
+        currentPlatform: selectedBrandId === "other" ? otherBrandName.trim() : platform.trim(),
+        selectedBrandIds: selectedBrandId && selectedBrandId !== "other" ? [selectedBrandId] : [],
+        currentBrands: selectedBrandId && selectedBrandId !== "other" ? liveBrands.filter((brand) => brand.id === selectedBrandId) : [],
+        otherBrands: selectedBrandId === "other" && otherBrandName.trim() ? [otherBrandName.trim()] : [],
         tradingExperience: exp,
         monthlyVolume: vol,
         acquisitionSource: src,
         primaryGoal: goal,
       });
-    } catch (ex) {
-      setError(ex instanceof Error ? ex.message : "Unable to save your onboarding answers.");
+    } catch {
+      setError("We couldn’t save your trading profile right now. Please try again shortly.");
     } finally {
       setSaving(false);
     }
@@ -633,33 +796,72 @@ function StepQuestionnaire({
           </div>
         </Question>
 
-        <Question n={2} title="Current broker, exchange, or prop firm?">
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={platform}
-              onChange={(e) => { setPlatform(e.target.value); setShowSuggest(true); }}
-              onFocus={() => setShowSuggest(true)}
-              onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
-              placeholder="Type or pick from list"
-              className={inputCls}
-            />
-            {showSuggest && platformSuggestions.length > 0 && (
-              <div className="glass-strong absolute z-20 mt-1 w-full rounded-xl p-1 text-sm">
-                {platformSuggestions.map((p) => (
+        <Question n={2} title="Which trading brands do you currently use?" hint="Live RebateBoard brands are prioritized by the markets you selected.">
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={brandQuery}
+                onChange={(e) => setBrandQuery(e.target.value)}
+                placeholder="Search brokers, prop firms, exchanges..."
+                className={inputCls}
+              />
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {brandsLoading && (
+                <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-xs text-white/60">
+                  Loading live RebateBoard brands...
+                </div>
+              )}
+
+              {!brandsLoading && brandOptions.map((brand) => {
+                const on = selectedBrandId === brand.id;
+                return (
                   <button
-                    key={p}
+                    key={brand.id}
                     type="button"
-                    onMouseDown={(e) => { e.preventDefault(); setPlatform(p); setShowSuggest(false); }}
-                    className="block w-full rounded-lg px-3 py-1.5 text-left text-white/90 hover:bg-white/10"
+                    onClick={() => {
+                      setSelectedBrandId(brand.id);
+                      setPlatform(brand.name);
+                      setOtherBrandName("");
+                    }}
+                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition duration-200 ${on ? "scale-[1.01] border-fuchsia-400/60 bg-fuchsia-500/15 text-white shadow-[0_0_22px_rgba(192,132,252,0.18)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/20 hover:bg-white/[0.07]"}`}
                   >
-                    {p}
+                    <BrandLogo brand={brand} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">{brand.name}</span>
+                      <span className="block truncate text-[11px] text-white/45">{brand.category}</span>
+                    </span>
                   </button>
-                ))}
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBrandId("other");
+                  setPlatform("");
+                }}
+                className={`rounded-xl border p-3 text-left transition duration-200 ${selectedBrandId === "other" ? "scale-[1.01] border-fuchsia-400/60 bg-fuchsia-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.07]"}`}
+              >
+                <span className="block text-sm font-semibold">Other</span>
+                <span className="block text-[11px] text-white/45">Add a brand not listed yet.</span>
+              </button>
+            </div>
+
+            {selectedBrandId === "other" && (
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={otherBrandName}
+                  onChange={(event) => setOtherBrandName(event.target.value)}
+                  placeholder="Enter brand name"
+                  className={inputCls}
+                />
               </div>
             )}
           </div>
-          <p className="mt-1 text-[11px] text-white/40">Not listed? Type manually.</p>
         </Question>
 
         <Question n={3} title="Trading experience" required>
@@ -670,7 +872,7 @@ function StepQuestionnaire({
           />
         </Question>
 
-        <Question n={4} title="Monthly trading volume" hint="Optional - helps us match cashback tiers.">
+        <Question n={4} title="Monthly trading volume" hint="Used to personalize cashback recommendations and trading insights.">
           <ChipRow
             options={VOLUME.map((x) => ({ id: x.id, label: x.label }))}
             value={vol}
@@ -695,7 +897,7 @@ function StepQuestionnaire({
                   key={g.id}
                   type="button"
                   onClick={() => setGoal(g.id)}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition ${on ? "border-fuchsia-400/60 bg-fuchsia-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/80 hover:text-white"}`}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition duration-200 ${on ? "scale-[1.02] border-fuchsia-400/60 bg-fuchsia-500/15 text-white shadow-[0_0_18px_rgba(192,132,252,0.16)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:text-white"}`}
                 >
                   <span className="text-lg">{g.emoji}</span>
                   <span>{g.label}</span>
@@ -727,6 +929,52 @@ function StepQuestionnaire({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+function toLiveOnboardingBrand(brand: AdminBrandRecord): LiveOnboardingBrand | null {
+  if (!brand?.id || !brand.name) return null;
+  const identity = asRecord(brand.identity);
+  const profile = asRecord(brand.profile);
+  const logo =
+    brand.thumbnail ||
+    stringValue(identity.logo) ||
+    stringValue(identity.logoUrl) ||
+    stringValue(profile.logo) ||
+    stringValue(profile.logoUrl);
+
+  return {
+    id: brand.id,
+    name: brand.name,
+    category: brand.category || "Other",
+    slug: brand.slug,
+    logo,
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function BrandLogo({ brand }: { brand: LiveOnboardingBrand }) {
+  return brand.logo ? (
+    <img
+      src={brand.logo}
+      alt={`${brand.name} logo`}
+      className="h-9 w-9 shrink-0 rounded-xl object-cover ring-1 ring-white/10"
+      loading="lazy"
+    />
+  ) : (
+    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-xs font-bold text-white ring-1 ring-white/10">
+      {brand.name.slice(0, 2).toUpperCase()}
     </div>
   );
 }
@@ -773,14 +1021,15 @@ function ChipRow({
 function StepSuccess({
   name, walletId, onExplore, onConnect, onOffers,
 }: { name: string; walletId: string | number; onExplore: () => void; onConnect: () => void; onOffers: () => void }) {
-  const first = name.split(" ")[0];
   return (
     <div className="text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-[0_0_40px_rgba(16,185,129,0.55)]">
         <Check className="h-8 w-8 text-white" />
       </div>
-      <h2 className="mt-4 text-2xl font-bold text-white">You're in, {first}.</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Wallet, rewards, and your trader profile are ready. Let's start earning.</p>
+      <h2 className="mt-4 text-2xl font-bold text-white">Welcome to RebateBoard 🎉</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Your account is ready. Your wallet has been created, your trading profile has been personalized, and you can now explore trusted brands, earn cashback, and build your trading edge.
+      </p>
 
       <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/70">
         <Wallet className="h-3.5 w-3.5 text-emerald-400" />
@@ -792,20 +1041,20 @@ function StepSuccess({
       <div className="mt-7 grid gap-3 sm:grid-cols-3">
         <ActionCard
           icon={<Compass className="h-5 w-5 text-fuchsia-300" />}
-          title="Explore Dashboard"
+          title="Go to Dashboard"
           desc="Your RebateBoard overview."
           primary
           onClick={onExplore}
         />
         <ActionCard
           icon={<Building2 className="h-5 w-5 text-cyan-300" />}
-          title="Connect Broker"
-          desc="Track ROI from day one."
+          title="Browse Programs"
+          desc="Compare trusted trading brands."
           onClick={onConnect}
         />
         <ActionCard
           icon={<Gift className="h-5 w-5 text-emerald-300" />}
-          title="View Cashback Offers"
+          title="Explore Cashback"
           desc="Start earning rebates."
           onClick={onOffers}
         />
