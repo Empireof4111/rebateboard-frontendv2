@@ -5,6 +5,7 @@ import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, to
 import { blogApi, type BlogPost } from "@/lib/admin-api";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { uploadMediaFile } from "@/lib/media-api";
 import { Plus, Edit3, Trash2, RefreshCw, Wand2, X } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/blog")({
@@ -86,6 +87,14 @@ function BlogAdmin() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const uploadBlogImage = async (file: File, kind: "cover" | "author") => {
+    const uploaded = await uploadMediaFile(file, {
+      folder: kind === "cover" ? "blogs/covers" : "blogs/authors",
+      prefix: editing?.urlSlug || editing?.title || "blog",
+    });
+    return uploaded.url;
   };
 
   const toggleStatus = async (post: BlogPost) => {
@@ -233,13 +242,19 @@ function BlogAdmin() {
                 value={editing.authorAvatar}
                 height="h-24"
                 onChange={(url) => setEditing({ ...editing, authorAvatar: url })}
+                onSelectFile={(file) => uploadBlogImage(file, "author")}
               />
             </div>
             <Field label="Excerpt (card summary)" span={2}>
               <textarea rows={2} className={fieldCls} value={editing.excerpt ?? ""} onChange={(e) => setEditing({ ...editing, excerpt: e.target.value })} placeholder="Short summary shown on the article card…" />
             </Field>
             <div className="md:col-span-2">
-              <ThumbnailUploader label="Cover image / thumbnail" value={editing.cover} onChange={(url) => setEditing({ ...editing, cover: url })} />
+              <ThumbnailUploader
+                label="Cover image / thumbnail"
+                value={editing.cover}
+                onChange={(url) => setEditing({ ...editing, cover: url })}
+                onSelectFile={(file) => uploadBlogImage(file, "cover")}
+              />
             </div>
             <Field label="Body (markdown)" span={2}>
               <textarea rows={10} className={fieldCls} value={editing.body ?? ""} onChange={(e) => setEditing({ ...editing, body: e.target.value })} placeholder="# Heading…" />

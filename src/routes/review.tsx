@@ -18,7 +18,10 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/review")({
-  validateSearch: searchSchema,
+  validateSearch: (search) => {
+    const parsed = searchSchema.safeParse(search);
+    return parsed.success ? parsed.data : {};
+  },
   head: () => ({
     meta: [
       { title: "Drop a Review — RebateBoard" },
@@ -53,9 +56,9 @@ function ReviewPage() {
   }
 
   return (
-    <div className="relative min-h-screen pt-20">
+    <div className="relative min-h-screen">
       <SiteHeader />
-      <main className="container-app max-w-6xl py-8 sm:py-10">
+      <main className="container-app max-w-6xl pb-8 pt-4 sm:pb-10 sm:pt-5">
         <div className="mb-6 text-center">
           <h1 className="text-gradient text-3xl font-bold sm:text-4xl">Drop a Review</h1>
           <p className="mt-2 text-sm text-muted-foreground">Your verified review feeds directly into the brand's TBI score.</p>

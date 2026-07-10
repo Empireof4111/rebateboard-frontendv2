@@ -70,9 +70,9 @@ function ReviewsHub() {
   const reviewTypes = [...new Set(reviews.map((item) => item.reviewType).filter(Boolean))] as string[];
 
   return (
-    <div className="relative min-h-screen pt-20">
+    <div className="relative min-h-screen">
       <SiteHeader />
-      <main className="container-app py-8 sm:py-10">
+      <main className="container-app pb-8 pt-4 sm:pb-10 sm:pt-5">
         <section className="glass rounded-2xl p-6 ring-1 ring-white/10 sm:p-8">
           <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
             <div>
