@@ -7,7 +7,7 @@ import { useI18n } from "../lib/i18n";
 
 type LoginSearch = { reauth?: string; email?: string; redirect?: string };
 
-export const Route = createFileRoute("/login" as any)({
+export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Login - RebateBoard" },

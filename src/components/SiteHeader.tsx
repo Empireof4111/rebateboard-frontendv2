@@ -621,16 +621,16 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 bg-[#10051f]/16 pt-2 backdrop-blur-xl supports-[backdrop-filter]:bg-[#10051f]/10">
+      <header className="fixed inset-x-0 top-0 z-50 bg-[#10051f]/16 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#10051f]/10">
         <span className="hidden" aria-hidden>
           {user ? "auth" : "guest"}
         </span>
         <div className="container-app">
-          <div className="liquid-glass w-full max-w-full overflow-hidden rounded-[1.35rem] px-3 py-2.5 shadow-[0_18px_55px_rgba(9,4,18,0.32)] sm:px-4">
+          <div className="liquid-glass w-full max-w-full overflow-hidden rounded-[1.15rem] px-2.5 py-2.5 shadow-[0_18px_55px_rgba(9,4,18,0.32)] sm:rounded-[1.35rem] sm:px-4">
             <nav className="flex min-w-0 items-center justify-between gap-3">
               <Link
                 to="/"
-                className="flex min-w-0 shrink-0 items-center gap-3"
+                className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3"
                 aria-label="RebateBoard home"
               >
                 <Logo heightClass="h-8 sm:h-9" className="shrink-0" />
@@ -648,7 +648,7 @@ export function SiteHeader() {
                 </button>
               </div>
 
-              <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+              <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
                 <div className="hidden sm:block">
                   <LanguageSelector />
                 </div>
@@ -678,7 +678,7 @@ export function SiteHeader() {
         </div>
         <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </header>
-      <div className="h-[8.7rem] sm:h-[8.85rem]" aria-hidden />
+      <div className="h-[calc(8.7rem+env(safe-area-inset-top))] sm:h-[calc(8.85rem+env(safe-area-inset-top))]" aria-hidden />
     </>
   );
 }

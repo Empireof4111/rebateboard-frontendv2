@@ -215,7 +215,7 @@ export function DashboardLayout() {
       <div className="glow-orb left-[-10%] top-[-10%] h-[500px] w-[500px]" />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-all duration-200 ease-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-2rem))] transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-all duration-200 ease-out lg:w-64 lg:translate-x-0 ${
           sidebarCollapsed ? "lg:w-20" : "lg:w-64"
         } ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
         aria-label="Dashboard navigation"
@@ -241,7 +241,10 @@ export function DashboardLayout() {
           {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>
 
-        <nav className={`flex flex-col gap-1 overflow-y-auto px-2 py-3 ${sidebarCollapsed ? "lg:px-2" : ""}`} style={{ maxHeight: "calc(100vh - 4rem)" }}>
+        <nav
+          className={`mobile-scroll flex flex-col gap-1 overflow-y-auto px-2 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] ${sidebarCollapsed ? "lg:px-2" : ""}`}
+          style={{ maxHeight: "calc(100dvh - 4rem)" }}
+        >
           {groups.map((g) => {
             const isOpen = openGroups[g.id] ?? false;
             const showItems = sidebarCollapsed || isOpen;
@@ -311,7 +314,7 @@ export function DashboardLayout() {
 
       <div className={sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}>
         <header className="sticky top-0 z-30 border-b border-white/5 bg-[#150829]/75 backdrop-blur-xl">
-          <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6">
+          <div className="flex h-14 min-w-0 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6">
             <button
               onClick={() => setMobileOpen(true)}
               className="grid h-9 w-9 place-items-center rounded-lg text-white transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:hidden"
@@ -330,7 +333,7 @@ export function DashboardLayout() {
             <button className="grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/5 md:hidden" aria-label={t("common.search")}>
               <Search className="h-4 w-4" />
             </button>
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
               <DashboardLanguageSelector />
               <Link to={"/dashboard/wallet" as string} className="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.45)] transition-transform hover:scale-[1.02] active:scale-[0.98] sm:inline-flex">
                 <Wallet className="h-3.5 w-3.5" /> {t("dashboard.wallet")}
@@ -378,7 +381,7 @@ export function DashboardLayout() {
                     )}
                   </div>
 
-                  <div className="max-h-[22rem] overflow-y-auto p-2">
+                  <div className="mobile-scroll max-h-[min(22rem,70dvh)] overflow-y-auto p-2">
                     {notifications.status === "loading" && (
                       <div className="space-y-2 p-2">
                         {[0, 1, 2].map((item) => (
@@ -457,7 +460,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1400px] p-3 sm:p-4 md:p-6 lg:p-8">
+        <main className="mx-auto w-full max-w-[1400px] p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:p-4 md:p-6 lg:p-8">
           <DashboardAdBanner pathname={pathname} />
           <Outlet />
         </main>

@@ -9,10 +9,11 @@ import { Logo } from "../components/Logo";
 import {
   useAuth, type Market, type TradingExperience, type MonthlyVolume,
   type AcquisitionSource, type PrimaryGoal, type OnboardingAnswers,
+  checkUsernameAvailability,
 } from "../lib/auth";
 import { fetchPublicAdminBrands, type AdminBrandRecord } from "../lib/admin-brands-api";
 
-export const Route = createFileRoute("/signup" as any)({
+export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Create your account - RebateBoard" },
@@ -279,6 +280,9 @@ function StepAccount({
   const [marketing, setMarketing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "invalid" | "checking" | "available" | "taken" | "error"
+  >("idle");
 
   useEffect(() => {
     if (country || typeof navigator === "undefined") return;
@@ -296,9 +300,54 @@ function StepAccount({
     } catch {}
   }, [country]);
 
+  const normalizedUsername = username.trim();
+
+  useEffect(() => {
+    if (!normalizedUsername) {
+      setUsernameStatus("idle");
+      return;
+    }
+
+    if (!/^[A-Za-z0-9_]{3,24}$/.test(normalizedUsername)) {
+      setUsernameStatus("invalid");
+      return;
+    }
+
+    let cancelled = false;
+    setUsernameStatus("checking");
+
+    const timer = window.setTimeout(() => {
+      void checkUsernameAvailability(normalizedUsername)
+        .then((available) => {
+          if (!cancelled) setUsernameStatus(available ? "available" : "taken");
+        })
+        .catch(() => {
+          if (!cancelled) setUsernameStatus("error");
+        });
+    }, 420);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [normalizedUsername]);
+
+  const usernameHelper = (() => {
+    if (!normalizedUsername) return "Used for your public profile, reviews, and community identity.";
+    if (usernameStatus === "invalid") return "Use 3-24 letters, numbers, or underscores.";
+    if (usernameStatus === "checking") return "Checking username availability...";
+    if (usernameStatus === "available") return "Username is available.";
+    if (usernameStatus === "taken") return "That username is already taken.";
+    if (usernameStatus === "error") return "We’ll verify this username when you continue.";
+    return "Used for your public profile, reviews, and community identity.";
+  })();
+
   function validate(): string | null {
     if (!fullName.trim()) return "Please enter your full name.";
     if (!/^\S+@\S+\.\S+$/.test(email)) return "Enter a valid email address.";
+    if (normalizedUsername && usernameStatus === "invalid") return "Please use a valid username.";
+    if (normalizedUsername && usernameStatus === "checking") return "Please wait while we check that username.";
+    if (normalizedUsername && usernameStatus === "taken") return "That username is already taken. Please choose another one.";
     if (!isStrongPassword(password)) return "Please complete the password checklist.";
     if (password !== confirm) return "Passwords do not match.";
     if (!agree) return "You must agree to the Terms & Privacy.";
@@ -320,12 +369,15 @@ function StepAccount({
         fullName: fullName.trim(),
         email: email.trim(),
         password,
-        username: username.trim() || undefined,
+        username: normalizedUsername || undefined,
         country: country || undefined,
         marketingOptIn: marketing,
       });
-    } catch {
-      setError("We couldn’t create your account right now. Please check your details and try again.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      setError(message.includes("username")
+        ? "That username is already taken. Please choose another one."
+        : "We couldn’t create your account right now. Please check your details and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -359,9 +411,32 @@ function StepAccount({
         <Field
           label="Username (optional)"
           icon={<AtSign className="h-4 w-4" />}
-          helper="Used for your public profile, reviews, and community identity."
+          helper={usernameHelper}
+          helperTone={
+            usernameStatus === "available" ? "success" :
+            usernameStatus === "taken" || usernameStatus === "invalid" ? "error" :
+            "muted"
+          }
         >
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="janetrader" className={inputCls} />
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/\s+/g, ""))}
+            placeholder="janetrader"
+            className={`${inputCls} pr-10 ${
+              usernameStatus === "available" ? "border-emerald-400/50" :
+              usernameStatus === "taken" || usernameStatus === "invalid" ? "border-red-400/50" :
+              ""
+            }`}
+          />
+          {usernameStatus === "checking" && (
+            <RefreshCcw className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-fuchsia-200/70" />
+          )}
+          {usernameStatus === "available" && (
+            <CheckCircle2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300" />
+          )}
+          {(usernameStatus === "taken" || usernameStatus === "invalid") && (
+            <CircleAlert className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-red-200" />
+          )}
         </Field>
         <CountrySelect value={country} onChange={setCountry} />
         <div>
@@ -401,7 +476,7 @@ function StepAccount({
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || (Boolean(normalizedUsername) && usernameStatus === "checking")}
           className="md:col-span-2 group mt-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)] transition hover:opacity-95 disabled:opacity-60"
         >
           {submitting ? "Creating account..." : "Continue"}
@@ -425,8 +500,8 @@ function isStrongPassword(password: string) {
 function PasswordChecklist({ password }: { password: string }) {
   const rules = [
     { label: "8+ characters", ok: password.length >= 8 },
-    { label: "One number", ok: /[0-9]/.test(password) },
     { label: "One uppercase letter", ok: /[A-Z]/.test(password) },
+    { label: "One number", ok: /[0-9]/.test(password) },
     { label: "One special character", ok: /[^A-Za-z0-9]/.test(password) },
   ];
 
@@ -503,11 +578,25 @@ function GoogleIcon() {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-muted-foreground outline-none focus:border-primary/60";
+  "w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-muted-foreground outline-none transition duration-200 focus:border-primary/60 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)]";
 
 function Field({
-  label, icon, required, helper, children,
-}: { label: string; icon?: React.ReactNode; required?: boolean; helper?: string; children: React.ReactNode }) {
+  label, icon, required, helper, helperTone = "muted", children,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  required?: boolean;
+  helper?: React.ReactNode;
+  helperTone?: "muted" | "success" | "error";
+  children: React.ReactNode;
+}) {
+  const helperClass =
+    helperTone === "success"
+      ? "text-emerald-200/80"
+      : helperTone === "error"
+      ? "text-red-200/85"
+      : "text-white/40";
+
   return (
     <div>
       <label className="mb-1.5 block text-xs text-muted-foreground">
@@ -517,7 +606,7 @@ function Field({
         {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</div>}
         {children}
       </div>
-      {helper && <p className="mt-1 text-[11px] text-white/40">{helper}</p>}
+      {helper && <p className={`mt-1 text-[11px] ${helperClass}`}>{helper}</p>}
     </div>
   );
 }
@@ -539,7 +628,7 @@ function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? "********"}
           autoComplete="new-password"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-muted-foreground outline-none focus:border-primary/60"
+          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-muted-foreground outline-none transition duration-200 focus:border-primary/60 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)]"
         />
         <button
           type="button"
@@ -810,9 +899,18 @@ function StepQuestionnaire({
 
             <div className="grid gap-2 sm:grid-cols-2">
               {brandsLoading && (
-                <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-xs text-white/60">
-                  Loading live RebateBoard brands...
-                </div>
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={`brand-skeleton-${index}`}
+                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3"
+                  >
+                    <div className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-white/10" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-3 w-2/3 animate-pulse rounded-full bg-white/10" />
+                      <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-white/[0.07]" />
+                    </div>
+                  </div>
+                ))
               )}
 
               {!brandsLoading && brandOptions.map((brand) => {

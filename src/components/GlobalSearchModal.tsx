@@ -356,15 +356,15 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[#090313]/82 p-4 backdrop-blur-md"
+      className="mobile-scroll fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[#090313]/82 p-2 backdrop-blur-md sm:p-4"
       onClick={onClose}
     >
-      <div className="pointer-events-none absolute left-1/2 top-20 h-[460px] w-[720px] -translate-x-1/2 rounded-full bg-fuchsia-500/18 blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-10 h-[300px] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-fuchsia-500/18 blur-3xl sm:top-20 sm:h-[460px]" />
       <div
         onClick={(event) => event.stopPropagation()}
-        className="relative mt-20 w-full max-w-4xl overflow-hidden rounded-[2rem] bg-[#12051f]/96 ring-1 ring-fuchsia-300/20"
+        className="relative mt-3 max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-hidden rounded-[1.4rem] bg-[#12051f]/96 ring-1 ring-fuchsia-300/20 sm:mt-20 sm:rounded-[2rem]"
       >
-        <div className="flex items-center gap-3 border-b border-white/8 px-5 py-4">
+        <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4">
           <Search className="h-4 w-4 text-fuchsia-200" />
           <input
             ref={inputRef}
@@ -385,7 +385,7 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
           </button>
         </div>
 
-        <div className="max-h-[68vh] overflow-y-auto p-4 sm:p-5">
+        <div className="mobile-scroll max-h-[calc(100dvh-5.75rem)] overflow-y-auto p-3 sm:max-h-[68vh] sm:p-5">
           {q.trim().length === 0 ? (
             <div className="space-y-6">
               <section>
@@ -449,7 +449,7 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
 
               <section>
                 <SectionHeader icon={ArrowRight} label="Jump to" />
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:grid-cols-4">
                   {QUICK_LINKS.map((link) => (
                     <QuickLinkButton key={link.id} hit={link} onClick={() => go(link)} />
                   ))}

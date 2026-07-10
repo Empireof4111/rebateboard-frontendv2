@@ -94,8 +94,11 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    min-width: 0;
   }
   html {
+    max-width: 100%;
+    overflow-x: clip;
     scroll-behavior: smooth;
   }
   body {
@@ -104,7 +107,17 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    max-width: 100%;
+    min-width: 320px;
     min-height: 100vh;
+    overflow-x: clip;
+    overscroll-behavior-y: none;
+  }
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
   }
   h1,
   h2,
@@ -112,6 +125,15 @@
   h4 {
     font-family: var(--font-display);
     letter-spacing: 0;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  @supports (height: 100dvh) {
+    .min-h-screen {
+      min-height: 100dvh;
+    }
   }
 }
 
@@ -172,6 +194,11 @@
     width: min(100% - 2rem, 92.5rem);
     margin-inline: auto;
   }
+  @media (max-width: 480px) {
+    .container-app {
+      width: min(100% - 1rem, 92.5rem);
+    }
+  }
   @media (min-width: 640px) {
     .container-app {
       width: min(100% - 3rem, 92.5rem);
@@ -184,6 +211,21 @@
   }
   .section {
     padding-block: 2rem;
+  }
+  @media (max-width: 640px) {
+    .section {
+      padding-block: 1.5rem;
+    }
+    .glass,
+    .glass-strong,
+    .glass-pill,
+    .liquid-glass {
+      --glass-blur: 22px;
+    }
+    .glow-orb {
+      opacity: 0.48;
+      transform: scale(0.68);
+    }
   }
   @media (min-width: 768px) {
     .section {
@@ -241,6 +283,10 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
 }
 
 @layer base {
@@ -257,11 +303,19 @@
   body {
     text-rendering: optimizeLegibility;
   }
+  [data-radix-popper-content-wrapper] {
+    max-width: calc(100vw - 0.75rem) !important;
+  }
   /* Better mobile tap targets */
   @media (max-width: 640px) {
     button:not(.no-min-tap),
     a.btn:not(.no-min-tap) {
       min-height: 40px;
+    }
+    input,
+    textarea,
+    select {
+      font-size: 16px;
     }
   }
 

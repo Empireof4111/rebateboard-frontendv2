@@ -467,6 +467,18 @@ export function useAuth() {
   return ctx;
 }
 
+export async function checkUsernameAvailability(username: string) {
+  const value = username.trim();
+  if (!value) return true;
+
+  const response = await apiRequest<{ available: boolean }>(
+    `/user/username-availability?username=${encodeURIComponent(value)}`,
+    { method: "GET" },
+  );
+
+  return Boolean(response.payload?.available);
+}
+
 export function usePersonalization() {
   const { user } = useAuth();
   const o = user?.onboarding;
