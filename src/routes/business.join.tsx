@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { TrustScoreCard } from "@/components/tbi/OnboardingPrimitives";
-import { CATEGORY_META, type BrandCategory } from "@/lib/tbi-onboarding";
-import { Shield, ArrowRight, CheckCircle2, Sparkles, TrendingUp, Lock } from "lucide-react";
+import { CATEGORY_META, useBrandApplicationSettings, type BrandCategory } from "@/lib/tbi-onboarding";
+import { Shield, ArrowRight, CheckCircle2, Sparkles, TrendingUp, Lock, Bell, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/business/join")({
   head: () => ({
@@ -25,6 +25,41 @@ const BENEFITS = [
 ];
 
 function BusinessJoinPage() {
+  const applicationSettings = useBrandApplicationSettings();
+
+  if (!applicationSettings.enabled) {
+    return (
+      <div className="min-h-screen bg-[#0b0418] text-foreground">
+        <SiteHeader />
+        <main className="container-app py-8 sm:py-10">
+          <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-8 text-center md:p-14">
+            <div className="absolute inset-x-16 top-0 h-40 rounded-full bg-fuchsia-500/20 blur-3xl" />
+            <div className="relative mx-auto max-w-2xl">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-white/10 text-fuchsia-200 shadow-[0_0_34px_rgba(192,132,252,0.22)]">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-fuchsia-200/80">Brand Applications</div>
+              <h1 className="mt-3 text-3xl font-bold leading-tight md:text-5xl">Brand Applications Are Temporarily Closed</h1>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground md:text-base">
+                We're currently reviewing submitted applications. Applications will reopen soon.
+                Thank you for your interest in joining RebateBoard.
+              </p>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-fuchsia-300/40">
+                  <Bell className="h-4 w-4 text-fuchsia-200" /> Notify Me
+                </Link>
+                <Link to="/contact" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-bold text-white shadow-[0_0_28px_rgba(192,132,252,0.35)] transition hover:brightness-110">
+                  <Mail className="h-4 w-4" /> Contact Us
+                </Link>
+              </div>
+            </div>
+          </section>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
       <SiteHeader />

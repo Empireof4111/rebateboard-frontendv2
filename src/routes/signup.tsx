@@ -1,15 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  ArrowRight, ArrowLeft, Check, Sparkles, Mail, Lock, User as UserIcon,
+  ArrowRight, ArrowLeft, Check, Mail, Lock, User as UserIcon,
   Globe, AtSign, ShieldCheck, Wallet, Gift, Compass, Building2,
   Eye, EyeOff, MailCheck, RefreshCcw, Search, CircleAlert, CheckCircle2,
+  BadgePercent, BarChart3, Bitcoin, Brain, ChartNoAxesCombined, Droplets,
+  Landmark, SearchCheck, Trophy, type LucideIcon,
 } from "lucide-react";
 import { Logo } from "../components/Logo";
 import {
   useAuth, type Market, type TradingExperience, type MonthlyVolume,
   type AcquisitionSource, type PrimaryGoal, type OnboardingAnswers,
-  checkUsernameAvailability,
+  authErrorMessage, checkUsernameAvailability,
 } from "../lib/auth";
 import { fetchPublicAdminBrands, type AdminBrandRecord } from "../lib/admin-brands-api";
 
@@ -27,39 +29,52 @@ export const Route = createFileRoute("/signup")({
 
 type Step = 1 | "verify" | 2 | 3;
 
-const COUNTRIES = [
-  { name: "United States", flag: "🇺🇸" },
-  { name: "United Kingdom", flag: "🇬🇧" },
-  { name: "Canada", flag: "🇨🇦" },
-  { name: "Australia", flag: "🇦🇺" },
-  { name: "South Africa", flag: "🇿🇦" },
-  { name: "Nigeria", flag: "🇳🇬" },
-  { name: "Kenya", flag: "🇰🇪" },
-  { name: "Germany", flag: "🇩🇪" },
-  { name: "France", flag: "🇫🇷" },
-  { name: "Spain", flag: "🇪🇸" },
-  { name: "Italy", flag: "🇮🇹" },
-  { name: "Netherlands", flag: "🇳🇱" },
-  { name: "United Arab Emirates", flag: "🇦🇪" },
-  { name: "Saudi Arabia", flag: "🇸🇦" },
-  { name: "India", flag: "🇮🇳" },
-  { name: "Pakistan", flag: "🇵🇰" },
-  { name: "Singapore", flag: "🇸🇬" },
-  { name: "Hong Kong", flag: "🇭🇰" },
-  { name: "Japan", flag: "🇯🇵" },
-  { name: "Brazil", flag: "🇧🇷" },
-  { name: "Mexico", flag: "🇲🇽" },
-  { name: "Argentina", flag: "🇦🇷" },
-  { name: "Other", flag: "🌍" },
+const COUNTRY_CODES = [
+  "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG", "AR", "AM", "AW", "AU", "AT", "AZ",
+  "BS", "BH", "BD", "BB", "BY", "BE", "BZ", "BJ", "BM", "BT", "BO", "BQ", "BA", "BW", "BV", "BR",
+  "IO", "BN", "BG", "BF", "BI", "CV", "KH", "CM", "CA", "KY", "CF", "TD", "CL", "CN", "CX", "CC",
+  "CO", "KM", "CG", "CD", "CK", "CR", "CI", "HR", "CU", "CW", "CY", "CZ", "DK", "DJ", "DM", "DO",
+  "EC", "EG", "SV", "GQ", "ER", "EE", "SZ", "ET", "FK", "FO", "FJ", "FI", "FR", "GF", "PF", "TF",
+  "GA", "GM", "GE", "DE", "GH", "GI", "GR", "GL", "GD", "GP", "GU", "GT", "GG", "GN", "GW", "GY",
+  "HT", "HM", "VA", "HN", "HK", "HU", "IS", "IN", "ID", "IR", "IQ", "IE", "IM", "IL", "IT", "JM",
+  "JP", "JE", "JO", "KZ", "KE", "KI", "KP", "KR", "KW", "KG", "LA", "LV", "LB", "LS", "LR", "LY",
+  "LI", "LT", "LU", "MO", "MG", "MW", "MY", "MV", "ML", "MT", "MH", "MQ", "MR", "MU", "YT", "MX",
+  "FM", "MD", "MC", "MN", "ME", "MS", "MA", "MZ", "MM", "NA", "NR", "NP", "NL", "NC", "NZ", "NI",
+  "NE", "NG", "NU", "NF", "MK", "MP", "NO", "OM", "PK", "PW", "PS", "PA", "PG", "PY", "PE", "PH",
+  "PN", "PL", "PT", "PR", "QA", "RE", "RO", "RU", "RW", "BL", "SH", "KN", "LC", "MF", "PM", "VC",
+  "WS", "SM", "ST", "SA", "SN", "RS", "SC", "SL", "SG", "SX", "SK", "SI", "SB", "SO", "ZA", "GS",
+  "SS", "ES", "LK", "SD", "SR", "SJ", "SE", "CH", "SY", "TW", "TJ", "TZ", "TH", "TL", "TG", "TK",
+  "TO", "TT", "TN", "TR", "TM", "TC", "TV", "UG", "UA", "AE", "GB", "US", "UM", "UY", "UZ", "VU",
+  "VE", "VN", "VG", "VI", "WF", "EH", "YE", "ZM", "ZW",
 ];
 
-const MARKETS: { id: Market; label: string; emoji: string }[] = [
-  { id: "forex", label: "Forex", emoji: "\u{1F4B1}" },
-  { id: "crypto", label: "Crypto", emoji: "\u20BF" },
-  { id: "indices", label: "Indices", emoji: "\u{1F4C8}" },
-  { id: "stocks", label: "Stocks", emoji: "\u{1F3DB}\uFE0F" },
-  { id: "commodities", label: "Commodities", emoji: "\u{1F6E2}\uFE0F" },
-  { id: "propfirms", label: "Prop Firms", emoji: "\u{1F3C6}" },
+const RegionDisplayNames = (Intl as typeof Intl & {
+  DisplayNames: new (locales: string[], options: { type: "region" }) => { of(code: string): string | undefined };
+}).DisplayNames;
+
+const countryNames = new RegionDisplayNames(["en"], { type: "region" });
+
+const COUNTRIES = COUNTRY_CODES
+  .map((code) => ({
+    code,
+    name: countryNames.of(code) || code,
+    flag: countryCodeToFlag(code),
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+function countryCodeToFlag(code: string) {
+  return code
+    .toUpperCase()
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+}
+
+const MARKETS: { id: Market; label: string; icon: LucideIcon }[] = [
+  { id: "forex", label: "Forex", icon: BadgePercent },
+  { id: "crypto", label: "Crypto", icon: Bitcoin },
+  { id: "indices", label: "Indices", icon: ChartNoAxesCombined },
+  { id: "stocks", label: "Stocks", icon: Landmark },
+  { id: "commodities", label: "Commodities", icon: Droplets },
+  { id: "propfirms", label: "Prop Firms", icon: Trophy },
 ];
 
 type LiveOnboardingBrand = {
@@ -101,12 +116,12 @@ const SOURCES: { id: AcquisitionSource; label: string }[] = [
   { id: "other", label: "Other" },
 ];
 
-const GOALS: { id: PrimaryGoal; label: string; emoji: string }[] = [
-  { id: "reduce_costs", label: "Reduce trading costs", emoji: "\u{1F4B8}" },
-  { id: "find_brokers", label: "Find better brokers", emoji: "\u{1F3E6}" },
-  { id: "track_performance", label: "Track performance", emoji: "\u{1F4CA}" },
-  { id: "earn_rewards", label: "Earn rewards / cashback", emoji: "\u{1F381}" },
-  { id: "improve_strategy", label: "Improve strategy", emoji: "\u{1F9E0}" },
+const GOALS: { id: PrimaryGoal; label: string; icon: LucideIcon }[] = [
+  { id: "reduce_costs", label: "Reduce trading costs", icon: BadgePercent },
+  { id: "find_brokers", label: "Find better brokers", icon: SearchCheck },
+  { id: "track_performance", label: "Track performance", icon: BarChart3 },
+  { id: "earn_rewards", label: "Earn rewards / cashback", icon: Gift },
+  { id: "improve_strategy", label: "Improve strategy", icon: Brain },
 ];
 
 function SignupPage() {
@@ -134,7 +149,7 @@ function SignupPage() {
       <div className="glow-orb left-[-10%] top-[10%] h-[400px] w-[400px]" />
       <div className="glow-orb right-[-10%] bottom-[5%] h-[500px] w-[500px]" />
 
-      <div className="container-app relative z-10 flex min-h-screen max-w-3xl flex-col items-center justify-center py-10">
+      <div className="container-app relative z-10 flex min-h-screen max-w-4xl flex-col items-center justify-center py-5 md:py-6">
         <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="RebateBoard home">
           <Logo heightClass="h-10" />
         </Link>
@@ -144,7 +159,7 @@ function SignupPage() {
 
         <Stepper step={step} />
 
-        <div className="glass-strong mt-6 w-full rounded-3xl p-6 md:p-8">
+        <div className="glass-strong mt-4 w-full rounded-3xl p-5 md:p-6">
           {step === 1 && (
             <StepAccount
               onDone={async (input) => {
@@ -227,13 +242,18 @@ function Stepper({ step }: { step: Step }) {
     { n: 3, label: "Done", desc: "Start exploring" },
   ];
   return (
-    <div className="flex w-full max-w-md items-center justify-between">
-      {items.map((it, i) => {
-        const active = stepNum === it.n;
-        const done = stepNum > it.n;
-        return (
-          <div key={it.n} className="flex flex-1 items-center">
-            <div className="flex flex-col items-center">
+    <div className="relative w-full max-w-lg px-2">
+      <div className="absolute left-[16.666%] right-[16.666%] top-4 h-px bg-white/10" />
+      <div
+        className="absolute left-[16.666%] top-4 h-px bg-emerald-500/60 transition-all duration-300"
+        style={{ width: `${Math.max(0, ((stepNum - 1) / 2) * 66.666)}%` }}
+      />
+      <div className="relative grid grid-cols-3">
+        {items.map((it) => {
+          const active = stepNum === it.n;
+          const done = stepNum > it.n;
+          return (
+            <div key={it.n} className="flex flex-col items-center text-center">
               <div
                 className={`grid h-8 w-8 place-items-center rounded-full text-xs font-semibold transition ${
                   done
@@ -246,14 +266,11 @@ function Stepper({ step }: { step: Step }) {
                 {done ? <Check className="h-4 w-4" /> : it.n}
               </div>
               <div className={`mt-1 text-[10px] font-medium ${active ? "text-white" : "text-white/50"}`}>{it.label}</div>
-              <div className={`hidden text-center text-[9px] sm:block ${active ? "text-white/60" : "text-white/35"}`}>{it.desc}</div>
+              <div className={`hidden max-w-28 text-center text-[9px] sm:block ${active ? "text-white/60" : "text-white/35"}`}>{it.desc}</div>
             </div>
-            {i < items.length - 1 && (
-              <div className={`mx-2 h-px flex-1 ${stepNum > it.n ? "bg-emerald-500/60" : "bg-white/10"}`} />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -283,22 +300,6 @@ function StepAccount({
   const [usernameStatus, setUsernameStatus] = useState<
     "idle" | "invalid" | "checking" | "available" | "taken" | "error"
   >("idle");
-
-  useEffect(() => {
-    if (country || typeof navigator === "undefined") return;
-    try {
-      const region = new Intl.Locale(navigator.language).maximize().region;
-      const map: Record<string, string> = {
-        US: "United States", GB: "United Kingdom", CA: "Canada", AU: "Australia",
-        ZA: "South Africa", NG: "Nigeria", KE: "Kenya", DE: "Germany",
-        FR: "France", ES: "Spain", IT: "Italy", NL: "Netherlands",
-        AE: "United Arab Emirates", SA: "Saudi Arabia", IN: "India", PK: "Pakistan",
-        SG: "Singapore", HK: "Hong Kong", JP: "Japan", BR: "Brazil",
-        MX: "Mexico", AR: "Argentina",
-      };
-      if (region && map[region]) setCountry(map[region]);
-    } catch {}
-  }, [country]);
 
   const normalizedUsername = username.trim();
 
@@ -374,10 +375,7 @@ function StepAccount({
         marketingOptIn: marketing,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      setError(message.includes("username")
-        ? "That username is already taken. Please choose another one."
-        : "We couldn’t create your account right now. Please check your details and try again.");
+      setError(authErrorMessage(err, "signup"));
     } finally {
       setSubmitting(false);
     }
@@ -397,11 +395,11 @@ function StepAccount({
         Continue with Google
         <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Coming Soon</span>
       </button>
-      <div className="my-5 flex items-center gap-3 text-[11px] text-white/40">
+      <div className="my-4 flex items-center gap-3 text-[11px] text-white/40">
         <div className="h-px flex-1 bg-white/10" /> or sign up with email <div className="h-px flex-1 bg-white/10" />
       </div>
 
-      <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
+      <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-2">
         <Field label="Full name" icon={<UserIcon className="h-4 w-4" />} required>
           <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Trader" className={inputCls} />
         </Field>
@@ -506,7 +504,7 @@ function PasswordChecklist({ password }: { password: string }) {
   ];
 
   return (
-    <div className="mt-2 grid gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-2">
+    <div className="mt-2 grid gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-2 sm:grid-cols-2">
       {rules.map((rule) => (
         <div key={rule.label} className={`flex items-center gap-2 text-[11px] ${rule.ok ? "text-emerald-200" : "text-white/45"}`}>
           {rule.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <CircleAlert className="h-3.5 w-3.5" />}
@@ -527,9 +525,12 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (value: s
     setQuery(next ? `${next.flag} ${next.name}` : "");
   }, [value]);
 
+  const normalizedQuery = query.replace(/^[^A-Za-z]+/, "").trim().toLowerCase();
   const filtered = COUNTRIES.filter((country) =>
-    country.name.toLowerCase().includes(query.replace(/^[^A-Za-z]+/, "").trim().toLowerCase()),
-  ).slice(0, 8);
+    !normalizedQuery ||
+    country.name.toLowerCase().includes(normalizedQuery) ||
+    country.code.toLowerCase().includes(normalizedQuery),
+  ).slice(0, 12);
 
   return (
     <Field label="Country" icon={<Globe className="h-4 w-4" />}>
@@ -549,7 +550,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (value: s
         <div className="glass-strong absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl p-1 text-sm">
           {filtered.map((country) => (
             <button
-              key={country.name}
+              key={country.code}
               type="button"
               onMouseDown={(event) => {
                 event.preventDefault();
@@ -561,6 +562,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (value: s
             >
               <span>{country.flag}</span>
               <span>{country.name}</span>
+              <span className="ml-auto text-[10px] uppercase text-white/35">{country.code}</span>
             </button>
           ))}
         </div>
@@ -668,8 +670,13 @@ function StepVerifyEmail({
       await onResend();
       setEntered("");
       setResent(true);
-    } catch {
-      setError("We couldn’t send your verification email right now. Please try again shortly.");
+    } catch (err) {
+      const message = authErrorMessage(err, "verify");
+      setError(
+        message.includes("verify that code")
+          ? "We couldn’t send your verification email right now. Please try again shortly."
+          : message,
+      );
     } finally {
       setResending(false);
     }
@@ -686,8 +693,13 @@ function StepVerifyEmail({
     setVerifying(true);
     try {
       await onVerified(entered);
-    } catch {
-      setError("That code didn’t work. Please check it or request a fresh code.");
+    } catch (err) {
+      const message = authErrorMessage(err, "verify");
+      setError(
+        message.includes("verify that code")
+          ? "That code didn’t work. Please check it or request a fresh code."
+          : message,
+      );
     } finally {
       setVerifying(false);
     }
@@ -866,11 +878,12 @@ function StepQuestionnaire({
         <button onClick={() => { void onSkip(); }} className="text-xs text-muted-foreground hover:text-white">Skip for now -&gt;</button>
       </div>
 
-      <div className="mt-6 space-y-7">
+      <div className="mt-5 space-y-5">
         <Question n={1} title="Which markets do you trade?" hint="Select all that apply." required>
           <div className="flex flex-wrap gap-2">
             {MARKETS.map((m) => {
               const on = markets.includes(m.id);
+              const Icon = m.icon;
               return (
                 <button
                   key={m.id}
@@ -878,7 +891,8 @@ function StepQuestionnaire({
                   onClick={() => toggleMarket(m.id)}
                   className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-fuchsia-400/60 bg-fuchsia-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/70 hover:text-white"}`}
                 >
-                  <span className="mr-1">{m.emoji}</span>{m.label}
+                  <Icon className={`mr-1.5 inline h-3.5 w-3.5 ${on ? "text-violet-100" : "text-violet-300"}`} />
+                  {m.label}
                 </button>
               );
             })}
@@ -990,6 +1004,7 @@ function StepQuestionnaire({
           <div className="grid gap-2 sm:grid-cols-2">
             {GOALS.map((g) => {
               const on = goal === g.id;
+              const Icon = g.icon;
               return (
                 <button
                   key={g.id}
@@ -997,7 +1012,9 @@ function StepQuestionnaire({
                   onClick={() => setGoal(g.id)}
                   className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition duration-200 ${on ? "scale-[1.02] border-fuchsia-400/60 bg-fuchsia-500/15 text-white shadow-[0_0_18px_rgba(192,132,252,0.16)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:text-white"}`}
                 >
-                  <span className="text-lg">{g.emoji}</span>
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${on ? "bg-violet-500/25 text-violet-100" : "bg-violet-500/10 text-violet-300"}`}>
+                    <Icon className="h-4 w-4" />
+                  </span>
                   <span>{g.label}</span>
                 </button>
               );
@@ -1012,7 +1029,7 @@ function StepQuestionnaire({
         </div>
       )}
 
-      <div className="mt-8 flex items-center justify-between gap-3">
+      <div className="mt-6 flex items-center justify-between gap-3">
         <button onClick={onBack} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs text-white/60 hover:text-white">
           <ArrowLeft className="h-3.5 w-3.5" /> Back
         </button>
@@ -1133,7 +1150,7 @@ function StepSuccess({
         <Wallet className="h-3.5 w-3.5 text-emerald-400" />
         Wallet ID <span className="font-mono text-white">{walletId}</span>
         <span className="text-white/30">-</span>
-        <Sparkles className="h-3.5 w-3.5 text-amber-300" /> RR balance 0
+        <Trophy className="h-3.5 w-3.5 text-violet-300" /> RR balance 0
       </div>
 
       <div className="mt-7 grid gap-3 sm:grid-cols-3">

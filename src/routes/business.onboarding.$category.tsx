@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, notFound, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
@@ -10,8 +10,9 @@ import {
 import {
   CATEGORY_META, STEP_DEFS, createSubmission, submitForReview, computeBreakdown, computeScore,
   computeCompletion, improvementSuggestions, buildMagicLink, type BrandCategory, type UploadedFile,
+  getApplicationDraft, saveApplicationDraft, clearApplicationDraft, useBrandApplicationSettings,
 } from "@/lib/tbi-onboarding";
-import { ArrowLeft, ArrowRight, Check, Send, Copy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Send, Copy, Save, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/business/onboarding/$category")({
   loader: ({ params }) => {
@@ -38,13 +39,18 @@ export const Route = createFileRoute("/business/onboarding/$category")({
 
 type FormData = Record<string, any>;
 
-function OnboardingFlow() {
-  const { category } = Route.useLoaderData();
-  const navigate = useNavigate();
-  const meta = CATEGORY_META[category as BrandCategory];
-  const [step, setStep] = useState(1);
-  const [data, setData] = useState<FormData>({
-    identity: { brandName: "", website: "", yearFounded: "", country: "", entityName: "", regulation: "" },
+function defaultApplicationData(): FormData {
+  return {
+    identity: {
+      brandName: "",
+      website: "",
+      yearFounded: "",
+      country: "",
+      entityName: "",
+      regulation: "",
+      logo: [],
+      coverImage: [],
+    },
     model: {},
     proof: { registrationDocs: [], payoutProof: [], reserveProof: [], activeTraders: 0, fundedTraders: 0 },
     infra: { platforms: [], liquidityProviders: [], technologyProvider: "" },
@@ -52,9 +58,19 @@ function OnboardingFlow() {
     economics: {},
     rebateboard: {},
     contact: { name: "", email: "" },
-  });
+  };
+}
+
+function OnboardingFlow() {
+  const { category } = Route.useLoaderData();
+  const navigate = useNavigate();
+  const meta = CATEGORY_META[category as BrandCategory];
+  const applicationSettings = useBrandApplicationSettings();
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState<FormData>(() => getApplicationDraft(category) ?? defaultApplicationData());
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [magicLink, setMagicLink] = useState<string | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
 
   const setStepData = (stepId: string, patch: Record<string, any>) => {
     setData((d: FormData) => ({ ...d, [stepId]: { ...d[stepId], ...patch } }));
@@ -64,9 +80,18 @@ function OnboardingFlow() {
   const { score, mode, cap } = useMemo(() => computeScore(breakdown, 0), [breakdown]);
   const completion = useMemo(() => computeCompletion(data), [data]);
 
+  useEffect(() => {
+    if (!submittedId) saveApplicationDraft(category, data);
+  }, [category, data, submittedId]);
+
+  const handleSaveDraft = () => {
+    saveApplicationDraft(category, data);
+    setDraftSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+  };
+
   const handleSubmit = () => {
-    if (!data.identity.brandName || !data.contact.email) {
-      alert("Brand name and contact email are required.");
+    if (!data.identity.brandName || !data.contact.email || !(data.identity.logo ?? []).length || !(data.identity.coverImage ?? []).length) {
+      alert("Please add your brand name, contact email, logo, and cover image before submitting.");
       return;
     }
     const sub = createSubmission({
@@ -77,6 +102,7 @@ function OnboardingFlow() {
       data,
     });
     submitForReview(sub.id);
+    clearApplicationDraft(category);
     setSubmittedId(sub.id);
     setMagicLink(buildMagicLink(sub));
   };
@@ -88,6 +114,29 @@ function OnboardingFlow() {
   const goBack = () => setStep((s) => Math.max(1, s - 1));
 
   if (submittedId) return <SuccessScreen brandName={data.identity.brandName} magicLink={magicLink!} onGoToDashboard={() => navigate({ to: magicLink! })} />;
+
+  if (!applicationSettings.enabled) {
+    return (
+      <div className="min-h-screen bg-[#0b0418] text-foreground">
+        <SiteHeader />
+        <main className="container-app max-w-3xl py-12 sm:py-16">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-xl md:p-12">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-fuchsia-200">
+              <Shield className="h-6 w-6" />
+            </div>
+            <h1 className="mt-5 text-3xl font-bold">Brand Applications Are Temporarily Closed</h1>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-muted-foreground">
+              We're currently reviewing submitted applications. Your saved progress will remain available when applications reopen.
+            </p>
+            <Link to="/business/join" className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-bold text-white">
+              Back to List Your Brand <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0b0418] text-foreground">
@@ -111,6 +160,7 @@ function OnboardingFlow() {
           <div className="space-y-6">
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
               <StepProgressBar totalSteps={totalSteps} currentStep={step} />
+              <UnlockJourney currentStep={step} />
               <div className="mt-6">
                 <StepTitleBlock title={stepDef.title} subtitle={stepDef.subtitle} description={stepDef.description} />
               </div>
@@ -147,7 +197,16 @@ function OnboardingFlow() {
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back
               </button>
-              <div className="text-[11px] text-muted-foreground hidden sm:block">{completion}% complete</div>
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="hidden items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:border-fuchsia-300/30 sm:inline-flex"
+              >
+                <Save className="h-3.5 w-3.5 text-fuchsia-200" /> Save Progress
+              </button>
+              <div className="hidden text-[11px] text-muted-foreground sm:block">
+                {draftSavedAt ? `Draft saved ${draftSavedAt}` : `${completion}% complete`}
+              </div>
               {step < totalSteps ? (
                 <button
                   onClick={goNext}
@@ -204,12 +263,71 @@ function OnboardingFlow() {
  * STEP COMPONENTS
  * ============================================================ */
 
+function UnlockJourney({ currentStep }: { currentStep: number }) {
+  const milestones = [
+    "Identity",
+    "Contact Information",
+    "Verification",
+    "Public Transparency",
+    "Trust Signals",
+    "Ready For Review",
+  ];
+
+  return (
+    <div className="mt-5 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      {milestones.map((item, index) => {
+        const done = currentStep > index + 1;
+        const active = currentStep === index + 1;
+        return (
+          <div
+            key={item}
+            className={`rounded-xl border px-3 py-2 text-[10px] font-semibold transition ${
+              done
+                ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
+                : active
+                ? "border-fuchsia-300/35 bg-fuchsia-500/10 text-fuchsia-100"
+                : "border-white/10 bg-white/[0.03] text-muted-foreground"
+            }`}
+          >
+            <span className="mr-1">{done ? "✓" : active ? "•" : "○"}</span>
+            {item}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function IdentityStep({ data, setData, category }: { data: any; setData: (p: any) => void; category: BrandCategory }) {
+  const handleAdd = (key: "logo" | "coverImage") => (files: File[]) => {
+    const next: UploadedFile[] = files.slice(0, 1).map((f) => ({
+      id: Math.random().toString(36).slice(2, 10),
+      name: f.name,
+      size: f.size,
+      status: "uploaded" as const,
+    }));
+    setData({ [key]: next });
+  };
+  const handleRemove = (key: "logo" | "coverImage") => () => setData({ [key]: [] });
+
   return (
     <>
+      <InfoNoteCard
+        title="Why this matters"
+        body="Your logo and cover image become the first trust signals traders see on your public profile after approval."
+        variant="info"
+      />
       <FieldShell label="Brand name" required>
         <TextField value={data.brandName ?? ""} onChange={(v) => setData({ brandName: v })} placeholder="e.g. PrimeEdge Capital" />
       </FieldShell>
+      <div className="grid gap-4 md:grid-cols-2">
+        <FieldShell label="Company logo" required helper="Used on listings, search, and your public profile">
+          <FileUploadBlock files={data.logo ?? []} onAdd={handleAdd("logo")} onRemove={handleRemove("logo")} />
+        </FieldShell>
+        <FieldShell label="Company cover image" required helper="Used as your public brand profile hero">
+          <FileUploadBlock files={data.coverImage ?? []} onAdd={handleAdd("coverImage")} onRemove={handleRemove("coverImage")} />
+        </FieldShell>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         <FieldShell label="Official website" required>
           <TextField value={data.website ?? ""} onChange={(v) => setData({ website: v })} placeholder="https://" />
@@ -547,7 +665,7 @@ function ReviewStep({ contact, setContact, data, score, cap, mode, breakdown, on
         disabled={!agree}
         className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3 text-sm font-bold text-white shadow-[0_0_24px_rgba(45,212,180,0.5)] transition disabled:opacity-50 hover:brightness-110"
       >
-        <Send className="mr-1 inline h-4 w-4" /> Publish my Trust Profile
+        <Send className="mr-1 inline h-4 w-4" /> Submit application for review
       </button>
     </>
   );
@@ -565,7 +683,7 @@ function SuccessScreen({ brandName, magicLink, onGoToDashboard }: { brandName: s
           </div>
           <h1 className="mt-6 text-3xl font-bold md:text-4xl">Welcome aboard, {brandName}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Your profile is in our review queue. We'll verify your documents within 48 hours and publish your Preliminary Trust Profile.
+            Your application has been received. We'll verify your documents and contact details, then convert the approved application into your public brand profile and Brand Dashboard.
           </p>
 
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left">
@@ -579,7 +697,7 @@ function SuccessScreen({ brandName, magicLink, onGoToDashboard }: { brandName: s
                 <Copy className="h-3 w-3" /> {copied ? "Copied!" : "Copy"}
               </button>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">In production this link is sent via email. Bookmark it to access your Trust Dashboard.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">In production this link is sent via email after approval. It opens the brand workspace for profile, reviews, complaints, announcements, and trust data.</p>
           </div>
 
           <button

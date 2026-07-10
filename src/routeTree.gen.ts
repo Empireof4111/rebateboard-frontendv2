@@ -21,9 +21,11 @@ import { Route as SignalProvidersRouteImport } from './routes/signal-providers'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ProgramsRouteImport } from './routes/programs'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LegalRouteImport } from './routes/legal'
+import { Route as HowWeMakeMoneyRouteImport } from './routes/how-we-make-money'
 import { Route as FuturesPropFirmsRouteImport } from './routes/futures-prop-firms'
 import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ExchangesRouteImport } from './routes/exchanges'
@@ -203,6 +205,11 @@ const ProgramsRoute = ProgramsRouteImport.update({
   path: '/programs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
@@ -216,6 +223,11 @@ const LoginRoute = LoginRouteImport.update({
 const LegalRoute = LegalRouteImport.update({
   id: '/legal',
   path: '/legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowWeMakeMoneyRoute = HowWeMakeMoneyRouteImport.update({
+  id: '/how-we-make-money',
+  path: '/how-we-make-money',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FuturesPropFirmsRoute = FuturesPropFirmsRouteImport.update({
@@ -837,9 +849,11 @@ export interface FileRoutesByFullPath {
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
   '/futures-prop-firms': typeof FuturesPropFirmsRoute
+  '/how-we-make-money': typeof HowWeMakeMoneyRoute
   '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/programs': typeof ProgramsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
@@ -970,8 +984,10 @@ export interface FileRoutesByTo {
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
   '/futures-prop-firms': typeof FuturesPropFirmsRoute
+  '/how-we-make-money': typeof HowWeMakeMoneyRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/programs': typeof ProgramsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
@@ -1104,9 +1120,11 @@ export interface FileRoutesById {
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
   '/futures-prop-firms': typeof FuturesPropFirmsRoute
+  '/how-we-make-money': typeof HowWeMakeMoneyRoute
   '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
+  '/pricing': typeof PricingRoute
   '/programs': typeof ProgramsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
@@ -1241,9 +1259,11 @@ export interface FileRouteTypes {
     | '/exchanges'
     | '/faqs'
     | '/futures-prop-firms'
+    | '/how-we-make-money'
     | '/legal'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/programs'
     | '/review'
     | '/reviews'
@@ -1374,8 +1394,10 @@ export interface FileRouteTypes {
     | '/exchanges'
     | '/faqs'
     | '/futures-prop-firms'
+    | '/how-we-make-money'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/programs'
     | '/review'
     | '/reviews'
@@ -1507,9 +1529,11 @@ export interface FileRouteTypes {
     | '/exchanges'
     | '/faqs'
     | '/futures-prop-firms'
+    | '/how-we-make-money'
     | '/legal'
     | '/login'
     | '/offers'
+    | '/pricing'
     | '/programs'
     | '/review'
     | '/reviews'
@@ -1643,9 +1667,11 @@ export interface RootRouteChildren {
   ExchangesRoute: typeof ExchangesRoute
   FaqsRoute: typeof FaqsRoute
   FuturesPropFirmsRoute: typeof FuturesPropFirmsRoute
+  HowWeMakeMoneyRoute: typeof HowWeMakeMoneyRoute
   LegalRoute: typeof LegalRouteWithChildren
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
+  PricingRoute: typeof PricingRoute
   ProgramsRoute: typeof ProgramsRoute
   ReviewRoute: typeof ReviewRoute
   ReviewsRoute: typeof ReviewsRouteWithChildren
@@ -1757,6 +1783,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offers': {
       id: '/offers'
       path: '/offers'
@@ -1776,6 +1809,13 @@ declare module '@tanstack/react-router' {
       path: '/legal'
       fullPath: '/legal'
       preLoaderRoute: typeof LegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-we-make-money': {
+      id: '/how-we-make-money'
+      path: '/how-we-make-money'
+      fullPath: '/how-we-make-money'
+      preLoaderRoute: typeof HowWeMakeMoneyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/futures-prop-firms': {
@@ -2858,9 +2898,11 @@ const rootRouteChildren: RootRouteChildren = {
   ExchangesRoute: ExchangesRoute,
   FaqsRoute: FaqsRoute,
   FuturesPropFirmsRoute: FuturesPropFirmsRoute,
+  HowWeMakeMoneyRoute: HowWeMakeMoneyRoute,
   LegalRoute: LegalRouteWithChildren,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
+  PricingRoute: PricingRoute,
   ProgramsRoute: ProgramsRoute,
   ReviewRoute: ReviewRoute,
   ReviewsRoute: ReviewsRouteWithChildren,

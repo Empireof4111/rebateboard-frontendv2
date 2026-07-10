@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Play,
@@ -22,6 +22,7 @@ import {
   Copy,
   Linkedin,
   Mail,
+  MessageSquare,
   UserCheck,
   UserPlus,
   Rocket,
@@ -210,6 +211,38 @@ function isAdminRole(role?: string | null) {
   return String(role || "").toUpperCase() === "ADMIN";
 }
 
+function isPropFirmCategory(category?: string) {
+  return /prop|funding|challenge/i.test(String(category || ""));
+}
+
+function reviewProviderTypeForCategory(category?: string) {
+  const value = String(category || "").toLowerCase();
+  if (value.includes("broker")) return "Broker";
+  if (value.includes("exchange") || value.includes("crypto")) return "Exchange";
+  if (value.includes("tool") || value.includes("software") || value.includes("journal")) {
+    return "Tool";
+  }
+  return "Prop Firm";
+}
+
+function buildReviewHref(slug: string, category?: string) {
+  const params = new URLSearchParams({
+    itemSlug: slug,
+    providerType: reviewProviderTypeForCategory(category),
+  });
+  return `/review?${params.toString()}`;
+}
+
+type BrandTopTab =
+  | "Overview"
+  | "Reviews"
+  | "Funding Programs"
+  | "Complaints"
+  | "Payouts"
+  | "Announcement"
+  | "TBI Breakdown"
+  | "Offers";
+
 function socialUrl(value?: string, network?: "x" | "linkedin") {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -321,6 +354,7 @@ function discountInfo(brand: SavedBrand | null) {
 
 type ProfileOfferInfo = {
   hasOffer: boolean;
+  label: string;
   discountLabel: string;
   code: string;
   description: string;
@@ -332,13 +366,26 @@ type ProfileOfferInfo = {
 
 function profileOfferInfo(brand: SavedBrand | null, offer: AdminOffer | null): ProfileOfferInfo {
   const brandDiscount = discountInfo(brand);
+  const category = String(brand?.category || "");
+  const isBroker = /broker/i.test(category);
+  const isExchange = /exchange|crypto/i.test(category);
+  const defaultLabel = isBroker
+    ? "Cashback available"
+    : isExchange
+      ? "Rewards available"
+      : "Offer live";
+  const defaultDescription = isBroker
+    ? "RebateBoard cashback details for this broker."
+    : isExchange
+      ? "RebateBoard reward details for this exchange."
+      : "Verified RebateBoard promotion for this brand.";
   const discountLabel = firstMeaningful(offer?.discount, brandDiscount.offerLabel);
   const code = firstMeaningful(offer?.code, brandDiscount.code);
   const description = firstMeaningful(
     offer?.description,
     offer?.title,
     brandDiscount.description,
-    brandDiscount.hasOffer ? "All users: challenge type dependent." : "",
+    brandDiscount.hasOffer ? defaultDescription : "",
   );
   const terms = firstMeaningful(offer?.terms, brandDiscount.description);
   const ctaUrl = externalUrl(
@@ -352,13 +399,14 @@ function profileOfferInfo(brand: SavedBrand | null, offer: AdminOffer | null): P
 
   return {
     hasOffer: Boolean(offer || brandDiscount.hasOffer || discountLabel || code),
-    discountLabel: discountLabel || "Offer live",
+    label: defaultLabel,
+    discountLabel: discountLabel || defaultLabel,
     code,
     description,
     terms,
     ctaUrl,
-    accentFrom: offer?.accentFrom || "#f59e0b",
-    accentTo: offer?.accentTo || "#fbbf24",
+    accentFrom: offer?.accentFrom || (isBroker ? "#22c55e" : isExchange ? "#38bdf8" : "#d946ef"),
+    accentTo: offer?.accentTo || (isBroker ? "#8b5cf6" : isExchange ? "#8b5cf6" : "#7c3aed"),
   };
 }
 
@@ -1727,16 +1775,14 @@ function FirmDetailsPage() {
   const name = brand?.name ?? decodeURIComponent(firmId).replace(/-/g, " ");
   const profileData = normalizePropFirmProfile(brand, name);
   const [activeIdx, setActiveIdx] = useState(0);
-  const topTabs = [
-    "Overview",
-    "Reviews",
-    "Funding Programs",
-    "Complaints",
-    "Payouts",
-    "Announcement",
-    "TBI Breakdown",
-  ] as const;
-  const [topTab, setTopTab] = useState<(typeof topTabs)[number]>("Overview");
+  const isPropFirm = isPropFirmCategory(brand?.category);
+  const topTabs = useMemo<BrandTopTab[]>(() => {
+    const tabs: BrandTopTab[] = ["Overview", "Reviews"];
+    if (isPropFirm) tabs.push("Funding Programs", "Payouts");
+    tabs.push("Complaints", "Offers", "Announcement", "TBI Breakdown");
+    return tabs;
+  }, [isPropFirm]);
+  const [topTab, setTopTab] = useState<BrandTopTab>("Overview");
   const tabsRef = useRef<HTMLDivElement>(null);
   const [stickyMetrics, setStickyMetrics] = useState({
     headerHeight: 142,
@@ -1794,6 +1840,10 @@ function FirmDetailsPage() {
   const xUrl = socialUrl(brand?.founder?.founderX, "x");
   const linkedInUrl = socialUrl(brand?.founder?.founderLi, "linkedin");
   const brandSlug = brand?.slug || firmId;
+  const reviewHref = buildReviewHref(brandSlug, brand?.category);
+  const tbiStage = brand
+    ? resolveBrandTbiState(brand, tbiProfile)
+    : (tbiProfile?.state ?? "preliminary");
   const isAdmin = isAdminRole(user?.role);
   const isBrandOwner = brandOwnerSession?.slug?.toLowerCase() === brandSlug.toLowerCase();
   const canEditProfile = isAdmin || isBrandOwner;
@@ -1841,7 +1891,9 @@ function FirmDetailsPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const header = document.querySelector<HTMLElement>("header.fixed");
+    const header =
+      document.querySelector<HTMLElement>("[data-site-header]") ??
+      document.querySelector<HTMLElement>("header.fixed");
     const tabs = tabsRef.current;
 
     const updateStickyMetrics = () => {
@@ -1866,6 +1918,10 @@ function FirmDetailsPage() {
       window.removeEventListener("resize", updateStickyMetrics);
     };
   }, []);
+
+  useEffect(() => {
+    if (!topTabs.includes(topTab)) setTopTab("Overview");
+  }, [topTab, topTabs]);
 
   useEffect(() => {
     if (topTab !== "Overview" || typeof window === "undefined") return;
@@ -2073,7 +2129,7 @@ function FirmDetailsPage() {
                     ) : null}
                   </div>
 
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                  <div className="mb-2 grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                     <a
                       href={
                         supportEmail
@@ -2084,13 +2140,19 @@ function FirmDetailsPage() {
                         if (!supportEmail) event.preventDefault();
                       }}
                       aria-disabled={!supportEmail}
-                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold ring-1 ${
+                      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold ring-1 ${
                         supportEmail
                           ? "bg-white/10 text-white ring-white/15 hover:bg-white/15"
                           : "cursor-not-allowed bg-white/5 text-white/35 ring-white/10"
                       }`}
                     >
                       <Mail className="h-3.5 w-3.5" /> Message
+                    </a>
+                    <a
+                      href={reviewHref}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" /> Review
                     </a>
                     <a
                       href={signupUrl || undefined}
@@ -2100,7 +2162,7 @@ function FirmDetailsPage() {
                         if (!signupUrl) event.preventDefault();
                       }}
                       aria-disabled={!signupUrl}
-                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ring-1 transition ${
+                      className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         signupUrl
                           ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40 hover:brightness-110"
                           : "cursor-not-allowed bg-white/5 text-white/35 ring-white/10"
@@ -2112,7 +2174,7 @@ function FirmDetailsPage() {
                       type="button"
                       disabled={followBusy || !brand?.id}
                       onClick={() => void toggleFollow()}
-                      className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold ring-1 transition ${
+                      className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         followState.isFollowing
                           ? "bg-white text-[#1a0b2e] ring-white/70 hover:bg-rose-50 hover:text-rose-700"
                           : "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40 hover:brightness-110"
@@ -2131,7 +2193,7 @@ function FirmDetailsPage() {
                 <div className="mt-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-2xl font-bold leading-tight sm:text-4xl">{name}</h1>
-                    <VerificationBadge />
+                    <VerificationBadge state={tbiStage} />
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span>{handle}</span>
@@ -2282,7 +2344,7 @@ function FirmDetailsPage() {
 
         <div
           ref={tabsRef}
-          className="mt-4 flex justify-center lg:sticky lg:z-40 lg:rounded-2xl lg:bg-[#16082a]/88 lg:px-3 lg:py-2 lg:shadow-xl lg:shadow-black/20 lg:ring-1 lg:ring-white/10 lg:backdrop-blur-2xl"
+          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[#16082a]/88 px-2 py-2 shadow-xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl lg:px-3"
           style={{ top: `${stickyTabsTop}px` }}
         >
           <div className="flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto py-0.5 lg:justify-center">
@@ -2316,6 +2378,7 @@ function FirmDetailsPage() {
               category={brand?.category || "Prop Firm"}
               checkoutLink={signupUrl}
               challenges={brand?.challenges}
+              stickyTop={stickySidebarTop}
             />
           </div>
         ) : topTab === "Complaints" ? (
@@ -2332,6 +2395,51 @@ function FirmDetailsPage() {
           </div>
         ) : topTab === "TBI Breakdown" ? (
           <TbiIndexContent brand={brand} profile={tbiProfile} score={tbiScore} />
+        ) : topTab === "Offers" ? (
+          <div className="mt-4 glass rounded-2xl p-6 ring-1 ring-white/10">
+            {profileOffer.hasOffer ? (
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-center">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-fuchsia-200/70">
+                    {profileOffer.label}
+                  </div>
+                  <h2 className="mt-2 text-2xl font-black text-white">
+                    {profileOffer.discountLabel}
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-white/70">
+                    {profileOffer.description ||
+                      "A verified RebateBoard offer is available for this brand."}
+                  </p>
+                </div>
+                {profileOffer.code ? (
+                  <button
+                    type="button"
+                    onClick={() => void copyDiscountCode(profileOffer.code)}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white ring-1 ring-white/15 transition hover:bg-white/15"
+                  >
+                    <Copy className="h-4 w-4" />
+                    {copiedCode ? "Copied" : profileOffer.code}
+                  </button>
+                ) : profileOffer.ctaUrl ? (
+                  <a
+                    href={profileOffer.ctaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-black text-white"
+                  >
+                    Claim Offer
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <div className="text-base font-semibold text-white">No active offer yet</div>
+                <p className="mt-2 text-sm text-white/60">
+                  Cashback, rebate, and partner offers will appear here when available.
+                </p>
+              </div>
+            )}
+          </div>
         ) : topTab !== "Overview" ? (
           <div className="mt-4 glass rounded-2xl p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
             <div className="text-base font-semibold text-white">{topTab}</div>
@@ -2340,8 +2448,11 @@ function FirmDetailsPage() {
         ) : (
           <div className="mt-4 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
             <aside
-              className="self-start lg:sticky"
-              style={{ top: `${stickySidebarTop}px` }}
+              className="self-start lg:sticky lg:overflow-y-auto lg:pr-1"
+              style={{
+                top: `${stickySidebarTop}px`,
+                maxHeight: `calc(100dvh - ${stickySidebarTop + 24}px)`,
+              }}
             >
               <div className="mb-3 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block">
                 Overview

@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   LineChart,
   LogOut,
+  Menu,
   MessageSquare,
   MonitorUp,
   Network,
@@ -34,6 +35,7 @@ import {
   User as UserIcon,
   WalletCards,
   Wrench,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -164,6 +166,8 @@ type HeaderNavItem = {
 };
 
 const navItems: HeaderNavItem[] = [
+  { labelKey: "nav.home", to: "/" },
+  { labelKey: "nav.earlyAccess", to: "/pricing" },
   {
     labelKey: "nav.propFirms",
     to: "/programs",
@@ -596,10 +600,186 @@ function UtilityMenu() {
   );
 }
 
+function MobileNavigationDrawer({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const [openGroup, setOpenGroup] = useState<string | null>("nav.propFirms");
+
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  return (
+    <div
+      className={`fixed inset-0 z-[70] lg:hidden ${
+        open ? "pointer-events-auto" : "pointer-events-none"
+      }`}
+      aria-hidden={!open}
+    >
+      <button
+        type="button"
+        aria-label="Close navigation"
+        onClick={onClose}
+        className={`absolute inset-0 bg-black/55 backdrop-blur-sm transition-opacity duration-200 ${
+          open ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <aside
+        className={`absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] flex-col border-l border-white/12 bg-[#12061f]/96 p-4 text-white shadow-[0_24px_100px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <Logo heightClass="h-8" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/[0.06] text-white ring-1 ring-white/10 transition hover:bg-white/[0.1]"
+            aria-label="Close menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2">
+          <LanguageSelector />
+          <Link
+            to="/signup"
+            onClick={onClose}
+            className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 text-xs font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
+          >
+            {t("common.signUp")}
+          </Link>
+        </div>
+
+        <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="space-y-2">
+            {navItems.map((item) => {
+              const hasChildren = Boolean(item.items?.length);
+              const expanded = openGroup === item.labelKey;
+
+              if (!hasChildren) {
+                return (
+                  <Link
+                    key={item.labelKey}
+                    to={item.to ?? "/"}
+                    onClick={onClose}
+                    className="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/88 ring-1 ring-white/8 transition hover:bg-white/[0.08]"
+                  >
+                    {t(item.labelKey)}
+                    <ArrowRightIcon />
+                  </Link>
+                );
+              }
+
+              return (
+                <div
+                  key={item.labelKey}
+                  className="overflow-hidden rounded-2xl bg-white/[0.035] ring-1 ring-white/8"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroup(expanded ? null : String(item.labelKey))}
+                    className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-white"
+                  >
+                    {t(item.labelKey)}
+                    <ChevronDown
+                      className={`h-4 w-4 text-white/58 transition-transform ${
+                        expanded ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ${
+                      expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <div className="grid gap-1 px-2 pb-2">
+                        {item.items?.map((sub) => {
+                          const Icon = sub.icon;
+                          return (
+                            <Link
+                              key={sub.labelKey}
+                              to={sub.to ?? "/"}
+                              onClick={onClose}
+                              className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
+                            >
+                              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200 ring-1 ring-violet-300/18 transition group-hover/menu:bg-violet-400/20 group-hover/menu:text-white">
+                                <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                              </span>
+                              <span className="min-w-0 pt-0.5">
+                                <span className="block text-xs font-semibold text-white">
+                                  {t(sub.labelKey)}
+                                </span>
+                                <span className="mt-1 block text-[10px] leading-4 text-white/50">
+                                  {sub.description}
+                                </span>
+                              </span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <div className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-violet-100/45">
+              Quick access
+            </div>
+            <div className="grid gap-2">
+              {utilityLinks.slice(0, 6).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    onClick={onClose}
+                    className="flex items-center gap-3 rounded-xl bg-white/[0.035] p-3 ring-1 ring-white/8 transition hover:bg-white/[0.075]"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold text-white">{item.label}</span>
+                      <span className="block truncate text-[10px] text-white/45">
+                        {item.description}
+                      </span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function ArrowRightIcon() {
+  return <span className="text-white/35">→</span>;
+}
+
 export function SiteHeader() {
   const { user } = useAuth();
   const { t } = useI18n();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -621,7 +801,10 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 bg-[#10051f]/16 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#10051f]/10">
+      <header
+        data-site-header
+        className="fixed inset-x-0 top-0 z-50 bg-[#10051f]/16 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#10051f]/10"
+      >
         <span className="hidden" aria-hidden>
           {user ? "auth" : "guest"}
         </span>
@@ -662,11 +845,19 @@ export function SiteHeader() {
                 </button>
                 {user ? <UserPill /> : <GuestActions />}
                 <UtilityMenu />
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(true)}
+                  aria-label="Open navigation menu"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.055] text-white ring-1 ring-white/10 transition hover:bg-white/[0.08] lg:hidden"
+                >
+                  <Menu className="h-4 w-4" />
+                </button>
               </div>
             </nav>
 
-            <div className="mt-2">
-              <div className="max-w-full overflow-x-auto no-scrollbar">
+            <div className="mt-2 hidden lg:block">
+              <div className="max-w-full">
                 <div className="flex w-max min-w-full items-center justify-center gap-1.5 lg:w-full">
                   {navItems.map((item) => (
                     <HeaderNavPill key={item.labelKey} item={item} />
@@ -678,7 +869,8 @@ export function SiteHeader() {
         </div>
         <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </header>
-      <div className="h-[calc(8.7rem+env(safe-area-inset-top))] sm:h-[calc(8.85rem+env(safe-area-inset-top))]" aria-hidden />
+      <MobileNavigationDrawer open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      <div className="h-[calc(4.85rem+env(safe-area-inset-top))] lg:h-[calc(8.85rem+env(safe-area-inset-top))]" aria-hidden />
     </>
   );
 }

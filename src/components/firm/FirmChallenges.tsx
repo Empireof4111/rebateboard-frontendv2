@@ -71,6 +71,7 @@ export function FirmChallenges({
   category = "Prop Firm",
   checkoutLink,
   challenges,
+  stickyTop,
 }: {
   firmName: string;
   brandId?: string;
@@ -78,6 +79,7 @@ export function FirmChallenges({
   category?: string;
   checkoutLink?: string;
   challenges?: unknown[];
+  stickyTop?: number;
 }) {
   const { user } = useAuth();
   const allChallenges = useMemo(() => normalizeChallenges(challenges), [challenges]);
@@ -228,7 +230,10 @@ export function FirmChallenges({
 
   return (
     <div className="space-y-4">
-      <div className="glass relative z-50 overflow-visible rounded-2xl p-4 ring-1 ring-violet-400/20">
+      <div
+        className="glass sticky z-40 overflow-visible rounded-2xl p-4 ring-1 ring-violet-400/20"
+        style={{ top: stickyTop ? `${stickyTop}px` : undefined }}
+      >
         <div className="flex flex-wrap items-center gap-2">
           <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold">
             <Filter className="h-3 w-3" /> Filter

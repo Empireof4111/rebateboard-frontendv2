@@ -1,11 +1,18 @@
 import { createFileRoute, useNavigate, Link, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { useAuth } from "../lib/auth";
-import { Sparkles, Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
+import { authErrorMessage, useAuth } from "../lib/auth";
+import { Mail, Lock, ArrowRight, ShieldCheck, Brain, BarChart3, Gift, type LucideIcon } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { useI18n } from "../lib/i18n";
 
 type LoginSearch = { reauth?: string; email?: string; redirect?: string };
+
+const LOGIN_FEATURES: { key: string; icon: LucideIcon }[] = [
+  { key: "auth.rebeta", icon: Brain },
+  { key: "auth.trueRoi", icon: BarChart3 },
+  { key: "auth.riskGuardrails", icon: ShieldCheck },
+  { key: "auth.rrRewards", icon: Gift },
+];
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -52,7 +59,7 @@ function LoginPage() {
             : "/signup");
       navigate({ to: destination as string });
     } catch (ex) {
-      setError(ex instanceof Error ? ex.message : t("auth.loginFailed"));
+      setError(authErrorMessage(ex, "login") || t("auth.loginFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -79,9 +86,9 @@ function LoginPage() {
               {t("auth.heroSubtitle")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              {["auth.rebeta", "auth.trueRoi", "auth.riskGuardrails", "auth.rrRewards"].map((key) => (
+              {LOGIN_FEATURES.map(({ key, icon: Icon }) => (
                 <span key={key} className="glass-pill rounded-full px-3 py-1.5 text-xs text-white/90">
-                  <Sparkles className="mr-1 inline h-3 w-3 text-accent" />
+                  <Icon className="mr-1 inline h-3 w-3 text-violet-300" />
                   {t(key)}
                 </span>
               ))}

@@ -30,6 +30,11 @@ export type UploadedFile = {
   url?: string; // data URL in mock mode
 };
 
+export type BrandApplicationSettings = {
+  enabled: boolean;
+  updatedAt?: string;
+};
+
 export type BrandSubmission = {
   id: string;
   category: BrandCategory;
@@ -221,12 +226,76 @@ export function improvementSuggestions(submission: BrandSubmission): { text: str
 }
 
 /* ============================================================
- * SUBMISSION STORE (in-memory + sessionStorage)
+ * APPLICATION SETTINGS + DRAFTS
  * ============================================================ */
 
+const SETTINGS_KEY = "rb-brand-application-settings";
+const DRAFT_KEY = "rb-brand-application-drafts";
 const STORAGE_KEY = "rb-tbi-submissions";
 let cache: BrandSubmission[] | null = null;
 const listeners = new Set<() => void>();
+
+function emit() {
+  listeners.forEach((fn) => fn());
+}
+
+function readJson<T>(key: string, fallback: T, storage: Storage | undefined): T {
+  if (!storage) return fallback;
+  try {
+    const raw = storage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson<T>(key: string, value: T, storage: Storage | undefined) {
+  if (!storage) return;
+  try {
+    storage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
+export function getBrandApplicationSettings(): BrandApplicationSettings {
+  if (typeof window === "undefined") return { enabled: true };
+  return readJson<BrandApplicationSettings>(SETTINGS_KEY, { enabled: true }, window.localStorage);
+}
+
+export function setBrandApplicationSettings(patch: Partial<BrandApplicationSettings>): BrandApplicationSettings {
+  const next = { ...getBrandApplicationSettings(), ...patch, updatedAt: new Date().toISOString() };
+  if (typeof window !== "undefined") writeJson(SETTINGS_KEY, next, window.localStorage);
+  emit();
+  return next;
+}
+
+export function useBrandApplicationSettings(): BrandApplicationSettings {
+  return useSyncExternalStore(subscribe, getBrandApplicationSettings, getBrandApplicationSettings);
+}
+
+export function getApplicationDraft(category: BrandCategory): Record<string, any> | null {
+  if (typeof window === "undefined") return null;
+  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, window.localStorage);
+  return drafts[category] ?? null;
+}
+
+export function saveApplicationDraft(category: BrandCategory, data: Record<string, any>) {
+  if (typeof window === "undefined") return;
+  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, window.localStorage);
+  writeJson(DRAFT_KEY, { ...drafts, [category]: data }, window.localStorage);
+  emit();
+}
+
+export function clearApplicationDraft(category: BrandCategory) {
+  if (typeof window === "undefined") return;
+  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, window.localStorage);
+  delete drafts[category];
+  writeJson(DRAFT_KEY, drafts, window.localStorage);
+  emit();
+}
+
+/* ============================================================
+ * SUBMISSION STORE (in-memory + sessionStorage)
+ * ============================================================ */
 
 function load(): BrandSubmission[] {
   if (cache) return cache;
@@ -244,7 +313,7 @@ function save(next: BrandSubmission[]) {
   if (typeof window !== "undefined") {
     try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   }
-  listeners.forEach((fn) => fn());
+  emit();
 }
 
 function subscribe(fn: () => void) { listeners.add(fn); return () => listeners.delete(fn); }

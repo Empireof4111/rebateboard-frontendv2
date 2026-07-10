@@ -42,6 +42,8 @@ const en: Dictionary = {
   "common.profile": "Profile",
   "common.logout": "Log out",
   "header.welcome": "Hi, welcome back",
+  "nav.home": "Home",
+  "nav.earlyAccess": "Early Access",
   "nav.propFirms": "Prop Firms",
   "nav.allPropFirms": "All Prop Firms",
   "nav.forexPropFirms": "Forex Prop Firms",

@@ -118,6 +118,57 @@ type LoginResponse = {
 const AuthContext = createContext<AuthContextType | null>(null);
 const STORAGE_KEY = "rb_auth_session";
 
+export function authErrorMessage(error: unknown, flow: "login" | "signup" | "verify" = "login") {
+  const raw = error instanceof Error ? error.message : String(error ?? "");
+  const message = raw.toLowerCase();
+
+  if (message.includes("email") && (message.includes("already") || message.includes("exist") || message.includes("duplicate"))) {
+    return "An account with this email already exists. Please sign in or use another email.";
+  }
+
+  if (message.includes("username") && (message.includes("already") || message.includes("taken") || message.includes("exist") || message.includes("duplicate"))) {
+    return "That username is already taken. Please choose another one.";
+  }
+
+  if (message.includes("phone") && (message.includes("already") || message.includes("exist") || message.includes("duplicate"))) {
+    return "An account with this phone number already exists. Please use another phone number.";
+  }
+
+  if (message.includes("invalid email") || message.includes("valid email")) {
+    return "Please enter a valid email address.";
+  }
+
+  if (message.includes("invalid") && message.includes("credential")) {
+    return "Please check your email or username and password, then try again.";
+  }
+
+  if (message.includes("password")) {
+    return flow === "signup"
+      ? "Please check the password requirements and try again."
+      : "Please check your password and try again.";
+  }
+
+  if (message.includes("network") || message.includes("temporarily unavailable") || message.includes("failed to fetch")) {
+    return "RebateBoard is having trouble connecting right now. Please try again in a moment.";
+  }
+
+  if (flow === "signup") {
+    return raw && !message.includes("something went wrong")
+      ? raw
+      : "We couldn’t create your account right now. Please review your details and try again.";
+  }
+
+  if (flow === "verify") {
+    return raw && !message.includes("something went wrong")
+      ? raw
+      : "We couldn’t verify that code. Please check the code and try again.";
+  }
+
+  return raw && !message.includes("something went wrong")
+    ? raw
+    : "We couldn’t sign you in right now. Please check your details and try again.";
+}
+
 function emptyAnswers(): OnboardingAnswers {
   return {
     preferredMarkets: [],

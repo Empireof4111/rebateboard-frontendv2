@@ -38,14 +38,16 @@ export function resolveBrandTbiState(
   const trust = asRecord(brand.trust);
 
   return (
-    normalizeTbiState(profile?.state) ??
     normalizeTbiState(trust.stateOverride) ??
+    normalizeTbiState(trust.manualState) ??
+    normalizeTbiState(trust.manualLevel) ??
     normalizeTbiState(trust.state) ??
     normalizeTbiState(trust.trustScoreMode) ??
     normalizeTbiState(trust.tbiState) ??
     normalizeTbiState(brandProfile.state) ??
     normalizeTbiState(brandProfile.trustScoreMode) ??
     normalizeTbiState(brandProfile.tbiState) ??
+    normalizeTbiState(profile?.state) ??
     "preliminary"
   );
 }

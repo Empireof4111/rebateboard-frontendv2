@@ -15,7 +15,7 @@ export const Route = createFileRoute("/superadmin/brand-requests")({
 const STATUS_TABS: { id: "all" | ReviewStatus; label: string }[] = [
   { id: "all", label: "All" },
   { id: "pending", label: "Pending" },
-  { id: "changes_requested", label: "Changes Requested" },
+  { id: "changes_requested", label: "Need More Information" },
   { id: "approved", label: "Approved" },
   { id: "rejected", label: "Rejected" },
 ];
@@ -44,8 +44,8 @@ function BrandRequestsPage() {
   return (
     <div>
       <PageHeader
-        title="Brand Requests"
-        subtitle={`${counts.pending ?? 0} pending · ${submissions.length} total submissions across all categories`}
+        title="Brand Applications"
+        subtitle={`${counts.pending ?? 0} pending · ${submissions.length} total applications across all categories`}
       />
 
       {/* Status tabs */}
@@ -68,7 +68,7 @@ function BrandRequestsPage() {
         })}
       </div>
 
-      <Panel title={`${filtered.length} request${filtered.length === 1 ? "" : "s"}`}>
+      <Panel title={`${filtered.length} application${filtered.length === 1 ? "" : "s"}`}>
         <Toolbar>
           <div className="glass flex flex-1 items-center gap-2 rounded-full px-3 py-1.5 text-xs">
             <Search className="h-3.5 w-3.5 text-muted-foreground" />
@@ -121,7 +121,7 @@ function BrandRequestsPage() {
                     s.status === "rejected" ? "bg-rose-500/15 text-rose-300 ring-rose-400/30" :
                     s.status === "changes_requested" ? "bg-amber-500/15 text-amber-300 ring-amber-400/30" :
                     "bg-violet-500/15 text-violet-300 ring-violet-400/30"
-                  }`}>{s.status.replace("_", " ")}</span>
+                  }`}>{s.status === "changes_requested" ? "need more info" : s.status.replace("_", " ")}</span>
                 </td>
                 <td className="text-right">
                   <div className="flex justify-end gap-1">
@@ -139,7 +139,7 @@ function BrandRequestsPage() {
             );
           })}
           {filtered.length === 0 && (
-            <tr><td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">No requests in this view.</td></tr>
+            <tr><td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">No applications in this view.</td></tr>
           )}
         </DataTable>
       </Panel>
@@ -155,7 +155,7 @@ function BrandRequestsPage() {
           onClose={() => setReviewAction(null)}
           onConfirm={(note) => {
             const { submission, type } = reviewAction;
-            if (type === "approve") { approveSubmission(submission.id, note); toast.success(`${submission.brandName} approved & published`); }
+            if (type === "approve") { approveSubmission(submission.id, note); toast.success(`${submission.brandName} approved and converted into a public brand profile`); }
             if (type === "reject") { rejectSubmission(submission.id, note); toast.success(`${submission.brandName} rejected`); }
             if (type === "changes") { requestChanges(submission.id, note); toast.success(`Changes requested from ${submission.brandName}`); }
             setReviewAction(null);
@@ -244,10 +244,10 @@ function SubmissionDetailModal({ submission, onClose, onAction }: { submission: 
 function ReviewActionModal({ submission, type, onClose, onConfirm }: { submission: BrandSubmission; type: "approve" | "reject" | "changes"; onClose: () => void; onConfirm: (note: string) => void }) {
   const [note, setNote] = useState("");
   const meta = type === "approve"
-    ? { title: `Approve ${submission.brandName}?`, body: "This publishes the brand's profile with a Preliminary Score visible on /tbi.", cta: "Approve & publish", color: "from-emerald-500 to-teal-500" }
+    ? { title: `Approve ${submission.brandName}?`, body: "This converts the application into a public brand profile and prepares the brand workspace.", cta: "Approve & publish", color: "from-emerald-500 to-teal-500" }
     : type === "reject"
     ? { title: `Reject ${submission.brandName}?`, body: "The brand will see your reason on their dashboard. They can resubmit later.", cta: "Reject submission", color: "from-rose-500 to-rose-600" }
-    : { title: `Request changes from ${submission.brandName}?`, body: "Tell them exactly what to fix. They can update and resubmit.", cta: "Send change request", color: "from-amber-500 to-amber-600" };
+    : { title: `Request more information from ${submission.brandName}?`, body: "Tell them exactly what to add or clarify. They can update and resubmit.", cta: "Request information", color: "from-amber-500 to-amber-600" };
 
   return (
     <Modal open onClose={onClose} title={meta.title} subtitle={meta.body} size="md"
