@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { TrustScoreCard } from "@/components/tbi/OnboardingPrimitives";
 import { CATEGORY_META, useBrandApplicationSettings, type BrandCategory } from "@/lib/tbi-onboarding";
 import { Shield, ArrowRight, CheckCircle2, Sparkles, TrendingUp, Lock, Bell, Mail } from "lucide-react";
 
@@ -96,13 +95,42 @@ function BusinessJoinPage() {
 
             {/* Live preview card */}
             <div className="space-y-3">
-              <TrustScoreCard score={null} status="none" helperText="Your future preview — start the application to begin scoring." />
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_70px_rgba(76,29,149,0.26)]">
+                <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-fuchsia-500/20 blur-3xl" />
+                <div className="relative">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-200/70">Trust Profile Preview</div>
+                      <div className="mt-1 text-lg font-bold text-white">Preliminary profile</div>
+                    </div>
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/10 text-fuchsia-200">
+                      <Shield className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex items-end gap-2">
+                    <span className="text-5xl font-black tracking-tight text-white">—</span>
+                    <span className="pb-2 text-sm font-semibold text-white/45">/10</span>
+                  </div>
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-xs leading-6 text-muted-foreground">
+                    Your score starts once you submit a brand application. We use your company information, verification proof, and trader feedback to build the trust profile.
+                  </div>
+                </div>
+              </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs">
                 <div className="font-bold text-white/90">Your unlock journey</div>
                 <ol className="mt-2 space-y-1.5 text-muted-foreground">
-                  <li>1️⃣ Submit data → <span className="text-fuchsia-300">Preliminary score (≤ 6.5)</span></li>
-                  <li>2️⃣ 5+ reviews → <span className="text-amber-300">Partially unlocked</span></li>
-                  <li>3️⃣ 10+ reviews → <span className="text-emerald-300">Fully verified TBI</span></li>
+                  <li className="flex gap-2">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-fuchsia-400/15 text-[10px] font-bold text-fuchsia-200">1</span>
+                    <span>Submit data → <span className="text-fuchsia-300">Preliminary score</span></span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-violet-400/15 text-[10px] font-bold text-violet-200">2</span>
+                    <span>5+ verified reviews → <span className="text-violet-200">Partially unlocked</span></span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-400/15 text-[10px] font-bold text-emerald-200">3</span>
+                    <span>10+ verified reviews → <span className="text-emerald-300">Fully verified TBI</span></span>
+                  </li>
                 </ol>
               </div>
             </div>
@@ -111,13 +139,16 @@ function BusinessJoinPage() {
 
         {/* BENEFITS */}
         <section className="mt-10 grid gap-4 md:grid-cols-4">
-          {BENEFITS.map((b) => (
-            <div key={b.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-fuchsia-400/30">
-              <b.icon className="h-5 w-5 text-fuchsia-300" />
-              <div className="mt-2 text-sm font-bold">{b.title}</div>
-              <p className="mt-1 text-xs text-muted-foreground">{b.text}</p>
-            </div>
-          ))}
+          {BENEFITS.map((b) => {
+            const Icon = b.icon;
+            return (
+              <div key={b.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-fuchsia-400/30">
+                <Icon className="h-5 w-5 text-fuchsia-300" />
+                <div className="mt-2 text-sm font-bold">{b.title}</div>
+                <p className="mt-1 text-xs text-muted-foreground">{b.text}</p>
+              </div>
+            );
+          })}
         </section>
 
         {/* CATEGORIES */}
