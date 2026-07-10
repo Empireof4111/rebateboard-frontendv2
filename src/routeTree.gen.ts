@@ -9,40 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrtRouteImport } from './routes/trt'
 import { Route as TradingToolsRouteImport } from './routes/trading-tools'
 import { Route as TradingSoftwareRouteImport } from './routes/trading-software'
 import { Route as TradingPlatformsRouteImport } from './routes/trading-platforms'
+import { Route as TradingPlanRouteImport } from './routes/trading-plan'
 import { Route as TradingJournalsRouteImport } from './routes/trading-journals'
 import { Route as TradingCalculatorsRouteImport } from './routes/trading-calculators'
+import { Route as TraderTbiRouteImport } from './routes/trader-tbi'
+import { Route as TopPropFirmSellersRouteImport } from './routes/top-prop-firm-sellers'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as StockPropFirmsRouteImport } from './routes/stock-prop-firms'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SignalProvidersRouteImport } from './routes/signal-providers'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as RebetaAiRouteImport } from './routes/rebeta-ai'
+import { Route as RebateRewardsRouteImport } from './routes/rebate-rewards'
+import { Route as PromotionsRouteImport } from './routes/promotions'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PressRouteImport } from './routes/press'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as MeritAwardsRouteImport } from './routes/merit-awards'
+import { Route as MarketNewsRouteImport } from './routes/market-news'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as HowWeMakeMoneyRouteImport } from './routes/how-we-make-money'
+import { Route as HelpCenterRouteImport } from './routes/help-center'
 import { Route as FuturesPropFirmsRouteImport } from './routes/futures-prop-firms'
 import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ExchangesRouteImport } from './routes/exchanges'
 import { Route as EducationProvidersRouteImport } from './routes/education-providers'
 import { Route as EconomicCalendarRouteImport } from './routes/economic-calendar'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DexPropFirmsRouteImport } from './routes/dex-prop-firms'
 import { Route as DemoAccountsRouteImport } from './routes/demo-accounts'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CryptoPropFirmsRouteImport } from './routes/crypto-prop-firms'
+import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as CopyTradingPlatformsRouteImport } from './routes/copy-trading-platforms'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as CommunityRouteImport } from './routes/community'
+import { Route as CashbackCalculatorRouteImport } from './routes/cashback-calculator'
 import { Route as CashbackRouteImport } from './routes/cashback'
+import { Route as CareersRouteImport } from './routes/careers'
 import { Route as BugBountyRouteImport } from './routes/bug-bounty'
 import { Route as BrokersRouteImport } from './routes/brokers'
 import { Route as BrandRouteImport } from './routes/brand'
+import { Route as BonusesRouteImport } from './routes/bonuses'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AiBacktestingLabRouteImport } from './routes/ai-backtesting-lab'
+import { Route as AffiliateProgramRouteImport } from './routes/affiliate-program'
 import { Route as AcademyRouteImport } from './routes/academy'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TbiIndexRouteImport } from './routes/tbi.index'
 import { Route as SuperadminIndexRouteImport } from './routes/superadmin.index'
@@ -145,6 +170,11 @@ import { Route as SuperadminBrandsNewRouteImport } from './routes/superadmin.bra
 import { Route as BusinessOnboardingCategoryRouteImport } from './routes/business.onboarding.$category'
 import { Route as PayoutsBrandSlugTransactionTxIdRouteImport } from './routes/payouts.$brandSlug.transaction.$txId'
 
+const TrtRoute = TrtRouteImport.update({
+  id: '/trt',
+  path: '/trt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradingToolsRoute = TradingToolsRouteImport.update({
   id: '/trading-tools',
   path: '/trading-tools',
@@ -160,6 +190,11 @@ const TradingPlatformsRoute = TradingPlatformsRouteImport.update({
   path: '/trading-platforms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TradingPlanRoute = TradingPlanRouteImport.update({
+  id: '/trading-plan',
+  path: '/trading-plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradingJournalsRoute = TradingJournalsRouteImport.update({
   id: '/trading-journals',
   path: '/trading-journals',
@@ -170,6 +205,16 @@ const TradingCalculatorsRoute = TradingCalculatorsRouteImport.update({
   path: '/trading-calculators',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TraderTbiRoute = TraderTbiRouteImport.update({
+  id: '/trader-tbi',
+  path: '/trader-tbi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopPropFirmSellersRoute = TopPropFirmSellersRouteImport.update({
+  id: '/top-prop-firm-sellers',
+  path: '/top-prop-firm-sellers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuperadminRoute = SuperadminRouteImport.update({
   id: '/superadmin',
   path: '/superadmin',
@@ -178,6 +223,11 @@ const SuperadminRoute = SuperadminRouteImport.update({
 const StockPropFirmsRoute = StockPropFirmsRouteImport.update({
   id: '/stock-prop-firms',
   path: '/stock-prop-firms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -200,6 +250,26 @@ const ReviewRoute = ReviewRouteImport.update({
   path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RebetaAiRoute = RebetaAiRouteImport.update({
+  id: '/rebeta-ai',
+  path: '/rebeta-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RebateRewardsRoute = RebateRewardsRouteImport.update({
+  id: '/rebate-rewards',
+  path: '/rebate-rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PromotionsRoute = PromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
@@ -210,9 +280,24 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PressRoute = PressRouteImport.update({
+  id: '/press',
+  path: '/press',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeritAwardsRoute = MeritAwardsRouteImport.update({
+  id: '/merit-awards',
+  path: '/merit-awards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketNewsRoute = MarketNewsRouteImport.update({
+  id: '/market-news',
+  path: '/market-news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -228,6 +313,11 @@ const LegalRoute = LegalRouteImport.update({
 const HowWeMakeMoneyRoute = HowWeMakeMoneyRouteImport.update({
   id: '/how-we-make-money',
   path: '/how-we-make-money',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpCenterRoute = HelpCenterRouteImport.update({
+  id: '/help-center',
+  path: '/help-center',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FuturesPropFirmsRoute = FuturesPropFirmsRouteImport.update({
@@ -255,6 +345,11 @@ const EconomicCalendarRoute = EconomicCalendarRouteImport.update({
   path: '/economic-calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DexPropFirmsRoute = DexPropFirmsRouteImport.update({
   id: '/dex-prop-firms',
   path: '/dex-prop-firms',
@@ -263,6 +358,11 @@ const DexPropFirmsRoute = DexPropFirmsRouteImport.update({
 const DemoAccountsRoute = DemoAccountsRouteImport.update({
   id: '/demo-accounts',
   path: '/demo-accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -275,9 +375,19 @@ const CryptoPropFirmsRoute = CryptoPropFirmsRouteImport.update({
   path: '/crypto-prop-firms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CouponsRoute = CouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CopyTradingPlatformsRoute = CopyTradingPlatformsRouteImport.update({
   id: '/copy-trading-platforms',
   path: '/copy-trading-platforms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -285,9 +395,24 @@ const CompareRoute = CompareRouteImport.update({
   path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CashbackCalculatorRoute = CashbackCalculatorRouteImport.update({
+  id: '/cashback-calculator',
+  path: '/cashback-calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CashbackRoute = CashbackRouteImport.update({
   id: '/cashback',
   path: '/cashback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BugBountyRoute = BugBountyRouteImport.update({
@@ -305,14 +430,39 @@ const BrandRoute = BrandRouteImport.update({
   path: '/brand',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BonusesRoute = BonusesRouteImport.update({
+  id: '/bonuses',
+  path: '/bonuses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiBacktestingLabRoute = AiBacktestingLabRouteImport.update({
+  id: '/ai-backtesting-lab',
+  path: '/ai-backtesting-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AffiliateProgramRoute = AffiliateProgramRouteImport.update({
+  id: '/affiliate-program',
+  path: '/affiliate-program',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcademyRoute = AcademyRouteImport.update({
   id: '/academy',
   path: '/academy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -832,40 +982,65 @@ const PayoutsBrandSlugTransactionTxIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
+  '/affiliate-program': typeof AffiliateProgramRoute
+  '/ai-backtesting-lab': typeof AiBacktestingLabRoute
+  '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
+  '/bonuses': typeof BonusesRoute
   '/brand': typeof BrandRouteWithChildren
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
+  '/careers': typeof CareersRoute
   '/cashback': typeof CashbackRoute
+  '/cashback-calculator': typeof CashbackCalculatorRoute
+  '/community': typeof CommunityRoute
   '/compare': typeof CompareRoute
+  '/contact': typeof ContactRoute
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
+  '/coupons': typeof CouponsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deals': typeof DealsRoute
   '/demo-accounts': typeof DemoAccountsRoute
   '/dex-prop-firms': typeof DexPropFirmsRoute
+  '/docs': typeof DocsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
   '/futures-prop-firms': typeof FuturesPropFirmsRoute
+  '/help-center': typeof HelpCenterRoute
   '/how-we-make-money': typeof HowWeMakeMoneyRoute
   '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
+  '/market-news': typeof MarketNewsRoute
+  '/merit-awards': typeof MeritAwardsRoute
   '/offers': typeof OffersRoute
+  '/press': typeof PressRoute
   '/pricing': typeof PricingRoute
   '/programs': typeof ProgramsRoute
+  '/promotions': typeof PromotionsRoute
+  '/rebate-rewards': typeof RebateRewardsRoute
+  '/rebeta-ai': typeof RebetaAiRoute
+  '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
   '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/status': typeof StatusRoute
   '/stock-prop-firms': typeof StockPropFirmsRoute
   '/superadmin': typeof SuperadminRouteWithChildren
+  '/top-prop-firm-sellers': typeof TopPropFirmSellersRoute
+  '/trader-tbi': typeof TraderTbiRoute
   '/trading-calculators': typeof TradingCalculatorsRoute
   '/trading-journals': typeof TradingJournalsRoute
+  '/trading-plan': typeof TradingPlanRoute
   '/trading-platforms': typeof TradingPlatformsRoute
   '/trading-software': typeof TradingSoftwareRoute
   '/trading-tools': typeof TradingToolsRoute
+  '/trt': typeof TrtRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/brand/analytics': typeof BrandAnalyticsRoute
   '/brand/announcements': typeof BrandAnnouncementsRoute
@@ -969,36 +1144,61 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
+  '/affiliate-program': typeof AffiliateProgramRoute
+  '/ai-backtesting-lab': typeof AiBacktestingLabRoute
+  '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
+  '/bonuses': typeof BonusesRoute
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
+  '/careers': typeof CareersRoute
   '/cashback': typeof CashbackRoute
+  '/cashback-calculator': typeof CashbackCalculatorRoute
+  '/community': typeof CommunityRoute
   '/compare': typeof CompareRoute
+  '/contact': typeof ContactRoute
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
+  '/coupons': typeof CouponsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
+  '/deals': typeof DealsRoute
   '/demo-accounts': typeof DemoAccountsRoute
   '/dex-prop-firms': typeof DexPropFirmsRoute
+  '/docs': typeof DocsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
   '/futures-prop-firms': typeof FuturesPropFirmsRoute
+  '/help-center': typeof HelpCenterRoute
   '/how-we-make-money': typeof HowWeMakeMoneyRoute
   '/login': typeof LoginRoute
+  '/market-news': typeof MarketNewsRoute
+  '/merit-awards': typeof MeritAwardsRoute
   '/offers': typeof OffersRoute
+  '/press': typeof PressRoute
   '/pricing': typeof PricingRoute
   '/programs': typeof ProgramsRoute
+  '/promotions': typeof PromotionsRoute
+  '/rebate-rewards': typeof RebateRewardsRoute
+  '/rebeta-ai': typeof RebetaAiRoute
+  '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
   '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/status': typeof StatusRoute
   '/stock-prop-firms': typeof StockPropFirmsRoute
+  '/top-prop-firm-sellers': typeof TopPropFirmSellersRoute
+  '/trader-tbi': typeof TraderTbiRoute
   '/trading-calculators': typeof TradingCalculatorsRoute
   '/trading-journals': typeof TradingJournalsRoute
+  '/trading-plan': typeof TradingPlanRoute
   '/trading-platforms': typeof TradingPlatformsRoute
   '/trading-software': typeof TradingSoftwareRoute
   '/trading-tools': typeof TradingToolsRoute
+  '/trt': typeof TrtRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/brand/analytics': typeof BrandAnalyticsRoute
   '/brand/announcements': typeof BrandAnnouncementsRoute
@@ -1103,40 +1303,65 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/academy': typeof AcademyRoute
+  '/affiliate-program': typeof AffiliateProgramRoute
+  '/ai-backtesting-lab': typeof AiBacktestingLabRoute
+  '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
+  '/bonuses': typeof BonusesRoute
   '/brand': typeof BrandRouteWithChildren
   '/brokers': typeof BrokersRoute
   '/bug-bounty': typeof BugBountyRoute
+  '/careers': typeof CareersRoute
   '/cashback': typeof CashbackRoute
+  '/cashback-calculator': typeof CashbackCalculatorRoute
+  '/community': typeof CommunityRoute
   '/compare': typeof CompareRoute
+  '/contact': typeof ContactRoute
   '/copy-trading-platforms': typeof CopyTradingPlatformsRoute
+  '/coupons': typeof CouponsRoute
   '/crypto-prop-firms': typeof CryptoPropFirmsRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deals': typeof DealsRoute
   '/demo-accounts': typeof DemoAccountsRoute
   '/dex-prop-firms': typeof DexPropFirmsRoute
+  '/docs': typeof DocsRoute
   '/economic-calendar': typeof EconomicCalendarRoute
   '/education-providers': typeof EducationProvidersRoute
   '/exchanges': typeof ExchangesRoute
   '/faqs': typeof FaqsRoute
   '/futures-prop-firms': typeof FuturesPropFirmsRoute
+  '/help-center': typeof HelpCenterRoute
   '/how-we-make-money': typeof HowWeMakeMoneyRoute
   '/legal': typeof LegalRouteWithChildren
   '/login': typeof LoginRoute
+  '/market-news': typeof MarketNewsRoute
+  '/merit-awards': typeof MeritAwardsRoute
   '/offers': typeof OffersRoute
+  '/press': typeof PressRoute
   '/pricing': typeof PricingRoute
   '/programs': typeof ProgramsRoute
+  '/promotions': typeof PromotionsRoute
+  '/rebate-rewards': typeof RebateRewardsRoute
+  '/rebeta-ai': typeof RebetaAiRoute
+  '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/reviews': typeof ReviewsRouteWithChildren
   '/signal-providers': typeof SignalProvidersRoute
   '/signup': typeof SignupRoute
+  '/status': typeof StatusRoute
   '/stock-prop-firms': typeof StockPropFirmsRoute
   '/superadmin': typeof SuperadminRouteWithChildren
+  '/top-prop-firm-sellers': typeof TopPropFirmSellersRoute
+  '/trader-tbi': typeof TraderTbiRoute
   '/trading-calculators': typeof TradingCalculatorsRoute
   '/trading-journals': typeof TradingJournalsRoute
+  '/trading-plan': typeof TradingPlanRoute
   '/trading-platforms': typeof TradingPlatformsRoute
   '/trading-software': typeof TradingSoftwareRoute
   '/trading-tools': typeof TradingToolsRoute
+  '/trt': typeof TrtRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/brand/analytics': typeof BrandAnalyticsRoute
   '/brand/announcements': typeof BrandAnnouncementsRoute
@@ -1242,40 +1467,65 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/academy'
+    | '/affiliate-program'
+    | '/ai-backtesting-lab'
+    | '/analytics'
     | '/blog'
+    | '/bonuses'
     | '/brand'
     | '/brokers'
     | '/bug-bounty'
+    | '/careers'
     | '/cashback'
+    | '/cashback-calculator'
+    | '/community'
     | '/compare'
+    | '/contact'
     | '/copy-trading-platforms'
+    | '/coupons'
     | '/crypto-prop-firms'
     | '/dashboard'
+    | '/deals'
     | '/demo-accounts'
     | '/dex-prop-firms'
+    | '/docs'
     | '/economic-calendar'
     | '/education-providers'
     | '/exchanges'
     | '/faqs'
     | '/futures-prop-firms'
+    | '/help-center'
     | '/how-we-make-money'
     | '/legal'
     | '/login'
+    | '/market-news'
+    | '/merit-awards'
     | '/offers'
+    | '/press'
     | '/pricing'
     | '/programs'
+    | '/promotions'
+    | '/rebate-rewards'
+    | '/rebeta-ai'
+    | '/reports'
     | '/review'
     | '/reviews'
     | '/signal-providers'
     | '/signup'
+    | '/status'
     | '/stock-prop-firms'
     | '/superadmin'
+    | '/top-prop-firm-sellers'
+    | '/trader-tbi'
     | '/trading-calculators'
     | '/trading-journals'
+    | '/trading-plan'
     | '/trading-platforms'
     | '/trading-software'
     | '/trading-tools'
+    | '/trt'
     | '/articles/$id'
     | '/brand/analytics'
     | '/brand/announcements'
@@ -1379,36 +1629,61 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/academy'
+    | '/affiliate-program'
+    | '/ai-backtesting-lab'
+    | '/analytics'
     | '/blog'
+    | '/bonuses'
     | '/brokers'
     | '/bug-bounty'
+    | '/careers'
     | '/cashback'
+    | '/cashback-calculator'
+    | '/community'
     | '/compare'
+    | '/contact'
     | '/copy-trading-platforms'
+    | '/coupons'
     | '/crypto-prop-firms'
+    | '/deals'
     | '/demo-accounts'
     | '/dex-prop-firms'
+    | '/docs'
     | '/economic-calendar'
     | '/education-providers'
     | '/exchanges'
     | '/faqs'
     | '/futures-prop-firms'
+    | '/help-center'
     | '/how-we-make-money'
     | '/login'
+    | '/market-news'
+    | '/merit-awards'
     | '/offers'
+    | '/press'
     | '/pricing'
     | '/programs'
+    | '/promotions'
+    | '/rebate-rewards'
+    | '/rebeta-ai'
+    | '/reports'
     | '/review'
     | '/reviews'
     | '/signal-providers'
     | '/signup'
+    | '/status'
     | '/stock-prop-firms'
+    | '/top-prop-firm-sellers'
+    | '/trader-tbi'
     | '/trading-calculators'
     | '/trading-journals'
+    | '/trading-plan'
     | '/trading-platforms'
     | '/trading-software'
     | '/trading-tools'
+    | '/trt'
     | '/articles/$id'
     | '/brand/analytics'
     | '/brand/announcements'
@@ -1512,40 +1787,65 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/academy'
+    | '/affiliate-program'
+    | '/ai-backtesting-lab'
+    | '/analytics'
     | '/blog'
+    | '/bonuses'
     | '/brand'
     | '/brokers'
     | '/bug-bounty'
+    | '/careers'
     | '/cashback'
+    | '/cashback-calculator'
+    | '/community'
     | '/compare'
+    | '/contact'
     | '/copy-trading-platforms'
+    | '/coupons'
     | '/crypto-prop-firms'
     | '/dashboard'
+    | '/deals'
     | '/demo-accounts'
     | '/dex-prop-firms'
+    | '/docs'
     | '/economic-calendar'
     | '/education-providers'
     | '/exchanges'
     | '/faqs'
     | '/futures-prop-firms'
+    | '/help-center'
     | '/how-we-make-money'
     | '/legal'
     | '/login'
+    | '/market-news'
+    | '/merit-awards'
     | '/offers'
+    | '/press'
     | '/pricing'
     | '/programs'
+    | '/promotions'
+    | '/rebate-rewards'
+    | '/rebeta-ai'
+    | '/reports'
     | '/review'
     | '/reviews'
     | '/signal-providers'
     | '/signup'
+    | '/status'
     | '/stock-prop-firms'
     | '/superadmin'
+    | '/top-prop-firm-sellers'
+    | '/trader-tbi'
     | '/trading-calculators'
     | '/trading-journals'
+    | '/trading-plan'
     | '/trading-platforms'
     | '/trading-software'
     | '/trading-tools'
+    | '/trt'
     | '/articles/$id'
     | '/brand/analytics'
     | '/brand/announcements'
@@ -1650,40 +1950,65 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AcademyRoute: typeof AcademyRoute
+  AffiliateProgramRoute: typeof AffiliateProgramRoute
+  AiBacktestingLabRoute: typeof AiBacktestingLabRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   BlogRoute: typeof BlogRoute
+  BonusesRoute: typeof BonusesRoute
   BrandRoute: typeof BrandRouteWithChildren
   BrokersRoute: typeof BrokersRoute
   BugBountyRoute: typeof BugBountyRoute
+  CareersRoute: typeof CareersRoute
   CashbackRoute: typeof CashbackRoute
+  CashbackCalculatorRoute: typeof CashbackCalculatorRoute
+  CommunityRoute: typeof CommunityRoute
   CompareRoute: typeof CompareRoute
+  ContactRoute: typeof ContactRoute
   CopyTradingPlatformsRoute: typeof CopyTradingPlatformsRoute
+  CouponsRoute: typeof CouponsRoute
   CryptoPropFirmsRoute: typeof CryptoPropFirmsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DealsRoute: typeof DealsRoute
   DemoAccountsRoute: typeof DemoAccountsRoute
   DexPropFirmsRoute: typeof DexPropFirmsRoute
+  DocsRoute: typeof DocsRoute
   EconomicCalendarRoute: typeof EconomicCalendarRoute
   EducationProvidersRoute: typeof EducationProvidersRoute
   ExchangesRoute: typeof ExchangesRoute
   FaqsRoute: typeof FaqsRoute
   FuturesPropFirmsRoute: typeof FuturesPropFirmsRoute
+  HelpCenterRoute: typeof HelpCenterRoute
   HowWeMakeMoneyRoute: typeof HowWeMakeMoneyRoute
   LegalRoute: typeof LegalRouteWithChildren
   LoginRoute: typeof LoginRoute
+  MarketNewsRoute: typeof MarketNewsRoute
+  MeritAwardsRoute: typeof MeritAwardsRoute
   OffersRoute: typeof OffersRoute
+  PressRoute: typeof PressRoute
   PricingRoute: typeof PricingRoute
   ProgramsRoute: typeof ProgramsRoute
+  PromotionsRoute: typeof PromotionsRoute
+  RebateRewardsRoute: typeof RebateRewardsRoute
+  RebetaAiRoute: typeof RebetaAiRoute
+  ReportsRoute: typeof ReportsRoute
   ReviewRoute: typeof ReviewRoute
   ReviewsRoute: typeof ReviewsRouteWithChildren
   SignalProvidersRoute: typeof SignalProvidersRoute
   SignupRoute: typeof SignupRoute
+  StatusRoute: typeof StatusRoute
   StockPropFirmsRoute: typeof StockPropFirmsRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
+  TopPropFirmSellersRoute: typeof TopPropFirmSellersRoute
+  TraderTbiRoute: typeof TraderTbiRoute
   TradingCalculatorsRoute: typeof TradingCalculatorsRoute
   TradingJournalsRoute: typeof TradingJournalsRoute
+  TradingPlanRoute: typeof TradingPlanRoute
   TradingPlatformsRoute: typeof TradingPlatformsRoute
   TradingSoftwareRoute: typeof TradingSoftwareRoute
   TradingToolsRoute: typeof TradingToolsRoute
+  TrtRoute: typeof TrtRoute
   ArticlesIdRoute: typeof ArticlesIdRoute
   BusinessJoinRoute: typeof BusinessJoinRoute
   BusinessTrustDashboardRoute: typeof BusinessTrustDashboardRoute
@@ -1699,6 +2024,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trt': {
+      id: '/trt'
+      path: '/trt'
+      fullPath: '/trt'
+      preLoaderRoute: typeof TrtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trading-tools': {
       id: '/trading-tools'
       path: '/trading-tools'
@@ -1720,6 +2052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TradingPlatformsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trading-plan': {
+      id: '/trading-plan'
+      path: '/trading-plan'
+      fullPath: '/trading-plan'
+      preLoaderRoute: typeof TradingPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trading-journals': {
       id: '/trading-journals'
       path: '/trading-journals'
@@ -1734,6 +2073,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TradingCalculatorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trader-tbi': {
+      id: '/trader-tbi'
+      path: '/trader-tbi'
+      fullPath: '/trader-tbi'
+      preLoaderRoute: typeof TraderTbiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/top-prop-firm-sellers': {
+      id: '/top-prop-firm-sellers'
+      path: '/top-prop-firm-sellers'
+      fullPath: '/top-prop-firm-sellers'
+      preLoaderRoute: typeof TopPropFirmSellersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/superadmin': {
       id: '/superadmin'
       path: '/superadmin'
@@ -1746,6 +2099,13 @@ declare module '@tanstack/react-router' {
       path: '/stock-prop-firms'
       fullPath: '/stock-prop-firms'
       preLoaderRoute: typeof StockPropFirmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -1776,6 +2136,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rebeta-ai': {
+      id: '/rebeta-ai'
+      path: '/rebeta-ai'
+      fullPath: '/rebeta-ai'
+      preLoaderRoute: typeof RebetaAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rebate-rewards': {
+      id: '/rebate-rewards'
+      path: '/rebate-rewards'
+      fullPath: '/rebate-rewards'
+      preLoaderRoute: typeof RebateRewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/promotions': {
+      id: '/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof PromotionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programs': {
       id: '/programs'
       path: '/programs'
@@ -1790,11 +2178,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/press': {
+      id: '/press'
+      path: '/press'
+      fullPath: '/press'
+      preLoaderRoute: typeof PressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offers': {
       id: '/offers'
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merit-awards': {
+      id: '/merit-awards'
+      path: '/merit-awards'
+      fullPath: '/merit-awards'
+      preLoaderRoute: typeof MeritAwardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market-news': {
+      id: '/market-news'
+      path: '/market-news'
+      fullPath: '/market-news'
+      preLoaderRoute: typeof MarketNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1816,6 +2225,13 @@ declare module '@tanstack/react-router' {
       path: '/how-we-make-money'
       fullPath: '/how-we-make-money'
       preLoaderRoute: typeof HowWeMakeMoneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help-center': {
+      id: '/help-center'
+      path: '/help-center'
+      fullPath: '/help-center'
+      preLoaderRoute: typeof HelpCenterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/futures-prop-firms': {
@@ -1853,6 +2269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EconomicCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dex-prop-firms': {
       id: '/dex-prop-firms'
       path: '/dex-prop-firms'
@@ -1865,6 +2288,13 @@ declare module '@tanstack/react-router' {
       path: '/demo-accounts'
       fullPath: '/demo-accounts'
       preLoaderRoute: typeof DemoAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -1881,11 +2311,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CryptoPropFirmsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coupons': {
+      id: '/coupons'
+      path: '/coupons'
+      fullPath: '/coupons'
+      preLoaderRoute: typeof CouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/copy-trading-platforms': {
       id: '/copy-trading-platforms'
       path: '/copy-trading-platforms'
       fullPath: '/copy-trading-platforms'
       preLoaderRoute: typeof CopyTradingPlatformsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -1895,11 +2339,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cashback-calculator': {
+      id: '/cashback-calculator'
+      path: '/cashback-calculator'
+      fullPath: '/cashback-calculator'
+      preLoaderRoute: typeof CashbackCalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cashback': {
       id: '/cashback'
       path: '/cashback'
       fullPath: '/cashback'
       preLoaderRoute: typeof CashbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bug-bounty': {
@@ -1923,6 +2388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrandRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bonuses': {
+      id: '/bonuses'
+      path: '/bonuses'
+      fullPath: '/bonuses'
+      preLoaderRoute: typeof BonusesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog': {
       id: '/blog'
       path: '/blog'
@@ -1930,11 +2402,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-backtesting-lab': {
+      id: '/ai-backtesting-lab'
+      path: '/ai-backtesting-lab'
+      fullPath: '/ai-backtesting-lab'
+      preLoaderRoute: typeof AiBacktestingLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliate-program': {
+      id: '/affiliate-program'
+      path: '/affiliate-program'
+      fullPath: '/affiliate-program'
+      preLoaderRoute: typeof AffiliateProgramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/academy': {
       id: '/academy'
       path: '/academy'
       fullPath: '/academy'
       preLoaderRoute: typeof AcademyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -2881,40 +3381,65 @@ const PayoutsBrandSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AcademyRoute: AcademyRoute,
+  AffiliateProgramRoute: AffiliateProgramRoute,
+  AiBacktestingLabRoute: AiBacktestingLabRoute,
+  AnalyticsRoute: AnalyticsRoute,
   BlogRoute: BlogRoute,
+  BonusesRoute: BonusesRoute,
   BrandRoute: BrandRouteWithChildren,
   BrokersRoute: BrokersRoute,
   BugBountyRoute: BugBountyRoute,
+  CareersRoute: CareersRoute,
   CashbackRoute: CashbackRoute,
+  CashbackCalculatorRoute: CashbackCalculatorRoute,
+  CommunityRoute: CommunityRoute,
   CompareRoute: CompareRoute,
+  ContactRoute: ContactRoute,
   CopyTradingPlatformsRoute: CopyTradingPlatformsRoute,
+  CouponsRoute: CouponsRoute,
   CryptoPropFirmsRoute: CryptoPropFirmsRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DealsRoute: DealsRoute,
   DemoAccountsRoute: DemoAccountsRoute,
   DexPropFirmsRoute: DexPropFirmsRoute,
+  DocsRoute: DocsRoute,
   EconomicCalendarRoute: EconomicCalendarRoute,
   EducationProvidersRoute: EducationProvidersRoute,
   ExchangesRoute: ExchangesRoute,
   FaqsRoute: FaqsRoute,
   FuturesPropFirmsRoute: FuturesPropFirmsRoute,
+  HelpCenterRoute: HelpCenterRoute,
   HowWeMakeMoneyRoute: HowWeMakeMoneyRoute,
   LegalRoute: LegalRouteWithChildren,
   LoginRoute: LoginRoute,
+  MarketNewsRoute: MarketNewsRoute,
+  MeritAwardsRoute: MeritAwardsRoute,
   OffersRoute: OffersRoute,
+  PressRoute: PressRoute,
   PricingRoute: PricingRoute,
   ProgramsRoute: ProgramsRoute,
+  PromotionsRoute: PromotionsRoute,
+  RebateRewardsRoute: RebateRewardsRoute,
+  RebetaAiRoute: RebetaAiRoute,
+  ReportsRoute: ReportsRoute,
   ReviewRoute: ReviewRoute,
   ReviewsRoute: ReviewsRouteWithChildren,
   SignalProvidersRoute: SignalProvidersRoute,
   SignupRoute: SignupRoute,
+  StatusRoute: StatusRoute,
   StockPropFirmsRoute: StockPropFirmsRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
+  TopPropFirmSellersRoute: TopPropFirmSellersRoute,
+  TraderTbiRoute: TraderTbiRoute,
   TradingCalculatorsRoute: TradingCalculatorsRoute,
   TradingJournalsRoute: TradingJournalsRoute,
+  TradingPlanRoute: TradingPlanRoute,
   TradingPlatformsRoute: TradingPlatformsRoute,
   TradingSoftwareRoute: TradingSoftwareRoute,
   TradingToolsRoute: TradingToolsRoute,
+  TrtRoute: TrtRoute,
   ArticlesIdRoute: ArticlesIdRoute,
   BusinessJoinRoute: BusinessJoinRoute,
   BusinessTrustDashboardRoute: BusinessTrustDashboardRoute,

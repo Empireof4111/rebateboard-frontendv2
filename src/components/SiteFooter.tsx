@@ -21,6 +21,8 @@ const socialLinks = [
   },
 ] as const;
 
+const trustValues = ["Transparency First", "Built for Traders", "Independent Reviews", "Global Community"] as const;
+
 type FooterLinkItem = {
   label: string;
   to: string;
@@ -151,7 +153,8 @@ export function SiteFooter() {
               <Logo heightClass="h-9" />
             </div>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              {t("footer.about")}
+              Helping traders earn more, lose less, and make smarter decisions through
+              transparency, trusted reviews, cashback, AI, and financial intelligence.
             </p>
           </div>
           {footerColumns.map(({ col, items }) => (
@@ -169,7 +172,17 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+        <div className="mt-8 grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-2 xl:grid-cols-4">
+          {trustValues.map((value) => (
+            <div
+              key={value}
+              className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-white/65"
+            >
+              {value}
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
           <div className="text-[11px] text-muted-foreground">
             {t("footer.rights")}
           </div>

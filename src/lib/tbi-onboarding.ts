@@ -256,14 +256,22 @@ function writeJson<T>(key: string, value: T, storage: Storage | undefined) {
   } catch {}
 }
 
+function getLocalStorage(): Storage | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
 export function getBrandApplicationSettings(): BrandApplicationSettings {
-  if (typeof window === "undefined") return { enabled: true };
-  return readJson<BrandApplicationSettings>(SETTINGS_KEY, { enabled: true }, window.localStorage);
+  return readJson<BrandApplicationSettings>(SETTINGS_KEY, { enabled: true }, getLocalStorage());
 }
 
 export function setBrandApplicationSettings(patch: Partial<BrandApplicationSettings>): BrandApplicationSettings {
   const next = { ...getBrandApplicationSettings(), ...patch, updatedAt: new Date().toISOString() };
-  if (typeof window !== "undefined") writeJson(SETTINGS_KEY, next, window.localStorage);
+  writeJson(SETTINGS_KEY, next, getLocalStorage());
   emit();
   return next;
 }
@@ -273,23 +281,22 @@ export function useBrandApplicationSettings(): BrandApplicationSettings {
 }
 
 export function getApplicationDraft(category: BrandCategory): Record<string, any> | null {
-  if (typeof window === "undefined") return null;
-  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, window.localStorage);
+  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, getLocalStorage());
   return drafts[category] ?? null;
 }
 
 export function saveApplicationDraft(category: BrandCategory, data: Record<string, any>) {
-  if (typeof window === "undefined") return;
-  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, window.localStorage);
-  writeJson(DRAFT_KEY, { ...drafts, [category]: data }, window.localStorage);
+  const storage = getLocalStorage();
+  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, storage);
+  writeJson(DRAFT_KEY, { ...drafts, [category]: data }, storage);
   emit();
 }
 
 export function clearApplicationDraft(category: BrandCategory) {
-  if (typeof window === "undefined") return;
-  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, window.localStorage);
+  const storage = getLocalStorage();
+  const drafts = readJson<Record<string, Record<string, any>>>(DRAFT_KEY, {}, storage);
   delete drafts[category];
-  writeJson(DRAFT_KEY, drafts, window.localStorage);
+  writeJson(DRAFT_KEY, drafts, storage);
   emit();
 }
 

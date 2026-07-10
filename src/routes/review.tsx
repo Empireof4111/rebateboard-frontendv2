@@ -34,7 +34,7 @@ export const Route = createFileRoute("/review")({
 function ReviewPage() {
   const search = Route.useSearch();
   const providerType = normalizeProviderType(search.providerType);
-  const itemSlug = search.itemSlug || search.brandSlug || search.brandId;
+  const itemSlug = safeDecode(search.itemSlug || search.brandSlug || search.brandId).trim() || undefined;
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -73,8 +73,17 @@ function ReviewPage() {
   );
 }
 
+function safeDecode(value?: string) {
+  const raw = String(value || "");
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 function normalizeProviderType(value?: string): ReviewProviderType | undefined {
-  const decoded = decodeURIComponent(String(value || "")).trim().toLowerCase();
+  const decoded = safeDecode(value).trim().toLowerCase();
   const match = reviewProviderTypes.find((type) => type.toLowerCase() === decoded);
   return match;
 }

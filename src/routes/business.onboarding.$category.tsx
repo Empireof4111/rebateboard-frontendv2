@@ -14,10 +14,34 @@ import {
 } from "@/lib/tbi-onboarding";
 import { ArrowLeft, ArrowRight, Check, Send, Copy, Save, Shield } from "lucide-react";
 
+const CATEGORY_ALIASES: Record<string, BrandCategory> = {
+  prop_firm: "prop_firm",
+  "prop-firm": "prop_firm",
+  propfirm: "prop_firm",
+  "forex-prop-firm": "prop_firm",
+  "futures-prop-firm": "prop_firm",
+  "crypto-prop-firm": "prop_firm",
+  broker: "broker",
+  "forex-broker": "broker",
+  exchange: "exchange",
+  "crypto-exchange": "exchange",
+  crypto: "exchange",
+  tool: "tool",
+  "trading-tool": "tool",
+  software: "tool",
+  education: "tool",
+};
+
+function normalizeBrandCategoryParam(value?: string): BrandCategory | null {
+  const raw = String(value || "").trim().toLowerCase();
+  const dashed = raw.replace(/\s+/g, "-");
+  return CATEGORY_ALIASES[dashed] ?? CATEGORY_ALIASES[dashed.replace(/-/g, "_")] ?? null;
+}
+
 export const Route = createFileRoute("/business/onboarding/$category")({
   loader: ({ params }) => {
-    const cat = params.category as BrandCategory;
-    if (!(cat in CATEGORY_META)) throw notFound();
+    const cat = normalizeBrandCategoryParam(params.category);
+    if (!cat || !(cat in CATEGORY_META)) throw notFound();
     return { category: cat };
   },
   head: ({ loaderData }) => ({

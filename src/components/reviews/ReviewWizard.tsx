@@ -10,6 +10,8 @@
 import { useMemo, useState, useCallback, useEffect, type ChangeEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
+  AlertCircle,
+  Bookmark,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -20,6 +22,8 @@ import {
   Info,
   BadgeCheck,
   Gift,
+  Layers,
+  ShieldCheck,
 } from "lucide-react";
 import { type ReviewProviderType, type ReviewProof, type ReviewRatings } from "@/lib/reviews-store";
 import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
