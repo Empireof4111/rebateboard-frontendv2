@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
 import { useTradingPlan, savePlan, uid, type Strategy, type Session, type MarketType } from "@/lib/trading-plan";
-import { Plus, Trash2, Sparkles, Brain, Shield, ListChecks, Crown } from "lucide-react";
+import { Plus, Trash2, Sparkles, Brain, Shield, ListChecks, Save } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/trading-plan")({
@@ -15,11 +15,20 @@ export const Route = createFileRoute("/dashboard/trading-plan")({
 });
 
 const SESSIONS: Session[] = ["asia", "london", "ny", "sydney"];
-const MARKETS: MarketType[] = ["forex", "crypto", "futures", "stocks", "indices"];
+const MARKETS: MarketType[] = ["forex", "crypto", "futures", "stocks", "indices", "commodities"];
+const PLAN_TABS = [
+  { id: "profile", label: "Profile", helper: "This helps Rebeta understand how you trade." },
+  { id: "strategies", label: "Strategies", helper: "Your setups become the benchmark for journal reviews." },
+  { id: "rules", label: "Rules", helper: "Risk rules power future guardrail alerts." },
+  { id: "psychology", label: "Psychology", helper: "Behavior context improves coaching quality." },
+  { id: "checklist", label: "Checklist", helper: "Checklist items become adherence signals." },
+] as const;
 
 function TradingPlanPage() {
   const plan = useTradingPlan();
-  const [tab, setTab] = useState<"profile" | "strategies" | "rules" | "psychology" | "checklist">("profile");
+  const [tab, setTab] = useState<(typeof PLAN_TABS)[number]["id"]>("profile");
+  const currentIndex = PLAN_TABS.findIndex((item) => item.id === tab);
+  const currentTab = PLAN_TABS[currentIndex] ?? PLAN_TABS[0];
 
   return (
     <div className="space-y-6">
@@ -28,27 +37,33 @@ function TradingPlanPage() {
         subtitle="Plan → Trade → Review → Improve. Your rules, your edge."
         actions={
           <>
-            <button
-              onClick={() => savePlan({ ...plan, premium: !plan.premium })}
-              className={`glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs ${plan.premium ? "text-success" : "text-white"}`}
-              title="Toggle premium for screenshot uploads"
-            >
-              <Crown className="h-3.5 w-3.5 text-accent" /> {plan.premium ? "Premium ON" : "Premium OFF"}
-            </button>
+            <Pill tone="success"><Save className="h-3 w-3" /> Autosaved</Pill>
             <Pill tone="primary"><Sparkles className="h-3 w-3" /> Updated {new Date(plan.updatedAt).toLocaleDateString()}</Pill>
           </>
         }
       />
 
+      <div className="glass rounded-2xl p-4 ring-1 ring-white/10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Step {currentIndex + 1} of {PLAN_TABS.length}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-white">{currentTab.label}</div>
+            <p className="mt-0.5 text-xs text-muted-foreground">{currentTab.helper}</p>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10 sm:w-48">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-300"
+              style={{ width: `${((currentIndex + 1) / PLAN_TABS.length) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-1 rounded-full bg-white/5 p-1 text-xs">
-        {[
-          { id: "profile", label: "Profile" },
-          { id: "strategies", label: "Strategies" },
-          { id: "rules", label: "Rules" },
-          { id: "psychology", label: "Psychology" },
-          { id: "checklist", label: "Checklist" },
-        ].map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id as typeof tab)} className={`rounded-full px-3 py-1.5 ${tab === t.id ? "bg-white/15 text-white" : "text-muted-foreground"}`}>{t.label}</button>
+        {PLAN_TABS.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)} className={`rounded-full px-3 py-1.5 transition ${tab === t.id ? "bg-white/15 text-white" : "text-muted-foreground hover:text-white"}`}>{t.label}</button>
         ))}
       </div>
 

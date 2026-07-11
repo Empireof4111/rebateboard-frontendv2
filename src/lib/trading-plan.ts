@@ -2,7 +2,7 @@
 // Persists to localStorage; framework-agnostic, with a tiny pub/sub for React.
 
 export type TradingStyle = "scalping" | "intraday" | "swing" | "position";
-export type MarketType = "forex" | "crypto" | "futures" | "stocks" | "indices";
+export type MarketType = "forex" | "crypto" | "futures" | "stocks" | "indices" | "commodities";
 export type Session = "asia" | "london" | "ny" | "sydney";
 export type Experience = "beginner" | "intermediate" | "advanced" | "pro";
 
@@ -67,6 +67,12 @@ export type Trade = {
   stop: number;
   target: number;
   session: Session;
+  venue?: string;
+  contract?: string;
+  instrumentMode?: string;
+  leverage?: number;
+  commission?: number;
+  fees?: number;
   // strategy & context
   strategyId: string | null;
   setupType?: string;
@@ -84,6 +90,12 @@ export type Trade = {
   // results
   pnl: number;
   rr: number;
+  pips?: number;
+  points?: number;
+  percentageGain?: number;
+  rMultiple?: number;
+  rewardRatio?: number;
+  winLossStatus?: "win" | "loss" | "breakeven";
   quality?: "A" | "B" | "C";
   satisfaction?: number; // 1-5
   // media (premium)
@@ -196,8 +208,92 @@ export function calcRR(entry: number, stop: number, target: number, direction: "
 }
 
 export function calcPnL(entry: number, exit: number, lot: number, direction: "long" | "short") {
-  const diff = direction === "long" ? exit - entry : entry - exit;
-  return diff * lot;
+  return calculateTradeMetrics({ market: "stocks", entry, exit, lot, direction }).pnl;
+}
+
+export type TradeCalculationInput = {
+  market: MarketType;
+  asset?: string;
+  direction: "long" | "short";
+  entry: number;
+  exit: number;
+  stop?: number;
+  target?: number;
+  lot: number;
+  commission?: number;
+  fees?: number;
+};
+
+export type TradeCalculationResult = {
+  pnl: number;
+  pips: number;
+  points: number;
+  percentageGain: number;
+  rMultiple: number;
+  rewardRatio: number;
+  riskAmount: number;
+  winLossStatus: "win" | "loss" | "breakeven";
+};
+
+function forexPipSize(asset = "") {
+  const normalized = asset.toUpperCase();
+  if (normalized.includes("JPY")) return 0.01;
+  if (normalized.includes("XAU") || normalized.includes("XAG")) return 0.1;
+  return 0.0001;
+}
+
+function contractMultiplier(market: MarketType, asset = "") {
+  const normalized = asset.toUpperCase();
+  if (market === "forex") {
+    if (normalized.includes("XAU") || normalized.includes("XAG")) return 100;
+    return 100_000;
+  }
+  if (market === "indices" || market === "futures") return 1;
+  if (market === "commodities") return normalized.includes("XAU") ? 100 : 1;
+  return 1;
+}
+
+export function calculateTradeMetrics(input: TradeCalculationInput): TradeCalculationResult {
+  const entry = Number(input.entry) || 0;
+  const exit = Number(input.exit) || 0;
+  const stop = Number(input.stop) || 0;
+  const target = Number(input.target) || 0;
+  const lot = Number(input.lot) || 0;
+  const costs = (Number(input.commission) || 0) + (Number(input.fees) || 0);
+  const signedMove = input.direction === "long" ? exit - entry : entry - exit;
+  const rawPoints = signedMove;
+  const multiplier = contractMultiplier(input.market, input.asset);
+  const pnl = rawPoints * lot * multiplier - costs;
+  const pips = input.market === "forex" ? rawPoints / forexPipSize(input.asset) : 0;
+  const points = input.market === "forex" ? 0 : rawPoints;
+  const percentageGain = entry > 0 ? (signedMove / entry) * 100 : 0;
+
+  const riskDistance = stop > 0
+    ? input.direction === "long" ? entry - stop : stop - entry
+    : 0;
+  const rewardDistance = target > 0
+    ? input.direction === "long" ? target - entry : entry - target
+    : 0;
+  const riskAmount = Math.max(0, riskDistance * lot * multiplier);
+  const rewardRatio = riskDistance > 0 ? Math.max(0, rewardDistance / riskDistance) : 0;
+  const rMultiple = riskAmount > 0 ? pnl / riskAmount : 0;
+  const winLossStatus = Math.abs(pnl) < 0.000001 ? "breakeven" : pnl > 0 ? "win" : "loss";
+
+  return {
+    pnl: roundMetric(pnl),
+    pips: roundMetric(pips),
+    points: roundMetric(points),
+    percentageGain: roundMetric(percentageGain),
+    rMultiple: roundMetric(rMultiple),
+    rewardRatio: roundMetric(rewardRatio),
+    riskAmount: roundMetric(riskAmount),
+    winLossStatus,
+  };
+}
+
+function roundMetric(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round(value * 100) / 100;
 }
 
 export type AdherenceResult = { score: number; violations: string[] };

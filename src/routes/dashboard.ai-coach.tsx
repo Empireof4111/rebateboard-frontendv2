@@ -55,9 +55,9 @@ const MAX_TEXT_ATTACHMENT_CHARS = 30_000;
 const MAX_IMAGE_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
 const DEFAULT_PROMPTS = [
-  "Explain rebates in simple terms",
-  "Review a trade setup",
-  "Compare this with TBI data",
+  "Analyze my last trading week",
+  "Help improve my risk management",
+  "Review my trading journal",
 ];
 
 const REBETA_LANGUAGES = [
@@ -86,10 +86,10 @@ const REBETA_LANGUAGES = [
 
 const ACTION_PROMPTS = [
   {
-    title: "Rebate clarity",
-    detail: "Cashback, eligibility, pending claims.",
+    title: "Risk coach",
+    detail: "Position size, stop logic, and guardrails.",
     prompt:
-      "Explain how trading rebates and cashback claims work in simple terms.",
+      "Help me improve my risk management. Ask for any missing journal or plan details first.",
   },
   {
     title: "Trade review",
@@ -98,7 +98,7 @@ const ACTION_PROMPTS = [
       "Help me review this trade setup. Ask me for the missing details first.",
   },
   {
-    title: "TBI trust check",
+    title: "Trust check",
     detail: "Broker risk, complaints, payout signals.",
     prompt:
       "Explain how I should use TBI trust intelligence before choosing a broker or prop firm.",
@@ -332,7 +332,32 @@ function RebataPage() {
             }
           >
             <div className="flex h-[min(62vh,560px)] min-h-[420px] flex-col">
-              <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+              <div className="flex-1 space-y-5 overflow-y-auto pr-1">
+                {messages.length === 0 && (
+                  <div className="rounded-2xl border border-violet-300/15 bg-violet-300/10 p-5">
+                    <div className="flex items-center gap-3">
+                      <CoachAvatar />
+                      <div>
+                        <h3 className="text-sm font-semibold text-white">Rebeta is ready to coach your next decision.</h3>
+                        <p className="mt-1 text-xs leading-relaxed text-violet-100/75">
+                          Ask about your journal, risk, trading plan, cashback, or a brand's trust profile.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {DEFAULT_PROMPTS.map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => sendSuggestion(prompt)}
+                          className="rounded-full border border-violet-300/20 bg-black/10 px-3 py-1.5 text-[11px] text-violet-50 transition hover:border-violet-300/45 hover:bg-violet-300/15"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {messages.map((message) => (
                   <ChatBubble
                     key={message.id}
@@ -347,7 +372,7 @@ function RebataPage() {
                     <CoachAvatar />
                     <div className="inline-flex max-w-[75%] items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-xs text-white/75">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-                      Rebeta is thinking through the context...
+                      Reviewing your trading context...
                     </div>
                   </div>
                 )}
@@ -362,7 +387,7 @@ function RebataPage() {
               )}
 
               {uploadError && (
-                <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs text-amber-50">
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-orange-400/25 bg-orange-500/10 px-3 py-2 text-xs text-orange-50">
                   <CircleAlert className="h-4 w-4 shrink-0" />
                   {uploadError}
                 </div>
@@ -486,8 +511,8 @@ function RebataPage() {
                 Rebeta Scope
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Trade education, rebates, cashback, TBI context, risk controls,
-                and psychology. No guaranteed signals.
+                Trading plan context, journal review, risk controls, rebates,
+                TBI trust signals, and psychology. No guaranteed signals.
               </p>
             </div>
           </Panel>
@@ -539,7 +564,7 @@ function RebataPage() {
       )}
 
       <Panel
-        title={`Rebata Action Plan${user?.name ? ` for ${user.name}` : ""}`}
+        title={`Rebeta Action Plan${user?.name ? ` for ${user.name}` : ""}`}
         action={<Sparkles className="h-4 w-4 text-accent" />}
       >
         <div className="grid gap-3 md:grid-cols-3">
@@ -583,13 +608,13 @@ function ChatBubble({
     !isUser && !message.error && message.suggestions?.length === 3;
 
   return (
-    <div className={`flex gap-2 ${isUser ? "justify-end" : ""}`}>
+    <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
       {!isUser && <CoachAvatar error={message.error} />}
       <div
-        className={`flex max-w-[82%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}
+        className={`flex max-w-[82%] flex-col gap-3 ${isUser ? "items-end" : "items-start"}`}
       >
         <div
-          className={`whitespace-pre-wrap rounded-2xl px-3 py-2 text-xs leading-relaxed sm:text-sm ${
+          className={`whitespace-pre-wrap rounded-2xl px-4 py-3 text-xs leading-relaxed sm:text-sm ${
             isUser
               ? "bg-primary/30 text-white"
               : message.error
@@ -652,7 +677,7 @@ function ChatBubble({
                 type="button"
                 onClick={() => onSuggestionClick(suggestion)}
                 disabled={sending}
-                className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1.5 text-left text-[11px] text-fuchsia-50 transition hover:border-fuchsia-300/45 hover:bg-fuchsia-300/15 disabled:opacity-50"
+              className="rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1.5 text-left text-[11px] text-violet-50 transition hover:border-violet-300/45 hover:bg-violet-300/15 disabled:opacity-50"
               >
                 {suggestion}
               </button>
@@ -678,7 +703,7 @@ function MessageList({
 
   return (
     <div
-      className={`rounded-xl border p-3 ${tone === "warning" ? "border-amber-300/20 bg-amber-300/10" : "border-white/10 bg-white/[0.03]"}`}
+      className={`rounded-xl border p-3 ${tone === "warning" ? "border-orange-400/20 bg-orange-500/10" : "border-white/10 bg-white/[0.03]"}`}
     >
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/70">
         {title}
@@ -710,7 +735,7 @@ function StructuredCard({
       title={title}
       action={
         tone === "warning" ? (
-          <CircleAlert className="h-4 w-4 text-amber-200" />
+          <CircleAlert className="h-4 w-4 text-orange-200" />
         ) : (
           <Sparkles className="h-4 w-4 text-accent" />
         )
