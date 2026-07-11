@@ -2,16 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   Check,
+  Copy,
   Download,
   Eye,
   EyeOff,
   Gauge,
   Globe2,
   QrCode,
+  Share2,
   ShieldCheck,
   SlidersHorizontal,
   Trophy,
   UserRound,
+  X,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
@@ -24,10 +27,12 @@ type Preset =
   | "payouts"
   | "best_month"
   | "funded"
+  | "trader_level"
+  | "streak"
   | "custom";
 
-type Theme = "obsidian" | "royal" | "platinum" | "midnight" | "emerald";
-type Ratio = "landscape" | "square" | "story" | "linkedin";
+type Theme = "obsidian" | "royal" | "platinum" | "emerald";
+type Ratio = "landscape" | "square" | "story";
 
 type Visibility = {
   profile: boolean;
@@ -47,6 +52,8 @@ const PRESETS: { id: Preset; label: string; title: string }[] = [
   { id: "payouts", label: "Payout Milestone", title: "Total Payouts" },
   { id: "best_month", label: "Best Month", title: "Best Month" },
   { id: "funded", label: "Funded Capital", title: "Funded Capital" },
+  { id: "trader_level", label: "Trader Level", title: "Trader Level" },
+  { id: "streak", label: "Trading Streak", title: "Trading Streak" },
   { id: "custom", label: "Custom", title: "Signature Achievement" },
 ];
 
@@ -82,14 +89,6 @@ const THEMES: Record<Theme, {
     line: "border-violet-950/10",
     quietText: "text-slate-700/70",
   },
-  midnight: {
-    label: "Midnight Blue",
-    shell: "from-[#050913] via-[#0c1324] to-[#111b34]",
-    glow: "bg-blue-500/16",
-    accent: "text-sky-200",
-    line: "border-sky-100/14",
-    quietText: "text-slate-200/58",
-  },
   emerald: {
     label: "Emerald",
     shell: "from-[#03110d] via-[#071914] to-[#0b241c]",
@@ -104,7 +103,6 @@ const RATIOS: Record<Ratio, { label: string; className: string; exportWidth: num
   landscape: { label: "Landscape", className: "aspect-[16/9] max-w-[980px]", exportWidth: 1600, exportHeight: 900 },
   square: { label: "Square", className: "aspect-square max-w-[780px]", exportWidth: 1200, exportHeight: 1200 },
   story: { label: "Story", className: "aspect-[9/16] max-w-[440px]", exportWidth: 1080, exportHeight: 1920 },
-  linkedin: { label: "LinkedIn Banner", className: "aspect-[4/1] max-w-[1040px]", exportWidth: 1584, exportHeight: 396 },
 };
 
 const DEFAULT_VISIBILITY: Visibility = {
@@ -131,6 +129,8 @@ export function ShareCardBuilder() {
   const [customMetric, setCustomMetric] = useState("+284%");
   const [animateKey, setAnimateKey] = useState(0);
   const [animatedNumber, setAnimatedNumber] = useState<number | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState<"png" | "copy" | "share" | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const fundedAccounts = trt.accounts.filter((a) => a.status === "funded" || a.type === "prop_funded");
@@ -143,6 +143,7 @@ export function ShareCardBuilder() {
     .reduce((sum, tx) => sum + tx.amount, 0);
   const bestMonth = Math.max(monthly.net, summary.net, 0);
   const traderLevel = getTraderLevel(user?.rrBalance ?? 0);
+  const streakDays = Number((user as { streakDays?: number } | null | undefined)?.streakDays ?? 0);
   const traderName = user?.fullName || user?.name || "RebateBoard Trader";
   const username = user?.username || user?.email?.split("@")[0] || "trader";
   const memberSince = formatMemberSince(user?.joinedAt);
@@ -156,24 +157,44 @@ export function ShareCardBuilder() {
       case "overall":
         return {
           title: "Overall ROI",
-          value: summary.roiPct == null ? "No Data Yet" : `${summary.roiPct >= 0 ? "+" : ""}${summary.roiPct.toFixed(0)}%`,
+          value: summary.roiPct == null ? "Your Story Starts Here" : `${summary.roiPct >= 0 ? "+" : ""}${summary.roiPct.toFixed(0)}%`,
           numeric: summary.roiPct,
           suffix: "%",
         };
       case "net_profit":
-        return { title: "Net Profit", value: money(summary.net), numeric: summary.net, prefix: "$" };
+        return summary.txCount > 0
+          ? { title: "Net Profit", value: money(summary.net), numeric: summary.net, prefix: "$" }
+          : { title: "Net Profit", value: "Track Your Edge", numeric: null };
       case "cashback":
-        return { title: "Cashback Earned", value: money(cashbackTotal), numeric: cashbackTotal, prefix: "$" };
+        return cashbackTotal > 0
+          ? { title: "Cashback Earned", value: money(cashbackTotal), numeric: cashbackTotal, prefix: "$" }
+          : { title: "Cashback Earned", value: "Unlock Savings", numeric: null };
       case "payouts":
-        return { title: "Total Payouts", value: money(payoutsTotal), numeric: payoutsTotal, prefix: "$" };
+        return payoutsTotal > 0
+          ? { title: "Total Payouts", value: money(payoutsTotal), numeric: payoutsTotal, prefix: "$" }
+          : { title: "Total Payouts", value: "Verify Milestones", numeric: null };
       case "best_month":
-        return { title: "Best Month", value: money(bestMonth), numeric: bestMonth, prefix: "$" };
+        return bestMonth > 0
+          ? { title: "Best Month", value: money(bestMonth), numeric: bestMonth, prefix: "$" }
+          : { title: "Best Month", value: "Build Momentum", numeric: null };
       case "funded":
-        return { title: "Funded Capital", value: money(fundedCapital), numeric: fundedCapital, prefix: "$" };
+        return fundedCapital > 0
+          ? { title: "Funded Capital", value: money(fundedCapital), numeric: fundedCapital, prefix: "$" }
+          : { title: "Funded Capital", value: "Log Capital", numeric: null };
+      case "trader_level":
+        return { title: "Trader Level", value: traderLevel, numeric: user?.rrBalance ?? null };
+      case "streak":
+        return {
+          title: "Trading Streak",
+          value: streakDays > 0 ? `${streakDays} Days` : "Start Your Streak",
+          numeric: streakDays > 0 ? streakDays : null,
+        };
       case "custom":
         return { title: customTitle || "Signature Achievement", value: customMetric || "Custom", numeric: parseMetric(customMetric) };
     }
-  }, [bestMonth, cashbackTotal, customMetric, customTitle, fundedCapital, payoutsTotal, preset, summary.net, summary.roiPct]);
+  }, [bestMonth, cashbackTotal, customMetric, customTitle, fundedCapital, payoutsTotal, preset, streakDays, summary.net, summary.roiPct, traderLevel, user?.rrBalance]);
+
+  const storyCopy = useMemo(() => getPresetStory(preset), [preset]);
 
   const supportStats = useMemo(() => [
     { label: "Funded Capital", value: fundedCapital > 0 ? money(fundedCapital) : "Not Logged" },
@@ -203,31 +224,51 @@ export function ShareCardBuilder() {
     return () => window.cancelAnimationFrame(raf);
   }, [achievement.numeric, animateKey]);
 
-  const displayMetric = animatedNumber == null
+  const displayMetric = animatedNumber == null || preset === "trader_level"
     ? achievement.value
     : formatAnimatedMetric(animatedNumber, achievement.value);
 
-  const exportPng = async () => {
-    if (!cardRef.current) return;
+  const createPngBlob = async () => {
+    if (!cardRef.current) return null;
+    const mod = await import("html-to-image");
+    const { exportWidth, exportHeight } = RATIOS[ratio];
+    const blob = await mod.toBlob(cardRef.current, {
+      pixelRatio: 2,
+      backgroundColor: theme === "platinum" ? "#f2edf8" : "#07070c",
+      width: exportWidth,
+      height: exportHeight,
+      style: {
+        width: `${exportWidth}px`,
+        height: `${exportHeight}px`,
+      },
+    });
+    return blob;
+  };
+
+  const exportCard = async (mode: "png" | "copy" | "share") => {
     try {
-      const mod = await import("html-to-image");
-      const { exportWidth, exportHeight } = RATIOS[ratio];
-      const url = await mod.toPng(cardRef.current, {
-        pixelRatio: 2,
-        backgroundColor: theme === "platinum" ? "#f2edf8" : "#07070c",
-        width: exportWidth,
-        height: exportHeight,
-        style: {
-          width: `${exportWidth}px`,
-          height: `${exportHeight}px`,
-        },
-      });
-      const a = document.createElement("a");
-      a.download = `rebateboard-${preset}-${ratio}-${Date.now()}.png`;
-      a.href = url;
-      a.click();
+      setExporting(mode);
+      await new Promise((resolve) => window.setTimeout(resolve, 420));
+      const blob = await createPngBlob();
+      if (!blob) throw new Error("No card");
+      const filename = `rebateboard-${preset}-${ratio}-${Date.now()}.png`;
+      if (mode === "copy" && navigator.clipboard && "write" in navigator.clipboard) {
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      } else if (mode === "share" && navigator.share && typeof File !== "undefined") {
+        const file = new File([blob], filename, { type: blob.type });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ title: "RebateBoard Performance Card", files: [file] });
+        } else {
+          downloadBlob(blob, filename);
+        }
+      } else {
+        downloadBlob(blob, filename);
+      }
+      setExportOpen(false);
     } catch {
       window.alert("We couldn't export this card right now. Please try again.");
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -235,37 +276,38 @@ export function ShareCardBuilder() {
   const platinum = theme === "platinum";
   const textPrimary = platinum ? "text-slate-950" : "text-white";
   const textMuted = platinum ? "text-slate-700/72" : themeSpec.quietText;
+  const textMetric = achievement.numeric == null && !/^[+$]?\d/.test(achievement.value);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <section className="space-y-4">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
+      <section className="space-y-4 xl:sticky xl:top-5 xl:self-start">
         <div
           ref={cardRef}
-          className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_28px_90px_rgba(0,0,0,0.46)] ring-1 ${themeSpec.line}`}
+          className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_24px_72px_rgba(0,0,0,0.42)] ring-1 ${themeSpec.line} transition-all duration-300 ease-out`}
         >
-          <div className={`absolute -right-[12%] -top-[20%] h-[55%] w-[45%] rounded-full ${themeSpec.glow} blur-3xl`} />
-          <div className={`absolute -bottom-[22%] left-[4%] h-[48%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
+          <div className={`absolute -right-[14%] -top-[22%] h-[46%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
+          <div className={`absolute -bottom-[22%] left-[5%] h-[38%] w-[30%] rounded-full ${themeSpec.glow} blur-3xl`} />
           <div
-            className="absolute inset-0 opacity-[0.08]"
+            className="absolute inset-0 opacity-[0.045]"
             style={{
               backgroundImage:
-                "linear-gradient(120deg, transparent 0 24px, currentColor 25px, transparent 26px), linear-gradient(60deg, transparent 0 34px, currentColor 35px, transparent 36px)",
-              backgroundSize: "92px 92px",
+                "linear-gradient(120deg, transparent 0 28px, currentColor 29px, transparent 30px)",
+              backgroundSize: "118px 118px",
               color: platinum ? "#2e174f" : "#ffffff",
             }}
           />
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
           <div className="relative flex h-full flex-col p-[6.2%]">
             <header className="flex items-start justify-between gap-6">
-              <Logo heightClass={ratio === "linkedin" ? "h-7" : "h-8"} className={platinum ? "[&_*]:text-slate-950" : ""} />
+              <Logo heightClass={ratio === "story" ? "h-10" : "h-8"} className={platinum ? "[&_*]:text-slate-950" : ""} />
               <div className={`text-right text-[0.62rem] font-semibold uppercase tracking-[0.22em] ${textMuted}`}>
                 <div>Trader Performance Card</div>
                 <div className="mt-1 opacity-70">Version 1.0</div>
               </div>
             </header>
 
-            <main className={`flex flex-1 flex-col ${ratio === "linkedin" ? "justify-center" : "justify-end"} py-[4%]`}>
-              <div className={`max-w-[72%] ${ratio === "story" ? "max-w-full" : ""}`}>
+            <main className={`flex flex-1 flex-col ${ratio === "story" ? "justify-center py-[10%]" : "justify-end py-[4%]"}`}>
+              <div className={`transition duration-300 ease-out ${ratio === "story" ? "max-w-full text-center" : "max-w-[72%]"}`}>
                 <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] ${themeSpec.line} ${themeSpec.accent}`}>
                   <Trophy className="h-3.5 w-3.5" />
                   {achievement.title}
@@ -273,25 +315,27 @@ export function ShareCardBuilder() {
                 <div
                   key={`${preset}-${ratio}-${animateKey}`}
                   className={`mt-4 font-black tracking-[-0.055em] ${textPrimary} ${
-                    ratio === "story"
-                      ? "text-[4.25rem] leading-[0.86]"
-                      : ratio === "linkedin"
-                        ? "text-[4.55rem] leading-none"
-                        : "text-[clamp(4.2rem,9vw,7.4rem)] leading-[0.88]"
+                    textMetric
+                      ? ratio === "story"
+                        ? "text-[3.25rem] leading-[0.95]"
+                        : "text-[clamp(3rem,5.8vw,5.2rem)] leading-[0.95]"
+                      : ratio === "story"
+                      ? "text-[4.85rem] leading-[0.88]"
+                      : "text-[clamp(4.2rem,9vw,7.4rem)] leading-[0.88]"
                   }`}
                 >
                   {displayMetric}
                 </div>
-                <div className={`mt-3 max-w-xl text-sm font-medium leading-relaxed ${textMuted}`}>
-                  Verified trading performance generated from the RebateBoard Trader Return Tracker.
+                <div className={`mt-3 ${ratio === "story" ? "mx-auto max-w-[19rem] text-base" : "max-w-xl text-sm"} font-medium leading-relaxed ${textMuted}`}>
+                  {storyCopy}
                 </div>
               </div>
             </main>
 
-            {vis.stats && ratio !== "linkedin" && (
-              <div className={`grid grid-cols-3 border-y ${themeSpec.line}`}>
+            {vis.stats && (
+              <div className={`grid ${ratio === "story" ? "grid-cols-1 divide-y" : "grid-cols-3 border-y"} ${themeSpec.line}`}>
                 {supportStats.map((stat, index) => (
-                  <div key={stat.label} className={`py-4 ${index > 0 ? `border-l ${themeSpec.line} pl-5` : "pr-5"}`}>
+                  <div key={stat.label} className={`py-4 ${ratio === "story" ? "text-center" : index > 0 ? `border-l ${themeSpec.line} pl-5` : "pr-5"}`}>
                     <div className={`text-[0.58rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{stat.label}</div>
                     <div className={`mt-1 text-lg font-bold tabular-nums ${textPrimary}`}>{stat.value}</div>
                   </div>
@@ -345,7 +389,7 @@ export function ShareCardBuilder() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => setAnimateKey((value) => value + 1)}
@@ -356,17 +400,17 @@ export function ShareCardBuilder() {
           </button>
           <button
             type="button"
-            onClick={exportPng}
+            onClick={() => setExportOpen(true)}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-bold text-white shadow-[0_0_22px_rgba(192,132,252,0.35)] transition hover:shadow-[0_0_28px_rgba(192,132,252,0.48)]"
           >
             <Download className="h-4 w-4" />
-            Download PNG
+            Export Card
           </button>
         </div>
       </section>
 
-      <aside className="space-y-4">
-        <ControlPanel title="Card Preset" icon={Trophy}>
+      <aside className="space-y-4 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:pr-1">
+        <ControlPanel title="Story" icon={Trophy}>
           <div className="grid gap-2">
             {PRESETS.map((item) => (
               <button
@@ -401,22 +445,8 @@ export function ShareCardBuilder() {
           )}
         </ControlPanel>
 
-        <ControlPanel title="Format & Theme" icon={SlidersHorizontal}>
-          <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(RATIOS) as Ratio[]).map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setRatio(item)}
-                className={`rounded-2xl px-3 py-2 text-xs font-bold transition ring-1 ${
-                  ratio === item ? "bg-white/10 text-white ring-white/20" : "bg-white/[0.03] text-muted-foreground ring-white/5"
-                }`}
-              >
-                {RATIOS[item].label}
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 grid gap-2">
+        <ControlPanel title="Theme" icon={SlidersHorizontal}>
+          <div className="grid gap-2">
             {(Object.keys(THEMES) as Theme[]).map((item) => (
               <button
                 key={item}
@@ -433,7 +463,24 @@ export function ShareCardBuilder() {
           </div>
         </ControlPanel>
 
-        <ControlPanel title="Visible Fields" icon={Eye}>
+        <ControlPanel title="Layout" icon={SlidersHorizontal}>
+          <div className="grid grid-cols-2 gap-2">
+            {(Object.keys(RATIOS) as Ratio[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setRatio(item)}
+                className={`rounded-2xl px-3 py-2 text-xs font-bold transition ring-1 ${
+                  ratio === item ? "bg-white/10 text-white ring-white/20" : "bg-white/[0.03] text-muted-foreground ring-white/5"
+                }`}
+              >
+                {RATIOS[item].label}
+              </button>
+            ))}
+          </div>
+        </ControlPanel>
+
+        <ControlPanel title="Privacy" icon={Eye}>
           <div className="space-y-2">
             {(Object.keys(vis) as (keyof Visibility)[]).map((field) => (
               <button
@@ -451,7 +498,48 @@ export function ShareCardBuilder() {
             Private fields stay hidden in the exported image. Export uses high-resolution PNG output for social channels.
           </p>
         </ControlPanel>
+
+        <ControlPanel title="Export" icon={Download}>
+          <button
+            type="button"
+            onClick={() => setExportOpen(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.28)] transition hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(192,132,252,0.4)]"
+          >
+            <Download className="h-4 w-4" />
+            Export Card
+          </button>
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            Finalize your card, then save, copy, or share it in a format tuned for social platforms.
+          </p>
+        </ControlPanel>
       </aside>
+
+      {exportOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-md">
+          <div className="glass w-full max-w-md rounded-[2rem] p-5 ring-1 ring-white/12">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-lg font-black text-white">Export Card</div>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  Your achievement is ready. Choose how you want to share it.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExportOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06] text-white transition hover:bg-white/[0.1]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3">
+              <ExportAction icon={Download} label="PNG" busy={exporting === "png"} onClick={() => exportCard("png")} />
+              <ExportAction icon={Copy} label="Copy Image" busy={exporting === "copy"} onClick={() => exportCard("copy")} />
+              <ExportAction icon={Share2} label="Native Share" busy={exporting === "share"} onClick={() => exportCard("share")} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -475,6 +563,35 @@ function ControlPanel({
       </div>
       {children}
     </div>
+  );
+}
+
+function ExportAction({
+  icon: Icon,
+  label,
+  busy,
+  onClick,
+}: {
+  icon: React.ElementType;
+  label: string;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      className="flex items-center justify-between rounded-2xl bg-white/[0.045] px-4 py-3 text-left text-sm font-bold text-white ring-1 ring-white/8 transition hover:bg-white/[0.075] disabled:cursor-wait disabled:opacity-70"
+    >
+      <span className="inline-flex items-center gap-3">
+        <span className="grid h-9 w-9 place-items-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/20">
+          <Icon className="h-4 w-4" />
+        </span>
+        {label}
+      </span>
+      <span className="text-xs font-semibold text-muted-foreground">{busy ? "Finalizing..." : "Ready"}</span>
+    </button>
   );
 }
 
@@ -565,6 +682,30 @@ function formatAnimatedMetric(value: number, finalValue: string) {
     return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
   }
   return finalValue;
+}
+
+function getPresetStory(preset: Preset) {
+  const map: Record<Preset, string> = {
+    overall: "A verified growth story from the RebateBoard Trader Return Tracker.",
+    net_profit: "Net performance captured from tracked trading activity.",
+    cashback: "Trading costs reduced through verified RebateBoard cashback.",
+    payouts: "A payout milestone documented through RebateBoard performance tracking.",
+    best_month: "A standout month worth turning into a verified achievement.",
+    funded: "Funded capital tracked with a clean, institution-grade performance record.",
+    trader_level: "Progression earned through activity, discipline, and platform contribution.",
+    streak: "Consistency matters. Keep logging meaningful trading activity to build momentum.",
+    custom: "A signature RebateBoard achievement designed for sharing.",
+  };
+  return map[preset];
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.download = filename;
+  a.href = url;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function fieldLabel(field: keyof Visibility) {
