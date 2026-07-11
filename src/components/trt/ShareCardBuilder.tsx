@@ -130,7 +130,9 @@ export function ShareCardBuilder() {
   const [animateKey, setAnimateKey] = useState(0);
   const [animatedNumber, setAnimatedNumber] = useState<number | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
-  const [exporting, setExporting] = useState<"png" | "copy" | "share" | null>(null);
+  const [exporting, setExporting] = useState<"png" | "copy" | "link" | null>(null);
+  const [exportComplete, setExportComplete] = useState(false);
+  const [firstCardMessage, setFirstCardMessage] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const fundedAccounts = trt.accounts.filter((a) => a.status === "funded" || a.type === "prop_funded");
@@ -194,12 +196,13 @@ export function ShareCardBuilder() {
     }
   }, [bestMonth, cashbackTotal, customMetric, customTitle, fundedCapital, payoutsTotal, preset, streakDays, summary.net, summary.roiPct, traderLevel, user?.rrBalance]);
 
+  const heroMessage = useMemo(() => getPresetHeroMessage(preset), [preset]);
   const storyCopy = useMemo(() => getPresetStory(preset), [preset]);
 
   const supportStats = useMemo(() => [
-    { label: "Funded Capital", value: fundedCapital > 0 ? money(fundedCapital) : "Not Logged" },
-    { label: "Total Payouts", value: payoutsTotal > 0 ? money(payoutsTotal) : "Not Logged" },
-    { label: "Net Profit", value: summary.txCount > 0 ? money(summary.net) : "Not Logged" },
+    { label: "Funded Capital", value: fundedCapital > 0 ? money(fundedCapital) : "Awaiting Activity" },
+    { label: "Total Payouts", value: payoutsTotal > 0 ? money(payoutsTotal) : "No Activity Yet" },
+    { label: "Net Profit", value: summary.txCount > 0 ? money(summary.net) : "Start Tracking" },
   ], [fundedCapital, payoutsTotal, summary.net, summary.txCount]);
 
   useEffect(() => {
@@ -245,7 +248,7 @@ export function ShareCardBuilder() {
     return blob;
   };
 
-  const exportCard = async (mode: "png" | "copy" | "share") => {
+  const exportCard = async (mode: "png" | "copy") => {
     try {
       setExporting(mode);
       await new Promise((resolve) => window.setTimeout(resolve, 420));
@@ -254,22 +257,36 @@ export function ShareCardBuilder() {
       const filename = `rebateboard-${preset}-${ratio}-${Date.now()}.png`;
       if (mode === "copy" && navigator.clipboard && "write" in navigator.clipboard) {
         await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-      } else if (mode === "share" && navigator.share && typeof File !== "undefined") {
-        const file = new File([blob], filename, { type: blob.type });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ title: "RebateBoard Performance Card", files: [file] });
-        } else {
-          downloadBlob(blob, filename);
-        }
       } else {
         downloadBlob(blob, filename);
       }
-      setExportOpen(false);
+      setExportComplete(true);
+      markFirstCardCreated();
     } catch {
       window.alert("We couldn't export this card right now. Please try again.");
     } finally {
       setExporting(null);
     }
+  };
+
+  const copyShareLink = async () => {
+    try {
+      setExporting("link");
+      await navigator.clipboard?.writeText(`https://rebateboard.com/verify/${assetId.toLowerCase()}`);
+      setExportComplete(true);
+      markFirstCardCreated();
+    } catch {
+      window.alert("We couldn't copy the share link right now. Please try again.");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const markFirstCardCreated = () => {
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem("rebateboard-share-card-created") === "1") return;
+    window.localStorage.setItem("rebateboard-share-card-created", "1");
+    setFirstCardMessage(true);
   };
 
   const themeSpec = THEMES[theme];
@@ -281,9 +298,10 @@ export function ShareCardBuilder() {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
       <section className="space-y-4 xl:sticky xl:top-5 xl:self-start">
+        <div className="rounded-[2.35rem] bg-white/[0.035] p-3 shadow-[0_30px_90px_rgba(0,0,0,0.36)] ring-1 ring-white/8 backdrop-blur-sm transition-all duration-300 ease-out">
         <div
           ref={cardRef}
-          className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_24px_72px_rgba(0,0,0,0.42)] ring-1 ${themeSpec.line} transition-all duration-300 ease-out`}
+          className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_18px_58px_rgba(0,0,0,0.34)] ring-1 ${themeSpec.line} transition-[max-width,aspect-ratio,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5`}
         >
           <div className={`absolute -right-[14%] -top-[22%] h-[46%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
           <div className={`absolute -bottom-[22%] left-[5%] h-[38%] w-[30%] rounded-full ${themeSpec.glow} blur-3xl`} />
@@ -313,8 +331,14 @@ export function ShareCardBuilder() {
                   {achievement.title}
                 </div>
                 <div
+                  key={`hero-${preset}-${animateKey}`}
+                  className={`mt-3 text-sm font-bold uppercase tracking-[0.16em] ${themeSpec.accent} transition-all duration-300 ease-out`}
+                >
+                  {heroMessage}
+                </div>
+                <div
                   key={`${preset}-${ratio}-${animateKey}`}
-                  className={`mt-4 font-black tracking-[-0.055em] ${textPrimary} ${
+                  className={`mt-3 font-black tracking-[-0.055em] ${textPrimary} transition-all duration-300 ease-out ${
                     textMetric
                       ? ratio === "story"
                         ? "text-[3.25rem] leading-[0.95]"
@@ -388,6 +412,7 @@ export function ShareCardBuilder() {
             </footer>
           </div>
         </div>
+        </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
@@ -400,13 +425,32 @@ export function ShareCardBuilder() {
           </button>
           <button
             type="button"
-            onClick={() => setExportOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-bold text-white shadow-[0_0_22px_rgba(192,132,252,0.35)] transition hover:shadow-[0_0_28px_rgba(192,132,252,0.48)]"
+            onClick={() => {
+              setExportComplete(false);
+              setExportOpen(true);
+            }}
+            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(192,132,252,0.5)]"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 transition group-hover:-translate-y-0.5" />
             Export Card
           </button>
         </div>
+
+        {firstCardMessage && (
+          <div className="mx-auto max-w-xl rounded-3xl border border-primary/20 bg-primary/10 p-4 text-center shadow-[0_18px_42px_rgba(124,58,237,0.18)]">
+            <div className="text-base font-black text-white">Congratulations.</div>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              You created your first RebateBoard Performance Card. Your achievements deserve to be shared.
+            </p>
+            <button
+              type="button"
+              onClick={() => setFirstCardMessage(false)}
+              className="mt-3 rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/[0.06]"
+            >
+              Got it
+            </button>
+          </div>
+        )}
       </section>
 
       <aside className="space-y-4 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:pr-1">
@@ -456,7 +500,10 @@ export function ShareCardBuilder() {
                   theme === item ? "bg-white/10 text-white ring-white/20" : "bg-white/[0.03] text-muted-foreground ring-white/5"
                 }`}
               >
-                <span>{THEMES[item].label}</span>
+                <span className="inline-flex items-center gap-2">
+                  <span className={`h-5 w-5 rounded-full bg-gradient-to-br ${THEMES[item].shell} ring-1 ring-white/20`} />
+                  {THEMES[item].label}
+                </span>
                 {theme === item && <Check className="h-4 w-4 text-primary" />}
               </button>
             ))}
@@ -502,10 +549,13 @@ export function ShareCardBuilder() {
         <ControlPanel title="Export" icon={Download}>
           <button
             type="button"
-            onClick={() => setExportOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.28)] transition hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(192,132,252,0.4)]"
+            onClick={() => {
+              setExportComplete(false);
+              setExportOpen(true);
+            }}
+            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-4 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(192,132,252,0.4)]"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 transition group-hover:-translate-y-0.5" />
             Export Card
           </button>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
@@ -519,9 +569,13 @@ export function ShareCardBuilder() {
           <div className="glass w-full max-w-md rounded-[2rem] p-5 ring-1 ring-white/12">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-black text-white">Export Card</div>
+                <div className="text-lg font-black text-white">
+                  {exportComplete ? "Your Performance Card is Ready" : "Export Card"}
+                </div>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Your achievement is ready. Choose how you want to share it.
+                  {exportComplete
+                    ? "Share your verified trading journey with your community."
+                    : "Finalize your card, then choose how you want to use it."}
                 </p>
               </div>
               <button
@@ -532,10 +586,15 @@ export function ShareCardBuilder() {
                 <X className="h-4 w-4" />
               </button>
             </div>
+            {exportComplete && (
+              <div className="mt-5 rounded-3xl border border-primary/20 bg-primary/10 p-4 text-sm font-semibold leading-relaxed text-violet-100">
+                Your card has been finalized. Use the actions below to save it, copy it, or share a verification link.
+              </div>
+            )}
             <div className="mt-5 grid gap-3">
-              <ExportAction icon={Download} label="PNG" busy={exporting === "png"} onClick={() => exportCard("png")} />
+              <ExportAction icon={Download} label="Download PNG" busy={exporting === "png"} onClick={() => exportCard("png")} />
               <ExportAction icon={Copy} label="Copy Image" busy={exporting === "copy"} onClick={() => exportCard("copy")} />
-              <ExportAction icon={Share2} label="Native Share" busy={exporting === "share"} onClick={() => exportCard("share")} />
+              <ExportAction icon={Share2} label="Copy Share Link" busy={exporting === "link"} onClick={copyShareLink} />
             </div>
           </div>
         </div>
@@ -682,6 +741,21 @@ function formatAnimatedMetric(value: number, finalValue: string) {
     return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
   }
   return finalValue;
+}
+
+function getPresetHeroMessage(preset: Preset) {
+  const map: Record<Preset, string> = {
+    overall: "Your Performance Speaks.",
+    net_profit: "Built Through Discipline.",
+    cashback: "Every Dollar Saved Matters.",
+    payouts: "Verified Success.",
+    best_month: "Your Best Month Yet.",
+    funded: "Bigger Opportunities.",
+    trader_level: "Progress Earned.",
+    streak: "Consistency Wins.",
+    custom: "Your Signature Moment.",
+  };
+  return map[preset];
 }
 
 function getPresetStory(preset: Preset) {
