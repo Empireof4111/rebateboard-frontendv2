@@ -49,6 +49,41 @@ function BrandAvatar({ brand }: { brand: TbiProfile }) {
   );
 }
 
+function SkeletonLine({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-full bg-white/10 ${className}`} />;
+}
+
+function RankingSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading fully unlocked rankings">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="glass rounded-3xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonLine className="h-4 w-2/3" />
+              <SkeletonLine className="h-3 w-1/2" />
+            </div>
+            <SkeletonLine className="h-5 w-8" />
+          </div>
+          <div className="mt-6 space-y-2">
+            <SkeletonLine className="h-10 w-28" />
+            <SkeletonLine className="h-3 w-24" />
+          </div>
+          <div className="mt-5 rounded-2xl bg-white/5 p-3">
+            <SkeletonLine className="h-3 w-24" />
+            <div className="mt-3 flex gap-2">
+              <SkeletonLine className="h-6 w-14" />
+              <SkeletonLine className="h-6 w-14" />
+              <SkeletonLine className="h-6 w-20" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TBIPage() {
   const [brands, setBrands] = useState<TbiProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +193,7 @@ function TBIPage() {
           </div>
 
           {loading ? (
-            <div className="glass rounded-3xl p-8 text-sm text-muted-foreground">Loading trusted brands...</div>
+            <RankingSkeleton />
           ) : error ? (
             <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-200">{error}</div>
           ) : !brands.length ? (

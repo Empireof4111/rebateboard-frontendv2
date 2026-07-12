@@ -55,6 +55,36 @@ function BrandAvatar({ profile }: { profile: TbiProfile }) {
   );
 }
 
+function SkeletonLine({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-full bg-white/10 ${className}`} />;
+}
+
+function ExploreSkeleton() {
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading trust profiles">
+      {Array.from({ length: 9 }).map((_, index) => (
+        <div key={index} className="glass rounded-3xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonLine className="h-4 w-2/3" />
+              <SkeletonLine className="h-3 w-1/2" />
+            </div>
+          </div>
+          <div className="mt-6 space-y-2">
+            <SkeletonLine className="h-8 w-24" />
+            <SkeletonLine className="h-3 w-20" />
+          </div>
+          <div className="mt-6 flex items-center justify-between">
+            <SkeletonLine className="h-3 w-28" />
+            <SkeletonLine className="h-3 w-16" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ExplorePage() {
   const [profiles, setProfiles] = useState<TbiProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,7 +255,7 @@ function ExplorePage() {
         </div>
 
         {loading ? (
-          <div className="glass mt-4 rounded-3xl p-8 text-sm text-muted-foreground">Loading trust profiles...</div>
+          <ExploreSkeleton />
         ) : error ? (
           <div className="mt-4 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-200">{error}</div>
         ) : (

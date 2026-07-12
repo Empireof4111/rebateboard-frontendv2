@@ -67,6 +67,62 @@ function BrandAvatar({ profile }: { profile: TbiProfile }) {
   );
 }
 
+function SkeletonLine({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-full bg-white/10 ${className}`} />;
+}
+
+function BrandProfileSkeleton() {
+  return (
+    <div className="mt-4 space-y-6" aria-label="Loading TBI brand profile">
+      <section className="glass rounded-3xl p-6 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+          <div className="h-20 w-20 animate-pulse rounded-3xl bg-white/10" />
+          <div className="min-w-0 flex-1 space-y-3">
+            <SkeletonLine className="h-8 w-64 max-w-full" />
+            <SkeletonLine className="h-4 w-80 max-w-full" />
+          </div>
+          <div className="space-y-3 lg:w-44">
+            <SkeletonLine className="h-10 w-full" />
+            <SkeletonLine className="h-4 w-28 lg:ml-auto" />
+            <SkeletonLine className="h-3 w-36 lg:ml-auto" />
+          </div>
+        </div>
+      </section>
+      <div className="grid gap-6 xl:grid-cols-[1.5fr_0.95fr]">
+        <div className="space-y-6">
+          <section className="glass rounded-3xl p-6">
+            <SkeletonLine className="h-5 w-44" />
+            <div className="mt-5 space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="rounded-2xl bg-white/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <SkeletonLine className="h-4 w-40" />
+                    <SkeletonLine className="h-4 w-10" />
+                  </div>
+                  <SkeletonLine className="mt-4 h-2 w-full" />
+                  <SkeletonLine className="mt-4 h-3 w-4/5" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <section key={index} className="glass rounded-3xl p-6">
+              <SkeletonLine className="h-5 w-40" />
+              <div className="mt-5 space-y-3">
+                <SkeletonLine className="h-12 w-full" />
+                <SkeletonLine className="h-12 w-full" />
+                <SkeletonLine className="h-12 w-2/3" />
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BrandPage() {
   const { slug } = Route.useParams();
   const [profile, setProfile] = useState<TbiProfile | null>(null);
@@ -116,7 +172,7 @@ function BrandPage() {
         </Link>
 
         {loading ? (
-          <div className="glass mt-4 rounded-3xl p-8 text-sm text-muted-foreground">Loading trust profile...</div>
+          <BrandProfileSkeleton />
         ) : error || !profile ? (
           <div className="mt-4 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-200">
             {error || "Brand profile not found."}

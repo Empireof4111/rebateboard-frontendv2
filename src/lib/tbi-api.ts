@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { API_BASE_URL, apiRequest } from "@/lib/api";
 
 const AUTH_STORAGE_KEY = "rb_auth_session";
 
@@ -232,6 +232,41 @@ export type TbiProfile = {
   };
 };
 
+function text(value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (!raw || /^(null|undefined|n\/a|na|none|false|-|—)$/i.test(raw)) return "";
+  return raw;
+}
+
+function logoText(value: unknown) {
+  if (typeof value === "string") return text(value);
+  if (value && typeof value === "object") {
+    const row = value as Record<string, unknown>;
+    return (
+      text(row.url) ||
+      text(row.src) ||
+      text(row.key) ||
+      text(row.path) ||
+      text(row.logo) ||
+      text(row.logoUrl)
+    );
+  }
+  return "";
+}
+
+export function tbiMediaUrl(value: unknown) {
+  const raw = logoText(value);
+  if (!raw) return "";
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+
+  const apiOrigin = API_BASE_URL.replace(/\/api\/v1$/i, "");
+  if (raw.startsWith("/api/v1/")) return `${apiOrigin}${raw}`;
+  if (raw.startsWith("/file/")) return `${API_BASE_URL}${raw}`;
+  if (raw.startsWith("/")) return `${apiOrigin}${raw}`;
+
+  return `${API_BASE_URL}/file/view?key=${encodeURIComponent(raw)}`;
+}
+
 export function tbiProfileLogo(profile: Pick<TbiProfile, "logo" | "logoUrl" | "thumbnail" | "brandLogo" | "favicon" | "website" | "identity" | "profile">) {
   const candidates = [
     profile.logo,
@@ -244,11 +279,11 @@ export function tbiProfileLogo(profile: Pick<TbiProfile, "logo" | "logoUrl" | "t
     profile.profile?.logo,
     profile.profile?.logoUrl,
   ]
-    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .map((value) => logoText(value))
     .filter(Boolean);
 
   const direct = candidates.find((value) => value && !/^(null|undefined)$/i.test(value));
-  if (direct) return direct;
+  if (direct) return tbiMediaUrl(direct);
 
   const website = typeof profile.website === "string" ? profile.website.trim() : "";
   if (!website) return "";
