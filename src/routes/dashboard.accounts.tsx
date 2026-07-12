@@ -1,7 +1,7 @@
-// Trader ROI Tracker (TRT) — user-facing module.
+// Trader Return Tracker (TRT) — user-facing module.
 // Single route with internal tabs (Overview, Transactions, Accounts, Payouts,
 // Insights, Share Card). The URL stays /dashboard/accounts for backward
-// compatibility, but the product is now framed as "Trader ROI Tracker".
+// compatibility, but the product is now framed as "Trader Return Tracker".
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -24,7 +24,7 @@ import {
 export const Route = createFileRoute("/dashboard/accounts")({
   head: () => ({
     meta: [
-      { title: "Trader ROI Tracker — RebateBoard" },
+      { title: "Trader Return Tracker — RebateBoard" },
       { name: "description", content: "Track every dollar in and out of your trading: prop fees, broker deposits, payouts, rebates, tools, and education." },
     ],
   }),
@@ -53,7 +53,7 @@ function TrtPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Trader ROI Tracker"
+        title="Trader Return Tracker"
         subtitle="Every dollar you spend on trading and every dollar it earns back. Spot wins, leaks, and what to do next."
         actions={
           <>

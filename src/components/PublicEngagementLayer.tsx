@@ -1,0 +1,211 @@
+import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, ExternalLink, ShieldCheck, X } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import {
+  fetchPublicActivityEvents,
+  fetchPublicCampaigns,
+  trackPublicCampaignClick,
+  trackPublicCampaignView,
+  type PublicActivityEvent,
+  type PublicCampaign,
+} from "@/lib/public-engagement-api";
+import { useAuth } from "@/lib/auth";
+
+const SENSITIVE_ROUTES = ["/login", "/signup", "/review", "/business/onboarding", "/verify"];
+
+export function PublicEngagementLayer() {
+  const location = useRouterState({ select: (state) => state.location });
+  const { user } = useAuth();
+  const route = location.pathname;
+  const sensitive = SENSITIVE_ROUTES.some((path) => route.startsWith(path));
+  const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
+  const [activity, setActivity] = useState<PublicActivityEvent | null>(null);
+  const [activityQueue, setActivityQueue] = useState<PublicActivityEvent[]>([]);
+
+  useEffect(() => {
+    if (sensitive) return;
+    let active = true;
+    fetchPublicCampaigns(route, user ? "logged in" : "guests").then((campaigns) => {
+      if (!active) return;
+      const eligible = campaigns
+        .filter((item) => !isDismissed(item))
+        .sort((a, b) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0];
+      if (eligible) {
+        setCampaign(eligible);
+        void trackPublicCampaignView(eligible.id);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [route, sensitive, user]);
+
+  useEffect(() => {
+    if (sensitive) return;
+    let active = true;
+    fetchPublicActivityEvents().then((events) => {
+      if (active) setActivityQueue(events.filter((event) => !isActivityDismissed(event)));
+    });
+    return () => {
+      active = false;
+    };
+  }, [sensitive, route]);
+
+  useEffect(() => {
+    if (sensitive || activity || activityQueue.length === 0 || document.hidden) return;
+    const timer = window.setTimeout(() => {
+      setActivity(activityQueue[0]);
+      setActivityQueue((current) => current.slice(1));
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [activity, activityQueue, sensitive]);
+
+  useEffect(() => {
+    if (!activity) return;
+    const timer = window.setTimeout(() => setActivity(null), 7600);
+    return () => window.clearTimeout(timer);
+  }, [activity]);
+
+  const campaignHref = useMemo(() => normalizeHref(campaign?.primaryCtaUrl || "/"), [campaign]);
+  const campaignExternal = isExternalHref(campaign?.primaryCtaUrl || "");
+
+  if (sensitive) return null;
+
+  return (
+    <>
+      {campaign && (
+        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/65 p-4 backdrop-blur-md" role="dialog" aria-modal="true">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/12 bg-[#140722]/95 p-5 text-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
+            <button
+              type="button"
+              onClick={() => dismissCampaign(campaign, setCampaign)}
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
+              aria-label="Close promotion"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {campaign.image && (
+              <img src={campaign.image} alt="" className="mb-5 aspect-[16/7] w-full rounded-3xl object-cover ring-1 ring-white/10" />
+            )}
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-100 ring-1 ring-primary/25">
+              <Bell className="h-3.5 w-3.5" />
+              RebateBoard Update
+            </div>
+            <h2 className="mt-4 pr-10 text-2xl font-black leading-tight md:text-4xl">{campaign.headline}</h2>
+            <p className="mt-3 text-sm leading-7 text-white/70">{campaign.supportingText}</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              {campaignExternal ? (
+                <a
+                  href={campaign.primaryCtaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => {
+                    void trackPublicCampaignClick(campaign.id);
+                    dismissCampaign(campaign, setCampaign);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white"
+                >
+                  {campaign.primaryCtaLabel || "Learn more"} <ExternalLink className="h-4 w-4" />
+                </a>
+              ) : (
+                <Link
+                  to={campaignHref}
+                  onClick={() => {
+                    void trackPublicCampaignClick(campaign.id);
+                    dismissCampaign(campaign, setCampaign);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white"
+                >
+                  {campaign.primaryCtaLabel || "Learn more"} <ExternalLink className="h-4 w-4" />
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => dismissCampaign(campaign, setCampaign)}
+                className="rounded-full border border-white/12 px-5 py-3 text-sm font-bold text-white/80 transition hover:bg-white/8"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activity && (
+        <div className="fixed bottom-5 left-4 z-[80] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/12 bg-[#140722]/95 p-4 text-white shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl md:bottom-6 md:left-6">
+          <button
+            type="button"
+            onClick={() => dismissActivity(activity, setActivity)}
+            className="absolute right-3 top-3 text-white/55 transition hover:text-white"
+            aria-label="Dismiss activity"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex gap-3 pr-6">
+            <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/8 ring-1 ring-white/10">
+              {activity.logoUrl ? <img src={activity.logoUrl} alt="" className="h-full w-full object-cover" /> : <Logo heightClass="h-5" showText={false} />}
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-black">
+                <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                {activity.title}
+              </div>
+              <p className="mt-1 text-xs leading-5 text-white/68">{activity.message}</p>
+              {activity.destinationUrl && (
+                isExternalHref(activity.destinationUrl) ? (
+                  <a href={activity.destinationUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-xs font-bold text-violet-200 hover:text-white">
+                    View details
+                  </a>
+                ) : (
+                  <Link to={normalizeHref(activity.destinationUrl)} className="mt-2 inline-flex text-xs font-bold text-violet-200 hover:text-white">
+                    View details
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function normalizeHref(value: string) {
+  if (!value || isExternalHref(value)) return "/" as const;
+  return value as "/";
+}
+
+function isExternalHref(value: string) {
+  return /^https?:\/\//i.test(value) || value.startsWith("mailto:");
+}
+
+function isDismissed(campaign: PublicCampaign) {
+  if (typeof window === "undefined") return false;
+  const key = `rb_campaign_${campaign.id}`;
+  const last = Number(window.localStorage.getItem(key) || 0);
+  return Date.now() - last < 24 * 60 * 60 * 1000;
+}
+
+function dismissCampaign(campaign: PublicCampaign, setCampaign: (campaign: PublicCampaign | null) => void) {
+  try {
+    window.localStorage.setItem(`rb_campaign_${campaign.id}`, String(Date.now()));
+  } catch {
+    // ignore
+  }
+  setCampaign(null);
+}
+
+function isActivityDismissed(event: PublicActivityEvent) {
+  if (typeof window === "undefined") return false;
+  return window.sessionStorage.getItem(`rb_activity_${event.id}`) === "1";
+}
+
+function dismissActivity(event: PublicActivityEvent, setActivity: (event: PublicActivityEvent | null) => void) {
+  try {
+    window.sessionStorage.setItem(`rb_activity_${event.id}`, "1");
+  } catch {
+    // ignore
+  }
+  setActivity(null);
+}

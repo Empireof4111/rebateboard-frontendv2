@@ -1054,7 +1054,7 @@ function ExclusiveOffersPanel({
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="truncate text-sm font-semibold text-white">{offer.brand}</span>
                   {offer.pinned && (
-                    <Star className="h-3.5 w-3.5 shrink-0 fill-amber-300 text-amber-300" />
+                    <Star className="h-3.5 w-3.5 shrink-0 fill-fuchsia-300 text-fuchsia-300" />
                   )}
                 </span>
                 <span className="mt-1 flex min-w-0 items-center gap-1.5">
@@ -1511,7 +1511,7 @@ function Index() {
                             key={n}
                             className={
                               "h-4 w-4 " +
-                              (n <= 4 ? "fill-yellow-400 text-yellow-400" : "text-yellow-400/40")
+                              (n <= 4 ? "fill-fuchsia-300 text-fuchsia-300" : "text-fuchsia-300/35")
                             }
                           />
                         ))}
@@ -1525,7 +1525,7 @@ function Index() {
                     {reviewBars.map((b) => (
                       <div key={b.stars} className="flex items-center gap-2 text-[11px]">
                         <span className="w-3 text-muted-foreground">{b.stars}</span>
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-orange-400"
@@ -2048,7 +2048,7 @@ function CompareDialog({
                             <div>
                               <div className="text-xs font-semibold">{name}</div>
                               <div className="mt-0.5 inline-flex items-center gap-1 text-[10px]">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 4.7{" "}
+                                <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" /> 4.7{" "}
                                 <span className="text-muted-foreground">(2,001)</span>
                               </div>
                             </div>
@@ -2142,11 +2142,11 @@ function CompareDialog({
                       <div>
                         <div className="text-sm font-semibold">{name}</div>
                         <div className="mt-0.5 flex items-center gap-1 text-[10px]">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <Star className="h-3 w-3 text-yellow-400/40" />
+                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
+                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
+                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
+                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
+                          <Star className="h-3 w-3 text-fuchsia-300/35" />
                           <span className="ml-1 font-semibold">4.0</span>
                         </div>
                         <div className="text-[10px] text-muted-foreground">Total Review : 4</div>

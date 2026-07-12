@@ -137,7 +137,7 @@ function ClaimsPage() {
             ← Back to Wallet
           </button>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
-            <ClipboardCheck className="h-6 w-6 text-accent" /> My cashback claims
+            <ClipboardCheck className="h-6 w-6 text-fuchsia-300" /> My cashback claims
           </h1>
           <p className="mt-1 text-sm text-white/60">Every claim you submit lives here — with proof, timeline, and payout target.</p>
         </div>

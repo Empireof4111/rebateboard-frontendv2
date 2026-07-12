@@ -36,6 +36,7 @@ import {
 import { fetchTbiExplore, type TbiProfile } from "@/lib/tbi-api";
 import { resolveCountryDisplay } from "@/lib/country-format";
 import { isPublishedBrand } from "@/lib/public-brand";
+import { fetchPublicSearchTrending, logSearchEvent, type TrendingConfig } from "@/lib/search-analytics";
 
 type SearchIcon = typeof Search;
 
@@ -235,9 +236,12 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
   const [history, setHistory] = useState<string[]>([]);
   const [brandHits, setBrandHits] = useState<Hit[]>([]);
   const [contentHits, setContentHits] = useState<Hit[]>([]);
+  const [trendingConfig, setTrendingConfig] = useState<TrendingConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const loggedSearchTermsRef = useRef<Set<string>>(new Set());
+  const loggedNoResultTermsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -246,12 +250,13 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
     setLoading(true);
 
     async function loadSearchData() {
-      const [brands, offers, posts, faqs, tbiProfiles] = await Promise.all([
+      const [brands, offers, posts, faqs, tbiProfiles, trending] = await Promise.all([
         fetchPublicAdminBrands(),
         fetchPublicOffers(),
         fetchPublicBlogPosts(0, 80),
         fetchPublicFaqs(0, 80),
         fetchTbiExplore(),
+        fetchPublicSearchTrending(),
       ]);
 
       if (!active) return;
@@ -274,6 +279,7 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
 
       setBrandHits(nextBrands);
       setContentHits(nextContent);
+      setTrendingConfig(trending);
       setLoading(false);
     }
 
@@ -293,6 +299,8 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
     if (!open) return;
     setHistory(readHistory());
     setQ("");
+    loggedSearchTermsRef.current = new Set();
+    loggedNoResultTermsRef.current = new Set();
     const timer = setTimeout(() => inputRef.current?.focus(), 50);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -308,11 +316,34 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
 
   const allHits = useMemo(() => [...brandHits, ...contentHits], [brandHits, contentHits]);
 
-  const trendingBrands = useMemo(() => brandHits.slice(0, 6), [brandHits]);
+  function resolveTrendingHits(items: string[], pool: Hit[]) {
+    const resolved: Hit[] = [];
+    items.forEach((item) => {
+      const needle = item.trim().toLowerCase();
+      if (!needle) return;
+      const match = pool.find((hit) => hit.label.toLowerCase() === needle)
+        ?? pool.find((hit) => hit.label.toLowerCase().includes(needle))
+        ?? pool.find((hit) => (hit.brandName ?? "").toLowerCase() === needle);
+      if (match && !resolved.some((hit) => hit.id === match.id)) resolved.push(match);
+    });
+    return resolved;
+  }
+
+  const trendingBrands = useMemo(() => {
+    const brandConfig = trendingConfig?.brands;
+    const configuredItems = brandConfig?.mode === "manual" ? brandConfig.items : (brandConfig?.resolved?.length ? brandConfig.resolved : brandConfig?.items);
+    const resolved = resolveTrendingHits(configuredItems ?? [], brandHits);
+    return (resolved.length ? resolved : brandHits).slice(0, 6);
+  }, [brandHits, trendingConfig]);
+
   const trendingSearches = useMemo(() => {
+    const configured = trendingConfig?.searches;
+    const configuredItems = configured?.mode === "manual" ? configured.items : (configured?.resolved?.length ? configured.resolved : configured?.items);
+    const resolved = resolveTrendingHits(configuredItems ?? [], [...brandHits, ...contentHits]);
+    if (resolved.length) return resolved.slice(0, 6);
     const offerHits = contentHits.filter((hit) => hit.group === "Offers").slice(0, 3);
     return [...brandHits.slice(0, 3), ...offerHits].slice(0, 6);
-  }, [brandHits, contentHits]);
+  }, [brandHits, contentHits, trendingConfig]);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -328,6 +359,29 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
     return groups;
   }, [results]);
 
+  useEffect(() => {
+    if (!open) return;
+    const term = q.trim();
+    if (term.length < 2) return;
+    const key = term.toLowerCase();
+    if (loggedSearchTermsRef.current.has(key)) return;
+    const handle = window.setTimeout(() => {
+      loggedSearchTermsRef.current.add(key);
+      logSearchEvent({ type: "search", term, surface: "global_search" });
+    }, 500);
+    return () => window.clearTimeout(handle);
+  }, [open, q]);
+
+  useEffect(() => {
+    if (!open || loading) return;
+    const term = q.trim();
+    if (term.length < 2 || results.length > 0) return;
+    const key = term.toLowerCase();
+    if (loggedNoResultTermsRef.current.has(key)) return;
+    loggedNoResultTermsRef.current.add(key);
+    logSearchEvent({ type: "no_results", term, surface: "global_search" });
+  }, [open, loading, q, results.length]);
+
   function pushHistory(term: string) {
     const nextTerm = term.trim();
     if (!nextTerm) return;
@@ -340,7 +394,16 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
   }
 
   function go(hit: Hit, term?: string) {
-    pushHistory(term ?? hit.label);
+    const searchTerm = term ?? hit.label;
+    pushHistory(searchTerm);
+    logSearchEvent({
+      type: "click",
+      term: searchTerm,
+      resultLabel: hit.label,
+      resultGroup: hit.group,
+      to: hit.to,
+      surface: "global_search",
+    });
     onClose();
     navigate({ to: hit.to });
   }

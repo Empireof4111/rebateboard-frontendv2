@@ -8,7 +8,6 @@ import {
   EyeOff,
   Gauge,
   Globe2,
-  QrCode,
   Share2,
   ShieldCheck,
   SlidersHorizontal,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
+import { createTrtShareableAsset, type ShareableAssetRecord } from "@/lib/shareable-assets-api";
 import { money, summarize, useTrt } from "@/lib/trt-store";
 
 type Preset =
@@ -117,7 +117,7 @@ const DEFAULT_VISIBILITY: Visibility = {
 };
 
 export function ShareCardBuilder() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const trt = useTrt();
   const summary = useMemo(() => summarize(trt, "all"), [trt]);
   const monthly = useMemo(() => summarize(trt, "30d"), [trt]);
@@ -130,8 +130,11 @@ export function ShareCardBuilder() {
   const [animateKey, setAnimateKey] = useState(0);
   const [animatedNumber, setAnimatedNumber] = useState<number | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
-  const [exporting, setExporting] = useState<"png" | "copy" | "link" | null>(null);
+  const [exporting, setExporting] = useState<"png" | "copy" | "social" | "verify" | null>(null);
   const [exportComplete, setExportComplete] = useState(false);
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  const [verificationRecord, setVerificationRecord] = useState<ShareableAssetRecord | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [firstCardMessage, setFirstCardMessage] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -153,6 +156,8 @@ export function ShareCardBuilder() {
     const seed = (user?.id || username || "trader").toString().replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase();
     return `RB-TRT-${seed || "CARD"}-${new Date().getFullYear()}`;
   }, [user?.id, username]);
+  const publicAssetId = verificationRecord?.publicAssetId || assetId;
+  const verificationUrl = getVerificationUrl(publicAssetId);
 
   const achievement = useMemo(() => {
     switch (preset) {
@@ -206,6 +211,11 @@ export function ShareCardBuilder() {
   ], [fundedCapital, payoutsTotal, summary.net, summary.txCount]);
 
   useEffect(() => {
+    setVerificationRecord(null);
+    setShareSheetOpen(false);
+  }, [achievement.title, achievement.value, preset, ratio, theme, vis]);
+
+  useEffect(() => {
     if (achievement.numeric == null || Number.isNaN(achievement.numeric)) {
       setAnimatedNumber(null);
       return;
@@ -231,18 +241,190 @@ export function ShareCardBuilder() {
     ? achievement.value
     : formatAnimatedMetric(animatedNumber, achievement.value);
 
+  const renderPerformanceCard = (ref?: typeof cardRef) => (
+    <div
+      ref={ref}
+      className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_18px_58px_rgba(0,0,0,0.34)] ring-1 ${themeSpec.line} transition-[max-width,aspect-ratio,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5`}
+    >
+      <div className={`absolute -right-[14%] -top-[22%] h-[46%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
+      <div className={`absolute -bottom-[22%] left-[5%] h-[38%] w-[30%] rounded-full ${themeSpec.glow} blur-3xl`} />
+      <div
+        className="absolute inset-0 opacity-[0.045]"
+        style={{
+          backgroundImage:
+            "linear-gradient(120deg, transparent 0 28px, currentColor 29px, transparent 30px)",
+          backgroundSize: "118px 118px",
+          color: platinum ? "#2e174f" : "#ffffff",
+        }}
+      />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+      <div className="relative flex h-full flex-col p-[6.2%]">
+        <header className="flex items-start justify-between gap-6">
+          <Logo heightClass={ratio === "story" ? "h-10" : "h-8"} className={platinum ? "[&_*]:text-slate-950" : ""} />
+          <div className={`text-right text-[0.62rem] font-semibold uppercase tracking-[0.22em] ${textMuted}`}>
+            <div>Trader Performance Card</div>
+            <div className="mt-1 opacity-70">Version 1.0</div>
+          </div>
+        </header>
+
+        <main className={`flex flex-1 flex-col ${ratio === "story" ? "justify-center py-[8%]" : ratio === "square" ? "justify-center py-[5%]" : "justify-end py-[4%]"}`}>
+          <div className={`transition duration-300 ease-out ${ratio === "story" ? "max-w-full text-center" : ratio === "square" ? "max-w-[88%]" : "max-w-[74%]"}`}>
+            <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] ${themeSpec.line} ${themeSpec.accent}`}>
+              <Trophy className="h-3.5 w-3.5" />
+              {achievement.title}
+            </div>
+            <div
+              key={`hero-${preset}-${animateKey}`}
+              className={`mt-3 text-sm font-bold uppercase tracking-[0.16em] ${themeSpec.accent} transition-all duration-300 ease-out`}
+            >
+              {heroMessage}
+            </div>
+            <div
+              key={`${preset}-${ratio}-${animateKey}`}
+              className={`mt-3 font-black tracking-[-0.055em] ${textPrimary} transition-all duration-300 ease-out ${
+                textMetric
+                  ? ratio === "story"
+                    ? "text-[3.25rem] leading-[0.95]"
+                    : "text-[clamp(3rem,5.8vw,5.2rem)] leading-[0.95]"
+                  : ratio === "story"
+                  ? "text-[4.85rem] leading-[0.88]"
+                  : "text-[clamp(4.2rem,9vw,7.4rem)] leading-[0.88]"
+              }`}
+            >
+              {displayMetric}
+            </div>
+            <div className={`mt-3 ${ratio === "story" ? "mx-auto max-w-[19rem] text-base" : "max-w-xl text-sm"} font-medium leading-relaxed ${textMuted}`}>
+              {storyCopy}
+            </div>
+          </div>
+        </main>
+
+        {vis.stats && (
+          <div className={`grid ${ratio === "story" ? "grid-cols-1 divide-y" : "grid-cols-3 border-y"} ${themeSpec.line}`}>
+            {supportStats.map((stat, index) => (
+              <div key={stat.label} className={`py-4 ${ratio === "story" ? "text-center" : index > 0 ? `border-l ${themeSpec.line} pl-5` : "pr-5"}`}>
+                <div className={`text-[0.58rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{stat.label}</div>
+                <div className={`mt-1 text-lg font-bold tabular-nums ${textPrimary}`}>{stat.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <footer className={`mt-5 flex items-end justify-between gap-5 ${ratio === "story" ? "flex-col items-start" : ""}`}>
+          {vis.profile && (
+            <div className="flex min-w-0 items-center gap-3">
+              <div className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border ${themeSpec.line} ${platinum ? "bg-slate-950/5" : "bg-white/[0.055]"}`}>
+                {user?.dp ? (
+                  <img src={user.dp} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <UserRound className={`h-5 w-5 ${themeSpec.accent}`} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className={`truncate text-base font-bold ${textPrimary}`}>{traderName}</div>
+                <div className={`truncate text-xs font-medium ${textMuted}`}>@{username}</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {vis.country && user?.country && <MetaChip icon={Globe2} label={user.country} platinum={platinum} />}
+                  {vis.memberSince && <MetaChip icon={BadgeCheck} label={`Member since ${memberSince}`} platinum={platinum} />}
+                  {vis.traderLevel && <MetaChip icon={Trophy} label={traderLevel} platinum={platinum} premium />}
+                  {vis.traderTbi && <MetaChip icon={Gauge} label={`Trader TBI ${Math.round(user?.traderScore ?? 0)}/100`} platinum={platinum} />}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(vis.verification || vis.qr) && (
+            <div className={`flex shrink-0 items-center gap-3 rounded-2xl border ${themeSpec.line} ${platinum ? "bg-white/45" : "bg-black/18"} p-3 backdrop-blur`}>
+              {vis.verification && (
+                <div className={ratio === "story" ? "max-w-[210px]" : "max-w-[250px]"}>
+                  <div className={`flex items-center gap-1.5 text-xs font-bold ${textPrimary}`}>
+                    <ShieldCheck className={`h-4 w-4 ${themeSpec.accent}`} />
+                    Verified by RebateBoard
+                  </div>
+                  <p className={`mt-1 text-[0.64rem] leading-snug ${textMuted}`}>
+                    Data verified from platform activity. Asset ID {publicAssetId}
+                  </p>
+                  <div className={`mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.14em] ${themeSpec.accent}`}>
+                    {shortVerificationUrl(verificationUrl)}
+                  </div>
+                </div>
+              )}
+              {vis.qr && <QrMark platinum={platinum} url={verificationUrl} />}
+            </div>
+          )}
+        </footer>
+      </div>
+    </div>
+  );
+
+  const buildVerificationPayload = () => {
+    const visibleFields = (Object.keys(vis) as (keyof Visibility)[]).filter((field) => vis[field]);
+    const metadata: Record<string, string | number | null> = {
+      presetLabel: PRESETS.find((item) => item.id === preset)?.label || achievement.title,
+    };
+    if (vis.profile) {
+      metadata.traderName = traderName;
+      metadata.username = username;
+    }
+    if (vis.country) metadata.country = user?.country || null;
+    if (vis.memberSince) metadata.memberSince = memberSince;
+    if (vis.traderLevel) metadata.traderLevel = traderLevel;
+    if (vis.traderTbi) metadata.traderTbi = Math.round(user?.traderScore ?? 0);
+    return {
+      preset,
+      format: ratio,
+      theme,
+      verifiedMetrics: {
+        primaryMetric: achievement.value,
+        achievement: achievement.title,
+        fundedCapital: supportStats[0]?.value ?? null,
+        totalPayouts: supportStats[1]?.value ?? null,
+        netProfit: supportStats[2]?.value ?? null,
+      },
+      visibleFields,
+      metadata,
+    };
+  };
+
+  const ensureVerificationRecord = async () => {
+    if (verificationRecord) return verificationRecord;
+    if (!token) {
+      throw new Error("Sign in to create a verified performance card.");
+    }
+    const record = await createTrtShareableAsset(token, buildVerificationPayload());
+    setVerificationRecord(record);
+    await waitForNextPaint();
+    return record;
+  };
+
+  const prepareVerifiedCard = async () => {
+    const record = await ensureVerificationRecord();
+    await waitForNextPaint();
+    if (cardRef.current) await waitForImages(cardRef.current);
+    return record;
+  };
+
   const createPngBlob = async () => {
     if (!cardRef.current) return null;
     const mod = await import("html-to-image");
     const { exportWidth, exportHeight } = RATIOS[ratio];
+    await document.fonts?.ready;
+    await waitForImages(cardRef.current);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const blob = await mod.toBlob(cardRef.current, {
       pixelRatio: 2,
       backgroundColor: theme === "platinum" ? "#f2edf8" : "#07070c",
+      cacheBust: true,
       width: exportWidth,
       height: exportHeight,
       style: {
         width: `${exportWidth}px`,
         height: `${exportHeight}px`,
+        maxWidth: "none",
+        minWidth: "0",
+        transform: "none",
+        transformOrigin: "top left",
+        overflow: "hidden",
       },
     });
     return blob;
@@ -251,7 +433,8 @@ export function ShareCardBuilder() {
   const exportCard = async (mode: "png" | "copy") => {
     try {
       setExporting(mode);
-      await new Promise((resolve) => window.setTimeout(resolve, 420));
+      await prepareVerifiedCard();
+      await new Promise((resolve) => window.setTimeout(resolve, 260));
       const blob = await createPngBlob();
       if (!blob) throw new Error("No card");
       const filename = `rebateboard-${preset}-${ratio}-${Date.now()}.png`;
@@ -269,14 +452,29 @@ export function ShareCardBuilder() {
     }
   };
 
-  const copyShareLink = async () => {
+  const openVerificationPage = async () => {
     try {
-      setExporting("link");
-      await navigator.clipboard?.writeText(`https://rebateboard.com/verify/${assetId.toLowerCase()}`);
+      setExporting("verify");
+      const record = await prepareVerifiedCard();
+      window.open(getVerificationUrl(record.publicAssetId), "_blank", "noopener,noreferrer");
       setExportComplete(true);
       markFirstCardCreated();
     } catch {
-      window.alert("We couldn't copy the share link right now. Please try again.");
+      window.alert("We couldn't open the verification page right now. Please try again.");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const openShareSheet = async () => {
+    try {
+      setExporting("social");
+      await prepareVerifiedCard();
+      setExportComplete(true);
+      setShareSheetOpen(true);
+      markFirstCardCreated();
+    } catch {
+      window.alert("We couldn't prepare social sharing right now. Please try again.");
     } finally {
       setExporting(null);
     }
@@ -296,122 +494,10 @@ export function ShareCardBuilder() {
   const textMetric = achievement.numeric == null && !/^[+$]?\d/.test(achievement.value);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
+    <div className="grid gap-5 lg:gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
       <section className="space-y-4 xl:sticky xl:top-5 xl:self-start">
         <div className="rounded-[2.35rem] bg-white/[0.035] p-3 shadow-[0_30px_90px_rgba(0,0,0,0.36)] ring-1 ring-white/8 backdrop-blur-sm transition-all duration-300 ease-out">
-        <div
-          ref={cardRef}
-          className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_18px_58px_rgba(0,0,0,0.34)] ring-1 ${themeSpec.line} transition-[max-width,aspect-ratio,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5`}
-        >
-          <div className={`absolute -right-[14%] -top-[22%] h-[46%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
-          <div className={`absolute -bottom-[22%] left-[5%] h-[38%] w-[30%] rounded-full ${themeSpec.glow} blur-3xl`} />
-          <div
-            className="absolute inset-0 opacity-[0.045]"
-            style={{
-              backgroundImage:
-                "linear-gradient(120deg, transparent 0 28px, currentColor 29px, transparent 30px)",
-              backgroundSize: "118px 118px",
-              color: platinum ? "#2e174f" : "#ffffff",
-            }}
-          />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-          <div className="relative flex h-full flex-col p-[6.2%]">
-            <header className="flex items-start justify-between gap-6">
-              <Logo heightClass={ratio === "story" ? "h-10" : "h-8"} className={platinum ? "[&_*]:text-slate-950" : ""} />
-              <div className={`text-right text-[0.62rem] font-semibold uppercase tracking-[0.22em] ${textMuted}`}>
-                <div>Trader Performance Card</div>
-                <div className="mt-1 opacity-70">Version 1.0</div>
-              </div>
-            </header>
-
-            <main className={`flex flex-1 flex-col ${ratio === "story" ? "justify-center py-[10%]" : "justify-end py-[4%]"}`}>
-              <div className={`transition duration-300 ease-out ${ratio === "story" ? "max-w-full text-center" : "max-w-[72%]"}`}>
-                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] ${themeSpec.line} ${themeSpec.accent}`}>
-                  <Trophy className="h-3.5 w-3.5" />
-                  {achievement.title}
-                </div>
-                <div
-                  key={`hero-${preset}-${animateKey}`}
-                  className={`mt-3 text-sm font-bold uppercase tracking-[0.16em] ${themeSpec.accent} transition-all duration-300 ease-out`}
-                >
-                  {heroMessage}
-                </div>
-                <div
-                  key={`${preset}-${ratio}-${animateKey}`}
-                  className={`mt-3 font-black tracking-[-0.055em] ${textPrimary} transition-all duration-300 ease-out ${
-                    textMetric
-                      ? ratio === "story"
-                        ? "text-[3.25rem] leading-[0.95]"
-                        : "text-[clamp(3rem,5.8vw,5.2rem)] leading-[0.95]"
-                      : ratio === "story"
-                      ? "text-[4.85rem] leading-[0.88]"
-                      : "text-[clamp(4.2rem,9vw,7.4rem)] leading-[0.88]"
-                  }`}
-                >
-                  {displayMetric}
-                </div>
-                <div className={`mt-3 ${ratio === "story" ? "mx-auto max-w-[19rem] text-base" : "max-w-xl text-sm"} font-medium leading-relaxed ${textMuted}`}>
-                  {storyCopy}
-                </div>
-              </div>
-            </main>
-
-            {vis.stats && (
-              <div className={`grid ${ratio === "story" ? "grid-cols-1 divide-y" : "grid-cols-3 border-y"} ${themeSpec.line}`}>
-                {supportStats.map((stat, index) => (
-                  <div key={stat.label} className={`py-4 ${ratio === "story" ? "text-center" : index > 0 ? `border-l ${themeSpec.line} pl-5` : "pr-5"}`}>
-                    <div className={`text-[0.58rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{stat.label}</div>
-                    <div className={`mt-1 text-lg font-bold tabular-nums ${textPrimary}`}>{stat.value}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <footer className={`mt-5 flex items-end justify-between gap-5 ${ratio === "story" ? "flex-col items-start" : ""}`}>
-              {vis.profile && (
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border ${themeSpec.line} ${platinum ? "bg-slate-950/5" : "bg-white/[0.055]"}`}>
-                    {user?.dp ? (
-                      <img src={user.dp} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <UserRound className={`h-5 w-5 ${themeSpec.accent}`} />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className={`truncate text-base font-bold ${textPrimary}`}>{traderName}</div>
-                    <div className={`truncate text-xs font-medium ${textMuted}`}>@{username}</div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {vis.country && user?.country && <MetaChip icon={Globe2} label={user.country} platinum={platinum} />}
-                      {vis.memberSince && <MetaChip icon={BadgeCheck} label={`Member since ${memberSince}`} platinum={platinum} />}
-                      {vis.traderLevel && <MetaChip icon={Trophy} label={traderLevel} platinum={platinum} premium />}
-                      {vis.traderTbi && <MetaChip icon={Gauge} label={`Trader TBI ${Math.round(user?.traderScore ?? 0)}/100`} platinum={platinum} />}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {(vis.verification || vis.qr) && (
-                <div className={`flex shrink-0 items-center gap-3 rounded-2xl border ${themeSpec.line} ${platinum ? "bg-white/45" : "bg-black/18"} p-3 backdrop-blur`}>
-                  {vis.verification && (
-                    <div className={ratio === "story" ? "max-w-[210px]" : "max-w-[250px]"}>
-                      <div className={`flex items-center gap-1.5 text-xs font-bold ${textPrimary}`}>
-                        <ShieldCheck className={`h-4 w-4 ${themeSpec.accent}`} />
-                        Verified by RebateBoard
-                      </div>
-                      <p className={`mt-1 text-[0.64rem] leading-snug ${textMuted}`}>
-                        Data verified from platform activity. Asset ID {assetId}
-                      </p>
-                      <div className={`mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.14em] ${themeSpec.accent}`}>
-                        rebateboard.com/verify
-                      </div>
-                    </div>
-                  )}
-                  {vis.qr && <QrMark platinum={platinum} />}
-                </div>
-              )}
-            </footer>
-          </div>
-        </div>
+          {renderPerformanceCard(cardRef)}
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -422,6 +508,14 @@ export function ShareCardBuilder() {
           >
             <Eye className="h-4 w-4" />
             Generate Preview
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white transition hover:bg-white/[0.08]"
+          >
+            <Eye className="h-4 w-4" />
+            Full-screen Preview
           </button>
           <button
             type="button"
@@ -588,14 +682,38 @@ export function ShareCardBuilder() {
             </div>
             {exportComplete && (
               <div className="mt-5 rounded-3xl border border-primary/20 bg-primary/10 p-4 text-sm font-semibold leading-relaxed text-violet-100">
-                Your card has been finalized. Use the actions below to save it, copy it, or share a verification link.
+                Your card has been finalized with a public RebateBoard verification record.
               </div>
             )}
             <div className="mt-5 grid gap-3">
               <ExportAction icon={Download} label="Download PNG" busy={exporting === "png"} onClick={() => exportCard("png")} />
               <ExportAction icon={Copy} label="Copy Image" busy={exporting === "copy"} onClick={() => exportCard("copy")} />
-              <ExportAction icon={Share2} label="Copy Share Link" busy={exporting === "link"} onClick={copyShareLink} />
+              <ExportAction icon={Share2} label="Share to Social" busy={exporting === "social"} onClick={openShareSheet} />
+              <ExportAction icon={Eye} label="Open Verification Page" busy={exporting === "verify"} onClick={openVerificationPage} />
+              <ExportAction icon={Eye} label="Full-screen Preview" busy={false} onClick={() => setPreviewOpen(true)} />
             </div>
+            {shareSheetOpen && (
+              <ShareSheet
+                caption={getShareCaption(preset, getVerificationUrl((verificationRecord?.publicAssetId || publicAssetId)))}
+                verificationUrl={getVerificationUrl((verificationRecord?.publicAssetId || publicAssetId))}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/78 p-3 backdrop-blur-md sm:p-6">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(false)}
+            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/[0.08] text-white ring-1 ring-white/12 transition hover:bg-white/[0.13]"
+            aria-label="Close preview"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="mobile-scroll max-h-[90dvh] w-full max-w-6xl overflow-auto rounded-[2rem] bg-white/[0.035] p-3 ring-1 ring-white/10">
+            {renderPerformanceCard()}
           </div>
         </div>
       )}
@@ -654,6 +772,113 @@ function ExportAction({
   );
 }
 
+function ShareSheet({ caption, verificationUrl }: { caption: string; verificationUrl: string }) {
+  const [copied, setCopied] = useState(false);
+  const encodedCaption = encodeURIComponent(caption);
+  const encodedUrl = encodeURIComponent(verificationUrl);
+  const shareTargets = [
+    { label: "X", href: `https://twitter.com/intent/tweet?text=${encodedCaption}` },
+    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+    { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
+    { label: "Telegram", href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption}` },
+    { label: "WhatsApp", href: `https://wa.me/?text=${encodedCaption}` },
+  ];
+
+  const copyCaption = async () => {
+    await navigator.clipboard?.writeText(caption);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-4">
+      <div className="text-sm font-black text-white">Share to Social</div>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        Most platforms accept a caption and verification link. Use Download PNG or Copy Image for the card artwork.
+      </p>
+      <div className="mt-3 rounded-2xl bg-black/20 p-3 text-xs leading-relaxed text-violet-100 ring-1 ring-white/8">
+        {caption}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {shareTargets.map((target) => (
+          <a
+            key={target.label}
+            href={target.href}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-2xl bg-white/[0.055] px-3 py-2 text-center text-xs font-bold text-white ring-1 ring-white/8 transition hover:bg-white/[0.09]"
+          >
+            {target.label}
+          </a>
+        ))}
+        <button
+          type="button"
+          onClick={copyCaption}
+          className="rounded-2xl bg-primary/15 px-3 py-2 text-xs font-bold text-violet-100 ring-1 ring-primary/20 transition hover:bg-primary/20"
+        >
+          {copied ? "Copied" : "Copy Caption"}
+        </button>
+        <button
+          type="button"
+          onClick={() => window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer")}
+          className="rounded-2xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-white ring-1 ring-white/8 transition hover:bg-white/[0.09]"
+        >
+          Instagram
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function getVerificationUrl(publicAssetId: string) {
+  const fallback = "https://rebateboard.com";
+  if (typeof window === "undefined") return `${fallback}/verify/${publicAssetId}`;
+  return `${window.location.origin}/verify/${publicAssetId}`;
+}
+
+function shortVerificationUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.host}/verify/${parsed.pathname.split("/").filter(Boolean).pop()}`;
+  } catch {
+    return url;
+  }
+}
+
+function getShareCaption(preset: Preset, verificationUrl: string) {
+  const opening: Record<Preset, string> = {
+    overall: "My verified trading performance, tracked with RebateBoard.",
+    net_profit: "My verified net performance, tracked with RebateBoard.",
+    cashback: "My verified cashback achievement, tracked with RebateBoard.",
+    payouts: "A new verified payout milestone.",
+    best_month: "My best trading month, verified through RebateBoard.",
+    funded: "My funded capital milestone, tracked with RebateBoard.",
+    trader_level: "My RebateBoard trader progression, verified by RebateBoard.",
+    streak: "My trading consistency milestone, tracked with RebateBoard.",
+    custom: "My verified RebateBoard trading achievement.",
+  };
+  return `${opening[preset]}\n\nView the verified record:\n${verificationUrl}`;
+}
+
+function waitForNextPaint() {
+  return new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+  });
+}
+
+async function waitForImages(root: HTMLElement) {
+  const images = Array.from(root.querySelectorAll("img"));
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        image.onload = () => resolve();
+        image.onerror = () => resolve();
+      });
+    }),
+  );
+}
+
 function MetaChip({
   icon: Icon,
   label,
@@ -683,28 +908,13 @@ function MetaChip({
   );
 }
 
-function QrMark({ platinum }: { platinum: boolean }) {
-  const squares = [
-    "col-start-1 row-start-1", "col-start-2 row-start-1", "col-start-3 row-start-1",
-    "col-start-1 row-start-2", "col-start-3 row-start-2", "col-start-1 row-start-3",
-    "col-start-2 row-start-3", "col-start-3 row-start-3", "col-start-5 row-start-1",
-    "col-start-6 row-start-1", "col-start-5 row-start-2", "col-start-7 row-start-2",
-    "col-start-6 row-start-3", "col-start-7 row-start-3", "col-start-1 row-start-5",
-    "col-start-2 row-start-6", "col-start-3 row-start-5", "col-start-5 row-start-5",
-    "col-start-7 row-start-5", "col-start-4 row-start-6", "col-start-6 row-start-6",
-    "col-start-5 row-start-7", "col-start-7 row-start-7",
-  ];
+function QrMark({ platinum, url }: { platinum: boolean; url: string }) {
+  const src = `https://api.qrserver.com/v1/create-qr-code/?size=192x192&ecc=H&margin=12&data=${encodeURIComponent(url)}`;
   return (
-    <div className={`grid h-16 w-16 shrink-0 grid-cols-7 grid-rows-7 gap-0.5 rounded-xl border p-2 ${
-      platinum ? "border-slate-950/10 bg-white/70" : "border-white/10 bg-white/8"
+    <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-xl border p-1 ${
+      platinum ? "border-slate-950/10 bg-white" : "border-white/12 bg-white"
     }`}>
-      {squares.map((position, index) => (
-        <span
-          key={`${position}-${index}`}
-          className={`${position} rounded-[2px] ${platinum ? "bg-slate-950" : "bg-white"}`}
-        />
-      ))}
-      <QrCode className={`col-start-4 row-start-4 h-2.5 w-2.5 ${platinum ? "text-violet-700" : "text-violet-200"}`} />
+      <img src={src} alt="Verification QR code" className="h-full w-full rounded-lg object-contain" crossOrigin="anonymous" />
     </div>
   );
 }

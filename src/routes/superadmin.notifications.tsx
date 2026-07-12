@@ -1,18 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, Bug, Coins, Mail, Send, ShieldCheck, Sparkles } from "lucide-react";
-import { PageHeader, Panel, DataTable, StatusPill, StatCard, Pill, EmptyState } from "@/components/superadmin/AdminUI";
-import { notifications } from "@/lib/admin-data";
+import { PageHeader, Panel, StatusPill, StatCard, Pill, EmptyState } from "@/components/superadmin/AdminUI";
 import { fetchAdminBugBountyReports, type BugBountyReportRecord } from "@/lib/bug-bounty-api";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/superadmin/notifications")({
   component: NotificationsAdmin,
 });
 
 function NotificationsAdmin() {
+  const { token } = useAuth();
   const [bugReports, setBugReports] = useState<BugBountyReportRecord[]>([]);
   const [loadingBugReports, setLoadingBugReports] = useState(true);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastSubject, setBroadcastSubject] = useState("");
+  const [broadcastBody, setBroadcastBody] = useState("");
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [lastBroadcast, setLastBroadcast] = useState<{ subject: string; sent: number; createdAt: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +63,39 @@ function NotificationsAdmin() {
     [bugReports],
   );
 
+  async function submitBroadcast(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!token) {
+      toast.error("Please sign in again before sending a broadcast.");
+      return;
+    }
+    const subject = broadcastSubject.trim();
+    const body = broadcastBody.trim();
+    if (!subject || !body) {
+      toast.error("Add a broadcast title and message before sending.");
+      return;
+    }
+
+    setBroadcasting(true);
+    try {
+      const response = await apiRequest<{ sent?: number }>("/notification", {
+        method: "POST",
+        token,
+        body: { subject, body },
+      });
+      const sent = Number(response.payload?.sent ?? 0);
+      setLastBroadcast({ subject, sent, createdAt: new Date().toISOString() });
+      setBroadcastSubject("");
+      setBroadcastBody("");
+      setBroadcastOpen(false);
+      toast.success(`Broadcast sent to ${sent.toLocaleString()} user${sent === 1 ? "" : "s"}.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to send broadcast right now.");
+    } finally {
+      setBroadcasting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -69,7 +109,11 @@ function NotificationsAdmin() {
             >
               <Bug className="h-3.5 w-3.5" /> Open Bug Bounty
             </Link>
-            <button className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button
+              type="button"
+              onClick={() => setBroadcastOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"
+            >
               <Send className="h-3.5 w-3.5" /> New broadcast
             </button>
           </div>
@@ -77,7 +121,12 @@ function NotificationsAdmin() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Broadcast templates" value={String(notifications.length)} delta="Static control room feed" tone="flat" />
+        <StatCard
+          label="Last broadcast reach"
+          value={lastBroadcast ? String(lastBroadcast.sent) : "—"}
+          delta={lastBroadcast ? "Sent this session" : "No broadcast sent yet"}
+          tone={lastBroadcast ? "up" : "flat"}
+        />
         <StatCard label="Accepted bug reports" value={String(acceptedReports.length)} delta="Needs follow-through" tone={acceptedReports.length ? "up" : "flat"} />
         <StatCard label="Rewarded bug reports" value={String(rewardedReports.length)} delta="RR already issued" tone={rewardedReports.length ? "up" : "flat"} />
         <StatCard
@@ -169,19 +218,83 @@ function NotificationsAdmin() {
         </Panel>
       </div>
 
-      <Panel title="Recent broadcasts">
-        <DataTable head={<><th>Title</th><th>Channel</th><th>Status</th><th>Reach</th><th></th></>}>
-          {notifications.map((n) => (
-            <tr key={n.id}>
-              <td className="font-semibold">{n.title}</td>
-              <td className="text-muted-foreground">{n.channel}</td>
-              <td><StatusPill status={n.status} /></td>
-              <td className="font-mono">{n.reach}</td>
-              <td className="text-right"><button className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-white">View</button></td>
-            </tr>
-          ))}
-        </DataTable>
+      <Panel title="Broadcast delivery">
+        {lastBroadcast ? (
+          <div className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">{lastBroadcast.subject}</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Sent to {lastBroadcast.sent.toLocaleString()} user{lastBroadcast.sent === 1 ? "" : "s"} ·{" "}
+                  {new Date(lastBroadcast.createdAt).toLocaleString()}
+                </div>
+              </div>
+              <Pill tone="good">Email + in-app queued</Pill>
+            </div>
+          </div>
+        ) : (
+          <EmptyState
+            icon={Bell}
+            title="No broadcast sent in this session"
+            description="Create a broadcast to notify users through their notification feed and email when email delivery is enabled."
+          />
+        )}
       </Panel>
+
+      {broadcastOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#08020f]/80 px-4 backdrop-blur-sm">
+          <form onSubmit={submitBroadcast} className="w-full max-w-xl rounded-[28px] bg-[#1b0b32] p-5 ring-1 ring-white/15 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-lg font-bold text-white">New broadcast</div>
+                <p className="mt-1 text-sm text-white/60">Send an update to every active RebateBoard user.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBroadcastOpen(false)}
+                className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white hover:bg-white/15"
+              >
+                Close
+              </button>
+            </div>
+            <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
+              Title
+              <input
+                value={broadcastSubject}
+                onChange={(event) => setBroadcastSubject(event.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-fuchsia-300/60"
+                placeholder="Platform update, cashback notice, maintenance reminder..."
+              />
+            </label>
+            <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
+              Message
+              <textarea
+                value={broadcastBody}
+                onChange={(event) => setBroadcastBody(event.target.value)}
+                rows={5}
+                className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-fuchsia-300/60"
+                placeholder="Write a clear user-facing message. Avoid internal terms."
+              />
+            </label>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setBroadcastOpen(false)}
+                className="rounded-full bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/15"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={broadcasting}
+                className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {broadcasting ? "Sending..." : "Send broadcast"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }

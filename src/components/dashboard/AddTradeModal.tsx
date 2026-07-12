@@ -4,6 +4,7 @@ import {
   addTrade, calculateTradeMetrics, computeAdherence, detectSession, uid, useTradingPlan,
   type Emotion, type MarketType, type Session, type Trade,
 } from "@/lib/trading-plan";
+import { saveJournalTradeToBackend } from "@/lib/financial-intelligence-api";
 
 type Mode = "quick" | "advanced";
 
@@ -161,7 +162,10 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
       violations: adherence.violations,
     };
     addTrade(trade);
-    // Auto-credit RR per admin rules (Superadmin → Rewards → Earn).
+    saveJournalTradeToBackend(trade).catch(() => {
+      // Local journal remains the instant fallback; backend sync retries can be added later.
+    });
+    // Credit RR through the existing rewards rules.
     import("@/lib/rr-rewards").then(({ awardRr, tickStreak, getStreakConfig }) => {
       awardRr("trade_log", { premium: !!plan.premium });
       const cfg = getStreakConfig();
@@ -195,7 +199,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
         <div className="border-b border-white/5 bg-white/[0.02] px-5 py-2">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
             <span>Plan Adherence</span>
-            <span className={adherence.score >= 80 ? "text-success" : adherence.score >= 50 ? "text-accent" : "text-destructive"}>{adherence.score}%</span>
+            <span className={adherence.score >= 80 ? "text-success" : adherence.score >= 50 ? "text-fuchsia-300" : "text-destructive"}>{adherence.score}%</span>
           </div>
           <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
             <div className={`h-full transition-all ${adherence.score >= 80 ? "bg-success" : adherence.score >= 50 ? "bg-accent" : "bg-destructive"}`} style={{ width: `${adherence.score}%` }} />
@@ -270,7 +274,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
               <Field label="Risk %"><Num value={form.riskPct} onChange={(v) => set("riskPct", v)} step={0.1} /></Field>
               <Field label="Commission"><Num value={form.commission} onChange={(v) => set("commission", v)} step={0.01} /></Field>
               <div className="col-span-2 rounded-lg bg-white/[0.04] p-3 text-xs">
-                <span className="text-muted-foreground">Backend-ready metrics: </span><b className="text-white">{rr.toFixed(2)} planned R</b>
+                <span className="text-muted-foreground">Planned reward profile: </span><b className="text-white">{rr.toFixed(2)}R</b>
                 <span className="ml-2 text-muted-foreground">{MARKET_CONFIG[(form.market as MarketType) ?? "forex"].helper}</span>
               </div>
             </div>
@@ -281,7 +285,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
               <Field label="Strategy">
                 {plan.strategies.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-white/10 p-3 text-xs text-muted-foreground">
-                    No strategies defined. <a href="/dashboard/trading-plan" className="text-accent underline">Create one →</a>
+                    No strategies defined. <a href="/dashboard/trading-plan" className="text-fuchsia-300 underline">Create one →</a>
                   </div>
                 ) : (
                   <Select value={form.strategyId ?? ""} onChange={(v) => set("strategyId", v)} options={plan.strategies.map((s) => s.id)} labels={plan.strategies.map((s) => s.name)} />
@@ -314,7 +318,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
                           set("checklistChecked", Array.from(list));
                         }} />
                         <span className="text-white">{c.label}</span>
-                        {c.required && <span className="ml-auto text-[9px] text-accent">required</span>}
+                        {c.required && <span className="ml-auto text-[9px] text-fuchsia-300">required</span>}
                       </label>
                     );
                   })}
@@ -376,7 +380,7 @@ function QuickResult({ form, set, pnl, rr, plan, advanced }: { form: Partial<Tra
         </>
       )}
       <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs text-white">
-        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-accent"><Sparkles className="h-3 w-3" /> AI Preview</div>
+        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-fuchsia-300"><Sparkles className="h-3 w-3" /> Rebeta Preview</div>
         <p className="mt-1">{plan.strategies.length === 0 ? "Set up a strategy in Trading Plan to unlock deeper insights." : `Adherence will roll into your Trader Score. ${rr < 1.5 ? "Watch low-RR setups." : "Solid RR profile."}`}</p>
       </div>
     </div>

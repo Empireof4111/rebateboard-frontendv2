@@ -1,17 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PublicCategoryListing } from "@/components/listings/PublicCategoryListing";
-import { getListingCategoryConfig } from "@/lib/listing-categories";
+import { PublicInfoPage, publicPages } from "@/components/PublicInfoPage";
 
-const config = getListingCategoryConfig("trading-journals");
+const page = publicPages["trading-journals"];
 
 export const Route = createFileRoute("/trading-journals")({
   head: () => ({
     meta: [
-      { title: `${config.title} | RebateBoard` },
-      { name: "description", content: config.description },
-      { property: "og:title", content: `${config.title} | RebateBoard` },
-      { property: "og:description", content: config.description },
+      { title: "Trading Journal | RebateBoard" },
+      { name: "description", content: page.description },
+      { property: "og:title", content: "Trading Journal | RebateBoard" },
+      { property: "og:description", content: page.description },
     ],
   }),
-  component: () => <PublicCategoryListing config={config} />,
+  component: () => <PublicInfoPage page={page} />,
 });

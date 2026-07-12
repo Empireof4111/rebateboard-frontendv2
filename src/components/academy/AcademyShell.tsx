@@ -292,7 +292,7 @@ function CourseCard({ course, onOpen }: { course: Course; onOpen: () => void }) 
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/70">{course.level}</span>
         </div>
         {course.access === "paid" ? (
-          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">PAID</span>
+          <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-300">PAID</span>
         ) : (
           <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">FREE</span>
         )}
@@ -304,7 +304,7 @@ function CourseCard({ course, onOpen }: { course: Course; onOpen: () => void }) 
         <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-white/50">
           <span className="inline-flex items-center gap-1"><BookOpen className="h-3 w-3" /> {totals.lessons} lessons</span>
           <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {course.estHours}h</span>
-          <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-amber-300" /> {course.rating.toFixed(1)}</span>
+          <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-fuchsia-300" /> {course.rating.toFixed(1)}</span>
         </div>
 
         <div className="mt-auto pt-4">
@@ -366,7 +366,7 @@ function CourseDetail({
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/70">{course.level}</span>
               {course.access === "paid"
-                ? <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">PAID</span>
+                ? <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-300">PAID</span>
                 : <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">FREE</span>}
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                 <Trophy className="h-3 w-3" /> +{course.rrReward} RR on completion
@@ -378,7 +378,7 @@ function CourseDetail({
             <div className="mt-4 flex flex-wrap gap-3 text-[11px] text-white/60">
               <span className="inline-flex items-center gap-1"><BookOpen className="h-3 w-3" /> {totals.modules} modules · {totals.lessons} lessons</span>
               <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> ~{course.estHours}h</span>
-              <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-amber-300" /> {course.rating.toFixed(1)} · {course.enrolled.toLocaleString()} enrolled</span>
+              <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-fuchsia-300" /> {course.rating.toFixed(1)} · {course.enrolled.toLocaleString()} enrolled</span>
               <span className="inline-flex items-center gap-1"><Award className="h-3 w-3 text-fuchsia-300" /> Certificate on final exam</span>
             </div>
 

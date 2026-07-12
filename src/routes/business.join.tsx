@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CATEGORY_META, useBrandApplicationSettings, type BrandCategory } from "@/lib/tbi-onboarding";
+import { fetchBrandApplicationSettings } from "@/lib/brand-application-settings-api";
 import { Shield, ArrowRight, CheckCircle2, Sparkles, TrendingUp, Lock, Bell, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/business/join")({
   head: () => ({
@@ -24,7 +26,26 @@ const BENEFITS = [
 ];
 
 function BusinessJoinPage() {
-  const applicationSettings = useBrandApplicationSettings();
+  const localApplicationSettings = useBrandApplicationSettings();
+  const [applicationSettings, setApplicationSettings] = useState(localApplicationSettings);
+
+  useEffect(() => {
+    setApplicationSettings(localApplicationSettings);
+  }, [localApplicationSettings.enabled, localApplicationSettings.updatedAt]);
+
+  useEffect(() => {
+    let active = true;
+    fetchBrandApplicationSettings()
+      .then((settings) => {
+        if (active) setApplicationSettings(settings);
+      })
+      .catch(() => {
+        // Local settings remain as a resilient fallback.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (!applicationSettings.enabled) {
     return (

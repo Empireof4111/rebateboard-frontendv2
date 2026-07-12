@@ -3,7 +3,7 @@ import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primit
 import { Plus, Upload, Filter, Flag, Camera, AlertTriangle, ShieldCheck, Trash2, Eye, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AddTradeModal } from "@/components/dashboard/AddTradeModal";
-import { deleteTrade, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { deleteTrade, summarizeTrades, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
 
 export const Route = createFileRoute("/dashboard/trades")({
   component: TradesPage,
@@ -25,14 +25,7 @@ function TradesPage() {
     });
   }, [trades, filter]);
 
-  const totals = useMemo(() => {
-    const pnl = trades.reduce((s, t) => s + t.pnl, 0);
-    const adherence = trades.length ? Math.round(trades.reduce((s, t) => s + t.adherence, 0) / trades.length) : 0;
-    const wins = trades.filter((t) => t.pnl > 0).length;
-    const wr = trades.length ? Math.round((wins / trades.length) * 100) : 0;
-    const violations = trades.reduce((s, t) => s + t.violations.length, 0);
-    return { pnl, adherence, wr, violations };
-  }, [trades]);
+  const totals = useMemo(() => summarizeTrades(trades), [trades]);
 
   return (
     <div className="space-y-6">
@@ -42,7 +35,7 @@ function TradesPage() {
         actions={
           <>
             <Link to={"/dashboard/trading-plan" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <ShieldCheck className="h-3.5 w-3.5 text-accent" /> Trading Plan
+              <ShieldCheck className="h-3.5 w-3.5 text-fuchsia-300" /> Trading Plan
             </Link>
             <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Upload className="h-3.5 w-3.5" /> Import CSV
@@ -55,18 +48,18 @@ function TradesPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Net PnL" value={`${totals.pnl >= 0 ? "+" : ""}$${totals.pnl.toFixed(2)}`} accent={totals.pnl >= 0 ? "success" : "destructive"} trend={totals.pnl >= 0 ? "up" : "down"} />
-        <StatCard label="Win rate" value={`${totals.wr}%`} accent="primary" />
-        <StatCard label="Plan adherence" value={`${totals.adherence}%`} accent={totals.adherence >= 80 ? "success" : totals.adherence >= 50 ? "warning" : "destructive"} />
-        <StatCard label="Violations" value={`${totals.violations}`} accent={totals.violations === 0 ? "success" : "warning"} />
+        <StatCard label="Net PnL" value={`${totals.netPnl >= 0 ? "+" : ""}$${totals.netPnl.toFixed(2)}`} accent={totals.netPnl >= 0 ? "success" : "destructive"} trend={totals.netPnl >= 0 ? "up" : "down"} />
+        <StatCard label="Win rate" value={totals.totalTrades ? `${totals.winRate}%` : "Not Enough Activity"} accent="primary" />
+        <StatCard label="Average R" value={totals.totalTrades ? `${totals.averageR.toFixed(2)}R` : "Not Enough Activity"} accent="primary" />
+        <StatCard label="Plan adherence" value={totals.totalTrades ? `${totals.adherence}%` : "Not Enough Activity"} accent={totals.adherence >= 80 ? "success" : totals.adherence >= 50 ? "warning" : "destructive"} />
       </div>
 
       {plan.strategies.length === 0 && (
         <div className="glass flex items-start gap-3 rounded-2xl p-4 ring-1 ring-accent/30">
-          <AlertTriangle className="mt-0.5 h-4 w-4 text-accent" />
+          <AlertTriangle className="mt-0.5 h-4 w-4 text-fuchsia-300" />
           <div className="flex-1 text-xs text-white">
             You haven't defined a strategy yet. Adherence and AI insights work best when you do.{" "}
-            <Link to={"/dashboard/trading-plan" as string} className="text-accent underline">Open Trading Plan →</Link>
+            <Link to={"/dashboard/trading-plan" as string} className="text-fuchsia-300 underline">Open Trading Plan →</Link>
           </div>
         </div>
       )}

@@ -9,6 +9,7 @@ import {
   type TbiState,
   tbiConfidenceTone,
   tbiStateLabel,
+  tbiScore100,
   tbiStateTone,
 } from "@/lib/tbi-api";
 import { ArrowRight, Filter, Search } from "lucide-react";
@@ -30,6 +31,25 @@ export const Route = createFileRoute("/tbi/explore")({
 const CATEGORIES = ["All", "Prop Firm", "Broker", "Exchange", "Tool"] as const;
 const STATES: Array<TbiState | "all"> = ["all", "preliminary", "partial", "full"];
 const CONFIDENCE: Array<TbiConfidence | "all"> = ["all", "Low", "Medium", "High"];
+
+function BrandAvatar({ profile }: { profile: TbiProfile }) {
+  const [failed, setFailed] = useState(false);
+  if (profile.logo && !failed) {
+    return (
+      <img
+        src={profile.logo}
+        alt={profile.name}
+        className="h-12 w-12 rounded-2xl object-cover ring-1 ring-white/10"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white">
+      {profile.name.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
 
 function ExplorePage() {
   const [profiles, setProfiles] = useState<TbiProfile[]>([]);
@@ -73,7 +93,7 @@ function ExplorePage() {
       if (category !== "All" && profile.category !== category) return false;
       if (state !== "all" && profile.state !== state) return false;
       if (confidence !== "all" && profile.confidence !== confidence) return false;
-      if (profile.finalScore < minScore) return false;
+      if (tbiScore100(profile) < minScore) return false;
       if (region && profile.region !== region) return false;
       if (query) {
         const haystack = `${profile.name} ${profile.fullCategory} ${profile.region}`.toLowerCase();
@@ -186,8 +206,8 @@ function ExplorePage() {
               <input
                 type="range"
                 min={0}
-                max={10}
-                step={0.1}
+                max={100}
+                step={1}
                 value={minScore}
                 onChange={(event) => setMinScore(Number(event.target.value))}
                 className="w-full accent-fuchsia-500"
@@ -214,17 +234,7 @@ function ExplorePage() {
                 className="glass group rounded-3xl p-5 transition hover:border-fuchsia-400/40"
               >
                 <div className="flex items-start gap-3">
-                  {profile.logo ? (
-                    <img
-                      src={profile.logo}
-                      alt={profile.name}
-                      className="h-12 w-12 rounded-2xl object-cover ring-1 ring-white/10"
-                    />
-                  ) : (
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white">
-                      {profile.name.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
+                  <BrandAvatar profile={profile} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="font-semibold">{profile.name}</div>
@@ -241,12 +251,8 @@ function ExplorePage() {
                 <div className="mt-4 flex items-end justify-between">
                   <div>
                     <div className="text-2xl font-bold">
-                      {profile.state === "preliminary"
-                        ? profile.preliminaryScore.toFixed(1)
-                        : profile.finalScore.toFixed(1)}
-                      <span className="text-xs text-muted-foreground">
-                        /{profile.state === "preliminary" ? "6.5" : "10"}
-                      </span>
+                      {tbiScore100(profile)}
+                      <span className="text-xs text-muted-foreground"> / 100</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground">{profile.trustLabel}</div>
                   </div>

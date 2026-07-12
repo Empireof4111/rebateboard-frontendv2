@@ -98,7 +98,7 @@ export type Trade = {
   winLossStatus?: "win" | "loss" | "breakeven";
   quality?: "A" | "B" | "C";
   satisfaction?: number; // 1-5
-  // media (premium)
+  // media
   beforeImg?: string;
   afterImg?: string;
   // computed
@@ -151,6 +151,20 @@ function safeSet(key: string, val: unknown) {
   try { if (typeof window !== "undefined") localStorage.setItem(key, JSON.stringify(val)); } catch {}
 }
 
+let backendPlanSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleBackendPlanSync(plan: TradingPlan) {
+  if (typeof window === "undefined") return;
+  if (backendPlanSyncTimer) clearTimeout(backendPlanSyncTimer);
+  backendPlanSyncTimer = setTimeout(() => {
+    import("@/lib/financial-intelligence-api")
+      .then(({ syncTradingPlanToBackend }) => syncTradingPlanToBackend(plan))
+      .catch(() => {
+        // Local plan remains the instant fallback; backend sync is best-effort.
+      });
+  }, 900);
+}
+
 function readPlanState(): TradingPlan {
   return safeGet<TradingPlan>(PLAN_KEY, defaultPlan);
 }
@@ -169,6 +183,7 @@ export function savePlan(plan: TradingPlan) {
   const next = { ...plan, updatedAt: new Date().toISOString() };
   planState = next;
   safeSet(PLAN_KEY, next);
+  scheduleBackendPlanSync(next);
   emit();
 }
 export function updatePlan(patch: Partial<TradingPlan>) {
@@ -235,6 +250,18 @@ export type TradeCalculationResult = {
   winLossStatus: "win" | "loss" | "breakeven";
 };
 
+export type TradeAnalyticsSummary = {
+  totalTrades: number;
+  netPnl: number;
+  winRate: number;
+  averageR: number;
+  profitFactor: number;
+  adherence: number;
+  violations: number;
+  wins: number;
+  losses: number;
+};
+
 function forexPipSize(asset = "") {
   const normalized = asset.toUpperCase();
   if (normalized.includes("JPY")) return 0.01;
@@ -288,6 +315,34 @@ export function calculateTradeMetrics(input: TradeCalculationInput): TradeCalcul
     rewardRatio: roundMetric(rewardRatio),
     riskAmount: roundMetric(riskAmount),
     winLossStatus,
+  };
+}
+
+export function summarizeTrades(trades: Trade[]): TradeAnalyticsSummary {
+  const totalTrades = trades.length;
+  const statusFor = (trade: Trade) => trade.winLossStatus ?? (trade.pnl > 0 ? "win" : trade.pnl < 0 ? "loss" : "breakeven");
+  const wins = trades.filter((trade) => statusFor(trade) === "win").length;
+  const losses = trades.filter((trade) => statusFor(trade) === "loss").length;
+  const netPnl = roundMetric(trades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0));
+  const grossProfit = trades.reduce((sum, trade) => sum + Math.max(0, Number(trade.pnl || 0)), 0);
+  const grossLoss = Math.abs(trades.reduce((sum, trade) => sum + Math.min(0, Number(trade.pnl || 0)), 0));
+  const averageR = totalTrades
+    ? roundMetric(trades.reduce((sum, trade) => sum + Number((trade.rMultiple ?? trade.rr) || 0), 0) / totalTrades)
+    : 0;
+  const adherence = totalTrades
+    ? Math.round(trades.reduce((sum, trade) => sum + Number(trade.adherence || 0), 0) / totalTrades)
+    : 0;
+
+  return {
+    totalTrades,
+    netPnl,
+    winRate: totalTrades ? Math.round((wins / totalTrades) * 100) : 0,
+    averageR,
+    profitFactor: grossLoss > 0 ? roundMetric(grossProfit / grossLoss) : grossProfit > 0 ? roundMetric(grossProfit) : 0,
+    adherence,
+    violations: trades.reduce((sum, trade) => sum + (trade.violations?.length ?? 0), 0),
+    wins,
+    losses,
   };
 }
 

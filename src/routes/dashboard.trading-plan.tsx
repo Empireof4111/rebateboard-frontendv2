@@ -82,7 +82,7 @@ function ProfileTab() {
   const update = (patch: Partial<typeof p>) => savePlan({ ...plan, profile: { ...p, ...patch } });
 
   return (
-    <Panel title="Trader Profile" action={<Brain className="h-4 w-4 text-accent" />}>
+    <Panel title="Trader Profile" action={<Brain className="h-4 w-4 text-fuchsia-300" />}>
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Trading style">
           <Chips value={p.style} onChange={(v) => update({ style: v as typeof p.style })} options={["scalping", "intraday", "swing", "position"]} />
@@ -164,7 +164,7 @@ function RulesTab() {
   const r = plan.rules;
   const update = (patch: Partial<typeof r>) => savePlan({ ...plan, rules: { ...r, ...patch } });
   return (
-    <Panel title="Trading Rules" action={<Shield className="h-4 w-4 text-accent" />}>
+    <Panel title="Trading Rules" action={<Shield className="h-4 w-4 text-fuchsia-300" />}>
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="Max trades per day"><Num value={r.maxTradesPerDay} onChange={(v) => update({ maxTradesPerDay: v })} /></Field>
         <Field label="Max daily loss (%)"><Num value={r.maxDailyLossPct} step={0.1} onChange={(v) => update({ maxDailyLossPct: v })} /></Field>
@@ -181,7 +181,7 @@ function PsychologyTab() {
   const p = plan.psychology;
   const update = (patch: Partial<typeof p>) => savePlan({ ...plan, psychology: { ...p, ...patch } });
   return (
-    <Panel title="Psychology Rules" action={<Brain className="h-4 w-4 text-accent" />}>
+    <Panel title="Psychology Rules" action={<Brain className="h-4 w-4 text-fuchsia-300" />}>
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="Stop trading after N losses"><Num value={p.stopAfterLosses} onChange={(v) => update({ stopAfterLosses: v })} /></Field>
         <Field label="Emotional triggers"><TagList value={p.emotionalTriggers} onChange={(v) => update({ emotionalTriggers: v })} /></Field>
@@ -198,7 +198,7 @@ function ChecklistTab() {
   const add = () => savePlan({ ...plan, checklist: [...plan.checklist, { id: uid("ck"), label: "New checklist item", required: false }] });
   const remove = (id: string) => savePlan({ ...plan, checklist: plan.checklist.filter((c) => c.id !== id) });
   return (
-    <Panel title="Pre-trade Checklist" action={<ListChecks className="h-4 w-4 text-accent" />}>
+    <Panel title="Pre-trade Checklist" action={<ListChecks className="h-4 w-4 text-fuchsia-300" />}>
       <div className="space-y-2">
         {plan.checklist.map((c) => (
           <div key={c.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-2">

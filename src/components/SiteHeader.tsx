@@ -307,13 +307,13 @@ const navItems: HeaderNavItem[] = [
       },
       {
         labelKey: "nav.aiBacktest",
-        to: "/dashboard/backtest",
+        to: "/ai-backtesting-lab",
         description: "Test strategies against historical market data",
         icon: FlaskConical,
       },
       {
         labelKey: "nav.tradingPlan",
-        to: "/dashboard/trading-plan",
+        to: "/trading-plan",
         description: "Create and maintain a disciplined trading plan",
         icon: ClipboardList,
       },

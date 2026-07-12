@@ -7,6 +7,7 @@ import {
   type TbiProfile,
   tbiConfidenceTone,
   tbiLabelTone,
+  tbiScore100,
   tbiStateLabel,
   tbiStateTone,
 } from "@/lib/tbi-api";
@@ -42,6 +43,25 @@ const componentMeta = [
   { key: "tc", label: "Trading Conditions", weight: "10%" },
   { key: "cx", label: "Customer Experience", weight: "10%" },
 ] as const;
+
+function BrandAvatar({ profile }: { profile: TbiProfile }) {
+  const [failed, setFailed] = useState(false);
+  if (profile.logo && !failed) {
+    return (
+      <img
+        src={profile.logo}
+        alt={profile.name}
+        className="h-20 w-20 rounded-3xl object-cover ring-1 ring-white/10"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-xl font-bold text-white">
+      {profile.name.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
 
 function BrandPage() {
   const { slug } = Route.useParams();
@@ -101,17 +121,7 @@ function BrandPage() {
           <>
             <section className="glass mt-4 rounded-3xl p-6 md:p-8">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-                {profile.logo ? (
-                  <img
-                    src={profile.logo}
-                    alt={profile.name}
-                    className="h-20 w-20 rounded-3xl object-cover ring-1 ring-white/10"
-                  />
-                ) : (
-                  <div className="grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-xl font-bold text-white">
-                    {profile.name.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
+                <BrandAvatar profile={profile} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-3xl font-bold">{profile.name}</h1>
@@ -127,12 +137,8 @@ function BrandPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-5xl font-bold">
-                    {profile.state === "preliminary"
-                      ? profile.preliminaryScore.toFixed(1)
-                      : profile.finalScore.toFixed(1)}
-                    <span className="text-base text-muted-foreground">
-                      /{profile.state === "preliminary" ? "6.5" : "10"}
-                    </span>
+                    {tbiScore100(profile)}
+                    <span className="text-base text-muted-foreground"> / 100</span>
                   </div>
                   <div className={`mt-1 text-sm font-semibold ${tbiLabelTone(profile.trustLabel)}`}>{profile.trustLabel}</div>
                   <div className={`mt-1 text-xs ${tbiConfidenceTone(profile.confidence)}`}>
@@ -164,7 +170,7 @@ function BrandPage() {
                                 {entry.label} <span className="text-xs text-muted-foreground">· {entry.weight}</span>
                               </div>
                               <div className="mt-1 text-xs text-muted-foreground">
-                                {entry.value.toFixed(1)} / 10
+                                {Math.round(entry.value * 10)} / 100
                               </div>
                             </div>
                             {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -194,11 +200,7 @@ function BrandPage() {
                     <MetricCard label="Risk Penalty" value={profile.riskPenalty.toFixed(2)} tone={profile.riskPenalty < 0 ? "bad" : "neutral"} />
                     <MetricCard
                       label="Final TBI"
-                      value={
-                        profile.state === "preliminary"
-                          ? `${profile.preliminaryScore.toFixed(2)} / 6.5`
-                          : profile.finalScore.toFixed(2)
-                      }
+                      value={`${tbiScore100(profile)} / 100`}
                       tone="good"
                     />
                   </div>
@@ -211,7 +213,7 @@ function BrandPage() {
                 <section className="glass rounded-3xl p-6">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-lg font-bold">
-                      <Star className="h-4 w-4 text-amber-300" /> Review System
+                      <Star className="h-4 w-4 text-fuchsia-300" /> Review System
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {profile.reviewCount} reviews · {profile.verifiedReviewCount} verified · weight {profile.weightedReviewMass.toFixed(1)}
@@ -247,7 +249,7 @@ function BrandPage() {
                             </div>
                           </div>
                           <div className="mt-2 text-sm text-muted-foreground">{review.comment || "No comment provided."}</div>
-                          <div className="mt-3 text-xs text-amber-300">Weighted score: {review.score.toFixed(1)} / 10</div>
+                          <div className="mt-3 text-xs text-sky-300">Weighted score: {Math.round(review.score * 10)} / 100</div>
                         </div>
                       ))
                     ) : (
@@ -288,17 +290,17 @@ function BrandPage() {
 
                 <section className="glass rounded-3xl p-6">
                   <div className="flex items-center gap-2 text-lg font-bold">
-                    <AlertTriangle className="h-4 w-4 text-amber-300" /> Risk Flags
+                    <AlertTriangle className="h-4 w-4 text-orange-300" /> Risk Flags
                   </div>
                   <div className="mt-4 space-y-3">
                     {profile.riskEvents.length ? (
                       profile.riskEvents.map((event) => (
-                        <div key={`${event.kind}-${event.title}`} className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+                        <div key={`${event.kind}-${event.title}`} className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
                           <div className="flex items-center justify-between gap-3">
-                            <div className="font-semibold text-amber-100">{event.title}</div>
-                            <div className="text-xs font-semibold text-amber-300">{event.impact.toFixed(2)}</div>
+                            <div className="font-semibold text-orange-100">{event.title}</div>
+                            <div className="text-xs font-semibold text-orange-300">{event.impact.toFixed(2)}</div>
                           </div>
-                          <div className="mt-2 text-sm text-amber-50/90">{event.detail}</div>
+                          <div className="mt-2 text-sm text-orange-50/90">{event.detail}</div>
                         </div>
                       ))
                     ) : (

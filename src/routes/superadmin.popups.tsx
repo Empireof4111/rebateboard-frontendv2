@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader, Panel, DataTable, StatusPill, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { Modal, ConfirmDialog, Field, fieldCls, selectCls, ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
-import { useAdminCollection, newId } from "@/lib/admin-store";
-import { popups as seed, type Popup } from "@/lib/admin-data";
+import type { Popup } from "@/lib/admin-data";
+import {
+  createAdminPopup,
+  deleteAdminPopup,
+  fetchAdminPopups,
+  updateAdminPopup,
+  type AdminPopupRecord,
+} from "@/lib/admin-popups-api";
+import { uploadMediaFile } from "@/lib/media-api";
 import { Plus, Edit3, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/popups")({
@@ -12,17 +19,45 @@ export const Route = createFileRoute("/superadmin/popups")({
 
 type PopupX = Popup & { thumbnail?: string };
 const empty = (): PopupX => ({
-  id: newId("pu"), title: "", message: "", cta: "Learn more", link: "/",
+  id: "new", title: "", message: "", cta: "Learn more", link: "/",
   trigger: "On load", audience: "All", start: "—", end: "—",
   status: "draft", views: 0, clicks: 0, thumbnail: "",
 });
 
 function PopupsPage() {
-  const { items, add, update, remove } = useAdminCollection<PopupX>("popups", seed as PopupX[]);
+  const [items, setItems] = useState<PopupX[]>([]);
   const [editing, setEditing] = useState<PopupX | null>(null);
   const [deleting, setDeleting] = useState<PopupX | null>(null);
+  const [loading, setLoading] = useState(true);
   const totalViews = items.reduce((s, p) => s + p.views, 0);
   const totalClicks = items.reduce((s, p) => s + p.clicks, 0);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchAdminPopups()
+      .then((rows) => {
+        if (active) setItems(rows.map(fromBackendPopup));
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : "Unable to load pop-ups";
+        toast.error(message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const replaceItem = (record: AdminPopupRecord) => {
+    const next = fromBackendPopup(record);
+    setItems((current) => {
+      const exists = current.some((item) => item.id === next.id);
+      return exists ? current.map((item) => (item.id === next.id ? next : item)) : [next, ...current];
+    });
+  };
 
   return (
     <div>
@@ -45,6 +80,7 @@ function PopupsPage() {
 
       <Panel title={`All pop-ups — ${items.length}`}>
         <DataTable head={<><th>Title</th><th>Trigger</th><th>Audience</th><th>Window</th><th>Views</th><th>Clicks</th><th>Status</th><th></th></>}>
+          {loading && <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Loading campaign pop-ups...</td></tr>}
           {items.map((p) => (
             <tr key={p.id}>
               <td>
@@ -64,7 +100,10 @@ function PopupsPage() {
               <td>
                 <button onClick={() => {
                   const next: Popup["status"] = p.status === "active" ? "paused" : "active";
-                  update(p.id, { status: next }); toast.success(`Set to ${next}`);
+                  void updateAdminPopup(Number(p.id), { status: toBackendStatus(next) })
+                    .then(replaceItem)
+                    .then(() => toast.success(`Set to ${next}`))
+                    .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to update pop-up"));
                 }}>
                   <StatusPill status={p.status} />
                 </button>
@@ -77,7 +116,7 @@ function PopupsPage() {
               </td>
             </tr>
           ))}
-          {items.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No pop-ups yet.</td></tr>}
+          {!loading && items.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No pop-ups yet.</td></tr>}
         </DataTable>
       </Panel>
 
@@ -91,11 +130,19 @@ function PopupsPage() {
             <>
               <button onClick={() => setEditing(null)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
               <button
-                onClick={() => {
-                  const exists = items.some((x) => x.id === editing.id);
-                  if (exists) update(editing.id, editing); else add(editing);
-                  toast.success(exists ? "Pop-up updated" : "Pop-up created");
-                  setEditing(null);
+                onClick={async () => {
+                  try {
+                    const exists = items.some((x) => x.id === editing.id);
+                    const payload = toBackendPopup(editing);
+                    const saved = exists
+                      ? await updateAdminPopup(Number(editing.id), payload)
+                      : await createAdminPopup(payload);
+                    replaceItem(saved);
+                    toast.success(exists ? "Pop-up updated" : "Pop-up created");
+                    setEditing(null);
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Unable to save pop-up");
+                  }
                 }}
                 className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"
               >Save</button>
@@ -125,7 +172,15 @@ function PopupsPage() {
               </select>
             </Field>
             <div className="md:col-span-2">
-              <ThumbnailUploader label="Pop-up image" value={editing.thumbnail} onChange={(url) => setEditing({ ...editing, thumbnail: url })} />
+              <ThumbnailUploader
+                label="Pop-up image"
+                value={editing.thumbnail}
+                onChange={(url) => setEditing({ ...editing, thumbnail: url })}
+                onSelectFile={async (file) => {
+                  const uploaded = await uploadMediaFile(file, { folder: "popups", prefix: "popup" });
+                  return uploaded.url;
+                }}
+              />
             </div>
           </div>
         </Modal>
@@ -134,11 +189,86 @@ function PopupsPage() {
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}
-        onConfirm={() => { if (deleting) { remove(deleting.id); toast.success("Pop-up deleted"); } }}
+        onConfirm={() => {
+          if (!deleting) return;
+          void deleteAdminPopup(Number(deleting.id))
+            .then(() => {
+              setItems((current) => current.filter((item) => item.id !== deleting.id));
+              toast.success("Pop-up deleted");
+            })
+            .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to delete pop-up"));
+        }}
         title="Delete pop-up?"
         message="The pop-up will stop appearing immediately."
         confirmText="Delete"
       />
     </div>
   );
+}
+
+function fromBackendPopup(record: AdminPopupRecord): PopupX {
+  return {
+    id: String(record.id),
+    title: record.title ?? "",
+    message: record.description ?? "",
+    cta: record.actionText || "Learn more",
+    link: record.actionURL || "/",
+    trigger: normalizeTrigger(record.trigger),
+    audience: normalizeAudience(record.audience),
+    start: record.startAt ? formatDateInput(record.startAt) : "—",
+    end: record.endAt ? formatDateInput(record.endAt) : "—",
+    status: fromBackendStatus(record.status),
+    views: Number(record.views ?? 0),
+    clicks: Number(record.clicks ?? 0),
+    thumbnail: record.thumbnail || "",
+  };
+}
+
+function toBackendPopup(popup: PopupX) {
+  return {
+    title: popup.title.trim(),
+    description: popup.message.trim(),
+    actionText: popup.cta.trim(),
+    actionURL: popup.link.trim() || "/",
+    thumbnail: popup.thumbnail || "",
+    trigger: popup.trigger,
+    audience: popup.audience,
+    startAt: dateOrEmpty(popup.start),
+    endAt: dateOrEmpty(popup.end),
+    status: toBackendStatus(popup.status),
+  };
+}
+
+function fromBackendStatus(status?: string): Popup["status"] {
+  const value = String(status || "").toUpperCase();
+  if (value === "ACTIVE") return "active";
+  if (value === "SUSPENDED" || value === "INACTIVE") return "paused";
+  return "draft";
+}
+
+function toBackendStatus(status: Popup["status"]) {
+  if (status === "active") return "ACTIVE";
+  if (status === "paused") return "INACTIVE";
+  return "PENDING";
+}
+
+function normalizeTrigger(value?: string): Popup["trigger"] {
+  if (value === "After 10s" || value === "Exit intent" || value === "Specific page") return value;
+  return "On load";
+}
+
+function normalizeAudience(value?: string): Popup["audience"] {
+  if (value === "Logged in" || value === "Guests") return value;
+  return "All";
+}
+
+function formatDateInput(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toISOString().slice(0, 16);
+}
+
+function dateOrEmpty(value: string) {
+  if (!value || value === "—") return "";
+  return value;
 }

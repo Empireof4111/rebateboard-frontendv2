@@ -20,9 +20,9 @@ type DisplayOffer = AdminOffer & OfferBrandFields;
 const tagStyles: Record<string, string> = {
   exclusive: "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/30",
   new: "bg-emerald-500/15 text-emerald-100 ring-emerald-400/30",
-  limited: "bg-amber-500/15 text-amber-100 ring-amber-400/30",
+  limited: "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/25",
   trending: "bg-sky-500/15 text-sky-100 ring-sky-400/30",
-  "free-account": "bg-yellow-500/15 text-yellow-100 ring-yellow-400/30",
+  "free-account": "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/25",
 };
 
 const tagLabel: Record<string, string> = {

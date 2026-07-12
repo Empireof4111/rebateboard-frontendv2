@@ -51,11 +51,19 @@ export type RrSpendRule = {
   label: string;
   description: string;
   category: string;
+  accountSize?: string;
   cost: number;
   tierGate: string | null;
   stock: number | null;
   redeemed: number;
   enabled: boolean;
+};
+
+export type RrPlatformSettings = {
+  brandApplications?: {
+    enabled?: boolean;
+    updatedAt?: string | null;
+  };
 };
 
 export type RrAllConfig = {
@@ -65,6 +73,7 @@ export type RrAllConfig = {
   social_rules: RrSocialRule[];
   streak_config: RrStreakConfig;
   spend_rules: RrSpendRule[];
+  platform_settings?: RrPlatformSettings;
 };
 
 export type RrClaim = {
@@ -97,6 +106,10 @@ export type RrUserStreak = {
 };
 
 export const rrApi = {
+  async getPublicPlatformSettings(): Promise<ApiResponse<RrPlatformSettings>> {
+    return apiRequest("/rr/public/platform-settings", { method: "GET", cache: "no-store" });
+  },
+
   async getConfig(token: string): Promise<ApiResponse<RrAllConfig>> {
     return apiRequest("/rr/config", { token });
   },

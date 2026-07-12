@@ -1,14 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { PublicInfoPage, publicPages } from "@/components/PublicInfoPage";
-
-const page = publicPages.coupons;
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/coupons")({
   head: () => ({
     meta: [
       { title: "Coupons | RebateBoard" },
-      { name: "description", content: page.description },
+      {
+        name: "description",
+        content: "Browse RebateBoard coupon codes inside the unified Offers marketplace.",
+      },
     ],
   }),
-  component: () => <PublicInfoPage page={page} />,
+  component: () => <Navigate to="/offers" replace />,
 });

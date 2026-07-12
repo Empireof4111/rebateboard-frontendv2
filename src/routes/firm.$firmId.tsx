@@ -2092,16 +2092,16 @@ function FirmDetailsPage() {
 
             <div className="px-5 pb-5 sm:px-6">
               <div className="min-w-0">
-                <div className="-mt-14 flex items-end justify-between gap-3 sm:-mt-16">
-                  <div className="relative h-28 w-28 shrink-0 rounded-[28px] border-4 border-[#130824] bg-white shadow-2xl sm:h-32 sm:w-32 sm:border-[5px]">
+                <div className="-mt-12 flex flex-col items-start gap-3 sm:-mt-16 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="relative h-24 w-24 shrink-0 rounded-[24px] border-4 border-[#130824] bg-white shadow-2xl sm:h-32 sm:w-32 sm:rounded-[28px] sm:border-[5px]">
                     {displayAvatar ? (
                       <img
                         src={displayAvatar}
                         alt={name}
-                        className="h-full w-full rounded-[21px] object-contain p-1.5 sm:rounded-[22px]"
+                        className="h-full w-full rounded-[17px] object-contain p-1.5 sm:rounded-[22px]"
                       />
                     ) : (
-                      <div className="grid h-full w-full place-items-center rounded-[21px] bg-white text-2xl font-bold text-violet-700 sm:rounded-[22px]">
+                      <div className="grid h-full w-full place-items-center rounded-[17px] bg-white text-xl font-bold text-violet-700 sm:rounded-[22px] sm:text-2xl">
                         {logoInitials || "RB"}
                       </div>
                     )}
@@ -2129,7 +2129,7 @@ function FirmDetailsPage() {
                     ) : null}
                   </div>
 
-                  <div className="mb-2 grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+                  <div className="grid w-full grid-cols-2 gap-2 sm:mb-2 sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                     <a
                       href={
                         supportEmail
@@ -2344,14 +2344,21 @@ function FirmDetailsPage() {
 
         <div
           ref={tabsRef}
-          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[#16082a]/88 px-2 py-2 shadow-xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl lg:px-3"
+          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[#16082a]/92 px-2 py-2 shadow-xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl lg:px-3"
           style={{ top: `${stickyTabsTop}px` }}
         >
-          <div className="flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto py-0.5 lg:justify-center">
+          <div className="no-scrollbar flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto overscroll-x-contain py-0.5 lg:justify-center">
             {topTabs.map((t) => (
               <button
                 key={t}
-                onClick={() => setTopTab(t)}
+                onClick={(event) => {
+                  setTopTab(t);
+                  event.currentTarget.scrollIntoView({
+                    behavior: "smooth",
+                    inline: "center",
+                    block: "nearest",
+                  });
+                }}
                 className={
                   "shrink-0 rounded-full px-4 py-1.5 text-[11px] font-semibold ring-1 transition duration-200 " +
                   (topTab === t

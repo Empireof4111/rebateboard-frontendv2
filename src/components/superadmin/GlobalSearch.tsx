@@ -1,23 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Search, X, ArrowRight } from "lucide-react";
-import { adminUsers, adminBrands, openComplaints, recentPayouts, withdrawals, claims, faqs, blogPosts, companyNews, inboxMessages } from "@/lib/admin-data";
+import { userAdminApi } from "@/lib/admin-api";
+import { fetchAdminBrands } from "@/lib/admin-brands-api";
+import { useAuth } from "@/lib/auth";
 
 type Hit = { id: string; label: string; sub: string; group: string; to: string };
 
-function buildIndex(): Hit[] {
+function buildModuleIndex(): Hit[] {
   const hits: Hit[] = [];
-  adminUsers.forEach((u) => hits.push({ id: `u-${u.id}`, label: u.name, sub: `${u.email} · ${u.country}`, group: "Users", to: "/superadmin/users" }));
-  adminBrands.forEach((b) => hits.push({ id: `b-${b.id}`, label: b.name, sub: `${b.category} · TBI ${b.tbi}`, group: "Brands", to: "/superadmin/brands" }));
-  openComplaints.forEach((c) => hits.push({ id: `c-${c.id}`, label: `${c.brand} — ${c.category}`, sub: `${c.user} · ${c.severity}`, group: "Complaints", to: "/superadmin/complaints" }));
-  recentPayouts.forEach((p) => hits.push({ id: `p-${p.id}`, label: `${p.brand} payout`, sub: `$${p.amount.toLocaleString()} · ${p.chain}`, group: "Payouts", to: "/superadmin/payouts" }));
-  withdrawals.forEach((w) => hits.push({ id: `w-${w.id}`, label: `${w.user} withdrawal`, sub: `$${w.amount} · ${w.method}`, group: "Withdrawals", to: "/superadmin/withdrawals" }));
-  claims.forEach((c) => hits.push({ id: `cl-${c.id}`, label: `${c.user} claim`, sub: `${c.partner} · $${c.amount}`, group: "Claims", to: "/superadmin/claims" }));
-  faqs.forEach((f) => hits.push({ id: `f-${f.id}`, label: f.question, sub: `FAQ · ${f.category}`, group: "FAQs", to: "/superadmin/faqs" }));
-  blogPosts.forEach((b) => hits.push({ id: `bl-${b.id}`, label: b.title, sub: `Blog · ${b.author}`, group: "Blog", to: "/superadmin/blog" }));
-  companyNews.forEach((n) => hits.push({ id: `n-${n.id}`, label: n.title, sub: `News · ${n.author}`, group: "News", to: "/superadmin/news" }));
-  inboxMessages.forEach((m) => hits.push({ id: `i-${m.id}`, label: m.subject, sub: `${m.user} · ${m.email}`, group: "Inbox", to: "/superadmin/inbox" }));
-  // Module shortcuts
   const modules = [
     ["Mission Control", "/superadmin"],
     ["Roles & Permissions", "/superadmin/roles"],
@@ -33,6 +24,7 @@ function buildIndex(): Hit[] {
     ["Pop-ups", "/superadmin/popups"],
     ["Offers", "/superadmin/offers"],
     ["Demo Accounts", "/superadmin/demo-accounts"],
+    ["Merit Awards", "/superadmin/merit-awards"],
     ["Challenge Purchases", "/superadmin/challenge-purchases"],
     ["Top Sellers", "/superadmin/top-sellers"],
     ["Subscribers", "/superadmin/subscribers"],
@@ -47,8 +39,11 @@ function buildIndex(): Hit[] {
 }
 
 export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { token } = useAuth();
   const [q, setQ] = useState("");
-  const index = useMemo(buildIndex, []);
+  const [liveHits, setLiveHits] = useState<Hit[]>([]);
+  const [loading, setLoading] = useState(false);
+  const modules = useMemo(buildModuleIndex, []);
 
   useEffect(() => {
     if (!open) return;
@@ -61,15 +56,72 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
     };
   }, [open, onClose]);
 
-  useEffect(() => { if (open) setQ(""); }, [open]);
+  useEffect(() => {
+    if (open) {
+      setQ("");
+      setLiveHits([]);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !token) return;
+    const term = q.trim();
+    let cancelled = false;
+
+    async function loadLiveResults() {
+      setLoading(Boolean(term));
+      try {
+        const [usersResponse, brands] = await Promise.all([
+          term ? userAdminApi.search(token!, term, 0, 8).catch(() => null) : Promise.resolve(null),
+          fetchAdminBrands().catch(() => []),
+        ]);
+        if (cancelled) return;
+
+        const lowered = term.toLowerCase();
+        const userHits: Hit[] = (usersResponse?.payload?.page ?? []).map((user) => ({
+          id: `u-${user.id}`,
+          label: user.name || user.email || `User #${user.id}`,
+          sub: `${user.email || "No email"} · ${user.country || "No country"}`,
+          group: "Users",
+          to: "/superadmin/users",
+        }));
+        const brandHits: Hit[] = brands
+          .filter((brand) => {
+            if (!term) return true;
+            return [brand.name, brand.category, brand.slug, brand.website]
+              .filter(Boolean)
+              .some((value) => String(value).toLowerCase().includes(lowered));
+          })
+          .slice(0, term ? 12 : 8)
+          .map((brand) => ({
+            id: `b-${brand.id}`,
+            label: brand.name,
+            sub: `${brand.category} · ${brand.visibility} · TBI ${Number(brand.tbi || 0).toFixed(1)}`,
+            group: "Brands",
+            to: "/superadmin/brands",
+          }));
+
+        setLiveHits([...userHits, ...brandHits]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    const handle = window.setTimeout(loadLiveResults, term ? 180 : 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [open, q, token]);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return index.slice(0, 12);
-    return index
+    const moduleResults = term
+      ? modules
       .filter((h) => h.label.toLowerCase().includes(term) || h.sub.toLowerCase().includes(term) || h.group.toLowerCase().includes(term))
-      .slice(0, 40);
-  }, [q, index]);
+      : modules.slice(0, 12);
+    return [...liveHits, ...moduleResults].slice(0, 40);
+  }, [q, modules, liveHits]);
 
   const grouped = useMemo(() => {
     const g: Record<string, Hit[]> = {};
@@ -95,10 +147,17 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
           </button>
         </div>
         <div className="max-h-[60vh] overflow-y-auto p-2">
-          {Object.entries(grouped).length === 0 && (
+          {loading && (
+            <div className="space-y-2 p-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-12 animate-pulse rounded-lg bg-white/[0.06]" />
+              ))}
+            </div>
+          )}
+          {!loading && Object.entries(grouped).length === 0 && (
             <div className="px-4 py-12 text-center text-sm text-muted-foreground">No matches for "{q}"</div>
           )}
-          {Object.entries(grouped).map(([group, hits]) => (
+          {!loading && Object.entries(grouped).map(([group, hits]) => (
             <div key={group} className="mb-2">
               <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{group}</div>
               {hits.map((h) => (

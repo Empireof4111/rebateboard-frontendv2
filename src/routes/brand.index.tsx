@@ -65,7 +65,7 @@ function BrandOverview() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-white">{r.userName}</span>
                     <span className="text-[10px] text-muted-foreground">{r.country}</span>
-                    <span className={`ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.status === "approved" ? "bg-emerald-500/15 text-emerald-300" : r.status === "pending" ? "bg-amber-500/15 text-amber-300" : "bg-rose-500/15 text-rose-300"}`}>{r.status}</span>
+                    <span className={`ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.status === "approved" ? "bg-emerald-500/15 text-emerald-300" : r.status === "pending" ? "bg-fuchsia-500/15 text-fuchsia-300" : "bg-rose-500/15 text-rose-300"}`}>{r.status}</span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{r.body}</p>
                 </div>
@@ -77,7 +77,7 @@ function BrandOverview() {
 
         <div className="space-y-4">
           <div className="glass rounded-2xl p-5 ring-1 ring-white/10">
-            <div className="flex items-center gap-2 text-amber-300"><Sparkles className="h-4 w-4" /></div>
+            <div className="flex items-center gap-2 text-fuchsia-300"><Sparkles className="h-4 w-4" /></div>
             <h3 className="mt-1 text-sm font-bold text-white">Improve your TBI</h3>
             <ul className="mt-3 space-y-2 text-[11px] text-muted-foreground">
               <li>• Reply to all pending reviews within 48h</li>

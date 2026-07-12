@@ -12,6 +12,7 @@ import {
   computeCompletion, improvementSuggestions, buildMagicLink, type BrandCategory, type UploadedFile,
   getApplicationDraft, saveApplicationDraft, clearApplicationDraft, useBrandApplicationSettings,
 } from "@/lib/tbi-onboarding";
+import { fetchBrandApplicationSettings } from "@/lib/brand-application-settings-api";
 import { ArrowLeft, ArrowRight, Check, Send, Copy, Save, Shield } from "lucide-react";
 
 const CATEGORY_ALIASES: Record<string, BrandCategory> = {
@@ -89,7 +90,8 @@ function OnboardingFlow() {
   const { category } = Route.useLoaderData();
   const navigate = useNavigate();
   const meta = CATEGORY_META[category as BrandCategory];
-  const applicationSettings = useBrandApplicationSettings();
+  const localApplicationSettings = useBrandApplicationSettings();
+  const [applicationSettings, setApplicationSettings] = useState(localApplicationSettings);
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(() => getApplicationDraft(category) ?? defaultApplicationData());
   const [submittedId, setSubmittedId] = useState<string | null>(null);
@@ -136,6 +138,24 @@ function OnboardingFlow() {
 
   const goNext = () => setStep((s) => Math.min(totalSteps, s + 1));
   const goBack = () => setStep((s) => Math.max(1, s - 1));
+
+  useEffect(() => {
+    setApplicationSettings(localApplicationSettings);
+  }, [localApplicationSettings.enabled, localApplicationSettings.updatedAt]);
+
+  useEffect(() => {
+    let active = true;
+    fetchBrandApplicationSettings()
+      .then((settings) => {
+        if (active) setApplicationSettings(settings);
+      })
+      .catch(() => {
+        // Keep the local snapshot if the public setting endpoint is unavailable.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (submittedId) return <SuccessScreen brandName={data.identity.brandName} magicLink={magicLink!} onGoToDashboard={() => navigate({ to: magicLink! })} />;
 

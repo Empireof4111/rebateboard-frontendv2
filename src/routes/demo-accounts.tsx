@@ -31,7 +31,7 @@ const platformPillClass: Record<DemoAccountPlatform, string> = {
   MT4: "bg-sky-500/15 text-sky-300 ring-sky-400/30",
   MT5: "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30",
   cTrader: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30",
-  DXtrade: "bg-amber-500/15 text-amber-300 ring-amber-400/30",
+  DXtrade: "bg-cyan-500/15 text-cyan-300 ring-cyan-400/30",
   TradingView: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
 };
 
@@ -101,7 +101,8 @@ function PublicDemoAccountsPage() {
               Public Demo Accounts
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70">
-              Explore live demo credentials published by the RebateBoard team so traders can test platforms, execution, and program flow before committing real capital.
+              Discover official demo trading environments from listed prop firms, brokers, crypto
+              exchanges, and trading providers before committing real capital.
             </p>
           </div>
 
@@ -146,8 +147,30 @@ function PublicDemoAccountsPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.05] px-6 py-16 text-center text-sm text-white/65 backdrop-blur-xl">
-            Loading live demo accounts...
+          <div className="grid gap-4 lg:grid-cols-2" aria-label="Loading demo accounts">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-[28px] border border-white/10 bg-white/[0.05] p-5 backdrop-blur-xl"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="h-14 w-14 animate-pulse rounded-2xl bg-white/[0.08]" />
+                  <div className="flex-1">
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-white/[0.08]" />
+                    <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-white/[0.05]" />
+                    <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-white/[0.05]" />
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, metricIndex) => (
+                    <div
+                      key={metricIndex}
+                      className="h-20 animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-white/10 bg-white/[0.04] px-6 py-16 text-center backdrop-blur-xl">
@@ -192,7 +215,7 @@ function PublicDemoAccountsPage() {
                         </span>
                       ) : null}
                       {row.hot ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-200 ring-1 ring-amber-400/30">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-400/30">
                           <Flame className="h-3 w-3" />
                           Hot
                         </span>

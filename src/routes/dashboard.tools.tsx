@@ -107,7 +107,7 @@ function ToolsPage() {
                   onClick={() => setActive(k)}
                   className="glass-pill inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-white hover:bg-white/15"
                 >
-                  <Icon className="h-3.5 w-3.5 text-accent" />
+                  <Icon className="h-3.5 w-3.5 text-fuchsia-300" />
                   {t.title}
                 </button>
               );
@@ -129,7 +129,7 @@ function ToolsPage() {
                 </div>
                 <button
                   onClick={() => toggleFav(t.key)}
-                  className={`rounded-full p-1.5 transition ${isFav ? "text-accent" : "text-muted-foreground hover:text-white"}`}
+                  className={`rounded-full p-1.5 transition ${isFav ? "text-fuchsia-300" : "text-muted-foreground hover:text-white"}`}
                   aria-label="Pin tool"
                 >
                   <Star className={`h-4 w-4 ${isFav ? "fill-current" : ""}`} />
@@ -137,7 +137,7 @@ function ToolsPage() {
               </div>
               <h3 className="mt-3 text-sm font-semibold text-white">{t.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
-              <div className="mt-3 text-[11px] text-accent">Mode · {t.preview}</div>
+              <div className="mt-3 text-[11px] text-fuchsia-300">Mode · {t.preview}</div>
               <button
                 onClick={() => setActive(t.key)}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] transition hover:brightness-110"
@@ -161,25 +161,25 @@ function ToolsPage() {
               {history.map((h, i) => (
                 <li key={i} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs">
                   <span className="text-white">{TOOLS.find(t => t.key === h.tool)?.title}</span>
-                  <span className="text-accent font-mono">{h.value}</span>
+                  <span className="text-fuchsia-300 font-mono">{h.value}</span>
                 </li>
               ))}
             </ul>
           )}
         </Panel>
 
-        <Panel title="Journal guidance" action={<Sparkles className="h-4 w-4 text-accent" />}>
+        <Panel title="Journal guidance" action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}>
           {journalGuidance ? (
             <ul className="space-y-2 text-xs">
               <li className="rounded-xl bg-white/5 p-3 text-white/85">
-                Average logged position size: <span className="text-accent">{journalGuidance.avgLot.toFixed(2)} lots</span>. Use the rebate calculator to estimate cashback on similar trades.
+                Average logged position size: <span className="text-fuchsia-300">{journalGuidance.avgLot.toFixed(2)} lots</span>. Use the rebate calculator to estimate cashback on similar trades.
               </li>
               <li className="rounded-xl bg-white/5 p-3 text-white/85">
-                Average logged RR: <span className="font-semibold text-success">{journalGuidance.avgR.toFixed(2)}R</span>. Use the <button onClick={() => setActive("profit")} className="text-accent underline">Profit Calculator</button> to test alternate targets.
+                Average logged RR: <span className="font-semibold text-success">{journalGuidance.avgR.toFixed(2)}R</span>. Use the <button onClick={() => setActive("profit")} className="text-fuchsia-300 underline">Profit Calculator</button> to test alternate targets.
               </li>
               {journalGuidance.mostTradedAsset && (
                 <li className="rounded-xl bg-white/5 p-3 text-white/85">
-                  Most logged asset: <span className="text-accent">{journalGuidance.mostTradedAsset}</span>. Keep calculator assumptions aligned with that market.
+                  Most logged asset: <span className="text-fuchsia-300">{journalGuidance.mostTradedAsset}</span>. Keep calculator assumptions aligned with that market.
                 </li>
               )}
             </ul>
@@ -294,13 +294,13 @@ function ResultActions({ value, onSave }: { value: string; onSave: (v: string) =
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       <button onClick={() => onSave(value)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white hover:bg-white/15">
-        <Save className="h-3.5 w-3.5 text-accent" /> Save result
+        <Save className="h-3.5 w-3.5 text-fuchsia-300" /> Save result
       </button>
       <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white hover:bg-white/15">
-        <BookPlus className="h-3.5 w-3.5 text-accent" /> Use in trade
+        <BookPlus className="h-3.5 w-3.5 text-fuchsia-300" /> Use in trade
       </button>
       <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white hover:bg-white/15">
-        <Share2 className="h-3.5 w-3.5 text-accent" /> Share
+        <Share2 className="h-3.5 w-3.5 text-fuchsia-300" /> Share
       </button>
     </div>
   );
@@ -362,7 +362,7 @@ function FeesCalculator({ onResult }: { onResult: (v: string) => void }) {
           <div className="my-4 h-px bg-white/10" />
 
           <div className="rounded-xl bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 p-3 ring-1 ring-fuchsia-400/20">
-            <div className="text-[11px] uppercase tracking-wider text-accent">With RebateBoard</div>
+            <div className="text-[11px] uppercase tracking-wider text-fuchsia-300">With RebateBoard</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-2xl font-bold text-success">${net.toFixed(2)}</span>
               <span className="text-[11px] text-muted-foreground">net cost</span>
@@ -409,7 +409,7 @@ function MarginCalculator({ onResult }: { onResult: (v: string) => void }) {
           <div className="mt-1 text-3xl font-bold text-white">{ccy} {required.toFixed(2)}</div>
           <div className="mt-2 text-xs text-destructive">Free margin impact: -{ccy} {required.toFixed(2)}</div>
           {risky && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl bg-warning/10 p-3 text-[11px] text-accent ring-1 ring-warning/20">
+            <div className="mt-4 flex items-start gap-2 rounded-xl bg-warning/10 p-3 text-[11px] text-fuchsia-300 ring-1 ring-warning/20">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
               High leverage increases liquidation risk. Consider reducing position size.
             </div>
@@ -485,7 +485,7 @@ function CurrencyConverter({ onResult }: { onResult: (v: string) => void }) {
           <Field label="Amount"><NumberInput value={amount} onChange={setAmount} step={1} min={0} /></Field>
           <Field label="From"><Select value={from} onChange={setFrom} options={Object.keys(RATES)} /></Field>
           <button onClick={swap} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white hover:bg-white/15">
-            <ArrowLeftRight className="h-3.5 w-3.5 text-accent" /> Swap
+            <ArrowLeftRight className="h-3.5 w-3.5 text-fuchsia-300" /> Swap
           </button>
           <Field label="To"><Select value={to} onChange={setTo} options={Object.keys(RATES)} /></Field>
           <div>
@@ -508,7 +508,7 @@ function CurrencyConverter({ onResult }: { onResult: (v: string) => void }) {
         <>
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Converted</div>
           <div className="mt-1 text-3xl font-bold text-white">
-            {result.toLocaleString(undefined, { maximumFractionDigits: 2 })} <span className="text-base text-accent">{to}</span>
+            {result.toLocaleString(undefined, { maximumFractionDigits: 2 })} <span className="text-base text-fuchsia-300">{to}</span>
           </div>
           <div className="mt-2 text-xs text-muted-foreground">{amount} {from} ≈ {result.toLocaleString(undefined, { maximumFractionDigits: 2 })} {to}</div>
           <ResultActions value={`${amount} ${from} = ${result.toFixed(2)} ${to}`} onSave={onResult} />

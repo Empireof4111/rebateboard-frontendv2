@@ -15,6 +15,8 @@ function readToken() {
 }
 
 export type TbiState = "preliminary" | "partial" | "full";
+export type TbiVisibility = "hidden" | TbiState;
+export type PlatformVisibility = "draft" | "tbi_only" | "public" | "unpublished" | "suspended";
 export type TbiConfidence = "High" | "Medium" | "Low";
 export type TbiCategory = "Prop Firm" | "Broker" | "Exchange" | "Tool";
 
@@ -35,12 +37,24 @@ export type TbiProfile = {
   scoreStateLabel?: string;
   lastUpdated?: string;
   visibility: string;
+  platformVisibility?: PlatformVisibility;
+  tbiVisibility?: TbiVisibility;
+  adminOverrideStatus?: TbiState | null;
+  effectiveStatus?: TbiState;
+  calculatedUnlockStatus?: TbiState;
+  rankingEligible?: boolean;
+  rankingEligibilityReasons?: string[];
+  rankingExcluded?: boolean;
   status: string;
   trustLabel: string;
   scoreDisplay: string;
   rawScore: number;
   finalScore: number;
   preliminaryScore: number;
+  rawScore100?: number;
+  finalScore100?: number;
+  score100?: number;
+  preliminaryScore100?: number;
   riskPenalty: number;
   components: {
     ut: number;
@@ -205,13 +219,19 @@ export type TbiProfile = {
 
 export type TbiAdminPatch = Partial<{
   visibility: string;
+  platformVisibility: PlatformVisibility;
+  tbiVisibility: TbiVisibility;
   status: string;
   stateOverride: TbiState;
+  overrideReason: string;
   confidenceOverride: TbiConfidence;
   manualFinalScore: number | null;
   manualRiskPenalty: number;
   unlockFullTbi: boolean;
   suspendVisibility: boolean;
+  rankingEligible: boolean;
+  rankingExcluded: boolean;
+  rankingExclusionReason: string;
   riskEvents: TbiProfile["riskEvents"];
   riskSignals: Record<string, unknown>;
   performanceInsights: TbiProfile["performanceInsights"];
@@ -273,20 +293,20 @@ export async function updateAdminTbiProfile(brandId: string, patch: TbiAdminPatc
 }
 
 export function tbiStateLabel(state: TbiState) {
-  if (state === "full") return "Full Verified";
-  if (state === "partial") return "Limited Data";
+  if (state === "full") return "Full Unlock";
+  if (state === "partial") return "Partial Unlock";
   return "Preliminary";
 }
 
 export function tbiStateTone(state: TbiState) {
   if (state === "full") return "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30";
-  if (state === "partial") return "bg-amber-500/15 text-amber-300 ring-amber-400/30";
-  return "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30";
+  if (state === "partial") return "bg-sky-500/15 text-sky-300 ring-sky-400/30";
+  return "bg-violet-500/12 text-violet-200 ring-violet-300/25";
 }
 
 export function tbiConfidenceTone(confidence: TbiConfidence) {
   if (confidence === "High") return "text-emerald-300";
-  if (confidence === "Medium") return "text-amber-300";
+  if (confidence === "Medium") return "text-sky-300";
   return "text-fuchsia-300";
 }
 
@@ -295,7 +315,15 @@ export function tbiLabelTone(label: string) {
     return "text-emerald-300";
   }
   if (label === "Trusted" || label === "Moderate Risk") {
-    return "text-amber-300";
+    return "text-sky-300";
   }
   return "text-rose-300";
+}
+
+export function tbiScore100(profile: Pick<TbiProfile, "finalScore" | "finalScore100" | "score100">) {
+  const direct = Number(profile.finalScore100 ?? profile.score100);
+  if (Number.isFinite(direct) && direct > 0) return Math.round(direct);
+  const fallback = Number(profile.finalScore ?? 0);
+  if (!Number.isFinite(fallback) || fallback <= 0) return 0;
+  return Math.round(fallback > 10 ? fallback : fallback * 10);
 }

@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from "react";
 import { useAdminCollection } from "@/lib/admin-store";
 import { roles as seedRoles, allPermissions, routePermissionMap, type Role } from "@/lib/admin-data";
+import { useAuth } from "@/lib/auth";
 
 type Ctx = {
   roles: Role[];
@@ -19,6 +20,7 @@ const STORAGE_KEY = "rb_admin_active_role";
 
 export function AdminPermissionsProvider({ children }: { children: ReactNode }) {
   const { items: roles } = useAdminCollection<Role>("roles", seedRoles);
+  const { user } = useAuth();
   const [activeRoleId, setActiveRoleIdState] = useState<string>(() => {
     if (typeof window === "undefined") return "ro_1";
     return localStorage.getItem(STORAGE_KEY) || "ro_1";
@@ -30,7 +32,11 @@ export function AdminPermissionsProvider({ children }: { children: ReactNode }) 
   }, []);
 
   const value = useMemo<Ctx>(() => {
-    const activeRole = roles.find((r) => r.id === activeRoleId) ?? roles[0];
+    const email = user?.email?.trim().toLowerCase();
+    const assignedRole = email
+      ? roles.find((role) => role.status === "active" && (role.assignedEmails ?? []).some((assigned) => assigned.trim().toLowerCase() === email))
+      : undefined;
+    const activeRole = assignedRole ?? roles.find((r) => r.id === activeRoleId) ?? roles[0];
     const permissions = new Set<string>(activeRole?.permissions ?? []);
     return {
       roles,
@@ -45,7 +51,7 @@ export function AdminPermissionsProvider({ children }: { children: ReactNode }) 
         return permissions.has(required);
       },
     };
-  }, [roles, activeRoleId, setActiveRoleId]);
+  }, [roles, activeRoleId, setActiveRoleId, user?.email]);
 
   return <AdminPermsContext.Provider value={value}>{children}</AdminPermsContext.Provider>;
 }

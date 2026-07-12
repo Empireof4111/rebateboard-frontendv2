@@ -252,7 +252,7 @@ function WalletPage() {
                 <Building2 className="h-3.5 w-3.5" /> Link account · earn
               </button>
               <button onClick={() => setClaimOpen(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-                <Sparkles className="h-3.5 w-3.5 text-accent" /> Claim cashback
+                <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" /> Claim cashback
               </button>
               <Link to="/dashboard/claims" className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white/80 hover:text-white">
                 View all claims →

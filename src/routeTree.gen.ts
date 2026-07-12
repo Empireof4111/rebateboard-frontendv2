@@ -30,6 +30,7 @@ import { Route as RebetaAiRouteImport } from './routes/rebeta-ai'
 import { Route as RebateRewardsRouteImport } from './routes/rebate-rewards'
 import { Route as PromotionsRouteImport } from './routes/promotions'
 import { Route as ProgramsRouteImport } from './routes/programs'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PressRouteImport } from './routes/press'
 import { Route as OffersRouteImport } from './routes/offers'
@@ -75,6 +76,7 @@ import { Route as PayoutsIndexRouteImport } from './routes/payouts.index'
 import { Route as LegalIndexRouteImport } from './routes/legal.index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as BrandIndexRouteImport } from './routes/brand.index'
+import { Route as VerifyPublicAssetIdRouteImport } from './routes/verify.$publicAssetId'
 import { Route as TbiExploreRouteImport } from './routes/tbi.explore'
 import { Route as SuperadminWithdrawalsRouteImport } from './routes/superadmin.withdrawals'
 import { Route as SuperadminWalletsRouteImport } from './routes/superadmin.wallets'
@@ -98,6 +100,7 @@ import { Route as SuperadminPartnerRequestsRouteImport } from './routes/superadm
 import { Route as SuperadminOffersRouteImport } from './routes/superadmin.offers'
 import { Route as SuperadminNotificationsRouteImport } from './routes/superadmin.notifications'
 import { Route as SuperadminNewsRouteImport } from './routes/superadmin.news'
+import { Route as SuperadminMeritAwardsRouteImport } from './routes/superadmin.merit-awards'
 import { Route as SuperadminLeaderboardsRouteImport } from './routes/superadmin.leaderboards'
 import { Route as SuperadminJournalAnalyticsRouteImport } from './routes/superadmin.journal-analytics'
 import { Route as SuperadminInboxRouteImport } from './routes/superadmin.inbox'
@@ -273,6 +276,11 @@ const PromotionsRoute = PromotionsRouteImport.update({
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -500,6 +508,11 @@ const BrandIndexRoute = BrandIndexRouteImport.update({
   path: '/',
   getParentRoute: () => BrandRoute,
 } as any)
+const VerifyPublicAssetIdRoute = VerifyPublicAssetIdRouteImport.update({
+  id: '/verify/$publicAssetId',
+  path: '/verify/$publicAssetId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TbiExploreRoute = TbiExploreRouteImport.update({
   id: '/tbi/explore',
   path: '/tbi/explore',
@@ -615,6 +628,11 @@ const SuperadminNotificationsRoute = SuperadminNotificationsRouteImport.update({
 const SuperadminNewsRoute = SuperadminNewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminMeritAwardsRoute = SuperadminMeritAwardsRouteImport.update({
+  id: '/merit-awards',
+  path: '/merit-awards',
   getParentRoute: () => SuperadminRoute,
 } as any)
 const SuperadminLeaderboardsRoute = SuperadminLeaderboardsRouteImport.update({
@@ -1020,6 +1038,7 @@ export interface FileRoutesByFullPath {
   '/offers': typeof OffersRoute
   '/press': typeof PressRoute
   '/pricing': typeof PricingRoute
+  '/products': typeof ProductsRoute
   '/programs': typeof ProgramsRoute
   '/promotions': typeof PromotionsRoute
   '/rebate-rewards': typeof RebateRewardsRoute
@@ -1108,6 +1127,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/inbox': typeof SuperadminInboxRoute
   '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
+  '/superadmin/merit-awards': typeof SuperadminMeritAwardsRoute
   '/superadmin/news': typeof SuperadminNewsRoute
   '/superadmin/notifications': typeof SuperadminNotificationsRoute
   '/superadmin/offers': typeof SuperadminOffersRoute
@@ -1131,6 +1151,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/wallets': typeof SuperadminWalletsRoute
   '/superadmin/withdrawals': typeof SuperadminWithdrawalsRoute
   '/tbi/explore': typeof TbiExploreRoute
+  '/verify/$publicAssetId': typeof VerifyPublicAssetIdRoute
   '/brand/': typeof BrandIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/legal/': typeof LegalIndexRoute
@@ -1179,6 +1200,7 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersRoute
   '/press': typeof PressRoute
   '/pricing': typeof PricingRoute
+  '/products': typeof ProductsRoute
   '/programs': typeof ProgramsRoute
   '/promotions': typeof PromotionsRoute
   '/rebate-rewards': typeof RebateRewardsRoute
@@ -1266,6 +1288,7 @@ export interface FileRoutesByTo {
   '/superadmin/inbox': typeof SuperadminInboxRoute
   '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
+  '/superadmin/merit-awards': typeof SuperadminMeritAwardsRoute
   '/superadmin/news': typeof SuperadminNewsRoute
   '/superadmin/notifications': typeof SuperadminNotificationsRoute
   '/superadmin/offers': typeof SuperadminOffersRoute
@@ -1289,6 +1312,7 @@ export interface FileRoutesByTo {
   '/superadmin/wallets': typeof SuperadminWalletsRoute
   '/superadmin/withdrawals': typeof SuperadminWithdrawalsRoute
   '/tbi/explore': typeof TbiExploreRoute
+  '/verify/$publicAssetId': typeof VerifyPublicAssetIdRoute
   '/brand': typeof BrandIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/legal': typeof LegalIndexRoute
@@ -1341,6 +1365,7 @@ export interface FileRoutesById {
   '/offers': typeof OffersRoute
   '/press': typeof PressRoute
   '/pricing': typeof PricingRoute
+  '/products': typeof ProductsRoute
   '/programs': typeof ProgramsRoute
   '/promotions': typeof PromotionsRoute
   '/rebate-rewards': typeof RebateRewardsRoute
@@ -1429,6 +1454,7 @@ export interface FileRoutesById {
   '/superadmin/inbox': typeof SuperadminInboxRoute
   '/superadmin/journal-analytics': typeof SuperadminJournalAnalyticsRoute
   '/superadmin/leaderboards': typeof SuperadminLeaderboardsRoute
+  '/superadmin/merit-awards': typeof SuperadminMeritAwardsRoute
   '/superadmin/news': typeof SuperadminNewsRoute
   '/superadmin/notifications': typeof SuperadminNotificationsRoute
   '/superadmin/offers': typeof SuperadminOffersRoute
@@ -1452,6 +1478,7 @@ export interface FileRoutesById {
   '/superadmin/wallets': typeof SuperadminWalletsRoute
   '/superadmin/withdrawals': typeof SuperadminWithdrawalsRoute
   '/tbi/explore': typeof TbiExploreRoute
+  '/verify/$publicAssetId': typeof VerifyPublicAssetIdRoute
   '/brand/': typeof BrandIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/legal/': typeof LegalIndexRoute
@@ -1505,6 +1532,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/press'
     | '/pricing'
+    | '/products'
     | '/programs'
     | '/promotions'
     | '/rebate-rewards'
@@ -1593,6 +1621,7 @@ export interface FileRouteTypes {
     | '/superadmin/inbox'
     | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
+    | '/superadmin/merit-awards'
     | '/superadmin/news'
     | '/superadmin/notifications'
     | '/superadmin/offers'
@@ -1616,6 +1645,7 @@ export interface FileRouteTypes {
     | '/superadmin/wallets'
     | '/superadmin/withdrawals'
     | '/tbi/explore'
+    | '/verify/$publicAssetId'
     | '/brand/'
     | '/dashboard/'
     | '/legal/'
@@ -1664,6 +1694,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/press'
     | '/pricing'
+    | '/products'
     | '/programs'
     | '/promotions'
     | '/rebate-rewards'
@@ -1751,6 +1782,7 @@ export interface FileRouteTypes {
     | '/superadmin/inbox'
     | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
+    | '/superadmin/merit-awards'
     | '/superadmin/news'
     | '/superadmin/notifications'
     | '/superadmin/offers'
@@ -1774,6 +1806,7 @@ export interface FileRouteTypes {
     | '/superadmin/wallets'
     | '/superadmin/withdrawals'
     | '/tbi/explore'
+    | '/verify/$publicAssetId'
     | '/brand'
     | '/dashboard'
     | '/legal'
@@ -1825,6 +1858,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/press'
     | '/pricing'
+    | '/products'
     | '/programs'
     | '/promotions'
     | '/rebate-rewards'
@@ -1913,6 +1947,7 @@ export interface FileRouteTypes {
     | '/superadmin/inbox'
     | '/superadmin/journal-analytics'
     | '/superadmin/leaderboards'
+    | '/superadmin/merit-awards'
     | '/superadmin/news'
     | '/superadmin/notifications'
     | '/superadmin/offers'
@@ -1936,6 +1971,7 @@ export interface FileRouteTypes {
     | '/superadmin/wallets'
     | '/superadmin/withdrawals'
     | '/tbi/explore'
+    | '/verify/$publicAssetId'
     | '/brand/'
     | '/dashboard/'
     | '/legal/'
@@ -1988,6 +2024,7 @@ export interface RootRouteChildren {
   OffersRoute: typeof OffersRoute
   PressRoute: typeof PressRoute
   PricingRoute: typeof PricingRoute
+  ProductsRoute: typeof ProductsRoute
   ProgramsRoute: typeof ProgramsRoute
   PromotionsRoute: typeof PromotionsRoute
   RebateRewardsRoute: typeof RebateRewardsRoute
@@ -2016,6 +2053,7 @@ export interface RootRouteChildren {
   PayoutsBrandSlugRoute: typeof PayoutsBrandSlugRouteWithChildren
   RSlugRoute: typeof RSlugRoute
   TbiExploreRoute: typeof TbiExploreRoute
+  VerifyPublicAssetIdRoute: typeof VerifyPublicAssetIdRoute
   PayoutsIndexRoute: typeof PayoutsIndexRoute
   TbiIndexRoute: typeof TbiIndexRoute
   BusinessOnboardingCategoryRoute: typeof BusinessOnboardingCategoryRoute
@@ -2169,6 +2207,13 @@ declare module '@tanstack/react-router' {
       path: '/programs'
       fullPath: '/programs'
       preLoaderRoute: typeof ProgramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -2486,6 +2531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrandIndexRouteImport
       parentRoute: typeof BrandRoute
     }
+    '/verify/$publicAssetId': {
+      id: '/verify/$publicAssetId'
+      path: '/verify/$publicAssetId'
+      fullPath: '/verify/$publicAssetId'
+      preLoaderRoute: typeof VerifyPublicAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tbi/explore': {
       id: '/tbi/explore'
       path: '/tbi/explore'
@@ -2645,6 +2697,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/superadmin/news'
       preLoaderRoute: typeof SuperadminNewsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/merit-awards': {
+      id: '/superadmin/merit-awards'
+      path: '/merit-awards'
+      fullPath: '/superadmin/merit-awards'
+      preLoaderRoute: typeof SuperadminMeritAwardsRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/superadmin/leaderboards': {
@@ -3285,6 +3344,7 @@ interface SuperadminRouteChildren {
   SuperadminInboxRoute: typeof SuperadminInboxRoute
   SuperadminJournalAnalyticsRoute: typeof SuperadminJournalAnalyticsRoute
   SuperadminLeaderboardsRoute: typeof SuperadminLeaderboardsRoute
+  SuperadminMeritAwardsRoute: typeof SuperadminMeritAwardsRoute
   SuperadminNewsRoute: typeof SuperadminNewsRoute
   SuperadminNotificationsRoute: typeof SuperadminNotificationsRoute
   SuperadminOffersRoute: typeof SuperadminOffersRoute
@@ -3338,6 +3398,7 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminInboxRoute: SuperadminInboxRoute,
   SuperadminJournalAnalyticsRoute: SuperadminJournalAnalyticsRoute,
   SuperadminLeaderboardsRoute: SuperadminLeaderboardsRoute,
+  SuperadminMeritAwardsRoute: SuperadminMeritAwardsRoute,
   SuperadminNewsRoute: SuperadminNewsRoute,
   SuperadminNotificationsRoute: SuperadminNotificationsRoute,
   SuperadminOffersRoute: SuperadminOffersRoute,
@@ -3419,6 +3480,7 @@ const rootRouteChildren: RootRouteChildren = {
   OffersRoute: OffersRoute,
   PressRoute: PressRoute,
   PricingRoute: PricingRoute,
+  ProductsRoute: ProductsRoute,
   ProgramsRoute: ProgramsRoute,
   PromotionsRoute: PromotionsRoute,
   RebateRewardsRoute: RebateRewardsRoute,
@@ -3447,6 +3509,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayoutsBrandSlugRoute: PayoutsBrandSlugRouteWithChildren,
   RSlugRoute: RSlugRoute,
   TbiExploreRoute: TbiExploreRoute,
+  VerifyPublicAssetIdRoute: VerifyPublicAssetIdRoute,
   PayoutsIndexRoute: PayoutsIndexRoute,
   TbiIndexRoute: TbiIndexRoute,
   BusinessOnboardingCategoryRoute: BusinessOnboardingCategoryRoute,

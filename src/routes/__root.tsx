@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth";
 import { captureRefFromUrl } from "@/lib/referral-store";
 import { I18nProvider } from "@/lib/i18n";
+import { PublicEngagementLayer } from "@/components/PublicEngagementLayer";
 
 import appCss from "../styles.css?url";
 
@@ -77,6 +78,7 @@ function RootComponent() {
     <I18nProvider>
       <AuthProvider>
         <Outlet />
+        <PublicEngagementLayer />
       </AuthProvider>
     </I18nProvider>
   );

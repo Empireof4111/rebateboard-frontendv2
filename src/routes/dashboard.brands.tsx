@@ -188,7 +188,7 @@ function ProgramsPage() {
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-[10px] uppercase text-muted-foreground">TBI</div>
-                  <div className="flex items-center gap-1 text-lg font-bold text-accent">
+                  <div className="flex items-center gap-1 text-lg font-bold text-fuchsia-300">
                     <Star className="h-3.5 w-3.5 fill-current" /> {Number(brand.tbi ?? 0).toFixed(1)}
                   </div>
                 </div>

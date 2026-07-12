@@ -7,6 +7,7 @@ import {
   type TbiProfile,
   tbiConfidenceTone,
   tbiLabelTone,
+  tbiScore100,
   tbiStateTone,
 } from "@/lib/tbi-api";
 import { AlertTriangle, ArrowRight, CheckCircle2, Info, Shield } from "lucide-react";
@@ -26,12 +27,14 @@ export const Route = createFileRoute("/tbi/")({
 });
 
 function BrandAvatar({ brand }: { brand: TbiProfile }) {
-  if (brand.logo) {
+  const [failed, setFailed] = useState(false);
+  if (brand.logo && !failed) {
     return (
       <img
         src={brand.logo}
         alt={brand.name}
         className="h-12 w-12 rounded-2xl object-cover ring-1 ring-white/10"
+        onError={() => setFailed(true)}
       />
     );
   }
@@ -95,7 +98,7 @@ function TBIPage() {
                 <Info className="mr-1 inline h-3.5 w-3.5 text-fuchsia-300" /> Confidence adjustment prevents low-data manipulation
               </div>
               <div className="glass-pill rounded-2xl px-4 py-3">
-                <AlertTriangle className="mr-1 inline h-3.5 w-3.5 text-amber-300" /> Risk penalties surface payout and complaint pressure
+                <AlertTriangle className="mr-1 inline h-3.5 w-3.5 text-rose-300" /> Risk penalties surface payout and complaint pressure
               </div>
             </div>
           </div>
@@ -156,7 +159,60 @@ function TBIPage() {
             <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-200">{error}</div>
           ) : !brands.length ? (
             <div className="glass rounded-3xl p-8 text-sm text-muted-foreground">
-              No brands have unlocked full public TBI ranking yet.
+              No brands currently meet full-unlock ranking requirements.
+              <div className="mt-2 text-xs">
+                Brands need Full Unlock status, enough verified data, sufficient confidence, and public ranking eligibility before they appear here.
+              </div>
+            </div>
+          ) : brands.length === 1 ? (
+            <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+              <div className="glass rounded-3xl p-6">
+                <div className="text-sm font-semibold text-white">One brand currently meets full ranking eligibility.</div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Fully Unlocked Rankings only include brands with enough verified reviews, confidence, active public visibility, and no critical unresolved trust flags.
+                </p>
+                <Link to="/tbi/explore" className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15">
+                  Explore all TBI profiles <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              {brands.map((brand, index) => (
+                <Link
+                  key={brand.id}
+                  to="/tbi/brand/$slug"
+                  params={{ slug: brand.slug }}
+                  className="glass group relative overflow-hidden rounded-3xl p-6 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)]"
+                >
+                  <div className="absolute right-5 top-5 rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">
+                    #{index + 1}
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <BrandAvatar brand={brand} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-xl font-semibold">{brand.name}</h3>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tbiStateTone("full")}`}>
+                          Full Unlock
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {brand.fullCategory} {brand.region ? `- ${brand.region}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <div className="text-5xl font-bold">
+                      {tbiScore100(brand)}
+                      <span className="text-base text-muted-foreground"> / 100</span>
+                    </div>
+                    <div className={`mt-1 text-sm font-semibold ${tbiLabelTone(brand.trustLabel)}`}>{brand.trustLabel}</div>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span className={tbiConfidenceTone(brand.confidence)}>{brand.confidence} confidence</span>
+                    <span>{brand.reviewCount} reviews</span>
+                    <span>{brand.verifiedReviewCount} verified</span>
+                  </div>
+                </Link>
+              ))}
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -188,8 +244,8 @@ function TBIPage() {
                   <div className="mt-5 flex items-end justify-between">
                     <div>
                       <div className="text-3xl font-bold">
-                        {brand.finalScore.toFixed(1)}
-                        <span className="text-sm text-muted-foreground">/10</span>
+                        {tbiScore100(brand)}
+                        <span className="text-sm text-muted-foreground"> / 100</span>
                       </div>
                       <div className={`text-[11px] ${tbiLabelTone(brand.trustLabel)}`}>{brand.trustLabel}</div>
                     </div>

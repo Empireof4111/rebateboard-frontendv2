@@ -208,7 +208,15 @@ function UsersPage() {
               <td className="text-right">
                 <div className="flex justify-end gap-1">
                   <button onClick={() => setViewing(user)} title="View" className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-white"><Eye className="h-3 w-3" /></button>
-                  <button onClick={() => { void updateUser(user, { banned: !user.banned }); }} title={user.banned ? "Unban" : "Suspend"} className="grid h-7 w-7 place-items-center rounded-md bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30"><Ban className="h-3 w-3" /></button>
+                  <button
+                    onClick={() => { void updateUser(user, { banned: !user.banned }); }}
+                    title={user.banned ? "Unsuspend" : "Suspend"}
+                    className={user.banned
+                      ? "grid h-7 w-7 place-items-center rounded-md bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30"
+                      : "grid h-7 w-7 place-items-center rounded-md bg-violet-500/15 text-violet-200 ring-1 ring-violet-400/30"}
+                  >
+                    <Ban className="h-3 w-3" />
+                  </button>
                   <button onClick={() => setDeleting(user)} title="Delete" className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30"><Trash2 className="h-3 w-3" /></button>
                 </div>
               </td>

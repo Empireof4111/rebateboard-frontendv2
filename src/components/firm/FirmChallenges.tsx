@@ -231,10 +231,13 @@ export function FirmChallenges({
   return (
     <div className="space-y-4">
       <div
-        className="glass sticky z-40 overflow-visible rounded-2xl p-4 ring-1 ring-violet-400/20"
-        style={{ top: stickyTop ? `${stickyTop}px` : undefined }}
+        className="glass sticky z-30 overflow-visible rounded-2xl p-3 ring-1 ring-violet-400/20 sm:p-4"
+        style={{
+          top: stickyTop ? `${stickyTop}px` : undefined,
+          maxHeight: stickyTop ? `calc(100dvh - ${stickyTop + 12}px)` : undefined,
+        }}
       >
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="no-scrollbar flex max-w-full flex-wrap items-center gap-2 overflow-x-auto overscroll-x-contain">
           <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold">
             <Filter className="h-3 w-3" /> Filter
           </button>
@@ -288,14 +291,14 @@ export function FirmChallenges({
             <span className="font-semibold text-white">{list.length}</span>{" "}
             {list.length === 1 ? "program" : "programs"}
           </span>
-          <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">
+          <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:ml-0 max-sm:w-full">
             <div className="glass-pill flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px]">
               <Search className="h-3 w-3 text-muted-foreground" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search..."
-                className="w-28 bg-transparent outline-none placeholder:text-muted-foreground"
+                className="w-28 bg-transparent outline-none placeholder:text-muted-foreground max-sm:w-full"
               />
             </div>
             <div className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] p-1 ring-1 ring-white/10">

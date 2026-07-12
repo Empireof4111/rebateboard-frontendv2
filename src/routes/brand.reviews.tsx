@@ -39,7 +39,7 @@ function BrandReviewsInbox() {
 
       <div className="grid grid-cols-3 gap-3">
         <div className="glass rounded-2xl p-4 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted-foreground">Total</div><div className="mt-1 text-2xl font-bold text-white">{reviews.length}</div></div>
-        <div className="glass rounded-2xl p-4 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted-foreground">Pending</div><div className="mt-1 text-2xl font-bold text-amber-300">{pending}</div></div>
+        <div className="glass rounded-2xl p-4 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted-foreground">Pending</div><div className="mt-1 text-2xl font-bold text-fuchsia-300">{pending}</div></div>
         <div className="glass rounded-2xl p-4 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted-foreground">Replied</div><div className="mt-1 text-2xl font-bold text-emerald-300">{replied}</div></div>
       </div>
 
@@ -60,7 +60,7 @@ function BrandReviewsInbox() {
                   <span className="text-sm font-semibold text-white">{r.userName}</span>
                   <span className="text-[10px] text-muted-foreground">{r.country} · {r.accountSize} · {r.experience}</span>
                   <StarRow value={r.ratings.overall} />
-                  <span className={`ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.status === "approved" ? "bg-emerald-500/15 text-emerald-300" : r.status === "pending" ? "bg-amber-500/15 text-amber-300" : "bg-rose-500/15 text-rose-300"}`}>{r.status}</span>
+                  <span className={`ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${r.status === "approved" ? "bg-emerald-500/15 text-emerald-300" : r.status === "pending" ? "bg-fuchsia-500/15 text-fuchsia-300" : "bg-rose-500/15 text-rose-300"}`}>{r.status}</span>
                 </div>
                 <p className="mt-2 text-sm text-white/90">{r.body}</p>
                 {r.proofs.length > 0 && <div className="mt-2 text-[10px] text-emerald-300">📎 {r.proofs.length} proof attached</div>}

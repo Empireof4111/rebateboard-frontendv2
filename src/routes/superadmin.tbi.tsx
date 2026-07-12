@@ -18,6 +18,7 @@ import {
   type TbiState,
   tbiConfidenceTone,
   tbiLabelTone,
+  tbiScore100,
   tbiStateLabel,
   tbiStateTone,
   updateAdminTbiProfile,
@@ -181,9 +182,7 @@ function TBIPage() {
                     </td>
                     <td>
                       <div className="font-mono font-bold text-white">
-                        {profile.state === "preliminary"
-                          ? `${profile.preliminaryScore.toFixed(1)} / 6.5`
-                          : `${profile.finalScore.toFixed(1)} / 10`}
+                        {tbiScore100(profile)} / 100
                       </div>
                       <div className={`text-xs ${tbiLabelTone(profile.trustLabel)}`}>{profile.trustLabel}</div>
                     </td>
@@ -191,7 +190,12 @@ function TBIPage() {
                     <td className={profile.riskPenalty < 0 ? "text-rose-300" : "text-muted-foreground"}>
                       {profile.riskPenalty.toFixed(2)}
                     </td>
-                    <td><StatusPill status={profile.visibility} /></td>
+                    <td>
+                      <StatusPill status={profile.platformVisibility || profile.visibility} />
+                      {profile.rankingEligible ? (
+                        <div className="mt-1 text-[10px] text-emerald-300">Ranking eligible</div>
+                      ) : null}
+                    </td>
                   </tr>
                 ))}
               </DataTable>
@@ -224,30 +228,42 @@ function TbiControlPanel({
   onSave: (patch: TbiAdminPatch) => Promise<void>;
 }) {
   const [visibility, setVisibility] = useState(profile.visibility);
+  const [platformVisibility, setPlatformVisibility] = useState(profile.platformVisibility || "draft");
+  const [tbiVisibility, setTbiVisibility] = useState(profile.tbiVisibility || "hidden");
   const [status, setStatus] = useState(profile.status);
   const [stateOverride, setStateOverride] = useState<TbiState | "">("");
+  const [overrideReason, setOverrideReason] = useState("");
   const [confidenceOverride, setConfidenceOverride] = useState<"" | "High" | "Medium" | "Low">("");
   const [manualFinalScore, setManualFinalScore] = useState<string>("");
   const [manualRiskPenalty, setManualRiskPenalty] = useState<string>(profile.riskPenalty.toFixed(2));
   const [unlockFullTbi, setUnlockFullTbi] = useState(false);
   const [suspendVisibility, setSuspendVisibility] = useState(profile.visibility === "hidden");
+  const [rankingEligible, setRankingEligible] = useState(Boolean(profile.rankingEligible));
+  const [rankingExcluded, setRankingExcluded] = useState(Boolean(profile.rankingExcluded));
+  const [rankingExclusionReason, setRankingExclusionReason] = useState(profile.rankingEligibilityReasons?.[0] || "");
 
   useEffect(() => {
     setVisibility(profile.visibility);
+    setPlatformVisibility(profile.platformVisibility || "draft");
+    setTbiVisibility(profile.tbiVisibility || "hidden");
     setStatus(profile.status);
     setStateOverride("");
+    setOverrideReason("");
     setConfidenceOverride("");
     setManualFinalScore("");
     setManualRiskPenalty(profile.riskPenalty.toFixed(2));
     setUnlockFullTbi(false);
     setSuspendVisibility(profile.visibility === "hidden");
+    setRankingEligible(Boolean(profile.rankingEligible));
+    setRankingExcluded(Boolean(profile.rankingExcluded));
+    setRankingExclusionReason(profile.rankingEligibilityReasons?.[0] || "");
   }, [profile]);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Raw" value={profile.rawScore.toFixed(2)} delta={profile.trustEngine.formula} tone="flat" />
-        <StatCard label="Final" value={profile.finalScore.toFixed(2)} delta={`${profile.reviewCount} reviews`} tone="up" />
+        <StatCard label="Final" value={`${tbiScore100(profile)} / 100`} delta={`${profile.reviewCount} reviews`} tone="up" />
         <StatCard label="Verified reviews" value={String(profile.verifiedReviewCount)} delta={profile.confidence} tone="flat" />
         <StatCard label="Complaints" value={String(profile.complaints.total)} delta={`${profile.complaints.pending} pending`} tone={profile.complaints.pending ? "down" : "flat"} />
       </div>
@@ -272,12 +288,31 @@ function TbiControlPanel({
         </div>
         <div className="grid gap-3">
           <label className="grid gap-1 text-xs text-muted-foreground">
-            Visibility
+            Legacy visibility
             <select value={visibility} onChange={(event) => setVisibility(event.target.value)} className={fieldCls}>
               <option value="draft">draft</option>
               <option value="published">published</option>
               <option value="hidden">hidden</option>
               <option value="archived">archived</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Platform visibility
+            <select value={platformVisibility} onChange={(event) => setPlatformVisibility(event.target.value as typeof platformVisibility)} className={fieldCls}>
+              <option value="draft">Draft</option>
+              <option value="tbi_only">TBI Only</option>
+              <option value="public">Public</option>
+              <option value="unpublished">Unpublished</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            TBI visibility
+            <select value={tbiVisibility} onChange={(event) => setTbiVisibility(event.target.value as typeof tbiVisibility)} className={fieldCls}>
+              <option value="hidden">Hidden</option>
+              <option value="preliminary">Preliminary</option>
+              <option value="partial">Partial Unlock</option>
+              <option value="full">Full Unlock</option>
             </select>
           </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
@@ -297,6 +332,15 @@ function TbiControlPanel({
               <option value="partial">Partial</option>
               <option value="full">Full</option>
             </select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Override reason
+            <input
+              value={overrideReason}
+              onChange={(event) => setOverrideReason(event.target.value)}
+              placeholder="Reason for manual status change"
+              className={fieldCls}
+            />
           </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
             Force confidence
@@ -336,6 +380,23 @@ function TbiControlPanel({
             <input type="checkbox" checked={suspendVisibility} onChange={(event) => setSuspendVisibility(event.target.checked)} />
             Suspend public visibility
           </label>
+          <label className="flex items-center gap-2 text-sm text-white">
+            <input type="checkbox" checked={rankingEligible} onChange={(event) => setRankingEligible(event.target.checked)} />
+            Admin ranking eligibility
+          </label>
+          <label className="flex items-center gap-2 text-sm text-white">
+            <input type="checkbox" checked={rankingExcluded} onChange={(event) => setRankingExcluded(event.target.checked)} />
+            Exclude from rankings
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Ranking exclusion reason
+            <input
+              value={rankingExclusionReason}
+              onChange={(event) => setRankingExclusionReason(event.target.value)}
+              placeholder="Optional public/admin reason"
+              className={fieldCls}
+            />
+          </label>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -343,13 +404,19 @@ function TbiControlPanel({
             onClick={() =>
               void onSave({
                 visibility,
+                platformVisibility,
+                tbiVisibility,
                 status,
                 stateOverride: stateOverride || undefined,
+                overrideReason: overrideReason || undefined,
                 confidenceOverride: confidenceOverride || undefined,
                 manualFinalScore: manualFinalScore.trim() ? Number(manualFinalScore) : null,
                 manualRiskPenalty: Number(manualRiskPenalty),
                 unlockFullTbi,
                 suspendVisibility,
+                rankingEligible,
+                rankingExcluded,
+                rankingExclusionReason,
               })
             }
             className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
@@ -361,17 +428,17 @@ function TbiControlPanel({
 
       <div className="rounded-2xl bg-white/5 p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-          <AlertTriangle className="h-4 w-4 text-amber-300" /> Risk and change monitoring
+          <AlertTriangle className="h-4 w-4 text-orange-300" /> Risk and change monitoring
         </div>
         <div className="space-y-3">
           {profile.riskEvents.length ? (
             profile.riskEvents.map((event) => (
-              <div key={`${event.kind}-${event.title}`} className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3">
+              <div key={`${event.kind}-${event.title}`} className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold text-amber-100">{event.title}</div>
-                  <div className="text-xs font-semibold text-amber-300">{event.impact.toFixed(2)}</div>
+                  <div className="font-semibold text-orange-100">{event.title}</div>
+                  <div className="text-xs font-semibold text-orange-300">{event.impact.toFixed(2)}</div>
                 </div>
-                <div className="mt-1 text-xs text-amber-50/90">{event.detail}</div>
+                <div className="mt-1 text-xs text-orange-50/90">{event.detail}</div>
               </div>
             ))
           ) : (

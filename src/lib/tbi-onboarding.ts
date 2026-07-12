@@ -232,6 +232,7 @@ export function improvementSuggestions(submission: BrandSubmission): { text: str
 const SETTINGS_KEY = "rb-brand-application-settings";
 const DRAFT_KEY = "rb-brand-application-drafts";
 const STORAGE_KEY = "rb-tbi-submissions";
+const DEFAULT_BRAND_APPLICATION_SETTINGS: BrandApplicationSettings = { enabled: true };
 let cache: BrandSubmission[] | null = null;
 const listeners = new Set<() => void>();
 
@@ -266,7 +267,7 @@ function getLocalStorage(): Storage | undefined {
 }
 
 export function getBrandApplicationSettings(): BrandApplicationSettings {
-  return readJson<BrandApplicationSettings>(SETTINGS_KEY, { enabled: true }, getLocalStorage());
+  return readJson<BrandApplicationSettings>(SETTINGS_KEY, DEFAULT_BRAND_APPLICATION_SETTINGS, getLocalStorage());
 }
 
 export function setBrandApplicationSettings(patch: Partial<BrandApplicationSettings>): BrandApplicationSettings {

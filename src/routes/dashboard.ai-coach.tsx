@@ -16,11 +16,14 @@ import {
   Target,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
+import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
+  getRebetaUsage,
   sendRebetaMessage,
   type RebetaChatMessage,
   type RebetaChatResponse,
+  type RebetaUsageStatus,
 } from "@/lib/rebeta-api";
 
 export const Route = createFileRoute("/dashboard/ai-coach")({
@@ -50,9 +53,11 @@ type RebetaChatAttachment = {
 
 const CHAT_HISTORY_VERSION = "v2";
 const MAX_STORED_MESSAGES = 80;
-const MAX_ATTACHMENTS_PER_MESSAGE = 4;
+const MAX_ATTACHMENTS_PER_MESSAGE = 2;
 const MAX_TEXT_ATTACHMENT_CHARS = 30_000;
-const MAX_IMAGE_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MIN_IMAGE_DIMENSION = 320;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
 const DEFAULT_PROMPTS = [
   "Analyze my last trading week",
@@ -122,6 +127,7 @@ function RebataPage() {
   const [lastResponse, setLastResponse] = useState<RebetaChatResponse | null>(
     null,
   );
+  const [usageStatus, setUsageStatus] = useState<RebetaUsageStatus | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState(
     () => localStorage.getItem("rebeta-language") || "auto",
   );
@@ -143,7 +149,26 @@ function RebataPage() {
     localStorage.setItem("rebeta-language", selectedLanguage);
   }, [selectedLanguage]);
 
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    getRebetaUsage(token)
+      .then((status) => {
+        if (alive) setUsageStatus(status);
+      })
+      .catch(() => {
+        if (alive) setUsageStatus(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+
   async function submitPrompt(rawPrompt = input) {
+    if (usageStatus?.premiumRequired) {
+      setError("You've completed your free Rebeta trial. Upgrade to continue using personalized AI trading intelligence.");
+      return;
+    }
     const prompt =
       rawPrompt.trim() ||
       (attachments.length
@@ -183,6 +208,7 @@ function RebataPage() {
         currentPage: window.location.pathname,
         attachments: outgoingAttachments,
         context: {
+          clientMessageId: userMessage.id,
           surface: "dashboard.ai-coach",
           currentPage: window.location.pathname,
           selectedLanguage,
@@ -197,6 +223,7 @@ function RebataPage() {
         },
       });
 
+      if (response.usage) setUsageStatus(response.usage);
       const nextSuggestions = normalizeSuggestions(response.suggestions);
 
       setMessages((current) => [
@@ -217,6 +244,10 @@ function RebataPage() {
       );
       setLastResponse(response);
     } catch (ex) {
+      if (ex instanceof ApiError) {
+        const payload = ex.payload as { usage?: RebetaUsageStatus } | undefined;
+        if (payload?.usage) setUsageStatus(payload.usage);
+      }
       const message =
         ex instanceof Error ? ex.message : "Rebeta could not answer right now.";
       setError(message);
@@ -241,6 +272,10 @@ function RebataPage() {
 
   function sendSuggestion(prompt: string) {
     setTab("chat");
+    if (usageStatus?.premiumRequired) {
+      setError("You've completed your free Rebeta trial. Upgrade to continue using personalized AI trading intelligence.");
+      return;
+    }
     void submitPrompt(prompt);
   }
 
@@ -300,6 +335,13 @@ function RebataPage() {
             >
               {lastResponse ? "Rebeta Active" : "Ready"}
             </Pill>
+            {usageStatus && (
+              <Pill tone={usageStatus.premiumRequired ? "warning" : "primary"}>
+                {usageStatus.unlimitedAccess
+                  ? "Premium Rebeta"
+                  : `${usageStatus.freeUsageRemaining ?? 0} of ${usageStatus.freeUsageLimit} free requests remaining`}
+              </Pill>
+            )}
             <div className="flex gap-1 rounded-full bg-white/5 p-1">
               <button
                 type="button"
@@ -326,12 +368,12 @@ function RebataPage() {
             title="Rebeta Chat"
             action={
               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+                <ShieldCheck className="h-3.5 w-3.5 text-fuchsia-300" />
                 Educational
               </span>
             }
           >
-            <div className="flex h-[min(62vh,560px)] min-h-[420px] flex-col">
+            <div className="flex min-h-[min(72dvh,640px)] flex-col md:h-[min(62vh,560px)] md:min-h-[420px]">
               <div className="flex-1 space-y-5 overflow-y-auto pr-1">
                 {messages.length === 0 && (
                   <div className="rounded-2xl border border-violet-300/15 bg-violet-300/10 p-5">
@@ -371,7 +413,7 @@ function RebataPage() {
                   <div className="flex gap-2">
                     <CoachAvatar />
                     <div className="inline-flex max-w-[75%] items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-xs text-white/75">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-fuchsia-300" />
                       Reviewing your trading context...
                     </div>
                   </div>
@@ -405,7 +447,25 @@ function RebataPage() {
                 </div>
               )}
 
-              <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
+              {usageStatus?.premiumRequired && (
+                <div className="mt-3 rounded-2xl border border-violet-300/25 bg-violet-300/10 p-4">
+                  <div className="text-sm font-semibold text-white">You've completed your free Rebeta trial.</div>
+                  <p className="mt-1 text-xs leading-relaxed text-violet-100/75">
+                    Your previous chats stay available. Upgrade when you're ready to continue with personalized AI trading intelligence.
+                  </p>
+                  <a
+                    href="/pricing"
+                    className="mt-3 inline-flex rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:opacity-95"
+                  >
+                    View Premium
+                  </a>
+                </div>
+              )}
+
+              <form
+                onSubmit={onSubmit}
+                className="sticky bottom-2 z-10 mt-3 flex items-end gap-2 rounded-[1.35rem] bg-[#1a0b2e]/82 p-1 backdrop-blur-xl md:static md:bg-transparent md:p-0 md:backdrop-blur-0"
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -417,13 +477,14 @@ function RebataPage() {
                   }
                 />
 
-                <div className="flex min-h-[52px] flex-1 items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-2 focus-within:border-primary/60">
+                <div className="flex min-h-[52px] min-w-0 flex-1 flex-wrap items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-2 focus-within:border-primary/60 sm:flex-nowrap">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={
                       sending ||
-                      attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE
+                      attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE ||
+                      usageStatus?.premiumRequired
                     }
                     aria-label="Add file or screenshot"
                     className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white/85 transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
@@ -432,7 +493,7 @@ function RebataPage() {
                   </button>
 
                   <label className="mb-0.5 inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-white/10 bg-white/[0.05] px-2 text-[11px] text-white/80">
-                    <Languages className="h-3.5 w-3.5 text-accent" />
+                    <Languages className="h-3.5 w-3.5 text-fuchsia-300" />
                     <select
                       value={selectedLanguage}
                       onChange={(event) =>
@@ -464,14 +525,17 @@ function RebataPage() {
                     }}
                     placeholder="Ask Rebeta or upload a screenshot/CSV for analysis..."
                     rows={1}
-                    className="max-h-32 min-h-[36px] flex-1 resize-none border-0 bg-transparent px-1 py-2 text-sm text-white placeholder:text-muted-foreground outline-none"
+                    className="min-h-[36px] min-w-[9rem] flex-1 resize-none border-0 bg-transparent px-1 py-2 text-sm text-white placeholder:text-muted-foreground outline-none [field-sizing:content] max-h-28 sm:min-w-0 sm:max-h-32"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={
-                    (!input.trim() && !attachments.length) || sending || !token
+                    (!input.trim() && !attachments.length) ||
+                    sending ||
+                    !token ||
+                    usageStatus?.premiumRequired
                   }
                   aria-label="Send message"
                   className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_24px_rgba(192,132,252,0.38)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
@@ -483,12 +547,15 @@ function RebataPage() {
                   )}
                 </button>
               </form>
+              <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted-foreground">
+                PNG, JPG, or WebP screenshots up to 5 MB each. Rebeta optimizes images before analysis. Remove passwords, account numbers, seed phrases, and other sensitive information before uploading.
+              </p>
             </div>
           </Panel>
 
           <Panel
             title="Quick Prompts"
-            action={<Sparkles className="h-4 w-4 text-accent" />}
+            action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}
           >
             <div className="space-y-2">
               {suggestions.map((prompt) => (
@@ -496,18 +563,18 @@ function RebataPage() {
                   key={prompt}
                   type="button"
                   onClick={() => sendSuggestion(prompt)}
-                  disabled={sending}
+                  disabled={sending || Boolean(usageStatus?.premiumRequired)}
                   className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-xs text-white/85 transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:opacity-50"
                 >
                   <span>{prompt}</span>
-                  <Send className="h-3.5 w-3.5 shrink-0 text-accent" />
+                  <Send className="h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
                 </button>
               ))}
             </div>
 
             <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-white">
-                <Brain className="h-4 w-4 text-accent" />
+                <Brain className="h-4 w-4 text-fuchsia-300" />
                 Rebeta Scope
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -545,7 +612,7 @@ function RebataPage() {
               <Panel
                 key={item.title}
                 title={item.title}
-                action={<Target className="h-4 w-4 text-accent" />}
+                action={<Target className="h-4 w-4 text-fuchsia-300" />}
               >
                 <p className="min-h-10 text-xs text-white/85">{item.detail}</p>
                 <button
@@ -554,7 +621,7 @@ function RebataPage() {
                   disabled={sending}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:opacity-50"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-accent" />
+                  <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />
                   Ask Rebeta
                 </button>
               </Panel>
@@ -565,7 +632,7 @@ function RebataPage() {
 
       <Panel
         title={`Rebeta Action Plan${user?.name ? ` for ${user.name}` : ""}`}
-        action={<Sparkles className="h-4 w-4 text-accent" />}
+        action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}
       >
         <div className="grid gap-3 md:grid-cols-3">
           {[
@@ -583,7 +650,7 @@ function RebataPage() {
               className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:opacity-50"
             >
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Target className="h-4 w-4 text-accent" /> {plan.t}
+                <Target className="h-4 w-4 text-fuchsia-300" /> {plan.t}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{plan.d}</p>
             </button>
@@ -737,7 +804,7 @@ function StructuredCard({
         tone === "warning" ? (
           <CircleAlert className="h-4 w-4 text-orange-200" />
         ) : (
-          <Sparkles className="h-4 w-4 text-accent" />
+          <Sparkles className="h-4 w-4 text-fuchsia-300" />
         )
       }
     >
@@ -793,9 +860,9 @@ function AttachmentChip({
       className={`inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] text-white/80 ${compact ? "max-w-[220px]" : ""}`}
     >
       {attachment.kind === "image" ? (
-        <Paperclip className="h-3.5 w-3.5 text-accent" />
+        <Paperclip className="h-3.5 w-3.5 text-fuchsia-300" />
       ) : (
-        <FileText className="h-3.5 w-3.5 text-accent" />
+        <FileText className="h-3.5 w-3.5 text-fuchsia-300" />
       )}
       <span className="truncate">{attachment.name}</span>
       <span className="shrink-0 text-white/40">
@@ -882,8 +949,15 @@ async function readRebetaAttachment(file: File): Promise<RebetaChatAttachment> {
       : "file";
 
   if (kind === "image") {
+    if (!ALLOWED_IMAGE_TYPES.has((file.type || "").toLowerCase())) {
+      throw new Error("Only PNG, JPG, or WebP screenshots can be analyzed by Rebeta.");
+    }
     if (file.size > MAX_IMAGE_ATTACHMENT_BYTES) {
-      throw new Error("Image is too large. Please upload an image under 4MB.");
+      throw new Error("Image is larger than 5 MB. Please upload a smaller screenshot.");
+    }
+    const dimensions = await readImageDimensions(file);
+    if (dimensions.width < MIN_IMAGE_DIMENSION || dimensions.height < MIN_IMAGE_DIMENSION) {
+      throw new Error(`Image resolution is too small. Upload at least ${MIN_IMAGE_DIMENSION} x ${MIN_IMAGE_DIMENSION} pixels.`);
     }
 
     return {
@@ -924,6 +998,22 @@ function readFileAsDataUrl(file: File) {
     reader.onerror = () =>
       reject(new Error("Could not read the selected file."));
     reader.readAsDataURL(file);
+  });
+}
+
+function readImageDimensions(file: File) {
+  return new Promise<{ width: number; height: number }>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: image.naturalWidth, height: image.naturalHeight });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Image could not be processed. Please try another screenshot."));
+    };
+    image.src = url;
   });
 }
 

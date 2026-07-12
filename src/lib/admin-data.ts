@@ -606,6 +606,7 @@ export type Role = {
   description: string;
   status: "active" | "inactive";
   users: number;
+  assignedEmails?: string[];
   created: string;
   permissions: string[];
 };

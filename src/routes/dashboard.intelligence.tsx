@@ -115,7 +115,7 @@ function IntelligencePage() {
         </div>
       </Panel>
 
-      <Panel title="Cashback summary" action={<Sparkles className="h-4 w-4 text-accent" />}>
+      <Panel title="Cashback summary" action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}>
         <p className="text-xs text-muted-foreground">Lifetime cashback earnings overview.</p>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <StatCard label="Total claims" value={claimStats ? String(claimStats.total) : "—"} accent="primary" />

@@ -131,16 +131,16 @@ function resolveMediaUrl(...values: unknown[]) {
   return `${API_BASE_URL}/file/view?key=${encodeURIComponent(value)}`;
 }
 
-function scoreOutOfTen(value: unknown) {
+function scoreOutOf100(value: unknown) {
   const raw = Number(value ?? 0);
   if (!Number.isFinite(raw) || raw <= 0) return 0;
-  return raw > 10 ? Math.min(10, raw / 10) : Math.min(10, raw);
+  return raw > 10 ? Math.min(100, raw) : Math.min(100, raw * 10);
 }
 
 function tbiLabel(value: unknown) {
-  const raw = Number(value ?? 0);
-  if (!Number.isFinite(raw) || raw <= 0) return "Pending";
-  return raw > 10 ? `${Number(raw.toFixed(0))}/100` : `${Number(raw.toFixed(1))}/10`;
+  const score = scoreOutOf100(value);
+  if (!score) return "Pending";
+  return `${Math.round(score)}/100`;
 }
 
 function compactCount(value: unknown) {
@@ -355,7 +355,7 @@ function sortByRankAndTrust(a: AdminBrandRecord, b: AdminBrandRecord) {
   const rankA = Number(a.rankOverride ?? 9999);
   const rankB = Number(b.rankOverride ?? 9999);
   if (rankA !== rankB) return rankA - rankB;
-  return scoreOutOfTen(b.tbi) - scoreOutOfTen(a.tbi);
+  return scoreOutOf100(b.tbi) - scoreOutOf100(a.tbi);
 }
 
 function sortBrands(brands: AdminBrandRecord[], mode: SortMode) {
@@ -363,7 +363,7 @@ function sortBrands(brands: AdminBrandRecord[], mode: SortMode) {
     if (mode === "recent") {
       return Date.parse(b.createdAt ?? "") - Date.parse(a.createdAt ?? "");
     }
-    if (mode === "tbi") return scoreOutOfTen(b.tbi) - scoreOutOfTen(a.tbi);
+    if (mode === "tbi") return scoreOutOf100(b.tbi) - scoreOutOf100(a.tbi);
     if (mode === "name") return a.name.localeCompare(b.name);
     return sortByRankAndTrust(a, b);
   });
@@ -803,7 +803,7 @@ function BrandCard({
 }) {
   const country = countryForBrand(brand);
   const stage = publicTbiStageTheme(resolveBrandTbiState(brand));
-  const score = scoreOutOfTen(brand.tbi);
+  const score = scoreOutOf100(brand.tbi);
   const promo = promoData(brand);
   const website = brandWebsite(brand);
   const metrics = metricRows(brand, config.metricProfile);
@@ -865,8 +865,8 @@ function BrandCard({
             </span>
           </div>
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px]">
-            <Rating score={score} />
-            <span className="font-bold text-white/75">{(score / 2).toFixed(1)}</span>
+            <Rating score={score / 10} />
+            <span className="font-bold text-white/75">{(score / 20).toFixed(1)}</span>
             <span className={`ml-auto rounded-full px-2 py-0.5 text-[9px] font-bold ring-1 ${stage.chip}`}>
               {stage.label}
             </span>

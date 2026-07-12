@@ -76,7 +76,7 @@ export function TransactionDrawer({
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/5 bg-[#150829]/95 px-5 py-4 backdrop-blur-xl">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Trader ROI Tracker</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Trader Return Tracker</div>
             <h2 className="text-lg font-bold text-white">Add transaction</h2>
           </div>
           <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-white/5 hover:text-white" aria-label="Close">

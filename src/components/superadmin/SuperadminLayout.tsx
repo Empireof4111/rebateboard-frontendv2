@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Users, Building2, Star, FileWarning, Wallet, Trophy,
+  LayoutDashboard, Users, Building2, Star, FileWarning, Wallet, Trophy, Award,
   GraduationCap, Newspaper, Megaphone, Shield, Flag, Settings, KeyRound,
   Bell, Activity, Coins, Handshake, Scale, Search, Menu, X, ChevronDown, Sparkles,
   CircleDollarSign, ClipboardCheck, ArrowDownToLine, HelpCircle, BadgePlus,
@@ -81,6 +81,7 @@ const groups: Group[] = [
       { to: "/superadmin/demo-accounts", label: "Demo Accounts", icon: Monitor, badge: "NEW" },
       { to: "/superadmin/challenge-purchases", label: "Challenge Purchases", icon: ClipboardCheck, badge: "NEW" },
       { to: "/superadmin/top-sellers", label: "Top Sellers", icon: Trophy, badge: "NEW" },
+      { to: "/superadmin/merit-awards", label: "Merit Awards", icon: Award, badge: "NEW" },
       { to: "/superadmin/popups", label: "Pop-ups", icon: MousePointerClick },
       { to: "/superadmin/subscribers", label: "Subscribers", icon: Mail },
     ],

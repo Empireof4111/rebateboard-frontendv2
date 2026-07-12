@@ -35,7 +35,7 @@ function StatCard({ icon: Icon, label, value, hint }: any) {
 function VerifBadge({ status }: { status: string }) {
   const map: Record<string, { cls: string; icon: any; label: string }> = {
     verified: { cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", icon: CheckCircle2, label: "Verified" },
-    pending: { cls: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30", icon: Hourglass, label: "Pending" },
+    pending: { cls: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30", icon: Hourglass, label: "Pending" },
     flagged: { cls: "bg-red-500/15 text-red-300 border-red-500/30", icon: AlertTriangle, label: "Flagged" },
   };
   const v = map[status] ?? map.verified;
@@ -205,7 +205,7 @@ function PayoutsPage() {
                       <td className="px-4 py-3">{fmtMins(b.averagePayoutTimeMinutes)}</td>
                       <td className="px-4 py-3">{fmtUsd(b.largestPayoutUsd)}</td>
                       <td className="px-4 py-3"><span className="text-emerald-300">{b.payoutReliabilityScore}%</span></td>
-                      <td className="px-4 py-3">{b.tbiScore}/10</td>
+                      <td className="px-4 py-3">{Math.round(Number(b.tbiScore) > 10 ? Number(b.tbiScore) : Number(b.tbiScore) * 10)}/100</td>
                       <td className="px-4 py-3">
                         <Link to="/payouts/$brandSlug" params={{ brandSlug: b.slug }} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-200 px-3 py-1 text-xs font-medium">
                           View Details <ChevronRight className="h-3 w-3" />
@@ -278,7 +278,7 @@ function PayoutsPage() {
           <h2 className="text-2xl font-semibold mb-4">Payout Intelligence</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="glass rounded-2xl p-5">
-              <div className="text-xs text-muted-foreground flex items-center gap-2"><Zap className="h-4 w-4 text-yellow-400" /> Fastest Paying Firm</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2"><Zap className="h-4 w-4 text-fuchsia-300" /> Fastest Paying Firm</div>
               <div className="mt-2 text-xl font-semibold">{fastest.name}</div>
               <div className="text-sm text-emerald-300">Avg {fmtMins(fastest.averagePayoutTimeMinutes)}</div>
             </div>
@@ -288,7 +288,7 @@ function PayoutsPage() {
               <div className="text-sm text-emerald-300">{reliable.payoutReliabilityScore}% reliability</div>
             </div>
             <div className="glass rounded-2xl p-5">
-              <div className="text-xs text-muted-foreground flex items-center gap-2"><Trophy className="h-4 w-4 text-amber-400" /> Biggest Payout</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2"><Trophy className="h-4 w-4 text-fuchsia-300" /> Biggest Payout</div>
               <div className="mt-2 text-xl font-semibold">{fmtUsd(biggest.amountUsd)}</div>
               <div className="text-sm text-muted-foreground">{biggest.brandName}</div>
             </div>

@@ -22,7 +22,7 @@ import {
   type SuperadminSearchAnalyticsResponse,
   updateSuperadminSearchTrendingConfig,
 } from "@/lib/superadmin-search-analytics-api";
-import { TBI_BRANDS } from "@/lib/tbi-data";
+import { fetchAdminBrands } from "@/lib/admin-brands-api";
 
 export const Route = createFileRoute("/superadmin/search-analytics")({
   head: () => ({ meta: [{ title: "Search Analytics - Superadmin" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -34,6 +34,7 @@ const COLORS = ["#d946ef", "#a855f7", "#8b5cf6", "#6366f1", "#3b82f6", "#06b6d4"
 function SearchAnalyticsPage() {
   const [range, setRange] = useState<7 | 30 | 90>(30);
   const [payload, setPayload] = useState<SuperadminSearchAnalyticsResponse | null>(null);
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -57,6 +58,24 @@ function SearchAnalyticsPage() {
       active = false;
     };
   }, [range]);
+
+  useEffect(() => {
+    let active = true;
+    fetchAdminBrands()
+      .then((brands) => {
+        if (!active) return;
+        const names = brands
+          .filter((brand) => brand.visibility === "published")
+          .map((brand) => brand.name)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        setBrandOptions(Array.from(new Set(names)));
+      })
+      .catch(() => setBrandOptions([]));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const summary = payload?.summary ?? { totalSearches: 0, totalClicks: 0, noResults: 0, ctr: 0 };
   const trend = payload?.trend ?? [];
@@ -222,6 +241,7 @@ function SearchAnalyticsPage() {
           config={payload.trendingConfig}
           topTermSuggestions={topTerms.map((item) => item.term)}
           topBrandSuggestions={topBrands.map((item) => item.label)}
+          brandOptions={brandOptions}
           onSave={async (config) => {
             setBusy(true);
             try {
@@ -281,11 +301,13 @@ function TrendingEditor({
   config,
   topTermSuggestions,
   topBrandSuggestions,
+  brandOptions,
   onSave,
 }: {
   config: SearchTrendingConfig;
   topTermSuggestions: string[];
   topBrandSuggestions: string[];
+  brandOptions: string[];
   onSave: (config: SearchTrendingConfig) => Promise<void>;
 }) {
   const [cfg, setCfg] = useState<SearchTrendingConfig>(config);
@@ -336,7 +358,7 @@ function TrendingEditor({
     update({ ...cfg, brands: { ...cfg.brands, items: cfg.brands.items.filter((item) => item !== brand) } });
   }
 
-  const allBrandNames = TBI_BRANDS.map((brand) => brand.name);
+  const allBrandNames = Array.from(new Set([...topBrandSuggestions, ...brandOptions])).sort((a, b) => a.localeCompare(b));
 
   return (
     <Panel

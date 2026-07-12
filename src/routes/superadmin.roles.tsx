@@ -16,7 +16,9 @@ function RolesPage() {
   const { items, add, update, remove } = useAdminCollection<Role>("roles", seed);
   const [editing, setEditing] = useState<Role | null>(null);
   const [deleting, setDeleting] = useState<Role | null>(null);
-  const totalAdmins = items.reduce((s, r) => s + r.users, 0);
+  const [viewingUsers, setViewingUsers] = useState<Role | null>(null);
+  const assignedCount = (role: Role) => (role.assignedEmails?.filter(Boolean).length ?? role.users ?? 0);
+  const totalAdmins = items.reduce((s, r) => s + assignedCount(r), 0);
 
   const togglePerm = (p: string) => {
     if (!editing) return;
@@ -49,7 +51,15 @@ function RolesPage() {
             <tr key={r.id}>
               <td className="font-semibold">{r.name || <span className="text-muted-foreground italic">unnamed</span>}</td>
               <td className="text-muted-foreground">{r.description}</td>
-              <td><span className="inline-flex items-center gap-1 font-mono"><UsersIcon className="h-3 w-3" /> {r.users}</span></td>
+              <td>
+                <button
+                  type="button"
+                  onClick={() => setViewingUsers(r)}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 font-mono text-xs text-white hover:bg-white/15"
+                >
+                  <UsersIcon className="h-3 w-3" /> {assignedCount(r)}
+                </button>
+              </td>
               <td className="text-xs"><Pill>{r.permissions.length} perms</Pill></td>
               <td>
                 <button onClick={() => { update(r.id, { status: r.status === "active" ? "inactive" : "active" }); toast.success(`Role set to ${r.status === "active" ? "inactive" : "active"}`); }}>
@@ -106,6 +116,23 @@ function RolesPage() {
                 <option value="active">active</option><option value="inactive">inactive</option>
               </select>
             </Field>
+            <Field label="Assigned admin emails" hint="One email per line or comma separated. When that user signs in, these permissions are applied automatically.">
+              <textarea
+                rows={4}
+                className={fieldCls}
+                value={(editing.assignedEmails ?? []).join("\n")}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    assignedEmails: e.target.value
+                      .split(/[\n,]+/)
+                      .map((value) => value.trim().toLowerCase())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder={"finance@rebateboard.com\nsupport@rebateboard.com"}
+              />
+            </Field>
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <label className="block text-[10px] uppercase tracking-wider text-muted-foreground">Permissions ({editing.permissions.length}/{allPermissions.length})</label>
@@ -159,9 +186,31 @@ function RolesPage() {
         onClose={() => setDeleting(null)}
         onConfirm={() => { if (deleting) { remove(deleting.id); toast.success("Role deleted"); } }}
         title={`Delete role "${deleting?.name}"?`}
-        message={`This will remove the role definition. ${deleting?.users ?? 0} admin account(s) currently assigned will need to be reassigned.`}
+        message={`This will remove the role definition. ${deleting ? assignedCount(deleting) : 0} admin account(s) currently assigned will need to be reassigned.`}
         confirmText="Delete role"
       />
+
+      {viewingUsers && (
+        <Modal open onClose={() => setViewingUsers(null)} title={`${viewingUsers.name} assignments`} size="md">
+          <div className="space-y-3">
+            {(viewingUsers.assignedEmails ?? []).length ? (
+              viewingUsers.assignedEmails!.map((email) => (
+                <div key={email} className="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 ring-1 ring-white/10">
+                  <div>
+                    <div className="text-sm font-semibold text-white">{email}</div>
+                    <div className="text-xs text-muted-foreground">Access follows this role after login or password recovery.</div>
+                  </div>
+                  <Pill tone={viewingUsers.status === "active" ? "good" : "bad"}>{viewingUsers.status}</Pill>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl bg-white/[0.04] p-4 text-sm text-muted-foreground ring-1 ring-white/10">
+                No emails are assigned to this role yet. Add staff emails from Edit role.
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

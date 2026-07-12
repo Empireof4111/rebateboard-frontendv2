@@ -520,7 +520,7 @@ function SocialRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSocialR
 
 /* ============================================================ Spend Rules */
 
-const SPEND_CATS = ["cash", "discount", "fees", "academy", "boost", "partner", "badge", "raffle", "other"] as const;
+const SPEND_CATS = ["challenge", "cash", "discount", "fees", "academy", "boost", "partner", "badge", "raffle", "other"] as const;
 
 function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRule[]; saving: boolean; onSave: (v: RrSpendRule[]) => void; onReset: () => void }) {
   const [draft, setDraft] = useState<RrSpendRule[]>(rules);
@@ -541,9 +541,12 @@ function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRul
 
   return (
     <Panel title="Spend rules — what RR can be redeemed for">
+      <Note>
+        Use challenge spend rules to set the RR needed for funded account unlocks. For example: 5K Trading Challenge = 100 RR, 10K Trading Challenge = 200 RR.
+      </Note>
       <NewSpendForm onAdd={add} />
 
-      <DataTable head={<><th>Reward</th><th>Category</th><th>Cost (RR)</th><th>Tier gate</th><th>Stock</th><th>Status</th><th></th></>}>
+      <DataTable head={<><th>Reward</th><th>Category</th><th>Account</th><th>Cost (RR)</th><th>Tier gate</th><th>Stock</th><th>Status</th><th></th></>}>
         {draft.map((r) => (
           <tr key={r.id}>
             <td>
@@ -557,6 +560,11 @@ function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRul
                 className="rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none">
                 {SPEND_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+            </td>
+            <td>
+              <input value={r.accountSize ?? ""} onChange={(e) => update(r.id, { accountSize: e.target.value.trim() || undefined })}
+                placeholder="5K"
+                className="w-20 rounded-md bg-black/30 px-2 py-1 text-xs font-semibold text-white ring-1 ring-white/10 outline-none placeholder:text-muted-foreground" />
             </td>
             <td>
               <input type="number" min={0} value={r.cost} onChange={(e) => update(r.id, { cost: Math.max(0, Number(e.target.value) || 0) })}
@@ -595,7 +603,8 @@ function NewSpendForm({ onAdd }: { onAdd: (r: Omit<RrSpendRule, "id" | "redeemed
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [cost, setCost] = useState(100);
-  const [category, setCategory] = useState<string>("other");
+  const [category, setCategory] = useState<string>("challenge");
+  const [accountSize, setAccountSize] = useState("5K");
   const [show, setShow] = useState(false);
 
   if (!show) {
@@ -607,15 +616,16 @@ function NewSpendForm({ onAdd }: { onAdd: (r: Omit<RrSpendRule, "id" | "redeemed
   }
 
   return (
-    <div className="mb-3 grid gap-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10 md:grid-cols-[2fr_2fr_1fr_1fr_auto]">
+    <div className="mb-3 grid gap-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10 md:grid-cols-[2fr_2fr_1fr_0.8fr_1fr_auto]">
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Reward title" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
       <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none">
         {SPEND_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
+      <input value={accountSize} onChange={(e) => setAccountSize(e.target.value)} placeholder="Account size" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
       <input type="number" min={0} value={cost} onChange={(e) => setCost(Math.max(0, Number(e.target.value) || 0))} className="rounded-md bg-black/30 px-2 py-1.5 text-right font-mono text-sm text-white ring-1 ring-white/10 outline-none" />
       <div className="flex gap-2">
-        <button onClick={() => { if (!label.trim()) return; onAdd({ label, description, cost, category, tierGate: null, stock: null, enabled: true }); setLabel(""); setDescription(""); setShow(false); }}
+        <button onClick={() => { if (!label.trim()) return; onAdd({ label, description, cost, category, accountSize: accountSize.trim() || undefined, tierGate: null, stock: null, enabled: true }); setLabel(""); setDescription(""); setAccountSize("5K"); setShow(false); }}
           className="rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">Add</button>
         <button onClick={() => setShow(false)} className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Cancel</button>
       </div>

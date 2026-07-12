@@ -38,6 +38,17 @@ const CATEGORIES: ("All" | OfferCategory)[] = [
   "Education",
 ];
 
+const OFFER_FILTERS = [
+  { label: "All offers", value: "all" },
+  { label: "Cashback", value: "cashback" },
+  { label: "Discounts", value: "discounts" },
+  { label: "Coupon Codes", value: "coupons" },
+  { label: "Bonuses", value: "bonuses" },
+  { label: "Limited-Time", value: "limited" },
+] as const;
+
+type OfferFilter = (typeof OFFER_FILTERS)[number]["value"];
+
 function SectionHeader({
   icon: Icon,
   title,
@@ -67,6 +78,7 @@ function PublicOffers() {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<AdminOffer | null>(null);
   const [filter, setFilter] = useState<(typeof CATEGORIES)[number]>("All");
+  const [offerFilter, setOfferFilter] = useState<OfferFilter>("all");
   const [q, setQ] = useState("");
 
   useEffect(() => {
@@ -111,6 +123,7 @@ function PublicOffers() {
   const filtered = useMemo(() => {
     return live.filter((o) => {
       if (filter !== "All" && o.category !== filter) return false;
+      if (!matchesOfferFilter(o, offerFilter)) return false;
       if (
         q &&
         !`${o.brand} ${o.title} ${o.description ?? ""}`.toLowerCase().includes(q.toLowerCase())
@@ -118,7 +131,7 @@ function PublicOffers() {
         return false;
       return true;
     });
-  }, [live, filter, q]);
+  }, [live, filter, offerFilter, q]);
 
   return (
     <div className="min-h-screen bg-[#0a0418] text-white">
@@ -249,6 +262,22 @@ function PublicOffers() {
             ))}
           </div>
 
+          <div className="mb-5 flex flex-wrap gap-1.5">
+            {OFFER_FILTERS.map((item) => (
+              <button
+                key={item.value}
+                onClick={() => setOfferFilter(item.value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  offerFilter === item.value
+                    ? "bg-white text-[#1a0738] shadow-lg shadow-white/10"
+                    : "bg-white/5 text-white/60 hover:bg-white/10"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           {filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center text-sm text-white/50">
               No offers match your filters.
@@ -267,4 +296,18 @@ function PublicOffers() {
       <OfferDetailModal offer={active} onClose={() => setActive(null)} />
     </div>
   );
+}
+
+function matchesOfferFilter(offer: AdminOffer, filter: OfferFilter) {
+  if (filter === "all") return true;
+  const haystack = `${offer.title} ${offer.description ?? ""} ${offer.discount ?? ""} ${
+    offer.offerType ?? ""
+  } ${offer.code ?? ""} ${offer.tags?.join(" ") ?? ""}`.toLowerCase();
+
+  if (filter === "cashback") return /cashback|rebate/.test(haystack);
+  if (filter === "discounts") return /off|discount|save/.test(haystack);
+  if (filter === "coupons") return Boolean(offer.code) || /code|coupon|promo/.test(haystack);
+  if (filter === "bonuses") return /bonus|free|retry|account/.test(haystack);
+  if (filter === "limited") return Boolean(offer.limitedTime || offer.tags?.includes("limited")) || /limited|ending|expires/.test(haystack);
+  return true;
 }

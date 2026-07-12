@@ -21,7 +21,12 @@ const socialLinks = [
   },
 ] as const;
 
-const trustValues = ["Transparency First", "Built for Traders", "Independent Reviews", "Global Community"] as const;
+const trustValues = [
+  { label: "Transparency First", to: "/trader-tbi" },
+  { label: "Built for Traders", to: "/products" },
+  { label: "Independent Reviews", to: "/reviews" },
+  { label: "Global Community", to: "/community" },
+] as const;
 
 type FooterLinkItem = {
   label: string;
@@ -44,10 +49,6 @@ export function SiteFooter() {
         { label: "Offers", to: "/offers" },
         { label: "Top Prop Firm Sellers", to: "/top-prop-firm-sellers" },
         { label: "Reviews", to: "/reviews" },
-        { label: "Bonuses", to: "/bonuses" },
-        { label: "Promotions", to: "/promotions" },
-        { label: "Coupons", to: "/coupons" },
-        { label: "Deals", to: "/deals" },
       ],
     },
     {
@@ -57,7 +58,7 @@ export function SiteFooter() {
         { label: "Trading Plan", to: "/trading-plan" },
         { label: "AI Backtesting Lab", to: "/ai-backtesting-lab" },
         { label: "Trader TBI", to: "/trader-tbi" },
-        { label: "TRT", to: "/trt" },
+        { label: "Trader Return Tracker", to: "/trt" },
         { label: "Rebeta AI", to: "/rebeta-ai" },
         { label: "Rebate Rewards", to: "/rebate-rewards" },
         { label: "Cashback Calculator", to: "/cashback-calculator" },
@@ -65,13 +66,10 @@ export function SiteFooter() {
       ],
     },
     {
-      col: t("footer.insights"),
+      col: "Resources",
       items: [
         { label: "Economic Calendar", to: "/economic-calendar" },
         { label: "Trading Academy", to: "/academy" },
-        { label: "Market News", to: "/market-news" },
-        { label: "Analytics", to: "/analytics" },
-        { label: "Reports", to: "/reports" },
         { label: "Demo Accounts", to: "/demo-accounts" },
         { label: "Blog", to: "/blog" },
       ],
@@ -82,8 +80,6 @@ export function SiteFooter() {
         { label: "About", to: "/about" },
         { label: "How We Make Money", to: "/how-we-make-money" },
         { label: "Pricing", to: "/pricing" },
-        { label: "Careers", to: "/careers" },
-        { label: "Press", to: "/press" },
         { label: "Contact", to: "/contact" },
         { label: "List Your Brand", to: "/business/join" },
         { label: "Affiliate Program", to: "/affiliate-program" },
@@ -94,8 +90,6 @@ export function SiteFooter() {
       col: t("footer.support"),
       items: [
         { label: "Help Center", to: "/help-center" },
-        { label: "Docs", to: "/docs" },
-        { label: "Status", to: "/status" },
         { label: "Community", to: "/community" },
         { label: "FAQ", to: "/faqs" },
         { label: "Bug Bounty", to: "/bug-bounty" },
@@ -116,16 +110,17 @@ export function SiteFooter() {
   return (
     <div className="container-app relative">
       {/* NEWSLETTER */}
-      <section className="mt-10 sm:mt-12">
+      <section id="newsletter" className="mt-10 sm:mt-12">
         <div className="glass-strong rounded-3xl p-5 text-center sm:p-7 lg:p-8">
           <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
-            {t("footer.stayConnected")}
+            Newsletter
           </div>
           <h2 className="text-xl font-bold sm:text-2xl">
-            {t("footer.newsletterTitle")}
+            Stay Ahead of the Market
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {t("footer.newsletterText")}
+            Receive weekly trader insights, cashback opportunities, platform updates, and Rebeta
+            intelligence. No spam. Just useful trading information.
           </p>
           <form
             className="mx-auto mt-5 flex max-w-md flex-col gap-2 sm:flex-row"
@@ -134,12 +129,12 @@ export function SiteFooter() {
             <div className="glass-pill flex flex-1 items-center rounded-full px-4">
               <input
                 type="email"
-                placeholder={t("footer.emailPlaceholder")}
+                placeholder="Email address"
                 className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
             <button className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-2 text-sm font-semibold">
-              {t("footer.subscribe")}
+              Subscribe
             </button>
           </form>
         </div>
@@ -162,8 +157,12 @@ export function SiteFooter() {
               <div className="mb-3 text-sm font-semibold">{col}</div>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 {items.map((item) => (
-                  <li key={`${col}-${item.label}`} className="hover:text-foreground">
-                    <Link to={item.to as any} params={item.params as any}>
+                  <li key={`${col}-${item.label}`}>
+                    <Link
+                      to={item.to as any}
+                      params={item.params as any}
+                      className="inline-flex py-1 transition hover:text-foreground"
+                    >
                       {item.label}
                     </Link>
                   </li>
@@ -174,12 +173,13 @@ export function SiteFooter() {
         </div>
         <div className="mt-8 grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-2 xl:grid-cols-4">
           {trustValues.map((value) => (
-            <div
-              key={value}
+            <Link
+              key={value.label}
+              to={value.to as any}
               className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-white/65"
             >
-              {value}
-            </div>
+              {value.label}
+            </Link>
           ))}
         </div>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">

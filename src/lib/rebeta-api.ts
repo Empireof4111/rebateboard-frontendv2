@@ -43,6 +43,24 @@ export type RebetaChatResponse = {
   predictions?: string[];
   actions?: RebetaAction[];
   nextActions?: RebetaNextAction[];
+  usage?: RebetaUsageStatus;
+};
+
+export type RebetaUsageStatus = {
+  plan: string;
+  billingStatus: string;
+  freeUsageLimit: number;
+  freeUsageConsumed: number;
+  freeUsageRemaining: number | null;
+  unlimitedAccess: boolean;
+  trialEnabled: boolean;
+  premiumGateEnabled: boolean;
+  imageUploadEnabled: boolean;
+  maxImagesPerRequest: number;
+  maxImageBytes: number;
+  maxProcessedImageBytes: number;
+  maxImageDimension: number;
+  premiumRequired: boolean;
 };
 
 export async function sendRebetaMessage(
@@ -66,5 +84,17 @@ export async function sendRebetaMessage(
   });
 
   if (!response.payload) throw new Error("Rebeta returned an empty response.");
+  return response.payload;
+}
+
+export async function getRebetaUsage(token: string | null) {
+  if (!token) throw new Error("You need to be signed in to use Rebeta.");
+
+  const response = await apiRequest<RebetaUsageStatus>("/rebeta/usage", {
+    method: "GET",
+    token,
+  });
+
+  if (!response.payload) throw new Error("Rebeta usage status is unavailable.");
   return response.payload;
 }

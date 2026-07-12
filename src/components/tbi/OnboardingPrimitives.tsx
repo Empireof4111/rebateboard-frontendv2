@@ -69,7 +69,7 @@ export function TrustScoreCard({
 
   const tone =
     status === "full" ? "from-emerald-400 to-teal-500" :
-    status === "partial" ? "from-amber-300 to-fuchsia-400" :
+    status === "partial" ? "from-sky-300 to-violet-400" :
     status === "preliminary" ? "from-fuchsia-400 to-violet-400" :
     "from-zinc-500 to-zinc-700";
 
@@ -113,13 +113,14 @@ export function TrustBreakdownCard({ breakdown }: { breakdown: TrustBreakdown })
       <div className="mt-3 space-y-3">
         {items.map((it) => {
           const locked = it.value == null;
-          const pct = locked ? 0 : (it.value! / 10) * 100;
+          const score100 = locked ? 0 : it.value! > 10 ? it.value! : it.value! * 10;
+          const pct = Math.max(0, Math.min(100, score100));
           return (
             <div key={it.label}>
               <div className="mb-1 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">{it.label}</span>
                 <span className={`font-semibold ${locked ? "text-muted-foreground" : "text-foreground"}`}>
-                  {locked ? "Locked" : it.value!.toFixed(1)}
+                  {locked ? "Locked" : `${Math.round(score100)} / 100`}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
@@ -156,7 +157,7 @@ export function UnlockProgressCard({ currentReviews }: { currentReviews: number 
         </div>
         <div className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
           state === "full" ? "bg-emerald-500/15 text-emerald-300" :
-          state === "partial" ? "bg-amber-500/15 text-amber-300" :
+          state === "partial" ? "bg-sky-500/15 text-sky-300" :
           "bg-white/10 text-muted-foreground"
         }`}>{state}</div>
       </div>
@@ -183,7 +184,7 @@ export function ImprovementSuggestions({ items }: { items: { text: string; score
             <div className="flex items-start gap-2 text-xs">
               <span className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${
                 it.priority === "high" ? "bg-rose-400" :
-                it.priority === "medium" ? "bg-amber-300" :
+                it.priority === "medium" ? "bg-orange-300" :
                 "bg-emerald-300"
               }`} />
               <span>{it.text}</span>
@@ -202,7 +203,7 @@ export function ImprovementSuggestions({ items }: { items: { text: string; score
 export function InfoNoteCard({ title, body, variant = "info" }: { title: string; body: string; variant?: "info" | "warning" | "success" }) {
   const tones = {
     info: "border-violet-400/30 bg-violet-500/5 text-violet-100",
-    warning: "border-amber-400/30 bg-amber-500/5 text-amber-100",
+    warning: "border-orange-400/30 bg-orange-500/5 text-orange-100",
     success: "border-emerald-400/30 bg-emerald-500/5 text-emerald-100",
   } as const;
   const Icon = variant === "warning" ? AlertTriangle : variant === "success" ? Check : Info;
@@ -425,7 +426,7 @@ export function PublicTrustStateBanner({ state, reviewCount }: { state: TrustSco
   if (state === "none") return null;
   const meta =
     state === "preliminary" ? { tone: "from-fuchsia-500/15 to-violet-500/10 border-fuchsia-400/30 text-fuchsia-100", label: "Preliminary Score", body: "Based on submitted brand data only · no trader reviews yet" } :
-    state === "partial" ? { tone: "from-amber-500/15 to-fuchsia-500/10 border-amber-400/30 text-amber-100", label: "Partially Unlocked", body: `Based on ${reviewCount} verified review${reviewCount === 1 ? "" : "s"}` } :
+    state === "partial" ? { tone: "from-sky-500/15 to-violet-500/10 border-sky-400/30 text-sky-100", label: "Partially Unlocked", body: `Based on ${reviewCount} verified review${reviewCount === 1 ? "" : "s"}` } :
     { tone: "from-emerald-500/15 to-teal-500/10 border-emerald-400/30 text-emerald-100", label: "Fully Verified Trust Score", body: `Based on ${reviewCount} verified trader reviews` };
 
   return (

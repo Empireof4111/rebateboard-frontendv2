@@ -6,11 +6,9 @@ import {
   BookOpen,
   BriefcaseBusiness,
   CalendarClock,
-  ChartNoAxesCombined,
   CircleDollarSign,
   ClipboardCheck,
   Compass,
-  FileText,
   Gift,
   GraduationCap,
   Handshake,
@@ -30,6 +28,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { useAuth } from "@/lib/auth";
 
 type PageKind = "marketplace" | "product" | "insight" | "company" | "support";
 
@@ -44,6 +43,7 @@ export type PublicInfoPageConfig = {
   features: Array<{ title: string; body: string }>;
   sections?: Array<{ title: string; body: string; bullets?: string[] }>;
   faqs?: Array<{ q: string; a: string }>;
+  related?: Array<{ title: string; body: string; to: string; label: string }>;
 };
 
 const kindMeta: Record<PageKind, { label: string; icon: typeof Sparkles }> = {
@@ -291,27 +291,342 @@ export const publicPages: Record<string, PublicInfoPageConfig> = {
       { title: "Editorial Context", body: "Stories prioritize clarity and actionability over hype." },
     ],
   },
-  "trading-plan": productPage("trading-plan", "Trading Plan", "Build rules before emotion takes over.", "Create risk rules, daily checklists, strategy notes, review routines, and AI-guided planning workflows that keep your trading consistent.", [
-    "Goal setting", "Risk rules", "Daily checklist", "Performance review"
-  ]),
-  "ai-backtesting-lab": productPage("ai-backtesting-lab", "AI Backtesting Lab", "Test trading ideas before you risk capital.", "Turn strategy notes, market assumptions, and real trade examples into structured backtest plans, reports, and AI-guided improvement loops.", [
-    "Strategy inputs", "Scenario reports", "Performance charts", "AI insights"
-  ]),
-  "trader-tbi": productPage("trader-tbi", "Trader TBI", "Your personal trust and consistency score.", "Trader TBI is designed to help users understand their own reliability, contribution quality, verification status, and platform activity over time.", [
-    "Personal trust score", "Improvement tips", "Performance history", "Future leaderboard"
-  ]),
-  trt: productPage("trt", "Trader Return Tracker", "Understand your real trading ROI.", "Track deposits, subscriptions, payouts, fees, cashback, and trading outcomes to see the true economics of your trading journey.", [
-    "ROI tracking", "Income and costs", "Account analytics", "Financial insights"
-  ]),
-  "rebeta-ai": productPage("rebeta-ai", "Rebeta AI", "Your AI trading operations assistant.", "Rebeta helps traders turn journal data, plans, reviews, risk rules, and platform activity into clearer next steps and smarter routines.", [
-    "AI coaching", "Trade analysis", "Psychology support", "Workflow guidance"
-  ]),
-  "rebate-rewards": productPage("rebate-rewards", "Rebate Rewards", "Progress through meaningful trader activity.", "Earn RR from verified contributions, learning, referrals, claims, reviews, and consistent platform use. RR is a progression system, not a cash balance.", [
-    "Trader levels", "Streaks", "Next unlocks", "Reward milestones"
-  ]),
-  "cashback-calculator": productPage("cashback-calculator", "Cashback Calculator", "Estimate cashback before you trade.", "Compare potential rebates by brand, asset, lot size, account type, and trading frequency using rates prepared for live marketplace updates.", [
-    "Live estimates", "Broker rates", "Asset support", "Clear assumptions"
-  ], "/cashback"),
+  "trading-journals": {
+    key: "trading-journals",
+    eyebrow: "Trading Journal",
+    title: "Turn every trade into a lesson.",
+    description:
+      "Record decisions, outcomes, screenshots, emotions, strategy context, and risk details so your trading history becomes useful evidence instead of scattered notes.",
+    kind: "product",
+    primaryCta: { label: "Start Your Trading Journal", to: "/dashboard/trades" },
+    secondaryCta: { label: "Build a Trading Plan", to: "/trading-plan" },
+    features: [
+      { title: "Market-aware logging", body: "Journal fields adapt around forex, crypto, indices, commodities, stocks, and futures so traders capture the details that matter." },
+      { title: "Before and after evidence", body: "Attach trade screenshots and notes to create a visual diary of what you planned, what happened, and what changed." },
+      { title: "Backend calculations", body: "Saved trades feed calculated performance values such as profit/loss, RR, win/loss status, and risk context." },
+      { title: "Rebeta-ready memory", body: "Journal entries give Rebeta better context for future coaching around mistakes, setups, risk, and psychology." },
+    ],
+    sections: [
+      {
+        title: "The real journal workflow",
+        body: "A journal entry follows the natural trade review process from setup to outcome.",
+        bullets: ["Select market and instrument", "Record entry, exit, stop loss, and target", "Add strategy and trading-plan context", "Upload before-and-after screenshots", "Write emotions and notes", "Review analytics and Rebeta insights"],
+      },
+      {
+        title: "From entry to intelligence",
+        body: "Each saved trade can support analytics, plan comparison, and future Rebeta coaching. The goal is not to collect data for its own sake; it is to help traders notice patterns early.",
+        bullets: ["Best-performing setups", "Recurring execution mistakes", "Best and worst sessions", "Risk consistency", "Plan adherence", "Emotional patterns"],
+      },
+      {
+        title: "Product preview",
+        body: "The dashboard journal is built around trade cards, calculation summaries, screenshots, notes, and a complete trade detail view that feels like opening a personal trading diary.",
+      },
+    ],
+    related: [
+      { title: "Trading Plan", body: "Compare each journaled trade against your own rules.", to: "/trading-plan", label: "Build rules" },
+      { title: "Rebeta AI", body: "Use your journal context for better trade review conversations.", to: "/rebeta-ai", label: "Meet Rebeta" },
+      { title: "Trader TBI", body: "Consistent verified activity can strengthen your trader profile.", to: "/trader-tbi", label: "View Trader TBI" },
+    ],
+    faqs: [
+      { q: "Can I upload trade screenshots?", a: "Yes. The journal supports before-and-after screenshots so trades can be reviewed visually, not only through numbers." },
+      { q: "Does the form change by market?", a: "The journal experience is designed to capture market-specific fields so forex, crypto, indices, commodities, stocks, and futures do not feel like the same generic form." },
+      { q: "Can Rebeta use my journal?", a: "Journal data can give Rebeta better context for future analysis and coaching inside RebateBoard." },
+    ],
+  },
+  "trading-plan": {
+    key: "trading-plan",
+    eyebrow: "Trading Plan",
+    title: "Trade with rules, not impulse.",
+    description:
+      "Create the operating framework for your trading: goals, strategy, risk limits, trading windows, entry rules, exit rules, daily checklist, and psychology guardrails.",
+    kind: "product",
+    primaryCta: { label: "Build Your Trading Plan", to: "/dashboard/trading-plan" },
+    secondaryCta: { label: "Open Trading Journal", to: "/trading-journals" },
+    features: [
+      { title: "Risk model", body: "Define how much you can risk, when to stop, and what conditions invalidate a trade." },
+      { title: "Strategy blueprint", body: "Document setups, markets, sessions, entry triggers, exits, and review routines." },
+      { title: "Daily guardrails", body: "Turn discipline into a checklist that helps prevent revenge trading, overtrading, and strategy hopping." },
+      { title: "Plan-aware coaching", body: "Rebeta can use your plan as context when reviewing trades and performance behavior." },
+    ],
+    sections: [
+      {
+        title: "The cost of trading without a plan",
+        body: "Most trading mistakes are not caused by a missing indicator. They come from undefined rules, unclear risk, emotional exits, and inconsistent review habits.",
+        bullets: ["Inconsistent position sizing", "Revenge trading", "Undefined daily limits", "Strategy hopping", "No review standard"],
+      },
+      {
+        title: "Build your blueprint",
+        body: "The plan walks through the core structure a trader needs before decisions become emotional.",
+        bullets: ["Trader profile", "Goals", "Strategy", "Risk model", "Entry checklist", "Exit rules", "Psychology rules", "Daily limits"],
+      },
+      {
+        title: "Connected to your journal",
+        body: "When trades are logged, RebateBoard can compare what happened with the rules you said you wanted to follow. That makes review sharper than a normal notes app.",
+      },
+    ],
+    related: [
+      { title: "Trading Journal", body: "Log trades and compare them against your plan.", to: "/trading-journals", label: "Log trades" },
+      { title: "Rebeta AI", body: "Ask for coaching that understands your rules.", to: "/rebeta-ai", label: "Ask Rebeta" },
+      { title: "AI Backtesting Lab", body: "Test strategy ideas before adding them to your plan.", to: "/ai-backtesting-lab", label: "Test ideas" },
+    ],
+    faqs: [
+      { q: "Is the plan only for advanced traders?", a: "No. It is useful for beginners who need structure and experienced traders who want consistency." },
+      { q: "Can I update my plan later?", a: "Yes. A trading plan should evolve as your data and behavior become clearer." },
+      { q: "How does it help Rebeta?", a: "Your plan gives Rebeta context about your intended rules, risk limits, and review standards." },
+    ],
+  },
+  "ai-backtesting-lab": {
+    key: "ai-backtesting-lab",
+    eyebrow: "AI Backtesting Lab",
+    title: "Test the strategy before you trade it.",
+    description:
+      "Structure trading ideas into testable rules, review historical-style scenarios, and understand whether a strategy deserves more attention before risking capital.",
+    kind: "product",
+    primaryCta: { label: "Open Backtesting Lab", to: "/dashboard/backtest" },
+    secondaryCta: { label: "Build a Trading Plan", to: "/trading-plan" },
+    features: [
+      { title: "Strategy inputs", body: "Define market, timeframe, entry conditions, exit logic, stop loss, take profit, risk, session, and date context where supported." },
+      { title: "Performance outputs", body: "Review outcomes such as win rate, drawdown, expectancy, profit factor, losing streaks, and best or worst conditions when available." },
+      { title: "Overfitting awareness", body: "The page explains that historical testing is not a guarantee and that data quality, execution, and market regime matter." },
+      { title: "Plan connection", body: "Promising strategy rules can inform your Trading Plan instead of staying as loose notes." },
+    ],
+    sections: [
+      {
+        title: "Define the strategy clearly",
+        body: "Backtesting starts by turning a vague idea into conditions that can be reviewed. The stronger the rule definition, the more useful the review becomes.",
+        bullets: ["Market and timeframe", "Entry and exit conditions", "Risk per trade", "Stop loss and take profit", "Session and date context"],
+      },
+      {
+        title: "Understand the output",
+        body: "The lab is intended to help traders read a strategy more honestly: not only whether it wins, but how it behaves when it loses.",
+        bullets: ["Win rate", "Net result", "Drawdown", "Expectancy", "Profit factor", "Losing streak", "Best and worst conditions"],
+      },
+      {
+        title: "Use results responsibly",
+        body: "Backtesting can help traders prepare, but historical results never guarantee live execution. Spreads, slippage, rule discipline, and market conditions still matter.",
+      },
+    ],
+    related: [
+      { title: "Trading Plan", body: "Turn tested rules into an operating framework.", to: "/trading-plan", label: "Update plan" },
+      { title: "Trading Journal", body: "Compare backtested ideas with real logged trades.", to: "/trading-journals", label: "Review trades" },
+      { title: "Rebeta AI", body: "Discuss results and next steps with Rebeta.", to: "/rebeta-ai", label: "Ask Rebeta" },
+    ],
+    faqs: [
+      { q: "Does backtesting guarantee results?", a: "No. It is a preparation and research tool, not a prediction engine." },
+      { q: "What should I test first?", a: "Start with one clear setup, one market, one timeframe, and strict entry and exit rules." },
+      { q: "Can tested strategies connect to my plan?", a: "The workflow is designed so useful strategy rules can inform your Trading Plan." },
+    ],
+  },
+  "trader-tbi": {
+    key: "trader-tbi",
+    eyebrow: "Trader TBI",
+    title: "Build a trading reputation you can prove.",
+    description:
+      "Trader TBI is your personal trust and consistency profile inside RebateBoard. It is separate from Brand TBI and focuses on your verified activity, contribution quality, and trading discipline.",
+    kind: "product",
+    primaryCta: { label: "View Your Trader TBI", to: "/dashboard/tbi" },
+    secondaryCta: { label: "Learn Brand TBI", to: "/tbi" },
+    features: [
+      { title: "Personal trust profile", body: "Reflects meaningful account activity such as profile completion, verified actions, reviews, journal consistency, and platform contribution." },
+      { title: "Improvement actions", body: "Shows practical steps that can strengthen your profile, such as completing your profile, logging trades, and contributing verified reviews." },
+      { title: "Privacy-aware identity", body: "Your public identity should be controlled. Private trading details should not be exposed without permission." },
+      { title: "Trader Levels", body: "Progression connects with Explorer, Bronze Trader, Silver Trader, Gold Trader, and future platform benefits." },
+    ],
+    sections: [
+      {
+        title: "What Trader TBI measures",
+        body: "Trader TBI is not a brand ranking. It is a signal for your own consistency and verified participation in the RebateBoard ecosystem.",
+        bullets: ["Profile completeness", "Verified activity", "Journal consistency", "Plan adherence", "Reviews and contributions", "Linked trading activity where available", "Community behavior"],
+      },
+      {
+        title: "How the score grows",
+        body: "The score should grow through useful activity, not passive logins. RebateBoard emphasizes actions that make the platform more trustworthy and your own trading more measurable.",
+        bullets: ["Provide verified data", "Maintain meaningful activity", "Follow risk rules", "Complete relevant platform actions"],
+      },
+      {
+        title: "Shareable identity",
+        body: "Trader TBI can support future verified profiles and performance cards so traders can show achievements without exposing private account details.",
+      },
+    ],
+    related: [
+      { title: "Trading Journal", body: "Consistency starts with reliable trade records.", to: "/trading-journals", label: "Start journaling" },
+      { title: "Rebate Rewards", body: "Useful activity can also support RR progression.", to: "/rebate-rewards", label: "Explore RR" },
+      { title: "Trader Return Tracker", body: "Connect identity with real financial return tracking.", to: "/trt", label: "Track returns" },
+    ],
+    faqs: [
+      { q: "Is Trader TBI the same as Brand TBI?", a: "No. Brand TBI evaluates listed trading brands. Trader TBI reflects a user's own verified activity and consistency." },
+      { q: "Is my private data public?", a: "Private financial and trading details should remain protected unless you intentionally share approved fields." },
+      { q: "Can it improve over time?", a: "Yes. Meaningful verified activity and consistency are designed to improve your profile." },
+    ],
+  },
+  trt: {
+    key: "trt",
+    eyebrow: "Trader Return Tracker",
+    title: "Know what trading is really returning to you.",
+    description:
+      "Track the complete financial return journey: purchases, reset fees, trading costs, payouts, cashback, income, expenses, net result, and ROI.",
+    kind: "product",
+    primaryCta: { label: "Track My ROI", to: "/dashboard/accounts" },
+    secondaryCta: { label: "See Payout Tracker", to: "/payouts" },
+    features: [
+      { title: "Complete cost picture", body: "Track challenge purchases, reset fees, subscriptions, broker costs, and other trading expenses in one place." },
+      { title: "Return tracking", body: "Record payouts, cashback, refunds, and income so the final number reflects actual recovery and return." },
+      { title: "Leakage detection", body: "Repeated resets, inactive purchases, and missed cashback can become visible before they quietly drain capital." },
+      { title: "Verified share cards", body: "Trader Return Tracker connects with RebateBoard Performance Cards so milestones can be shared with public verification." },
+    ],
+    sections: [
+      {
+        title: "What Trader Return Tracker records",
+        body: "The goal is to answer one hard question: after all costs and returns, are you actually ahead?",
+        bullets: ["Challenge purchases", "Reset fees", "Broker or trading costs", "Payouts", "Cashback", "Other income and expenses"],
+      },
+      {
+        title: "Core metrics",
+        body: "Trader Return Tracker focuses on capital allocation: what you spent, what came back, which brands or programs performed, and where costs are repeating.",
+        bullets: ["Total spend", "Total returned", "Net result", "ROI", "Cost recovery", "Best-performing brand or program"],
+      },
+      {
+        title: "Rebeta financial intelligence",
+        body: "Trader Return Tracker data prepares Rebeta to identify trends such as repeated costs, recovery through cashback, and month-over-month return changes as the connected intelligence layer matures.",
+      },
+    ],
+    related: [
+      { title: "Cashback Calculator", body: "Estimate potential cost recovery before choosing a partner.", to: "/cashback-calculator", label: "Calculate" },
+      { title: "Payout Tracker", body: "Compare public payout behavior across brands.", to: "/payouts", label: "Explore payouts" },
+      { title: "Rebeta AI", body: "Ask Rebeta to help interpret your return picture.", to: "/rebeta-ai", label: "Ask Rebeta" },
+    ],
+    faqs: [
+      { q: "Is Trader Return Tracker only for prop firms?", a: "No. It is designed around the wider financial journey: prop firms, brokers, exchanges, costs, payouts, cashback, and income." },
+      { q: "Does Trader Return Tracker replace accounting software?", a: "No. It is a trading-performance and return tracker, not tax or accounting advice." },
+      { q: "Can I share achievements?", a: "Trader Return Tracker connects with RebateBoard Performance Cards for verified shareable milestones." },
+    ],
+  },
+  "rebeta-ai": {
+    key: "rebeta-ai",
+    eyebrow: "Rebeta AI",
+    title: "Your trading intelligence, connected.",
+    description:
+      "Rebeta is RebateBoard's trading copilot for platform guidance, risk education, journal review, trading-plan support, brand questions, and multilingual assistance.",
+    kind: "product",
+    primaryCta: { label: "Ask Rebeta", to: "/dashboard/ai-coach" },
+    secondaryCta: { label: "Start a Journal", to: "/trading-journals" },
+    features: [
+      { title: "Platform guidance", body: "Ask how RebateBoard features work, where to go next, and how cashback, rewards, TBI, reviews, and tools connect." },
+      { title: "Trading context", body: "Rebeta is designed to use your journal, plan, Trader Return Tracker, rewards, TBI, and cashback context where integration is available." },
+      { title: "Multilingual support", body: "The assistant supports multilingual conversations so users can ask questions in the language they are most comfortable using." },
+      { title: "Image analysis", body: "Uploaded screenshots can be read for supported analysis workflows, helping users discuss charts, trade notes, or platform evidence." },
+    ],
+    sections: [
+      {
+        title: "What Rebeta can help with today",
+        body: "Rebeta should feel like a product-level copilot, not a generic chat box.",
+        bullets: ["RebateBoard feature support", "Broker and prop-firm questions", "Risk education", "Trading Journal guidance", "Trading Plan guidance", "Cashback and TBI explanations"],
+      },
+      {
+        title: "One assistant across RebateBoard",
+        body: "The long-term design is a connected assistant that understands the user's RebateBoard journey. Current integrations are expanded carefully so Rebeta only claims context it can actually use.",
+        bullets: ["Journal context", "Trading Plan context", "Trader Return Tracker and financial data", "Rewards progress", "TBI and brand information", "Cashback and payout workflows"],
+      },
+      {
+        title: "Safety and boundaries",
+        body: "Rebeta provides education, analysis, and platform guidance. It does not guarantee trading outcomes and should not be treated as regulated financial advice.",
+      },
+    ],
+    related: [
+      { title: "Trading Plan", body: "Give Rebeta your rules before asking for coaching.", to: "/trading-plan", label: "Create plan" },
+      { title: "Trading Journal", body: "Give Rebeta better memory through structured trade logs.", to: "/trading-journals", label: "Log trades" },
+      { title: "Trader Return Tracker", body: "Prepare return data for financial intelligence.", to: "/trt", label: "Track returns" },
+    ],
+    faqs: [
+      { q: "Is Rebeta a trading signal service?", a: "No. Rebeta is for education, analysis, workflow guidance, and platform support, not guaranteed-profit signals." },
+      { q: "Can Rebeta read screenshots?", a: "The assistant supports image-upload analysis workflows where the uploaded file can be processed safely." },
+      { q: "Does Rebeta know my private data?", a: "Rebeta should only use authorized RebateBoard context and privacy-safe information relevant to the request." },
+    ],
+  },
+  "rebate-rewards": {
+    key: "rebate-rewards",
+    eyebrow: "Rebate Rewards",
+    title: "Your activity should reward you.",
+    description:
+      "Rebate Rewards turns meaningful platform activity into RR progression, trader levels, streaks, badges, and future unlocks. RR is a progression system, not a cash currency.",
+    kind: "product",
+    primaryCta: { label: "Explore Rebate Rewards", to: "/dashboard/rewards" },
+    secondaryCta: { label: "Browse Cashback", to: "/cashback" },
+    features: [
+      { title: "Earn through useful actions", body: "RR can come from verified reviews, referrals, profile completion, journal milestones, linked accounts, approved campaigns, and learning activity." },
+      { title: "Trader Levels", body: "Progress through Explorer, Bronze Trader, Silver Trader, Gold Trader, and future levels as your RebateBoard activity grows." },
+      { title: "Trading Streaks", body: "Streaks reward eligible activity such as journaling, reviews, plan tasks, lessons, cashback claims, and Rebeta usage." },
+      { title: "Next unlocks", body: "Rewards point users toward funded challenges, academy access, AI features, cashback boosts, badges, and giveaways as they become available." },
+    ],
+    sections: [
+      {
+        title: "How traders earn RR",
+        body: "Rebate Rewards is built around meaningful activity, not passive logins.",
+        bullets: ["Submit verified reviews", "Refer traders", "Complete profile milestones", "Log journal activity", "Link eligible accounts", "Complete approved missions"],
+      },
+      {
+        title: "How RR can be used",
+        body: "Utilities depend on what is enabled by RebateBoard and participating partners. Unavailable rewards should be clearly marked as upcoming in the dashboard.",
+        bullets: ["Discounts", "Academy access", "Badges", "Platform perks", "Sponsored opportunities", "Future reward utilities"],
+      },
+      {
+        title: "Streaks and milestones",
+        body: "Trading Streaks should be maintained by meaningful actions. If a user misses the required activity before the next milestone, streak progress resets while previously earned RR remains untouched.",
+      },
+    ],
+    related: [
+      { title: "Cashback", body: "Reduce trading costs while earning platform progress.", to: "/cashback", label: "Explore cashback" },
+      { title: "Trading Journal", body: "Eligible journal activity can support consistency.", to: "/trading-journals", label: "Start journaling" },
+      { title: "Trader TBI", body: "Rewards and verified activity support your trader identity.", to: "/trader-tbi", label: "Build profile" },
+    ],
+    faqs: [
+      { q: "Is RR money?", a: "No. RR is a progression and rewards system, not a cash currency." },
+      { q: "Does logging in keep a streak?", a: "No. Streaks should be maintained by eligible actions, not passive login activity." },
+      { q: "Are all rewards available now?", a: "Only enabled rewards should appear as active. Future rewards should be clearly marked as upcoming." },
+    ],
+  },
+  "cashback-calculator": {
+    key: "cashback-calculator",
+    eyebrow: "Cashback Calculator",
+    title: "See what your trading activity could return.",
+    description:
+      "Estimate potential cashback before choosing a partner. Adjust trading activity, volume, lot size, commission or rebate assumptions, and time period to understand possible cost recovery.",
+    kind: "product",
+    primaryCta: { label: "Open Calculator", to: "/cashback-calculator" },
+    secondaryCta: { label: "Browse Cashback Partners", to: "/cashback" },
+    features: [
+      { title: "Interactive estimate", body: "Use trading variables such as volume, lot size, number of trades, rate assumptions, and time period where supported." },
+      { title: "Monthly and annual view", body: "Translate trade activity into estimated cashback ranges over a practical time horizon." },
+      { title: "Assumption clarity", body: "Results should explain what was assumed so users do not mistake an estimate for a guaranteed payout." },
+      { title: "Partner discovery", body: "Move from the estimate into eligible cashback programs and brand profiles." },
+    ],
+    sections: [
+      {
+        title: "What the calculator asks for",
+        body: "The calculator focuses on variables that materially affect estimated cashback.",
+        bullets: ["Provider or market", "Trading volume", "Lot size", "Number of trades", "Commission or rebate rate", "Time period"],
+      },
+      {
+        title: "What the result shows",
+        body: "A useful result should explain possible cashback, effective cost reduction, and assumptions without pretending to verify future activity.",
+        bullets: ["Estimated cashback", "Monthly estimate", "Annual estimate", "Effective cost reduction", "Calculation assumptions"],
+      },
+      {
+        title: "Estimate, then verify",
+        body: "Actual cashback depends on provider conditions, tracking, eligibility, and verified activity. RebateBoard uses claims and wallet workflows to handle the real payout process.",
+      },
+    ],
+    related: [
+      { title: "Cashback", body: "Learn how cashback works before joining a partner.", to: "/cashback", label: "Learn cashback" },
+      { title: "Trader Return Tracker", body: "Track whether cashback reduces your real trading costs.", to: "/trt", label: "Track returns" },
+      { title: "Payout Tracker", body: "Review payout behavior before choosing a brand.", to: "/payouts", label: "View payouts" },
+    ],
+    faqs: [
+      { q: "Are calculator results guaranteed?", a: "No. Results are estimates and depend on final provider terms, eligibility, and verified activity." },
+      { q: "Can I compare brands?", a: "The calculator is designed to help users understand possible cashback and then browse eligible partners." },
+      { q: "Where do I claim cashback?", a: "Cashback claims are handled through RebateBoard's claim and wallet workflow after eligible activity is verified." },
+    ],
+  },
   "top-prop-firm-sellers": {
     key: "top-prop-firm-sellers",
     eyebrow: "Top Sellers",
@@ -334,36 +649,6 @@ export const publicPages: Record<string, PublicInfoPageConfig> = {
   deals: marketplaceOfferPage("deals", "Deals", "Current trader deals.", "A focused view of active deals across prop firms, brokers, exchanges, tools, and education providers."),
 };
 
-function productPage(
-  key: string,
-  title: string,
-  headline: string,
-  description: string,
-  labels: string[],
-  primaryTo = "/dashboard",
-): PublicInfoPageConfig {
-  return {
-    key,
-    eyebrow: title,
-    title: headline,
-    description,
-    kind: "product",
-    primaryCta: { label: "Open Dashboard", to: primaryTo },
-    secondaryCta: { label: "Create Free Account", to: "/signup" },
-    features: labels.map((label) => ({
-      title: label,
-      body: `${title} is built to connect with RebateBoard's wider trader operating system while keeping workflows clear, actionable, and launch-ready.`,
-    })),
-    sections: [
-      {
-        title: `How ${title} Fits RebateBoard`,
-        body:
-          "This product page introduces the public value of the feature while the full workflow lives inside the user dashboard for logged-in traders.",
-      },
-    ],
-  };
-}
-
 function marketplaceOfferPage(key: string, title: string, headline: string, description: string): PublicInfoPageConfig {
   return {
     key,
@@ -383,8 +668,11 @@ function marketplaceOfferPage(key: string, title: string, headline: string, desc
 }
 
 export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
+  const { user } = useAuth();
   const meta = kindMeta[page.kind];
   const MetaIcon = meta.icon;
+  const resolveCtaTo = (to: string) => (!user && to.startsWith("/dashboard") ? "/login" : to);
+  const resolveCtaSearch = (to: string) => (!user && to.startsWith("/dashboard") ? { redirect: to } : undefined);
 
   return (
     <div className="min-h-screen bg-[#0d0420] text-white">
@@ -411,7 +699,8 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 {page.primaryCta && (
                   <Link
-                    to={page.primaryCta.to as any}
+                    to={resolveCtaTo(page.primaryCta.to) as any}
+                    search={resolveCtaSearch(page.primaryCta.to) as any}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-semibold shadow-[0_0_30px_rgba(192,132,252,0.32)] transition hover:scale-[1.01]"
                   >
                     {page.primaryCta.label}
@@ -420,7 +709,8 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
                 )}
                 {page.secondaryCta && (
                   <Link
-                    to={page.secondaryCta.to as any}
+                    to={resolveCtaTo(page.secondaryCta.to) as any}
+                    search={resolveCtaSearch(page.secondaryCta.to) as any}
                     className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-5 py-3 text-sm font-semibold text-white/85 transition hover:border-fuchsia-300/35 hover:bg-white/[0.08]"
                   >
                     {page.secondaryCta.label}
@@ -430,18 +720,17 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
             </div>
             <div className="rounded-[1.6rem] border border-white/10 bg-black/20 p-4">
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Transparency", value: "First", icon: ShieldCheck },
-                  { label: "Trader Value", value: "Built In", icon: Target },
-                  { label: "Trust Signals", value: "Connected", icon: BadgeCheck },
-                  { label: "Launch Ready", value: "Scalable", icon: Rocket },
-                ].map(({ label, value, icon: Icon }) => (
-                  <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+                {page.features.slice(0, 4).map((feature, index) => {
+                  const icons = [ShieldCheck, Target, BadgeCheck, Rocket];
+                  const Icon = icons[index % icons.length];
+                  return (
+                  <div key={feature.title} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
                     <Icon className="h-5 w-5 text-fuchsia-200" />
-                    <div className="mt-5 text-lg font-bold">{value}</div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-white/45">{label}</div>
+                    <div className="mt-5 text-sm font-bold leading-5">{feature.title}</div>
+                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-white/50">{feature.body}</div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -483,25 +772,58 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
           </section>
         ) : null}
 
-        <section className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:p-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              { title: "Related", body: "Move naturally into the next RebateBoard workflow.", icon: Compass },
-              { title: "Useful Today", body: "Built as a real launch page, not a placeholder.", icon: FileText },
-              { title: "Expandable", body: "Structured so the page can grow with live marketplace data later.", icon: ChartNoAxesCombined },
-            ].map(({ title, body, icon: Icon }) => (
-              <div key={title} className="flex gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/[0.06]">
-                  <Icon className="h-4 w-4 text-violet-100" />
-                </div>
-                <div>
-                  <div className="font-semibold">{title}</div>
-                  <p className="mt-1 text-sm leading-6 text-white/58">{body}</p>
-                </div>
+        {page.related?.length ? (
+          <section className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/[0.06]">
+                <Compass className="h-4 w-4 text-violet-100" />
               </div>
-            ))}
-          </div>
-        </section>
+              <div>
+                <h2 className="text-xl font-bold">Continue your workflow</h2>
+                <p className="text-sm text-white/55">Move into the next RebateBoard tool that strengthens this journey.</p>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {page.related.map((item) => (
+                <Link
+                  key={item.title}
+                  to={resolveCtaTo(item.to) as any}
+                  search={resolveCtaSearch(item.to) as any}
+                  className="group rounded-2xl border border-white/10 bg-black/15 p-4 transition hover:-translate-y-0.5 hover:border-fuchsia-300/25 hover:bg-white/[0.06]"
+                >
+                  <div className="font-semibold">{item.title}</div>
+                  <p className="mt-2 min-h-[3rem] text-sm leading-6 text-white/58">{item.body}</p>
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-fuchsia-200">
+                    {item.label}
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {page.faqs?.length ? (
+          <section className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/[0.06]">
+                <HelpCircle className="h-4 w-4 text-fuchsia-100" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">FAQ</h2>
+                <p className="text-sm text-white/55">Clear answers before users enter the dashboard.</p>
+              </div>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-3">
+              {page.faqs.map((faq) => (
+                <article key={faq.q} className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                  <h3 className="text-sm font-bold text-white">{faq.q}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/62">{faq.a}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
       <SiteFooter />
     </div>

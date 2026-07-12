@@ -301,11 +301,11 @@ function RewardsPage() {
               <button key={opt.id} onClick={() => setRedeemOpen(opt.id)}
                 className={`group rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.07] ${ring} hover:ring-1`}
               >
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Icon className="h-5 w-5 text-accent" /></div>
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Icon className="h-5 w-5 text-fuchsia-300" /></div>
                 <div className="mt-3 text-sm font-semibold text-white">{opt.title}</div>
                 <p className="mt-1 text-[11px] text-muted-foreground">{opt.tagline}</p>
                 <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[10px] font-medium text-white">{opt.rate}</div>
-                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-accent transition group-hover:gap-2">{opt.cta} <ArrowRight className="h-3 w-3" /></div>
+                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 transition group-hover:gap-2">{opt.cta} <ArrowRight className="h-3 w-3" /></div>
               </button>
             );
           })}
@@ -434,7 +434,7 @@ function RewardsPage() {
       </Panel>
 
       {/* Earn opportunities */}
-      <Panel title="Earn RR" action={<Sparkles className="h-4 w-4 text-accent" />}>
+      <Panel title="Earn RR" action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}>
         {earnRules.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {earnRules.map((rule) => (
