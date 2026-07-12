@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { PageHeader, Panel } from "@/components/superadmin/AdminUI";
 import { setBrandApplicationSettings, useBrandApplicationSettings } from "@/lib/tbi-onboarding";
 import { fetchBrandApplicationSettings, saveBrandApplicationSettingsRemote } from "@/lib/brand-application-settings-api";
-import { useAuth } from "@/lib/auth";
 import { toast } from "@/components/superadmin/AdminActions";
 import { ToggleLeft, ToggleRight } from "lucide-react";
 
@@ -11,11 +10,25 @@ export const Route = createFileRoute("/superadmin/settings")({
   component: SettingsAdmin,
 });
 
+const AUTH_STORAGE_KEY = "rb_auth_session";
+
+function readAdminToken() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { token?: string | null };
+    return parsed.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function SettingsAdmin() {
-  const { token } = useAuth();
   const localBrandApplications = useBrandApplicationSettings();
   const [brandApplications, setBrandApplicationsState] = useState(localBrandApplications);
   const [savingBrandApplications, setSavingBrandApplications] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     setBrandApplicationsState(localBrandApplications);
@@ -28,9 +41,13 @@ function SettingsAdmin() {
         if (!active) return;
         setBrandApplicationsState(settings);
         setBrandApplicationSettings(settings);
+        setSettingsError(null);
       })
       .catch(() => {
         // Keep the local setting if the backend is temporarily unavailable.
+        if (active) {
+          setSettingsError("Remote settings are temporarily unavailable. Local cached settings are shown.");
+        }
       });
     return () => {
       active = false;
@@ -38,6 +55,7 @@ function SettingsAdmin() {
   }, []);
 
   async function toggleBrandApplications() {
+    const token = readAdminToken();
     if (!token || savingBrandApplications) return;
     const nextEnabled = !brandApplications.enabled;
     const optimistic = { enabled: nextEnabled, updatedAt: new Date().toISOString() };
@@ -48,6 +66,7 @@ function SettingsAdmin() {
       const saved = await saveBrandApplicationSettingsRemote(token, nextEnabled);
       setBrandApplicationsState(saved);
       setBrandApplicationSettings(saved);
+      setSettingsError(null);
       toast.success(nextEnabled ? "Brand applications are open" : "Brand applications are closed");
     } catch (error) {
       setBrandApplicationsState(brandApplications);
@@ -80,6 +99,11 @@ function SettingsAdmin() {
         </Panel>
         <Panel title="Brand Applications">
           <div className="space-y-4 text-sm">
+            {settingsError ? (
+              <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 p-3 text-xs leading-5 text-sky-100">
+                {settingsError}
+              </div>
+            ) : null}
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>

@@ -2092,16 +2092,16 @@ function FirmDetailsPage() {
 
             <div className="px-5 pb-5 sm:px-6">
               <div className="min-w-0">
-                <div className="-mt-12 flex flex-col items-start gap-3 sm:-mt-16 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="relative h-24 w-24 shrink-0 rounded-[24px] border-4 border-[#130824] bg-white shadow-2xl sm:h-32 sm:w-32 sm:rounded-[28px] sm:border-[5px]">
+                <div className="-mt-8 flex flex-col items-start gap-3 sm:-mt-11 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="relative h-20 w-20 shrink-0 rounded-[22px] border-[3px] border-[#130824] bg-white shadow-2xl sm:h-28 sm:w-28 sm:rounded-[26px] sm:border-4">
                     {displayAvatar ? (
                       <img
                         src={displayAvatar}
                         alt={name}
-                        className="h-full w-full rounded-[17px] object-contain p-1.5 sm:rounded-[22px]"
+                        className="h-full w-full rounded-[16px] object-contain p-1.5 sm:rounded-[20px]"
                       />
                     ) : (
-                      <div className="grid h-full w-full place-items-center rounded-[17px] bg-white text-xl font-bold text-violet-700 sm:rounded-[22px] sm:text-2xl">
+                      <div className="grid h-full w-full place-items-center rounded-[16px] bg-white text-lg font-bold text-violet-700 sm:rounded-[20px] sm:text-2xl">
                         {logoInitials || "RB"}
                       </div>
                     )}

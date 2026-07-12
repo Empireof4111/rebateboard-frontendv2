@@ -803,20 +803,20 @@ export function SiteHeader() {
     <>
       <header
         data-site-header
-        className="fixed inset-x-0 top-0 z-50 bg-[#10051f]/16 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#10051f]/10"
+        className="fixed inset-x-0 top-0 z-50 pt-[calc(env(safe-area-inset-top)+0.45rem)]"
       >
         <span className="hidden" aria-hidden>
           {user ? "auth" : "guest"}
         </span>
-        <div className="container-app">
-          <div className="liquid-glass w-full max-w-full overflow-hidden rounded-[1.15rem] px-2.5 py-2.5 shadow-[0_18px_55px_rgba(9,4,18,0.32)] sm:rounded-[1.35rem] sm:px-4">
+        <div className="mx-auto w-full max-w-[96rem] px-3 sm:px-5 lg:px-7">
+          <div className="site-header-glass w-full max-w-full overflow-hidden rounded-[1.15rem] px-2.5 py-2.5 sm:rounded-[1.35rem] sm:px-4">
             <nav className="flex min-w-0 items-center justify-between gap-3">
               <Link
                 to="/"
                 className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3"
                 aria-label="RebateBoard home"
               >
-                <Logo heightClass="h-8 sm:h-9" className="shrink-0" />
+                <Logo heightClass="h-9 sm:h-10" className="shrink-0" />
                 <span className="sr-only">RebateBoard</span>
               </Link>
 

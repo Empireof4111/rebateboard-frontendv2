@@ -680,14 +680,26 @@ function ListingSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="glass rounded-2xl p-4 ring-1 ring-white/10">
-          <div className="h-12 w-2/3 animate-pulse rounded-xl bg-white/10" />
+        <div key={index} className="skeleton-card rounded-2xl p-4 ring-1 ring-white/10">
+          <div className="flex items-start gap-3">
+            <div className="skeleton h-14 w-14 rounded-[17px]" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="skeleton h-4 w-2/3" />
+              <div className="skeleton h-3 w-4/5" />
+              <div className="skeleton h-3 w-1/2" />
+            </div>
+            <div className="skeleton h-7 w-7 rounded-full" />
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
             {Array.from({ length: 4 }).map((__, metricIndex) => (
-              <div key={metricIndex} className="h-16 animate-pulse rounded-xl bg-white/10" />
+              <div key={metricIndex} className="skeleton h-16 rounded-xl" />
             ))}
           </div>
-          <div className="mt-3 h-10 animate-pulse rounded-xl bg-white/10" />
+          <div className="mt-3 skeleton h-10 rounded-xl" />
+          <div className="mt-3 grid grid-cols-2 gap-1.5">
+            <div className="skeleton h-8 rounded-full" />
+            <div className="skeleton h-8 rounded-full" />
+          </div>
         </div>
       ))}
     </div>
@@ -748,14 +760,14 @@ function BrandLogo({
   return (
     <div
       className={`grid ${sizeClass} shrink-0 place-items-center overflow-hidden ${
-        src && !failed ? "bg-transparent" : "bg-primary/20"
+        src && !failed ? "bg-white/[0.04] ring-1 ring-white/10" : "bg-primary/20"
       }`}
     >
       {src && !failed ? (
         <img
           src={src}
           alt={`${brand.name} logo`}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain p-1"
           loading="lazy"
           onError={() => setFailed(true)}
         />
@@ -1152,13 +1164,13 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
   }, [categoryBrands, filters, search, sortMode]);
   const visibleBrands = filteredBrands.slice(0, visibleCount);
   const recommendedBrands = useMemo(() => {
-    const selected = categoryBrands
+    return categoryBrands
       .filter((brand) => {
         const flags = asRecord(brand.flags);
         return flags.recommended === true || flags.editorPick === true || flags.featured === true;
       })
-      .sort(sortByRankAndTrust);
-    return (selected.length ? selected : [...categoryBrands].sort(sortByRankAndTrust)).slice(0, 4);
+      .sort(sortByRankAndTrust)
+      .slice(0, 4);
   }, [categoryBrands]);
 
   const toggleFilter = (group: string, option: string) => {
@@ -1258,28 +1270,6 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
           </div>
         </div>
 
-        {!loading && !error && recommendedBrands.length > 0 && (
-          <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <div>
-                  <h2 className="text-sm font-black text-white">Recommended Brands</h2>
-                  <p className="text-[10px] text-white/42">Editorial, trust, and category relevance.</p>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-[10px] font-bold text-primary ring-1 ring-primary/20">
-                <ShieldCheck className="h-3 w-3" /> Live profiles
-              </span>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              {recommendedBrands.map((brand) => (
-                <RecommendationCard key={brand.id} brand={brand} />
-              ))}
-            </div>
-          </section>
-        )}
-
         <section className="relative mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -1318,6 +1308,28 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
             {filteredBrands.length} {filteredBrands.length === 1 ? "brand" : "brands"}
           </span>
         </section>
+
+        {!loading && !error && recommendedBrands.length > 0 && (
+          <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div>
+                  <h2 className="text-sm font-black text-white">Recommended Brands</h2>
+                  <p className="text-[10px] text-white/42">Admin-featured profiles for this category.</p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-[10px] font-bold text-primary ring-1 ring-primary/20">
+                <ShieldCheck className="h-3 w-3" /> Featured by RebateBoard
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {recommendedBrands.map((brand) => (
+                <RecommendationCard key={brand.id} brand={brand} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {mobileFiltersOpen && (
           <div className="relative mb-4 lg:hidden">

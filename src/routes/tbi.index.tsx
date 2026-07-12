@@ -11,7 +11,7 @@ import {
   tbiScore100,
   tbiStateTone,
 } from "@/lib/tbi-api";
-import { AlertTriangle, ArrowRight, CheckCircle2, Info, Shield } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Crown, Info, Medal, Shield, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/tbi/")({
   head: () => ({
@@ -27,39 +27,97 @@ export const Route = createFileRoute("/tbi/")({
   component: TBIPage,
 });
 
-function BrandAvatar({ brand }: { brand: TbiProfile }) {
+function rankTheme(rank: number) {
+  if (rank === 1) {
+    return {
+      Icon: Crown,
+      label: "#1",
+      badge: "border-[#f6d77a]/35 bg-[#f6d77a]/15 text-[#ffe8a3] shadow-[0_0_22px_rgba(246,215,122,0.18)]",
+      card: "border-[#f6d77a]/30 shadow-[0_0_34px_rgba(246,215,122,0.11)]",
+      glow: "shadow-[0_0_28px_rgba(246,215,122,0.25)] ring-[#f6d77a]/35",
+    };
+  }
+  if (rank === 2) {
+    return {
+      Icon: Medal,
+      label: "#2",
+      badge: "border-white/28 bg-white/12 text-white shadow-[0_0_20px_rgba(255,255,255,0.12)]",
+      card: "border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.08)]",
+      glow: "shadow-[0_0_24px_rgba(226,232,240,0.18)] ring-white/28",
+    };
+  }
+  if (rank === 3) {
+    return {
+      Icon: Trophy,
+      label: "#3",
+      badge: "border-[#d7a06a]/35 bg-[#d7a06a]/14 text-[#ffd1a3] shadow-[0_0_20px_rgba(215,160,106,0.15)]",
+      card: "border-[#d7a06a]/24 shadow-[0_0_28px_rgba(215,160,106,0.09)]",
+      glow: "shadow-[0_0_24px_rgba(215,160,106,0.18)] ring-[#d7a06a]/30",
+    };
+  }
+  if (rank <= 5) {
+    return {
+      Icon: Trophy,
+      label: `#${rank}`,
+      badge: "border-fuchsia-300/25 bg-fuchsia-300/12 text-fuchsia-100 shadow-[0_0_18px_rgba(217,70,239,0.13)]",
+      card: "border-fuchsia-300/18 shadow-[0_0_26px_rgba(217,70,239,0.08)]",
+      glow: "shadow-[0_0_22px_rgba(217,70,239,0.18)] ring-fuchsia-300/24",
+    };
+  }
+  return {
+    Icon: null,
+    label: `#${rank}`,
+    badge: "border-white/10 bg-white/5 text-muted-foreground",
+    card: "border-white/10",
+    glow: "ring-white/10",
+  };
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  const theme = rankTheme(rank);
+  const Icon = theme.Icon;
+  return (
+    <div className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black ${theme.badge}`}>
+      {Icon ? <Icon className="h-3 w-3" strokeWidth={2.4} /> : null}
+      {theme.label}
+    </div>
+  );
+}
+
+function BrandAvatar({ brand, rank }: { brand: TbiProfile; rank?: number }) {
   const [failed, setFailed] = useState(false);
   const logo = tbiProfileLogo(brand);
+  const glow = rank && rank <= 5 ? rankTheme(rank).glow : "ring-white/10";
   useEffect(() => setFailed(false), [logo]);
   if (logo && !failed) {
     return (
       <img
         src={logo}
         alt={brand.name}
-        className="h-12 w-12 rounded-2xl bg-white/[0.04] object-contain p-1 ring-1 ring-white/10"
+        className={`h-12 w-12 rounded-2xl bg-white/[0.04] object-contain p-1 ring-1 ${glow}`}
         onError={() => setFailed(true)}
         loading="lazy"
       />
     );
   }
   return (
-    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white">
+    <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white ring-1 ${glow}`}>
       {brand.name.slice(0, 2).toUpperCase()}
     </div>
   );
 }
 
 function SkeletonLine({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-full bg-white/10 ${className}`} />;
+  return <div className={`skeleton rounded-full ${className}`} />;
 }
 
 function RankingSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading fully unlocked rankings">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="glass rounded-3xl p-5">
+        <div key={index} className="skeleton-card rounded-3xl p-5">
           <div className="flex items-start gap-3">
-            <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/10" />
+            <div className="skeleton h-12 w-12 rounded-2xl" />
             <div className="min-w-0 flex-1 space-y-2">
               <SkeletonLine className="h-4 w-2/3" />
               <SkeletonLine className="h-3 w-1/2" />
@@ -219,13 +277,14 @@ function TBIPage() {
                   key={brand.id}
                   to="/tbi/brand/$slug"
                   params={{ slug: brand.slug }}
-                  className="glass group relative overflow-hidden rounded-3xl p-6 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)]"
+                  className={`glass ranking-card-enter group relative overflow-hidden rounded-3xl p-6 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)] ${rankTheme(index + 1).card}`}
+                  style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
                 >
-                  <div className="absolute right-5 top-5 rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">
-                    #{index + 1}
+                  <div className="absolute right-5 top-5">
+                    <RankBadge rank={index + 1} />
                   </div>
                   <div className="flex items-start gap-4">
-                    <BrandAvatar brand={brand} />
+                    <BrandAvatar brand={brand} rank={index + 1} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-xl font-semibold">{brand.name}</h3>
@@ -260,13 +319,14 @@ function TBIPage() {
                   key={brand.id}
                   to="/tbi/brand/$slug"
                   params={{ slug: brand.slug }}
-                  className="glass group relative overflow-hidden rounded-3xl p-5 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)]"
+                  className={`glass ranking-card-enter group relative overflow-hidden rounded-3xl p-5 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)] ${rankTheme(index + 1).card}`}
+                  style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
                 >
-                  <div className="absolute right-4 top-4 rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">
-                    #{index + 1}
+                  <div className="absolute right-4 top-4">
+                    <RankBadge rank={index + 1} />
                   </div>
                   <div className="flex items-start gap-3">
-                    <BrandAvatar brand={brand} />
+                    <BrandAvatar brand={brand} rank={index + 1} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate font-semibold">{brand.name}</h3>

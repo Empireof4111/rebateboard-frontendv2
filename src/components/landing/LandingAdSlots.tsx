@@ -5,7 +5,7 @@
  */
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, TrendingUp, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import {
   hydrateSlide,
   type DashboardAd,
@@ -89,14 +89,6 @@ function trackAdClick(ad: DashboardAd | null) {
   void trackPublicAdvertClick(ad.id);
 }
 
-function heroSlideTag(slide: HeroSlide) {
-  if (slide.source === "blog") return "Editorial";
-  if (slide.ad.format === "single") return "Ad";
-  if (slide.ad.format === "carousel") return "Featured";
-  if (slide.ad.format === "trending") return "Trending";
-  return "Sponsored";
-}
-
 function heroSlideLabel(slide: HeroSlide) {
   if (hasPublicCopy(slide.label)) return slide.label;
   if (hasPublicCopy(slide.ad.cta)) return slide.ad.cta!;
@@ -158,7 +150,6 @@ export function LandingHeroAdCard({
   const image = current?.image || fallbackImage;
   const hasCampaign = Boolean(current);
   const label = current ? heroSlideLabel(current) : "";
-  const tag = current ? heroSlideTag(current) : "";
 
   useEffect(() => {
     if (!current?.ad) return;
@@ -178,27 +169,24 @@ export function LandingHeroAdCard({
       />
       <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/92 via-[#10051f]/10 to-black/10" />
       {hasCampaign && (
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+        <div className="absolute bottom-3 left-3 max-w-[min(74%,22rem)] sm:bottom-4 sm:left-4 sm:max-w-[20rem] lg:max-w-[21rem]">
           <Link
             to={current.href}
             onClick={() => trackAdClick(current.ad)}
-            className="glass block rounded-2xl p-4 transition hover:bg-white/[0.07]"
+            className="block rounded-2xl border border-white/15 bg-[#130722]/42 p-3 text-left shadow-[0_16px_36px_rgba(7,2,18,0.22)] backdrop-blur-2xl transition hover:bg-[#19092c]/52 sm:p-3.5"
           >
-            <div className="mb-2 inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-fuchsia-100 ring-1 ring-white/15">
-              {tag}
-            </div>
-            <p className="line-clamp-2 text-sm font-semibold text-white">{label}</p>
-            {current.sub && <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{current.sub}</p>}
-            <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground">
-              <TrendingUp className="h-3 w-3" /> rebateboard.com
-              <span className="ml-auto">{slides.length ? `${i + 1}/${slides.length}` : ""}</span>
-            </div>
+            <p className="line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-base">{label}</p>
+            {current.sub && (
+              <p className="mt-1 line-clamp-1 text-[11px] leading-relaxed text-white/68 sm:text-xs">
+                {current.sub}
+              </p>
+            )}
           </Link>
         </div>
       )}
       {!hasCampaign && (
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-          <div className="glass rounded-2xl p-4">
+        <div className="absolute bottom-3 left-3 max-w-[min(74%,22rem)] sm:bottom-4 sm:left-4 sm:max-w-[20rem]">
+          <div className="rounded-2xl border border-white/15 bg-[#130722]/42 p-3 shadow-[0_16px_36px_rgba(7,2,18,0.22)] backdrop-blur-2xl sm:p-3.5">
             <p className="text-sm font-semibold text-white">Featured placement ready</p>
             <p className="mt-1 text-[11px] text-muted-foreground">
               New partner highlights and trader offers will appear here soon.

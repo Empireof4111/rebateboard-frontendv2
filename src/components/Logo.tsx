@@ -38,11 +38,11 @@ export function Logo({
 
   return (
     <span
-      className={`inline-flex items-center gap-2 ${className}`}
+      className={`inline-flex items-center gap-2.5 ${className}`}
       aria-label={alt}
     >
       {mark}
-      <span className="whitespace-nowrap text-[1.42rem] font-black leading-none text-white sm:text-[1.58rem]">
+      <span className="whitespace-nowrap text-[1.38rem] font-extrabold leading-none text-white sm:text-[1.52rem]">
         RebateBoard
       </span>
     </span>
