@@ -29,7 +29,22 @@ export type TbiProfile = {
   website: string;
   region: string;
   logo?: string;
+  logoUrl?: string;
+  thumbnail?: string;
+  brandLogo?: string;
+  favicon?: string;
   cover?: string;
+  identity?: {
+    logo?: string;
+    logoUrl?: string;
+    website?: string;
+    [key: string]: unknown;
+  };
+  profile?: {
+    logo?: string;
+    logoUrl?: string;
+    [key: string]: unknown;
+  };
   confidence: TbiConfidence;
   confidenceFactor: number;
   state: TbiState;
@@ -216,6 +231,33 @@ export type TbiProfile = {
     regulationTier: string;
   };
 };
+
+export function tbiProfileLogo(profile: Pick<TbiProfile, "logo" | "logoUrl" | "thumbnail" | "brandLogo" | "favicon" | "website" | "identity" | "profile">) {
+  const candidates = [
+    profile.logo,
+    profile.logoUrl,
+    profile.thumbnail,
+    profile.brandLogo,
+    profile.favicon,
+    profile.identity?.logo,
+    profile.identity?.logoUrl,
+    profile.profile?.logo,
+    profile.profile?.logoUrl,
+  ]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+
+  const direct = candidates.find((value) => value && !/^(null|undefined)$/i.test(value));
+  if (direct) return direct;
+
+  const website = typeof profile.website === "string" ? profile.website.trim() : "";
+  if (!website) return "";
+  const host = website
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .split("/")[0];
+  return host ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128` : "";
+}
 
 export type TbiAdminPatch = Partial<{
   visibility: string;

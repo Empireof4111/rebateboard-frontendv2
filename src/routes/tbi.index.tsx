@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
   fetchTbiTop,
+  tbiProfileLogo,
   type TbiProfile,
   tbiConfidenceTone,
   tbiLabelTone,
@@ -28,13 +29,16 @@ export const Route = createFileRoute("/tbi/")({
 
 function BrandAvatar({ brand }: { brand: TbiProfile }) {
   const [failed, setFailed] = useState(false);
-  if (brand.logo && !failed) {
+  const logo = tbiProfileLogo(brand);
+  useEffect(() => setFailed(false), [logo]);
+  if (logo && !failed) {
     return (
       <img
-        src={brand.logo}
+        src={logo}
         alt={brand.name}
-        className="h-12 w-12 rounded-2xl object-cover ring-1 ring-white/10"
+        className="h-12 w-12 rounded-2xl bg-white/[0.04] object-contain p-1 ring-1 ring-white/10"
         onError={() => setFailed(true)}
+        loading="lazy"
       />
     );
   }

@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
   fetchTbiBrand,
+  tbiProfileLogo,
   type TbiProfile,
   tbiConfidenceTone,
   tbiLabelTone,
@@ -46,13 +47,16 @@ const componentMeta = [
 
 function BrandAvatar({ profile }: { profile: TbiProfile }) {
   const [failed, setFailed] = useState(false);
-  if (profile.logo && !failed) {
+  const logo = tbiProfileLogo(profile);
+  useEffect(() => setFailed(false), [logo]);
+  if (logo && !failed) {
     return (
       <img
-        src={profile.logo}
+        src={logo}
         alt={profile.name}
-        className="h-20 w-20 rounded-3xl object-cover ring-1 ring-white/10"
+        className="h-20 w-20 rounded-3xl bg-white/[0.04] object-contain p-2 ring-1 ring-white/10"
         onError={() => setFailed(true)}
+        loading="lazy"
       />
     );
   }
