@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import { AlertTriangle, Bug, Coins, ExternalLink, ImagePlus, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, Bug, Coins, ExternalLink, ImagePlus, ShieldCheck, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { uploadMediaFiles } from "@/lib/media-api";
@@ -125,7 +125,7 @@ function BugBountyPage() {
             <div className="grid gap-2 sm:grid-cols-3">
               <MiniBadge icon={Bug} label="Live intake" value="Open" />
               <MiniBadge icon={Coins} label="Reward model" value="RR payout" />
-              <MiniBadge icon={Sparkles} label="Best reports" value="Clear repro steps" />
+              <MiniBadge icon={Bot} label="Best reports" value="Clear repro steps" />
             </div>
           </div>
         </div>

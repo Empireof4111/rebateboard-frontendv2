@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus, Trash2, Save, Eye, MousePointerClick, Power, X, Megaphone, Sparkles, Flame, RefreshCw,
+  Plus, Trash2, Save, Eye, MousePointerClick, Power, X, Megaphone, Bot, Flame, RefreshCw,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard } from "@/components/superadmin/AdminUI";
 import { ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/superadmin/ads")({
 
 const FORMATS: { value: AdFormat; label: string; icon: typeof Megaphone; hint: string }[] = [
   { value: "marquee", label: "Sliding text", icon: Megaphone, hint: "One-line scrolling promo" },
-  { value: "single", label: "Single banner", icon: Sparkles, hint: "Headline + CTA" },
+  { value: "single", label: "Single banner", icon: Bot, hint: "Headline + CTA" },
   { value: "carousel", label: "Multi-brand", icon: Flame, hint: "2–5 brand strip" },
   { value: "trending", label: "Auto trending", icon: Flame, hint: "Top TBI brands" },
 ];

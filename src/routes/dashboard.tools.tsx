@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Calculator, DollarSign, TrendingUp, ArrowLeftRight, Gift, Search,
-  Star, History, Sparkles, X, Save, BookPlus, Share2, AlertTriangle,
+  Star, History, Bot, X, Save, BookPlus, Share2, AlertTriangle,
   BarChart3,
 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
@@ -23,6 +23,9 @@ export const Route = createFileRoute("/dashboard/tools")({
       { title: "Trading Tools — RebateBoard" },
       { name: "description", content: "Calculate, simulate, and optimize your trading decisions instantly." },
     ],
+  }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    tool: typeof search.tool === "string" ? search.tool : undefined,
   }),
   component: ToolsPage,
 });
@@ -48,10 +51,16 @@ const TOOLS: ToolMeta[] = [
 
 function ToolsPage() {
   const trades = useTrades();
+  const search = useSearch({ from: "/dashboard/tools" }) as { tool?: string };
+  const requestedTool = TOOLS.some((tool) => tool.key === search.tool) ? (search.tool as ToolKey) : null;
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState<ToolKey | null>(null);
+  const [active, setActive] = useState<ToolKey | null>(requestedTool);
   const [favs, setFavs] = useState<ToolKey[]>(["rebate"]);
   const [history, setHistory] = useState<{ tool: ToolKey; value: string; ts: number }[]>([]);
+
+  useEffect(() => {
+    if (requestedTool) setActive(requestedTool);
+  }, [requestedTool]);
 
   const filtered = useMemo(
     () => TOOLS.filter(t => (t.title + t.description).toLowerCase().includes(query.toLowerCase())),
@@ -177,7 +186,7 @@ function ToolsPage() {
           )}
         </Panel>
 
-        <Panel title="Journal guidance" action={<Sparkles className="h-4 w-4 text-violet-300" />}>
+        <Panel title="Journal guidance" action={<Bot className="h-4 w-4 text-violet-300" />}>
           {journalGuidance ? (
             <ul className="space-y-2 text-xs">
               <li className="rounded-xl bg-white/5 p-3 text-white/85">

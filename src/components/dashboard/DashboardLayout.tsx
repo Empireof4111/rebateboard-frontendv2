@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import {
   LayoutDashboard, Brain, LineChart, Calendar, BarChart3, Bot, ShieldAlert,
   Wallet, Trophy, Star, Gift, Users, GraduationCap, User as UserIcon,
-  Settings, Search, Bell, Plus, LogOut, Menu, X, Sparkles, Calculator,
+  Settings, Search, Bell, Plus, LogOut, Menu, X, Calculator,
   ChevronDown, Newspaper, Megaphone, FileWarning, Layers, ClipboardCheck, FlaskConical, Globe2, Share2, Check,
   PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
@@ -230,8 +230,13 @@ export function DashboardLayout() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [user, loading, navigate]);
+    if (!loading && !user) {
+      const redirect = typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+        : pathname;
+      navigate({ to: "/login", search: { redirect } });
+    }
+  }, [user, loading, navigate, pathname]);
 
   if (loading || !user) {
     return (
@@ -399,7 +404,7 @@ export function DashboardLayout() {
                 <Plus className="h-4 w-4" />
               </button>
               <Link to={"/dashboard/ai-coach" as string} className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
-                <Sparkles className="h-3.5 w-3.5 text-violet-300" /> {t("dashboard.askRebeta")}
+                <Bot className="h-3.5 w-3.5 text-violet-300" /> {t("dashboard.askRebeta")}
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -514,7 +519,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1400px] p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:p-4 md:p-6 lg:p-8">
+        <main className="mx-auto w-full max-w-[1400px] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-1 sm:px-4 sm:pt-1.5 md:px-6 md:pt-2 lg:px-8 lg:pt-2">
           <DashboardAdBanner pathname={pathname} />
           <Outlet />
         </main>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Minus, BookOpen, ArrowUpRight, MessageCircle, Sparkles } from "lucide-react";
+import { Search, Plus, Minus, BookOpen, ArrowUpRight, MessageCircle, Bot } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
@@ -121,7 +121,7 @@ function FaqsPage() {
         {/* Hero */}
         <section className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[11px] uppercase tracking-widest text-muted-foreground ring-1 ring-white/10">
-            <Sparkles className="h-3 w-3 text-violet-300" /> Help Center
+            <Bot className="h-3 w-3 text-violet-300" /> Help Center
           </div>
           <h1 className="mt-4 text-3xl font-bold sm:text-5xl">Everything you need to know</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">

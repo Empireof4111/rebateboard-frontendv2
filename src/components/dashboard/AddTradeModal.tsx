@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Camera, Check, AlertTriangle, Sparkles, ShieldCheck } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Camera, Check, AlertTriangle, Bot, ShieldCheck } from "lucide-react";
 import {
   addTrade, calculateManualTradeResult, calculateTradeMetrics, computeAdherence, detectSession, formatTradePnl, uid, useTradingPlan,
   type Emotion, type MarketType, type Session, type Trade, type TradeOutcome,
@@ -499,7 +499,7 @@ function QuickResult({
         </>
       )}
       <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs text-white">
-        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-violet-300"><Sparkles className="h-3 w-3" /> Rebeta Preview</div>
+        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-violet-300"><Bot className="h-3 w-3" /> Rebeta Preview</div>
         <p className="mt-1">{plan.strategies.length === 0 ? "Set up a strategy in Trading Plan to unlock deeper insights." : `Adherence will roll into your Trader Score. ${rr < 1.5 ? "Watch low-RR setups." : "Solid RR profile."}`}</p>
       </div>
     </div>

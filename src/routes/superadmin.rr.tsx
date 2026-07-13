@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Sparkles, RotateCcw, Plus, Trash2, GraduationCap, BookOpen, Star, UserPlus, Flag,
+  Bot, RotateCcw, Plus, Trash2, GraduationCap, BookOpen, Star, UserPlus, Flag,
   Instagram, Youtube, Send, MessageCircle, Mail, Coins, ShieldCheck, Check, X,
   TrendingUp, Users, Gift, Activity, ExternalLink, Music2, Flame, Save, RefreshCw,
 } from "lucide-react";
@@ -154,7 +154,7 @@ const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n
 function Note({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4 flex items-start gap-2 rounded-xl bg-violet-500/10 px-3 py-2 text-[11px] text-violet-100 ring-1 ring-violet-400/20">
-      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />
+      <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />
       <span>{children}</span>
     </div>
   );
@@ -237,7 +237,7 @@ function OverviewPanel({ stats, config }: { stats: RrStats | null; config: RrAll
       <Panel title="Economy snapshot">
         <div className="grid grid-cols-2 gap-3">
           <Mini icon={Activity} label="Active earn rules" value={String(earnActive)} />
-          <Mini icon={Sparkles} label="Active social tasks" value={String(socialActive)} />
+          <Mini icon={Bot} label="Active social tasks" value={String(socialActive)} />
           <Mini icon={Coins} label="Active spend rules" value={String(spendActive)} />
           <Mini icon={Users} label="Users holding RR" value={String(stats?.totalUsersWithRr ?? 0)} />
           <Mini icon={Gift} label="Approved claims" value={String(stats?.approvedClaims ?? 0)} />
@@ -284,7 +284,7 @@ function EarnRulesPanel({ rules, saving, onSave, onReset }: { rules: RrRule[]; s
 
       <div className="grid gap-3">
         {draft.map((r) => {
-          const Icon = EARN_ICONS[r.id] ?? Sparkles;
+          const Icon = EARN_ICONS[r.id] ?? Bot;
           return (
             <div key={r.id}
               className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 transition md:grid-cols-[1fr_auto_auto_auto] md:items-center ${r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"}`}
@@ -442,7 +442,7 @@ function CapsPanel({ caps, saving, onSave, onReset }: { caps: RrCaps; saving: bo
 
 const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   follow_instagram: Instagram,
-  follow_twitter: Sparkles,
+  follow_twitter: Bot,
   subscribe_youtube: Youtube,
   follow_tiktok: Music2,
   join_telegram: Send,
@@ -466,7 +466,7 @@ function SocialRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSocialR
 
       <div className="grid gap-3">
         {draft.map((r) => {
-          const Icon = SOCIAL_ICONS[r.id] ?? Sparkles;
+          const Icon = SOCIAL_ICONS[r.id] ?? Bot;
           return (
             <div key={r.id}
               className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 md:grid-cols-[1fr_auto_auto_auto] md:items-center ${r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"}`}
@@ -744,7 +744,7 @@ function StreaksPanel({ cfg, stats, saving, onSave, onReset }: { cfg: RrStreakCo
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Mini icon={Flame} label="Active milestones" value={String(draft.milestones.filter((m) => m.enabled).length)} />
           <Mini icon={TrendingUp} label="Grace window" value={`${draft.graceHours}h`} />
-          <Mini icon={Sparkles} label="Qualifier" value={draft.qualifier} />
+          <Mini icon={Bot} label="Qualifier" value={draft.qualifier} />
           <Mini icon={Gift} label="Streaks enabled" value={draft.enabled ? "Yes" : "Paused"} />
         </div>
       </Panel>
@@ -835,7 +835,7 @@ function ClaimsPanel({ socialRules }: { socialRules: RrSocialRule[] }) {
         <DataTable head={<><th>Action</th><th>User</th><th>Proof</th><th>Amount</th><th>Status</th><th>Submitted</th><th></th></>}>
           {claims.map((c) => {
             const rule = socialRules.find((s) => s.id === c.socialId);
-            const Icon = SOCIAL_ICONS[c.socialId] ?? Sparkles;
+            const Icon = SOCIAL_ICONS[c.socialId] ?? Bot;
             return (
               <tr key={c.id}>
                 <td>

@@ -17,7 +17,7 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
+  Bot,
   Star,
   TrendingUp,
   UserCheck,
@@ -706,6 +706,63 @@ function ListingSkeleton() {
   );
 }
 
+function RecommendedSkeleton() {
+  return (
+    <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="skeleton h-9 w-9 rounded-2xl" />
+          <div className="space-y-2">
+            <div className="skeleton h-4 w-40 rounded-full" />
+            <div className="skeleton h-3 w-56 rounded-full" />
+          </div>
+        </div>
+        <div className="skeleton h-7 w-36 rounded-full" />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="skeleton-card rounded-2xl p-3 ring-1 ring-white/10">
+            <div className="flex items-center gap-3">
+              <div className="skeleton h-10 w-10 rounded-xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="skeleton h-3.5 w-3/4 rounded-full" />
+                <div className="skeleton h-3 w-1/2 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FilterSidebarSkeleton() {
+  return (
+    <aside className="glass rounded-2xl p-4 ring-1 ring-violet-400/20">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="space-y-2">
+          <div className="skeleton h-4 w-20 rounded-full" />
+          <div className="skeleton h-3 w-14 rounded-full" />
+        </div>
+        <div className="skeleton h-7 w-16 rounded-full" />
+      </div>
+      {Array.from({ length: 5 }).map((_, groupIndex) => (
+        <div key={groupIndex} className={groupIndex ? "mt-4 border-t border-white/10 pt-4" : ""}>
+          <div className="skeleton h-4 w-28 rounded-full" />
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: groupIndex < 2 ? 3 : 2 }).map((__, optionIndex) => (
+              <div key={optionIndex} className="flex items-center gap-2">
+                <div className="skeleton h-3.5 w-3.5 rounded" />
+                <div className="skeleton h-3 w-28 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </aside>
+  );
+}
+
 function StatePanel({
   icon: Icon,
   title,
@@ -1233,10 +1290,10 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app relative py-6">
-        <div className="pointer-events-none absolute left-1/3 top-10 h-[420px] w-[420px] rounded-full bg-primary/10 blur-[120px]" />
+        <div className="pointer-events-none absolute left-1/3 top-10 h-[420px] w-[420px] rounded-full bg-primary/[0.07] blur-[120px]" />
 
         <div className="relative mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
@@ -1270,11 +1327,13 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
           </div>
         </div>
 
+        {loading && <RecommendedSkeleton />}
+
         {!loading && !error && recommendedBrands.length > 0 && (
           <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
+                <Bot className="h-4 w-4 text-primary" />
                 <div>
                   <h2 className="text-sm font-black text-white">Recommended Brands</h2>
                   <p className="text-[10px] text-white/42">Admin-featured profiles for this category.</p>
@@ -1348,16 +1407,20 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
 
         <div className="relative grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
           <div className="hidden self-start lg:sticky lg:top-[9.5rem] lg:block">
-            <FilterSidebar
-              groups={filterGroups}
-              selected={filters}
-              openGroups={openGroups}
-              onToggleGroup={(group) =>
-                setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }))
-              }
-              onToggleOption={toggleFilter}
-              onClear={() => setFilters({})}
-            />
+            {loading ? (
+              <FilterSidebarSkeleton />
+            ) : (
+              <FilterSidebar
+                groups={filterGroups}
+                selected={filters}
+                openGroups={openGroups}
+                onToggleGroup={(group) =>
+                  setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }))
+                }
+                onToggleOption={toggleFilter}
+                onClear={() => setFilters({})}
+              />
+            )}
           </div>
 
           <div className="min-w-0">
@@ -1380,7 +1443,7 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
               />
             ) : categoryBrands.length === 0 ? (
               <StatePanel
-                icon={Sparkles}
+                icon={Bot}
                 title={`${config.title} are coming to RebateBoard`}
                 body={`There are no published ${config.title.toLowerCase()} yet. Once the research team publishes a brand from the admin dashboard, its logo, profile, category facts, TBI state, and available rewards will appear here automatically.`}
               />

@@ -1,7 +1,7 @@
 // BrandPicker — search a listed brand or create a custom one.
 // Used by the transaction drawer and the account modal.
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, Plus, Check } from "lucide-react";
+import { Search, Bot, Plus, Check } from "lucide-react";
 import type { TrtBrand } from "@/lib/trt-store";
 import { makeCustomBrand } from "@/lib/trt-store";
 import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
@@ -119,7 +119,7 @@ export function BrandPicker({
                     <span className="flex-1 text-left">
                       Create custom brand <span className="font-semibold">"{q.trim()}"</span>
                     </span>
-                    <Sparkles className="h-3.5 w-3.5 text-violet-300" />
+                    <Bot className="h-3.5 w-3.5 text-violet-300" />
                   </button>
                 </li>
               )}

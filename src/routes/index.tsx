@@ -774,7 +774,7 @@ function HeroActionStrip() {
         to="/signup"
         className={linkClass}
       >
-        <span className={iconClass}>
+        <span className={`${iconClass} hero-action-ring ring-seq-1`}>
           <Rocket className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
         <span className={labelClass}>{t("hero.getStarted")}</span>
@@ -783,7 +783,7 @@ function HeroActionStrip() {
         to="/offers"
         className={linkClass}
       >
-        <span className={iconClass}>
+        <span className={`${iconClass} hero-action-ring ring-seq-2`}>
           <BadgePercent className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
         <span className={labelClass}>{t("hero.cashback")}</span>
@@ -792,7 +792,7 @@ function HeroActionStrip() {
         to="/tbi"
         className={linkClass}
       >
-        <span className={iconClass}>
+        <span className={`${iconClass} hero-action-ring ring-seq-3`}>
           <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
         <span className={labelClass}>{t("hero.aiTrustScores")}</span>

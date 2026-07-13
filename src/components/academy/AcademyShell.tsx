@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Award, Bot, BookOpen, Brain, Check, ChevronRight, CircleCheck, Clock, GraduationCap,
-  Lock, MessageCircle, PlayCircle, Sparkles, Star, Trophy, Wallet, X, ArrowLeft,
+  Lock, MessageCircle, PlayCircle, Bot, Star, Trophy, Wallet, X, ArrowLeft,
   CheckCircle2, AlertCircle, Send, Zap, Download, FileImage, FileText, Eye, Printer,
 } from "lucide-react";
 import {
@@ -146,7 +146,7 @@ function Home({ setView, preview }: { setView: (v: View) => void; preview: boole
         <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-violet-300/90">
-            <Sparkles className="h-3 w-3" /> Trader University
+            <Bot className="h-3 w-3" /> Trader University
           </div>
           <h1 className="mt-4 max-w-3xl bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-3xl font-bold leading-tight text-transparent md:text-5xl">
             The Academy that turns reading into <span className="text-emerald-300">RR rewards</span>.
@@ -717,7 +717,7 @@ function QuizRunner({
               </div>
               {submitted && q.explain && (
                 <div className="mt-2 flex items-start gap-2 rounded-lg border border-violet-500/20 bg-violet-500/5 p-2 text-[11px] text-white/80">
-                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" /> {q.explain}
+                  <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" /> {q.explain}
                 </div>
               )}
             </div>

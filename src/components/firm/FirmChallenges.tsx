@@ -18,7 +18,7 @@ import {
   RotateCcw,
   Search,
   Shield,
-  Sparkles,
+  Bot,
   Star,
   Tag,
   TrendingUp,
@@ -231,14 +231,13 @@ export function FirmChallenges({
   return (
     <div className="space-y-4">
       <div
-        className="glass sticky z-30 overflow-visible rounded-2xl p-3 ring-1 ring-violet-400/20 sm:p-4"
+        className="glass sticky z-[58] overflow-visible rounded-2xl bg-[rgba(18,18,25,0.96)] p-3 shadow-[0_18px_50px_rgba(0,0,0,0.28)] ring-1 ring-violet-400/20 backdrop-blur-2xl sm:p-4"
         style={{
           top: stickyTop ? `${stickyTop}px` : undefined,
-          maxHeight: stickyTop ? `calc(100dvh - ${stickyTop + 12}px)` : undefined,
         }}
       >
         <div className="no-scrollbar flex max-w-full flex-wrap items-center gap-2 overflow-x-auto overscroll-x-contain">
-          <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold">
+          <button type="button" className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold">
             <Filter className="h-3 w-3" /> Filter
           </button>
           <PillSelect label="Assets" value={asset} options={assetOptions} onChange={setAsset} />
@@ -271,6 +270,7 @@ export function FirmChallenges({
           />
           <div className="mx-1 hidden h-5 w-px bg-white/15 sm:block" />
           <button
+            type="button"
             onClick={() => setDiscount((current) => !current)}
             className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold ring-1 ring-white/10"
           >
@@ -876,7 +876,7 @@ function CheckoutModal({
                   key={option}
                   active={rewardPreference === option}
                   onClick={() => selectRewardPreference(option)}
-                  icon={option === "cashback" ? <Gift className="h-3 w-3" /> : option === "rr" ? <Coins className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+                  icon={option === "cashback" ? <Gift className="h-3 w-3" /> : option === "rr" ? <Coins className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
                   label={option === "rr" ? "RR" : option[0].toUpperCase() + option.slice(1)}
                 />
               ))}
@@ -1443,8 +1443,9 @@ function PillSelect({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`relative ${open ? "z-[100]" : "z-0"}`}>
+    <div className={`relative ${open ? "z-[90]" : "z-0"}`}>
       <button
+        type="button"
         onClick={() => setOpen((current) => !current)}
         className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold"
       >
@@ -1454,10 +1455,11 @@ function PillSelect({
       </button>
       {open ? (
         <>
-          <div className="fixed inset-0 z-[80]" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-[110] mt-1 max-h-64 min-w-[140px] overflow-auto rounded-xl border border-white/15 bg-[rgba(18,18,25,0.95)] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur">
+          <div className="fixed inset-0 z-[85]" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-[95] mt-1 max-h-64 min-w-[160px] overflow-auto rounded-xl border border-white/15 bg-[rgba(18,18,25,0.98)] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-xl">
             {options.map((option) => (
               <button
+                type="button"
                 key={option}
                 onClick={() => {
                   onChange(option);

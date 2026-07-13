@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { FlaskConical, Database, Sparkles, Coins, Shield, Users, FileText } from "lucide-react";
+import { FlaskConical, Database, Bot, Coins, Shield, Users, FileText } from "lucide-react";
 import { PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
 import { adminMetrics, mockReports, importSources } from "@/lib/backtest-data";
 
@@ -17,7 +17,7 @@ const tabs: { id: Tab; label: string; icon: typeof FlaskConical }[] = [
   { id: "overview", label: "Overview", icon: FlaskConical },
   { id: "reports", label: "User Reports", icon: FileText },
   { id: "sources", label: "Data Sources", icon: Database },
-  { id: "ai", label: "AI Prompts", icon: Sparkles },
+  { id: "ai", label: "AI Prompts", icon: Bot },
   { id: "cashback", label: "Cashback Settings", icon: Coins },
   { id: "compliance", label: "Compliance", icon: Shield },
 ];

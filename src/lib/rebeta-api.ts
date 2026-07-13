@@ -61,6 +61,20 @@ export type RebetaUsageStatus = {
   maxProcessedImageBytes: number;
   maxImageDimension: number;
   premiumRequired: boolean;
+  normalChatAvailable?: boolean;
+  defaultLanguage?: string;
+  fileUploadFreeLimit?: number;
+  fileUploadConsumed?: number;
+  fileUploadRemaining?: number | null;
+  fileUploadPremiumRequired?: boolean;
+  languagePromptFreeLimit?: number;
+  languagePromptConsumed?: number;
+  languagePromptRemaining?: number | null;
+  languagePremiumRequired?: boolean;
+  backtestFreeLimit?: number;
+  backtestConsumed?: number;
+  backtestRemaining?: number | null;
+  backtestPremiumRequired?: boolean;
 };
 
 export async function sendRebetaMessage(

@@ -15,6 +15,7 @@ export type PublicCampaign = {
   allowedPages?: string[];
   startAt?: string;
   endAt?: string;
+  updatedAt?: string;
 };
 
 export type PublicActivityEvent = {
@@ -22,7 +23,9 @@ export type PublicActivityEvent = {
   eventType: string;
   sourceType: "brand" | "rebateboard" | "user";
   sourceId?: string;
+  sourceName?: string;
   brandId?: string;
+  brandName?: string;
   title: string;
   message: string;
   logoUrl?: string;

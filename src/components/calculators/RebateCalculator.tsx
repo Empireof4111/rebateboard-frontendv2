@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, Save } from "lucide-react";
+import { BadgePercent, Check, ChevronDown, Save, Search } from "lucide-react";
 import {
   fetchPublicAdminBrands,
   type AdminBrandRecord,
 } from "@/lib/admin-brands-api";
+import { brandInitials, brandLogoUrl } from "@/lib/brand-assets";
 
 type RebateCalculatorProps = {
   compact?: boolean;
@@ -238,23 +239,7 @@ export function RebateCalculator({
         </div>
 
         <Field label="Broker / firm">
-          <select
-            value={brandId}
-            onChange={(event) => setBrandId(event.target.value)}
-            className={inputClass}
-          >
-            {brands.length === 0 ? (
-              <option value="" className="bg-[var(--rb-bg-elevated)]">
-                Published brands load automatically
-              </option>
-            ) : (
-              brands.map((brand) => (
-                <option key={brand.id} value={brand.id} className="bg-[var(--rb-bg-elevated)]">
-                  {brand.name}
-                </option>
-              ))
-            )}
-          </select>
+          <BrandPicker brands={brands} selectedId={brandId} onSelect={setBrandId} />
         </Field>
 
         <div className="grid grid-cols-3 gap-3">
@@ -348,5 +333,137 @@ export function RebateCalculator({
       </div>
 
     </div>
+  );
+}
+
+function BrandPicker({
+  brands,
+  selectedId,
+  onSelect,
+}: {
+  brands: AdminBrandRecord[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement | null>(null);
+  const selected = brands.find((brand) => brand.id === selectedId);
+  const visible = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return brands.slice(0, 12);
+    return brands
+      .filter((brand) => `${brand.name} ${brand.category}`.toLowerCase().includes(term))
+      .slice(0, 16);
+  }, [brands, query]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  if (brands.length === 0) {
+    return (
+      <div className={`${inputClass} flex items-center text-white/45`}>
+        Published brands load automatically
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className={`${inputClass} flex items-center gap-2 pr-2 text-left`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        {selected ? (
+          <>
+            <BrandAvatar brand={selected} className="h-6 w-6 rounded-lg" />
+            <span className="min-w-0 flex-1 truncate">{selected.name}</span>
+            <span className="hidden shrink-0 text-[10px] font-bold uppercase tracking-[0.12em] text-white/42 sm:inline">
+              {selected.category}
+            </span>
+          </>
+        ) : (
+          <span className="flex-1 text-white/45">Select a listed brand</span>
+        )}
+        <ChevronDown className={`h-4 w-4 shrink-0 text-white/45 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-2xl border border-white/12 bg-[rgba(18,18,25,0.98)] shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+          <div className="flex items-center gap-2 border-b border-white/8 px-3 py-2">
+            <Search className="h-4 w-4 text-white/42" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search brands..."
+              className="h-8 min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/35"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto p-1.5">
+            {visible.map((brand) => {
+              const active = brand.id === selectedId;
+              return (
+                <button
+                  key={brand.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(brand.id);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left transition ${
+                    active ? "bg-violet-500/16 text-white" : "text-white/82 hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                  role="option"
+                  aria-selected={active}
+                >
+                  <BrandAvatar brand={brand} className="h-8 w-8 rounded-xl" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold">{brand.name}</span>
+                    <span className="block truncate text-[11px] text-white/45">{brand.category}</span>
+                  </span>
+                  {active && <Check className="h-4 w-4 shrink-0 text-violet-200" />}
+                </button>
+              );
+            })}
+            {visible.length === 0 && (
+              <div className="px-3 py-5 text-center text-xs text-white/45">No matching brands found.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BrandAvatar({ brand, className }: { brand: AdminBrandRecord; className: string }) {
+  const [failed, setFailed] = useState(false);
+  const logo = brandLogoUrl(brand);
+  const initials = brandInitials(brand.name);
+
+  return (
+    <span className={`grid shrink-0 place-items-center overflow-hidden bg-white/[0.06] ${className}`}>
+      {logo && !failed ? (
+        <img
+          src={logo}
+          alt=""
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span className="text-[10px] font-black text-violet-100">{initials || "RB"}</span>
+      )}
+    </span>
   );
 }

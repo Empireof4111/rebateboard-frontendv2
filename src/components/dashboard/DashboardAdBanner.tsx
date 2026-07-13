@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Megaphone, ArrowRight } from "lucide-react";
+import { Bot, Megaphone, ArrowRight } from "lucide-react";
 import {
   type DashboardAd,
   type AdSlide,
@@ -74,7 +74,7 @@ export function DashboardAdBanner({ pathname }: { pathname: string }) {
   };
 
   return (
-    <div className="mb-6 pt-2 animate-fade-in">
+    <div className="mb-4 animate-fade-in sm:mb-5">
       <AdRenderer ad={ad} onClick={onClick} />
     </div>
   );
@@ -103,15 +103,17 @@ function isRenderableDashboardAd(ad: DashboardAd) {
 function Shell({
   children,
   accent,
+  className = "",
 }: {
   children: React.ReactNode;
   accent?: string;
+  className?: string;
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${accent ?? "from-violet-500/20 to-violet-600/20"} backdrop-blur-xl`}
+      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${accent ?? "from-violet-500/20 via-violet-500/14 to-indigo-500/18"} backdrop-blur-xl ${className}`}
     >
-      <div className="absolute inset-0 bg-[rgba(18,18,25,0.40)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(126,77,255,0.24),transparent_34%),rgba(18,18,25,0.40)]" />
       <div className="relative">{children}</div>
     </div>
   );
@@ -119,22 +121,44 @@ function Shell({
 
 function Marquee({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   return (
-    <Shell accent={ad.accent}>
+    <Shell accent={ad.accent} className="shadow-[0_18px_48px_rgba(45,18,105,0.22)]">
       <Link
         to={ad.href ?? "/dashboard"}
         onClick={onClick}
-        className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-white"
+        className="group flex min-h-[4.75rem] items-center gap-3 px-4 py-4 text-white sm:min-h-[5.4rem] sm:px-5"
       >
-        <Megaphone className="h-3.5 w-3.5 shrink-0 text-violet-200" />
-        <div className="relative flex-1 overflow-hidden">
-          <div className="flex animate-[marquee_28s_linear_infinite] whitespace-nowrap">
-            <span className="pr-12">{ad.headline}</span>
-            <span className="pr-12">{ad.headline}</span>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/12 bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:h-12 sm:w-12">
+          <Megaphone className="h-5 w-5 text-violet-100" />
+        </span>
+        <div className="relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
+          <div className="dashboard-text-marquee-track flex w-max items-center whitespace-nowrap group-hover:[animation-play-state:paused]">
+            <span className="px-10 text-center text-base font-black leading-none text-white sm:px-16 sm:text-xl">
+              {ad.headline}
+            </span>
+            <span className="px-10 text-center text-base font-black leading-none text-white sm:px-16 sm:text-xl" aria-hidden>
+              {ad.headline}
+            </span>
           </div>
         </div>
-        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/70" />
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/12 bg-white/[0.07] text-white/75 transition group-hover:translate-x-0.5 group-hover:bg-white/[0.12] group-hover:text-white">
+          <ArrowRight className="h-4 w-4" />
+        </span>
       </Link>
-      <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+      <style>{`
+        .dashboard-text-marquee-track {
+          animation: rb-dashboard-marquee 36s linear infinite;
+        }
+        @keyframes rb-dashboard-marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dashboard-text-marquee-track {
+            animation: none !important;
+            transform: translateX(0) !important;
+          }
+        }
+      `}</style>
     </Shell>
   );
 }
@@ -164,7 +188,7 @@ function Single({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
     <Shell accent={ad.accent}>
       <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/15">
-          <Sparkles className="h-5 w-5 text-violet-100" />
+          <Bot className="h-5 w-5 text-violet-100" />
         </div>
         <div className="flex-1">
           <div className="text-sm font-semibold text-white">{ad.headline}</div>
@@ -187,8 +211,8 @@ function Carousel({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   if (slides.length === 0) return null;
 
   return (
-    <div className="overflow-hidden py-1">
-      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none">
+    <div className="overflow-hidden">
+      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-0 scrollbar-none">
       {slides.map((s, i) => (
         <SlideChip key={i} slide={s} badge="Featured" onClick={onClick} />
       ))}
@@ -212,8 +236,8 @@ function Trending({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   }, [ad.trendingLimit]);
 
   return (
-    <div className="overflow-hidden py-1">
-      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none">
+    <div className="overflow-hidden">
+      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-0 scrollbar-none">
       {liveSlides.length > 0 ? (
         liveSlides.map((s, i) => (
           <SlideChip key={i} slide={s} badge="Recommended" onClick={onClick} />

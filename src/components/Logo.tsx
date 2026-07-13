@@ -27,7 +27,7 @@ export function Logo({
       <img
         src={logoMarkSrc}
         alt=""
-        className="h-[152%] w-[152%] max-w-none object-contain"
+        className="h-[172%] w-[172%] max-w-none object-contain"
       />
     </span>
   );
@@ -42,11 +42,11 @@ export function Logo({
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 sm:gap-1 ${className}`}
+      className={`inline-flex items-center gap-0 ${className}`}
       aria-label={alt}
     >
       {mark}
-      <span className="whitespace-nowrap text-[1.38rem] font-bold leading-none text-white sm:text-[1.52rem]">
+      <span className="ml-px whitespace-nowrap text-[1.22rem] font-semibold leading-none text-white sm:text-[1.34rem]">
         RebateBoard
       </span>
     </span>

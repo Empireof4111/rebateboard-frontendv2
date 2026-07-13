@@ -21,7 +21,6 @@ import {
   Rocket,
   Route as RouteIcon,
   ShieldCheck,
-  Sparkles,
   Trophy,
   Users,
   WalletCards,
@@ -124,7 +123,7 @@ const founderBenefits: Feature[] = [
   { title: "3 Months of Rebeta Pro", description: "Complimentary access for a limited period after launch.", icon: Crown },
   { title: "Priority Access", description: "Try new workflows, tools, and intelligence features first.", icon: Rocket },
   { title: "Exclusive RR Rewards", description: "Earn special progression rewards tied to early participation.", icon: Gift },
-  { title: "Early Beta Invitations", description: "Help shape new marketplace, AI, and dashboard capabilities.", icon: Sparkles },
+  { title: "Early Beta Invitations", description: "Help shape new marketplace, AI, and dashboard capabilities.", icon: Bot },
   { title: "Community Recognition", description: "Stand out as part of the first generation of RebateBoard traders.", icon: Users },
   { title: "Future Founder Perks", description: "Additional benefits may unlock as the ecosystem matures.", icon: Gem },
 ];
@@ -210,7 +209,7 @@ function SectionHeading({
     <div className="mx-auto max-w-3xl text-center">
       {eyebrow ? (
         <span className="inline-flex items-center gap-2 rounded-full bg-primary/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-primary ring-1 ring-primary/25">
-          <Sparkles className="h-3.5 w-3.5" /> {eyebrow}
+          <Bot className="h-3.5 w-3.5" /> {eyebrow}
         </span>
       ) : null}
       <h2 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl">{title}</h2>
@@ -269,7 +268,7 @@ function EarlyAccessPage() {
                 period after launch.
               </p>
             </div>
-            <Sparkles className="h-8 w-8 shrink-0 text-primary" />
+            <Bot className="h-8 w-8 shrink-0 text-primary" />
           </div>
         </section>
 

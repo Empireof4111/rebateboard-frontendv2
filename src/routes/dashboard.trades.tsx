@@ -215,7 +215,7 @@ function TradeDetailModal({ trade, onClose }: { trade: Trade; onClose: () => voi
             </div>
           )}
           <div className="rounded-2xl border border-violet-300/15 bg-violet-300/10 p-4 text-sm text-violet-50">
-            <SparklesLabel />
+            <RebetaMemoryLabel />
             <p className="mt-2 text-xs leading-relaxed text-violet-100/80">
               Rebeta will use this diary entry with your Trading Plan to improve future psychology, risk, and strategy analysis.
             </p>
@@ -251,6 +251,6 @@ function DetailBlock({ title, items }: { title: string; items: Array<[string, st
   );
 }
 
-function SparklesLabel() {
+function RebetaMemoryLabel() {
   return <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-violet-100">Rebeta Memory</div>;
 }

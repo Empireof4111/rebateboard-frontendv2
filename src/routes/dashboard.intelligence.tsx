@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState, PageHeader, StatCard, Panel, Pill } from "@/components/dashboard/Primitives";
-import { AlertTriangle, Target, Sparkles } from "lucide-react";
+import { AlertTriangle, Target, Bot } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type WalletSummary, type ClaimStats } from "@/lib/finance-api";
 import { resolveTradeNetPnl, useTrades } from "@/lib/trading-plan";
@@ -70,7 +70,7 @@ function IntelligencePage() {
               </div>
             </div>
           ) : (
-            <EmptyState icon={Sparkles} title="Not enough journal data" description="Log trades to identify repeatable strengths and execution gaps." />
+            <EmptyState icon={Bot} title="Not enough journal data" description="Log trades to identify repeatable strengths and execution gaps." />
           )}
         </Panel>
 
@@ -115,7 +115,7 @@ function IntelligencePage() {
         </div>
       </Panel>
 
-      <Panel title="Cashback summary" action={<Sparkles className="h-4 w-4 text-violet-300" />}>
+      <Panel title="Cashback summary" action={<Bot className="h-4 w-4 text-violet-300" />}>
         <p className="text-xs text-muted-foreground">Lifetime cashback earnings overview.</p>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <StatCard label="Total claims" value={claimStats ? String(claimStats.total) : "—"} accent="primary" />

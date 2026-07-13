@@ -4,7 +4,7 @@
  * gracefully renders nothing (or a fallback) when no ad is configured.
  */
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import {
   hydrateSlide,
@@ -47,10 +47,12 @@ function isRenderableForPlacement(ad: DashboardAd, placement: AdPlacement) {
 
 function usePlacementAds(placement: AdPlacement) {
   const [ads, setAds] = useState<DashboardAd[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     const refresh = () => {
+      setLoading(true);
       fetchPublicAdverts(placement).then((ads) => {
         if (!active) return;
         setAds(
@@ -58,6 +60,11 @@ function usePlacementAds(placement: AdPlacement) {
             .filter((item) => isRenderableForPlacement(item, placement))
             .sort((a, b) => Number(b.priority ?? 0) - Number(a.priority ?? 0)),
         );
+        setLoading(false);
+      }).catch(() => {
+        if (!active) return;
+        setAds([]);
+        setLoading(false);
       });
     };
 
@@ -69,11 +76,11 @@ function usePlacementAds(placement: AdPlacement) {
     };
   }, [placement]);
 
-  return ads;
+  return { ads, loading };
 }
 
 function useActiveAd(placement: AdPlacement) {
-  const ads = usePlacementAds(placement);
+  const { ads } = usePlacementAds(placement);
   const ad = ads[0] ?? null;
 
   useEffect(() => {
@@ -102,7 +109,7 @@ function slidesForAds(ads: DashboardAd[], fallbackImage: string): HeroSlide[] {
       .filter((slide) => hasPublicCopy(slide.label) || Boolean(slide.image))
       .map((slide) => ({
         ...slide,
-        image: slide.image || fallbackImage,
+        image: slide.image || ad.image,
         ad,
       }));
 
@@ -112,7 +119,7 @@ function slidesForAds(ads: DashboardAd[], fallbackImage: string): HeroSlide[] {
             label: hasPublicCopy(ad.headline) ? ad.headline! : "Sponsored campaign",
             sub: ad.sub,
             href: ad.href || "/blog",
-            image: ad.image || fallbackImage,
+            image: ad.image || undefined,
             accent: ad.accent,
             ad,
           }
@@ -132,8 +139,12 @@ export function LandingHeroAdCard({
   fallbackImage: string;
   className?: string;
 }) {
-  const ads = usePlacementAds("landing-hero");
-  const slides = slidesForAds(ads, fallbackImage);
+  const { ads, loading } = usePlacementAds("landing-hero");
+  const slides = useMemo(() => slidesForAds(ads, fallbackImage), [ads, fallbackImage]);
+  const slideSignature = useMemo(
+    () => slides.map((slide) => `${slide.ad.id}:${slide.label}:${slide.image ?? ""}`).join("|"),
+    [slides],
+  );
   const [i, setI] = useState(0);
 
   useEffect(() => {
@@ -146,8 +157,12 @@ export function LandingHeroAdCard({
     if (i >= slides.length) setI(0);
   }, [i, slides.length]);
 
+  useEffect(() => {
+    setI(0);
+  }, [slideSignature]);
+
   const current = slides[i] ?? slides[0];
-  const image = current?.image || fallbackImage;
+  const image = current?.image;
   const hasCampaign = Boolean(current);
   const label = current ? heroSlideLabel(current) : "";
 
@@ -156,17 +171,26 @@ export function LandingHeroAdCard({
     void trackPublicAdvertImpression(current.ad.id);
   }, [current?.ad?.id]);
 
+  if (loading) {
+    return <LandingHeroAdSkeleton className={className} />;
+  }
+
   return (
     <div
       className={`glass-strong relative min-h-[18rem] overflow-hidden rounded-[2rem] sm:min-h-[20rem] ${className}`}
     >
-      <img
-        src={image}
-        alt={current?.label ?? "Featured"}
-        className="absolute inset-0 h-full w-full object-cover"
-        width={1024}
-        height={640}
-      />
+      {image ? (
+        <img
+          key={image}
+          src={image}
+          alt={current?.label ?? "Featured"}
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+          width={1024}
+          height={640}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(126,77,255,0.26),transparent_34%),linear-gradient(135deg,rgba(22,18,34,0.92),rgba(9,9,13,0.96))]" />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/42 via-transparent to-black/5" />
       {hasCampaign && (
         <div className="absolute inset-x-3 bottom-3 sm:inset-x-4 sm:bottom-4">
@@ -205,12 +229,43 @@ export function LandingHeroAdCard({
             <ChevronRight className="h-4 w-4" />
           </button>
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
-            {slides.map((_, j) => (
-              <span key={j} className={`h-1 rounded-full transition-all ${j === i ? "w-6 bg-white" : "w-1.5 bg-white/40"}`} />
+            {slides.map((slide, j) => (
+              <button
+                key={`${slide.ad.id}-${j}`}
+                type="button"
+                aria-label={`Show slide ${j + 1}`}
+                onClick={() => setI(j)}
+                className={`h-1 rounded-full transition-all ${j === i ? "w-6 bg-white" : "w-1.5 bg-white/40 hover:bg-white/65"}`}
+              />
             ))}
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function LandingHeroAdSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`glass-strong relative min-h-[18rem] overflow-hidden rounded-[2rem] sm:min-h-[20rem] ${className}`}
+      aria-label="Loading featured advert"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_10%,rgba(126,77,255,0.18),transparent_34%),linear-gradient(135deg,rgba(22,22,31,0.92),rgba(9,9,13,0.96))]" />
+      <div className="absolute inset-5 grid grid-rows-[1fr_auto] gap-4">
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
+          <div className="h-full w-full animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.04),rgba(255,255,255,0.12),rgba(255,255,255,0.04))]" />
+        </div>
+        <div className="rounded-2xl border border-white/12 bg-black/20 p-4 backdrop-blur-md">
+          <div className="h-4 w-4/5 animate-pulse rounded-full bg-white/18" />
+          <div className="mt-2 h-3 w-2/5 animate-pulse rounded-full bg-white/10" />
+        </div>
+      </div>
+      <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+        <span className="h-1 w-6 rounded-full bg-white/30" />
+        <span className="h-1 w-1.5 rounded-full bg-white/16" />
+        <span className="h-1 w-1.5 rounded-full bg-white/16" />
+      </div>
     </div>
   );
 }

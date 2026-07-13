@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { openAddTrade } from "@/lib/ui-bus";
 import { resolveTradeNetPnl, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
-import { BarChart3, Plus, Sparkles } from "lucide-react";
+import { BarChart3, Plus, Bot } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
   component: AnalyticsPage,
@@ -154,7 +154,7 @@ function AnalyticsPage() {
             <MetricPanel title="Asset Performance" rows={metrics.assetRows} />
           </div>
 
-          <Panel title="Best Conditions Engine" action={<Pill tone="primary"><Sparkles className="h-3 w-3" />Journal</Pill>}>
+          <Panel title="Best Conditions Engine" action={<Pill tone="primary"><Bot className="h-3 w-3" />Journal</Pill>}>
             {bestConditions.length > 0 ? (
               <>
                 <p className="text-sm text-white">Your strongest logged conditions so far:</p>

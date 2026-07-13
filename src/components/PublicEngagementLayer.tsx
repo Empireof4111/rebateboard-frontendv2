@@ -11,6 +11,7 @@ import {
   type PublicCampaign,
 } from "@/lib/public-engagement-api";
 import { useAuth } from "@/lib/auth";
+import { brandInitials, firstBrandText, resolveMediaUrl } from "@/lib/brand-assets";
 
 const SENSITIVE_ROUTES = ["/login", "/signup", "/review", "/business/onboarding", "/verify"];
 
@@ -102,6 +103,7 @@ export function PublicEngagementLayer() {
 
   const campaignHref = useMemo(() => normalizeHref(campaign?.primaryCtaUrl || "/"), [campaign]);
   const campaignExternal = isExternalHref(campaign?.primaryCtaUrl || "");
+  const campaignImage = useMemo(() => resolveAssetUrl(campaign?.image), [campaign?.image]);
 
   if (sensitive) return null;
 
@@ -118,8 +120,8 @@ export function PublicEngagementLayer() {
             >
               <X className="h-4 w-4" />
             </button>
-            {campaign.image && (
-              <img src={campaign.image} alt="" className="mb-5 aspect-[16/7] w-full rounded-3xl object-cover ring-1 ring-white/10" />
+            {campaignImage && (
+              <img src={campaignImage} alt="" className="mb-5 aspect-[16/7] w-full rounded-3xl object-cover ring-1 ring-white/10" />
             )}
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-100 ring-1 ring-primary/25">
               <Bell className="h-3.5 w-3.5" />
@@ -176,9 +178,7 @@ export function PublicEngagementLayer() {
             <X className="h-4 w-4" />
           </button>
           <div className="flex gap-3 pr-6">
-            <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/8 ring-1 ring-white/10">
-              {activity.logoUrl ? <img src={activity.logoUrl} alt="" className="h-full w-full object-cover" /> : <Logo heightClass="h-5" showText={false} />}
-            </div>
+            <ActivityLogo activity={activity} />
             <div>
               <div className="flex items-center gap-1.5 text-sm font-black">
                 <ShieldCheck className="h-4 w-4 text-emerald-300" />
@@ -202,6 +202,42 @@ export function PublicEngagementLayer() {
       )}
     </>
   );
+}
+
+function ActivityLogo({ activity }: { activity: PublicActivityEvent }) {
+  const [failed, setFailed] = useState(false);
+  const logoUrl = resolveAssetUrl(activity.logoUrl);
+  const fallbackLabel = activity.sourceName || activity.brandName || brandNameFromMessage(activity.message) || activity.title;
+  const initials = brandInitials(fallbackLabel);
+
+  if (logoUrl && !failed) {
+    return (
+      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl bg-white/5">
+        <img
+          src={logoUrl}
+          alt={`${fallbackLabel} logo`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary/15 text-xs font-black uppercase text-violet-100">
+      {initials ? <span>{initials}</span> : <Logo heightClass="h-5" showText={false} />}
+    </div>
+  );
+}
+
+function resolveAssetUrl(value?: string) {
+  return resolveMediaUrl(value);
+}
+
+function brandNameFromMessage(message: string) {
+  const match = message.match(/^(.+?)\s+(?:is|was|has)\s+/i);
+  return match?.[1]?.trim() ?? "";
 }
 
 function normalizeHref(value: string) {
@@ -231,9 +267,9 @@ function isDismissed(campaign: PublicCampaign) {
   if (typeof window === "undefined") return false;
   const ttl = getDismissalTtl(campaign);
   if (ttl === 0) return false;
-  if (ttl === "session") return window.sessionStorage.getItem(`rb_campaign_${campaign.id}`) === "1";
+  if (ttl === "session") return window.sessionStorage.getItem(campaignDismissalKey(campaign)) === "1";
 
-  const key = `rb_campaign_${campaign.id}`;
+  const key = campaignDismissalKey(campaign);
   const last = Number(window.localStorage.getItem(key) || 0);
   return Date.now() - last < ttl;
 }
@@ -242,14 +278,18 @@ function dismissCampaign(campaign: PublicCampaign, setCampaign: (campaign: Publi
   try {
     const ttl = getDismissalTtl(campaign);
     if (ttl === "session") {
-      window.sessionStorage.setItem(`rb_campaign_${campaign.id}`, "1");
+      window.sessionStorage.setItem(campaignDismissalKey(campaign), "1");
     } else if (ttl !== 0) {
-      window.localStorage.setItem(`rb_campaign_${campaign.id}`, String(Date.now()));
+      window.localStorage.setItem(campaignDismissalKey(campaign), String(Date.now()));
     }
   } catch {
     // ignore
   }
   setCampaign(null);
+}
+
+function campaignDismissalKey(campaign: PublicCampaign) {
+  return `rb_campaign_${campaign.id}_${firstBrandText(campaign.updatedAt, campaign.startAt, campaign.headline)}`;
 }
 
 function isActivityDismissed(event: PublicActivityEvent) {

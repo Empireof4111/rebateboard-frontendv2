@@ -5,8 +5,8 @@ import { PageHeader, StatCard, Panel, Pill, EmptyState } from "@/components/dash
 import { DashboardChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { MiniLineChart, SourceBars } from "@/components/dashboard/Charts";
 import {
-  TrendingUp, Sparkles, AlertTriangle, Activity,
-  Plus, Star, Building2, Bot, Lightbulb,
+  TrendingUp, Bot, AlertTriangle, Activity,
+  Plus, Star, Building2, Lightbulb,
   Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug, Gift,
   CheckCircle2, Target,
 } from "lucide-react";
@@ -52,6 +52,7 @@ function DashboardHome() {
   const [reviewCount, setReviewCount] = useState(0);
   const [claimCount, setClaimCount] = useState(0);
   const [linkedAccountsCount, setLinkedAccountsCount] = useState(0);
+  const [localNow, setLocalNow] = useState(() => new Date());
   const trades = useTrades();
   const tradingPlan = useTradingPlan();
 
@@ -84,6 +85,12 @@ function DashboardHome() {
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const updateLocalClock = () => setLocalNow(new Date());
+    updateLocalClock();
+    const timer = window.setInterval(updateLocalClock, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const { primaryMarketLabel, goalLabel } = usePersonalization();
   const hasTradingPlan = Boolean(
@@ -139,12 +146,12 @@ function DashboardHome() {
     { label: "Cashback Claimed", done: claimCount > 0 },
     { label: levelProgress.current.name, done: true },
   ], [claimCount, levelProgress.current.name, linkedAccountsCount, reviewCount, user?.onboardingCompleted, user?.profileCompletion]);
-  const greeting = (() => {
-    const h = new Date().getHours();
+  const greeting = useMemo(() => {
+    const h = localNow.getHours();
     if (h < 12) return t("dashboard.greetingMorning");
     if (h < 18) return t("dashboard.greetingAfternoon");
     return t("dashboard.greetingEvening");
-  })();
+  }, [localNow, t]);
   const subtitle = primaryMarketLabel || goalLabel
     ? `${t("dashboard.tunedFor")} ${primaryMarketLabel ?? t("dashboard.yourMarkets")}${goalLabel ? ` · ${t("dashboard.goal")}: ${goalLabel}` : ""}.`
     : t("dashboard.commandCenter");
@@ -293,12 +300,12 @@ function DashboardHome() {
             <ul className="space-y-2.5 text-xs">
               {topEarningSource ? (
                 <li className="flex gap-2 rounded-lg bg-emerald-500/10 p-2.5">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                   <span className="text-white"><b>{topEarningSource.source}</b> is your top tracked earning source at <b>{fmtUSD(Number(topEarningSource.amount))}</b>.</span>
                 </li>
               ) : (
                 <li className="flex gap-2 rounded-lg bg-white/5 p-2.5">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="text-white/75">No cashback earnings have landed yet. Link an account or submit a claim to start tracking.</span>
                 </li>
               )}
@@ -417,7 +424,7 @@ function DashboardHome() {
               </li>
               {journalSnapshot.strongestAsset && (
                 <li className="flex gap-2">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span className="text-white/90"><b>{journalSnapshot.strongestAsset[0]}</b> is your strongest logged asset at <b>{journalSnapshot.strongestAsset[1].pnl >= 0 ? "+" : "−"}${Math.abs(journalSnapshot.strongestAsset[1].pnl).toFixed(2)}</b>.</span>
                 </li>
               )}

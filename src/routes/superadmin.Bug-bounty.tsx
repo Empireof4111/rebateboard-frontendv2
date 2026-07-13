@@ -12,7 +12,7 @@ import {
   Search,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
+  Bot,
 } from "lucide-react";
 import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import {
@@ -236,7 +236,7 @@ function BugBountyPage() {
           </div>
         </Panel>
 
-        <Panel title="Next integrations" action={<Sparkles className="h-3.5 w-3.5 text-violet-300" />}>
+        <Panel title="Next integrations" action={<Bot className="h-3.5 w-3.5 text-violet-300" />}>
           <ul className="space-y-2 text-xs text-white/85">
             <li className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
               Connect in-app notifications so critical reports page superadmin immediately.

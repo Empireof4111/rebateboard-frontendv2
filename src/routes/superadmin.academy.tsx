@@ -16,7 +16,7 @@ import {
 } from "@/lib/academy-api";
 import {
   Plus, Edit3, Trash2, ChevronRight, BookOpen, GraduationCap, Layers,
-  Sparkles, RotateCcw, Search, Eye, FileQuestion, PlayCircle,
+  Bot, RotateCcw, Search, Eye, FileQuestion, PlayCircle,
   ChevronDown, Image, Upload,
 } from "lucide-react";
 
@@ -1144,7 +1144,7 @@ function PreviewTab({ course }: { course: Course }) {
 
       {(course.outcomes ?? []).length > 0 && (
         <div className="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
-          <div className="mb-2 text-xs font-bold text-white inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-violet-300" /> What you'll learn</div>
+          <div className="mb-2 text-xs font-bold text-white inline-flex items-center gap-1.5"><Bot className="h-3 w-3 text-violet-300" /> What you'll learn</div>
           <ul className="space-y-1 text-xs text-white/70">
             {course.outcomes.map((o, i) => <li key={i}>• {o}</li>)}
           </ul>

@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Search,
   ShieldCheck,
-  Sparkles,
   Wallet,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -29,7 +28,7 @@ export const Route = createFileRoute("/help-center")({
 });
 
 const categories = [
-  { name: "Getting Started", icon: Sparkles, keywords: ["account", "start", "free", "signup"] },
+  { name: "Getting Started", icon: Bot, keywords: ["account", "start", "free", "signup"] },
   { name: "Cashback and Claims", icon: CircleDollarSign, keywords: ["cashback", "claim", "rebate"] },
   { name: "Wallet and Withdrawals", icon: Wallet, keywords: ["wallet", "withdrawal", "payment"] },
   { name: "Reviews", icon: MessageCircle, keywords: ["review", "verified"] },

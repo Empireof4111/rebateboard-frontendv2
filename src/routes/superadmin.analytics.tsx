@@ -23,7 +23,7 @@ import {
   Users,
   CheckCircle2,
   Target,
-  Sparkles,
+  Bot,
 } from "lucide-react";
 import {
   EmptyState,
@@ -427,7 +427,7 @@ function AnalyticsPage() {
 
         <Panel
           title="How users found us"
-          action={<Pill icon={Sparkles}>attribution</Pill>}
+          action={<Pill icon={Bot}>attribution</Pill>}
         >
           {data.acquisitionSource.length ? (
             <div className="h-64 w-full">

@@ -149,17 +149,18 @@ function SignupPage() {
       <div className="glow-orb left-[-10%] top-[10%] h-[400px] w-[400px]" />
       <div className="glow-orb right-[-10%] bottom-[5%] h-[500px] w-[500px]" />
 
-      <div className="container-app relative z-10 flex min-h-screen max-w-4xl flex-col items-center justify-center py-5 md:py-6">
-        <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="RebateBoard home">
-          <Logo heightClass="h-10" />
-        </Link>
-        <p className="mb-5 max-w-md text-center text-sm text-muted-foreground">
-          Create your account, earn cashback, and build your trading edge.
-        </p>
+      <Link
+        to="/"
+        className="absolute left-4 top-4 z-20 inline-flex items-center gap-3 sm:left-6 sm:top-6"
+        aria-label="RebateBoard home"
+      >
+        <Logo heightClass="h-8" />
+      </Link>
 
+      <div className="container-app relative z-10 flex min-h-screen max-w-3xl flex-col items-center justify-start pb-5 pt-12 md:pb-6 md:pt-14 lg:pt-16">
         <Stepper step={step} />
 
-        <div className="glass-strong mt-4 w-full rounded-3xl p-5 md:p-6">
+        <div className="glass-strong mt-2 w-full rounded-3xl p-3.5 md:p-4">
           {step === 1 && (
             <StepAccount
               onDone={async (input) => {
@@ -210,7 +211,7 @@ function SignupPage() {
         </div>
 
         {step === 1 && (
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <p className="mt-3 text-center text-xs text-muted-foreground">
             Already have an account?{" "}
             <Link to="/login" className="text-white underline-offset-2 hover:underline">Sign in</Link>
           </p>
@@ -383,23 +384,23 @@ function StepAccount({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-white">Create your account</h2>
+      <h2 className="text-xl font-bold text-white md:text-2xl">Create your account</h2>
       <p className="mt-1 text-sm text-muted-foreground">Join RebateBoard and start making smarter trading decisions.</p>
 
       <button
         type="button"
         disabled
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/45"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/45"
       >
         <GoogleIcon />
         Continue with Google
         <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Coming Soon</span>
       </button>
-      <div className="my-4 flex items-center gap-3 text-[11px] text-white/40">
+      <div className="my-3 flex items-center gap-3 text-[11px] text-white/40">
         <div className="h-px flex-1 bg-white/10" /> or sign up with email <div className="h-px flex-1 bg-white/10" />
       </div>
 
-      <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-2">
+      <form onSubmit={onSubmit} className="grid gap-2.5 md:grid-cols-2">
         <Field label="Full name" icon={<UserIcon className="h-4 w-4" />} required>
           <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Trader" className={inputCls} />
         </Field>
@@ -475,7 +476,7 @@ function StepAccount({
         <button
           type="submit"
           disabled={submitting || (Boolean(normalizedUsername) && usernameStatus === "checking")}
-          className="md:col-span-2 group mt-1 flex items-center justify-center gap-2 rounded-xl rb-gradient-primary px-4 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)] transition hover:opacity-95 disabled:opacity-60"
+          className="md:col-span-2 group mt-0.5 flex items-center justify-center gap-2 rounded-xl rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)] transition hover:opacity-95 disabled:opacity-60"
         >
           {submitting ? "Creating account..." : "Continue"}
           <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
@@ -504,7 +505,7 @@ function PasswordChecklist({ password }: { password: string }) {
   ];
 
   return (
-    <div className="mt-2 grid gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-2 sm:grid-cols-2">
+    <div className="mt-1.5 grid gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1.5 sm:grid-cols-2">
       {rules.map((rule) => (
         <div key={rule.label} className={`flex items-center gap-2 text-[11px] ${rule.ok ? "text-emerald-200" : "text-white/45"}`}>
           {rule.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <CircleAlert className="h-3.5 w-3.5" />}
@@ -580,7 +581,7 @@ function GoogleIcon() {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-muted-foreground outline-none transition duration-200 focus:border-primary/60 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)]";
+  "w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 pl-10 pr-3 text-sm text-white placeholder:text-muted-foreground outline-none transition duration-200 focus:border-primary/60 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)]";
 
 function Field({
   label, icon, required, helper, helperTone = "muted", children,
@@ -630,7 +631,7 @@ function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? "********"}
           autoComplete="new-password"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-muted-foreground outline-none transition duration-200 focus:border-primary/60 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)]"
+          className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 pl-10 pr-10 text-sm text-white placeholder:text-muted-foreground outline-none transition duration-200 focus:border-primary/60 focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)]"
         />
         <button
           type="button"

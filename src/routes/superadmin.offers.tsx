@@ -34,7 +34,7 @@ import {
   Search,
   Image as ImageIcon,
   FileText,
-  Sparkles,
+  Bot,
   Pin,
 } from "lucide-react";
 
@@ -745,7 +745,7 @@ function OffersAdmin() {
 
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
               <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/50">
-                <Sparkles className="h-3 w-3 text-violet-400" /> Live preview
+                <Bot className="h-3 w-3 text-violet-400" /> Live preview
               </div>
               {previewOffer && <OfferCard offer={previewOffer} />}
             </div>

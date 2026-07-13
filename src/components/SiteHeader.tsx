@@ -95,7 +95,7 @@ function UserPill() {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="glass-strong w-56 border border-white/18 bg-[rgba(18,18,25,0.95)] p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+        className="navigation-glass-panel w-56 p-2 text-foreground"
       >
         <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
           <span className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
@@ -166,7 +166,8 @@ type HeaderNavItem = {
   labelKey: TranslationKey;
   to?: string;
   items?: {
-    labelKey: TranslationKey;
+    labelKey?: TranslationKey;
+    label?: string;
     to?: string;
     description: string;
     icon: LucideIcon;
@@ -280,111 +281,53 @@ const navItems: HeaderNavItem[] = [
   { labelKey: "nav.comparisons", to: "/compare" },
   {
     labelKey: "nav.tools",
-    to: "/trading-tools",
+    to: "/dashboard/tools",
     items: [
       {
-        labelKey: "nav.tradingTools",
-        to: "/trading-tools",
-        description: "Practical tools for everyday trading decisions",
+        label: "All Dashboard Tools",
+        to: "/dashboard/tools",
+        description: "Open the complete protected calculator workspace",
         icon: Wrench,
       },
       {
-        labelKey: "nav.tradingSoftware",
-        to: "/trading-software",
-        description: "Research trading and analytics software",
-        icon: AppWindow,
+        label: "Profit Consistency Calculator",
+        to: "/dashboard/tools?tool=consistency",
+        description: "Measure how much profit came from your best trading day",
+        icon: BarChart3,
       },
       {
-        labelKey: "nav.tradingJournals",
-        to: "/trading-journals",
-        description: "Track execution, habits, and performance",
-        icon: NotebookTabs,
+        label: "Rebate Calculator",
+        to: "/dashboard/tools?tool=rebate",
+        description: "Estimate possible cashback and rebate value",
+        icon: Tags,
       },
       {
-        labelKey: "nav.tradingCalculators",
-        to: "/trading-calculators",
-        description: "Calculate risk, margin, profit, and rebates",
+        label: "Margin Calculator",
+        to: "/dashboard/tools?tool=margin",
+        description: "Estimate required margin for a position",
         icon: Calculator,
       },
       {
-        labelKey: "nav.tradingPlatforms",
-        to: "/trading-platforms",
-        description: "Compare platforms, features, and integrations",
-        icon: MonitorUp,
+        label: "Currency Converter",
+        to: "/dashboard/tools?tool=currency",
+        description: "Convert supported currencies in the tools workspace",
+        icon: Globe2,
       },
       {
-        labelKey: "nav.educationProviders",
-        to: "/education-providers",
-        description: "Find structured learning for every skill level",
-        icon: GraduationCap,
+        label: "Profit Calculator",
+        to: "/dashboard/tools?tool=profit",
+        description: "Model price scenarios, pips, and possible P&L",
+        icon: TrendingUp,
       },
       {
-        labelKey: "nav.signalProviders",
-        to: "/signal-providers",
-        description: "Review signal quality and provider transparency",
-        icon: RadioTower,
-      },
-      {
-        labelKey: "nav.copyTradingPlatforms",
-        to: "/copy-trading-platforms",
-        description: "Compare social and copy trading services",
-        icon: Copy,
-      },
-      {
-        labelKey: "nav.economicCalendar",
-        to: "/economic-calendar",
-        description: "Follow market-moving events and releases",
-        icon: CalendarDays,
-      },
-      {
-        labelKey: "nav.tradingAcademy",
-        to: "/academy",
-        description: "Build skills with guided trading lessons",
-        icon: Landmark,
-      },
-      {
-        labelKey: "nav.aiBacktest",
-        to: "/ai-backtesting-lab",
-        description: "Test strategies against historical market data",
-        icon: FlaskConical,
-      },
-      {
-        labelKey: "nav.tradingPlan",
-        to: "/trading-plan",
-        description: "Create and maintain a disciplined trading plan",
-        icon: ClipboardList,
+        label: "Fees Calculator",
+        to: "/dashboard/tools?tool=fees",
+        description: "Estimate spread and commission costs",
+        icon: WalletCards,
       },
     ],
   },
-  {
-    labelKey: "nav.aboutUs",
-    items: [
-      {
-        labelKey: "nav.company",
-        to: "/business/join",
-        description: "Learn about RebateBoard and partner with us",
-        icon: Building2,
-      },
-      {
-        labelKey: "nav.trustDashboard",
-        to: "/business/trust-dashboard",
-        description: "See how transparency and trust are measured",
-        icon: ShieldCheck,
-      },
-      {
-        labelKey: "nav.faq",
-        to: "/faqs",
-        description: "Find answers to common platform questions",
-        icon: CircleHelp,
-      },
-      {
-        labelKey: "nav.legal",
-        to: "/legal",
-        description: "Review platform policies and legal information",
-        icon: Scale,
-      },
-    ],
-  },
+  { labelKey: "nav.aboutUs", to: "/about" },
   { labelKey: "nav.blogs", to: "/blog" },
 ];
 
@@ -393,7 +336,7 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const baseClass =
-    "flex h-8 shrink-0 items-center gap-1 rounded-full px-3.5 text-[12px] font-medium text-muted-foreground outline-none transition hover:bg-white/[0.075] hover:text-foreground focus-visible:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring";
+    "flex h-8 shrink-0 items-center gap-1 rounded-full border border-transparent px-3.5 text-[12px] font-medium text-muted-foreground outline-none transition duration-200 hover:border-white/10 hover:bg-white/[0.075] hover:text-foreground focus-visible:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring";
 
   const cancelClose = () => {
     if (closeTimer.current) {
@@ -428,7 +371,11 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
     return (
       <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
         <div onPointerEnter={openMenu} onPointerLeave={scheduleClose}>
-          <DropdownMenuTrigger className={baseClass}>
+          <DropdownMenuTrigger
+            className={`${baseClass} ${
+              open ? "border-violet-300/25 bg-[rgba(90,34,241,0.13)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" : ""
+            }`}
+          >
             {t(item.labelKey)}
             <ChevronDown
               className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
@@ -439,14 +386,15 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
             sideOffset={10}
             onPointerEnter={openMenu}
             onPointerLeave={scheduleClose}
-            className={`glass-strong ${menuWidth} border border-white/18 bg-[rgba(18,18,25,0.95)] p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl`}
+            className={`navigation-glass-panel ${menuWidth} p-3 text-foreground`}
           >
             <div className="grid gap-1 sm:grid-cols-2">
               {item.items.map((sub) => {
                 const Icon = sub.icon;
+                const label = sub.labelKey ? t(sub.labelKey) : sub.label;
                 return (
                   <DropdownMenuItem
-                    key={sub.labelKey}
+                    key={sub.labelKey ?? sub.label}
                     asChild={!!sub.to}
                     className="cursor-pointer rounded-xl p-0 focus:bg-transparent"
                   >
@@ -460,7 +408,7 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
                         </span>
                         <span className="min-w-0 pt-0.5">
                           <span className="block text-xs font-semibold text-white">
-                            {t(sub.labelKey)}
+                            {label}
                           </span>
                           <span className="mt-1 block text-[10px] leading-4 text-white/48">
                             {sub.description}
@@ -468,7 +416,7 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
                         </span>
                       </Link>
                     ) : (
-                      <span>{t(sub.labelKey)}</span>
+                      <span>{label}</span>
                     )}
                   </DropdownMenuItem>
                 );
@@ -494,7 +442,7 @@ function LanguageSelector() {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-label={t("common.language")}
-        className="flex h-9 items-center gap-1 rounded-full bg-white/[0.045] px-2 text-xs font-semibold text-white outline-none ring-1 ring-white/10 transition hover:bg-white/[0.08] sm:px-3"
+        className="flex h-9 items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] px-2 text-xs font-semibold text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-violet-300/25 hover:bg-white/[0.08] sm:px-3"
       >
         <Globe2 className="h-3.5 w-3.5 text-primary" />
         <span className="hidden sm:inline">{languageMeta.code.toUpperCase()}</span>
@@ -503,7 +451,7 @@ function LanguageSelector() {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="glass-strong w-56 border border-white/18 bg-[rgba(18,18,25,0.95)] p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+        className="navigation-glass-panel w-56 p-2 text-foreground"
       >
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {t("common.language")}
@@ -588,14 +536,14 @@ function UtilityMenu() {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-label="Open RebateBoard menu"
-        className="hidden h-10 w-10 place-items-center rounded-full bg-white/[0.045] text-white outline-none ring-1 ring-white/10 transition hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring sm:grid"
+        className="hidden h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.045] text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-violet-300/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring sm:grid"
       >
         <LayoutGrid className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="glass-strong w-[min(34rem,calc(100vw-2rem))] border border-white/18 bg-[rgba(18,18,25,0.95)] p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+        className="navigation-glass-panel w-[min(34rem,calc(100vw-2rem))] p-3 text-foreground"
       >
         <DropdownMenuLabel className="px-2 pb-2 pt-1">
           <span className="block text-[10px] uppercase tracking-[0.22em] text-violet-100/55">
@@ -672,7 +620,7 @@ function MobileNavigationDrawer({
         }`}
       />
       <aside
-        className={`absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] flex-col border-l border-white/12 bg-[rgba(18,18,25,0.96)] p-4 text-white shadow-[0_24px_100px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-transform duration-300 ${
+        className={`navigation-glass-panel absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -745,9 +693,10 @@ function MobileNavigationDrawer({
                       <div className="grid gap-1 px-2 pb-2">
                         {item.items?.map((sub) => {
                           const Icon = sub.icon;
+                          const label = sub.labelKey ? t(sub.labelKey) : sub.label;
                           return (
                             <Link
-                              key={sub.labelKey}
+                              key={sub.labelKey ?? sub.label}
                               to={sub.to ?? "/"}
                               onClick={onClose}
                               className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
@@ -757,7 +706,7 @@ function MobileNavigationDrawer({
                               </span>
                               <span className="min-w-0 pt-0.5">
                                 <span className="block text-xs font-semibold text-white">
-                                  {t(sub.labelKey)}
+                                  {label}
                                 </span>
                                 <span className="mt-1 block text-[10px] leading-4 text-white/50">
                                   {sub.description}
@@ -817,6 +766,7 @@ export function SiteHeader() {
   const { t } = useI18n();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -836,11 +786,18 @@ export function SiteHeader() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    const updateScrolled = () => setScrolled(window.scrollY > 12);
+    updateScrolled();
+    window.addEventListener("scroll", updateScrolled, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrolled);
+  }, []);
+
   return (
     <>
       <header
-        data-site-header
-        className="fixed inset-x-0 top-0 z-50 pt-[calc(env(safe-area-inset-top)+0.45rem)]"
+        data-site-header={scrolled ? "scrolled" : "top"}
+        className="fixed inset-x-0 top-0 z-50 pt-[calc(env(safe-area-inset-top)+0.5rem)] sm:pt-[calc(env(safe-area-inset-top)+0.75rem)]"
       >
         <span className="hidden" aria-hidden>
           {user ? "auth" : "guest"}
@@ -861,7 +818,7 @@ export function SiteHeader() {
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
-                  className="flex h-9 w-full items-center gap-3 rounded-full bg-white/[0.04] px-4 text-left transition hover:bg-white/[0.08]"
+                  className="flex h-9 w-full items-center gap-3 rounded-full border border-white/10 bg-black/15 px-4 text-left shadow-[inset_0_1px_8px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.035)] transition hover:border-violet-300/25 hover:bg-white/[0.065] focus-visible:border-violet-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/20"
                 >
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <span className="flex-1 text-sm text-muted-foreground">{t("common.search")}</span>
@@ -876,7 +833,7 @@ export function SiteHeader() {
                   type="button"
                   onClick={() => setSearchOpen(true)}
                   aria-label="Open search"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.055] text-white transition hover:bg-white/[0.08] lg:hidden"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.055] text-white transition hover:border-violet-300/25 hover:bg-white/[0.08] lg:hidden"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -886,7 +843,7 @@ export function SiteHeader() {
                   type="button"
                   onClick={() => setMobileMenuOpen(true)}
                   aria-label="Open navigation menu"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.055] text-white ring-1 ring-white/10 transition hover:bg-white/[0.08] lg:hidden"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.055] text-white transition hover:border-violet-300/25 hover:bg-white/[0.08] lg:hidden"
                 >
                   <Menu className="h-4 w-4" />
                 </button>
@@ -907,7 +864,7 @@ export function SiteHeader() {
         <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </header>
       <MobileNavigationDrawer open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-      <div className="h-[calc(4.85rem+env(safe-area-inset-top))] lg:h-[calc(8.85rem+env(safe-area-inset-top))]" aria-hidden />
+      <div className="h-[calc(5.35rem+env(safe-area-inset-top))] sm:h-[calc(5.6rem+env(safe-area-inset-top))] lg:h-[calc(9.6rem+env(safe-area-inset-top))]" aria-hidden />
     </>
   );
 }

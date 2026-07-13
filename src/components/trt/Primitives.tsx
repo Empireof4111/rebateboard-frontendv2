@@ -1,6 +1,6 @@
 // Trader ROI Tracker — shared UI primitives
 import type { ReactNode } from "react";
-import { TrendingUp, TrendingDown, ArrowDown, ArrowUp, Sparkles, AlertTriangle, Info } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowDown, ArrowUp, Bot, AlertTriangle, Info } from "lucide-react";
 import type { TrtAccountStatus, TrtBrand, TrtInsight, TrtTransaction } from "@/lib/trt-store";
 import { labelAccountType, labelCategory, labelStatus, money } from "@/lib/trt-store";
 
@@ -41,7 +41,7 @@ export function TrackerKpiCard({
 
 export function InsightCard({ insight }: { insight: TrtInsight }) {
   const map = {
-    positive: { icon: Sparkles, bg: "bg-success/10 ring-success/25", chip: "bg-success/20 text-success", chipText: "Win" },
+    positive: { icon: Bot, bg: "bg-success/10 ring-success/25", chip: "bg-success/20 text-success", chipText: "Win" },
     watch: { icon: Info, bg: "bg-warning/10 ring-warning/25", chip: "bg-warning/20 text-accent", chipText: "Watch" },
     leak: { icon: AlertTriangle, bg: "bg-destructive/10 ring-destructive/25", chip: "bg-destructive/20 text-destructive", chipText: "Leak" },
   } as const;

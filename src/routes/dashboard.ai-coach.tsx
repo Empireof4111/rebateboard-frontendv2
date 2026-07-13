@@ -12,7 +12,6 @@ import {
   Send,
   X,
   ShieldCheck,
-  Sparkles,
   Target,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
@@ -133,6 +132,14 @@ function RebataPage() {
     () => localStorage.getItem("rebeta-language") || "auto",
   );
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const fileUploadLocked = Boolean(
+    usageStatus?.fileUploadPremiumRequired && !usageStatus.unlimitedAccess,
+  );
+  const languageLocked = Boolean(
+    usageStatus?.languagePremiumRequired &&
+      !usageStatus.unlimitedAccess &&
+      isPaidLanguageSelection(selectedLanguage, usageStatus.defaultLanguage),
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -166,8 +173,12 @@ function RebataPage() {
   }, [token]);
 
   async function submitPrompt(rawPrompt = input) {
-    if (usageStatus?.premiumRequired) {
-      setError("You've completed your free Rebeta trial. Upgrade to continue using personalized AI trading intelligence.");
+    if (attachments.length && fileUploadLocked) {
+      setError("You've used your free Rebeta file uploads. Upgrade to continue uploading files, or send a normal chat message.");
+      return;
+    }
+    if (languageLocked) {
+      setError("You've used your free selected-language prompts. Continue in English or upgrade for more languages.");
       return;
     }
     const prompt =
@@ -273,15 +284,16 @@ function RebataPage() {
 
   function sendSuggestion(prompt: string) {
     setTab("chat");
-    if (usageStatus?.premiumRequired) {
-      setError("You've completed your free Rebeta trial. Upgrade to continue using personalized AI trading intelligence.");
-      return;
-    }
     void submitPrompt(prompt);
   }
 
   async function handleFileSelection(fileList: FileList | null) {
     if (!fileList?.length) return;
+    if (fileUploadLocked) {
+      setUploadError("You've used your free Rebeta file uploads. Upgrade to continue uploading files for analysis.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     setUploadError(null);
     const availableSlots = MAX_ATTACHMENTS_PER_MESSAGE - attachments.length;
@@ -337,10 +349,10 @@ function RebataPage() {
               {lastResponse ? "Rebeta Active" : "Ready"}
             </Pill>
             {usageStatus && (
-              <Pill tone={usageStatus.premiumRequired ? "warning" : "primary"}>
+              <Pill tone={fileUploadLocked || languageLocked ? "warning" : "primary"}>
                 {usageStatus.unlimitedAccess
                   ? "Premium Rebeta"
-                  : `${usageStatus.freeUsageRemaining ?? 0} of ${usageStatus.freeUsageLimit} free requests remaining`}
+                  : `Uploads ${usageStatus.fileUploadRemaining ?? 0}/${usageStatus.fileUploadFreeLimit ?? 2} · Languages ${usageStatus.languagePromptRemaining ?? 0}/${usageStatus.languagePromptFreeLimit ?? 5}`}
               </Pill>
             )}
             <div className="flex gap-1 rounded-full bg-white/5 p-1">
@@ -448,11 +460,11 @@ function RebataPage() {
                 </div>
               )}
 
-              {usageStatus?.premiumRequired && (
+              {(fileUploadLocked || languageLocked) && (
                 <div className="mt-3 rounded-2xl border border-violet-300/25 bg-violet-300/10 p-4">
-                  <div className="text-sm font-semibold text-white">You've completed your free Rebeta trial.</div>
+                  <div className="text-sm font-semibold text-white">Premium feature limit reached.</div>
                   <p className="mt-1 text-xs leading-relaxed text-violet-100/75">
-                    Your previous chats stay available. Upgrade when you're ready to continue with personalized AI trading intelligence.
+                    Normal English chat remains available. Upgrade when you're ready to continue with file analysis or extra selected-language prompts.
                   </p>
                   <a
                     href="/pricing"
@@ -485,7 +497,7 @@ function RebataPage() {
                     disabled={
                       sending ||
                       attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE ||
-                      usageStatus?.premiumRequired
+                      fileUploadLocked
                     }
                     aria-label="Add file or screenshot"
                     className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white/85 transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
@@ -497,9 +509,19 @@ function RebataPage() {
                     <Languages className="h-3.5 w-3.5 text-violet-300" />
                     <select
                       value={selectedLanguage}
-                      onChange={(event) =>
-                        setSelectedLanguage(event.target.value)
-                      }
+                      onChange={(event) => {
+                        const nextLanguage = event.target.value;
+                        if (
+                          usageStatus?.languagePremiumRequired &&
+                          !usageStatus.unlimitedAccess &&
+                          isPaidLanguageSelection(nextLanguage, usageStatus.defaultLanguage)
+                        ) {
+                          setError("You've used your free selected-language prompts. Continue in English or upgrade for more languages.");
+                          setSelectedLanguage("en");
+                          return;
+                        }
+                        setSelectedLanguage(nextLanguage);
+                      }}
                       className="max-w-[92px] bg-transparent text-[11px] text-white outline-none sm:max-w-[130px]"
                       aria-label="Rebeta response language"
                     >
@@ -536,7 +558,8 @@ function RebataPage() {
                     (!input.trim() && !attachments.length) ||
                     sending ||
                     !token ||
-                    usageStatus?.premiumRequired
+                    (attachments.length > 0 && fileUploadLocked) ||
+                    languageLocked
                   }
                   aria-label="Send message"
                   className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl rb-gradient-primary text-white shadow-[0_0_24px_rgba(192,132,252,0.38)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
@@ -556,7 +579,7 @@ function RebataPage() {
 
           <Panel
             title="Quick Prompts"
-            action={<Sparkles className="h-4 w-4 text-violet-300" />}
+            action={<Bot className="h-4 w-4 text-violet-300" />}
           >
             <div className="space-y-2">
               {suggestions.map((prompt) => (
@@ -564,7 +587,7 @@ function RebataPage() {
                   key={prompt}
                   type="button"
                   onClick={() => sendSuggestion(prompt)}
-                  disabled={sending || Boolean(usageStatus?.premiumRequired)}
+                  disabled={sending}
                   className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-xs text-white/85 transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:opacity-50"
                 >
                   <span>{prompt}</span>
@@ -622,7 +645,7 @@ function RebataPage() {
                   disabled={sending}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:opacity-50"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-violet-300" />
+                  <Bot className="h-3.5 w-3.5 text-violet-300" />
                   Ask Rebeta
                 </button>
               </Panel>
@@ -633,7 +656,7 @@ function RebataPage() {
 
       <Panel
         title={`Rebeta Action Plan${user?.name ? ` for ${user.name}` : ""}`}
-        action={<Sparkles className="h-4 w-4 text-violet-300" />}
+        action={<Bot className="h-4 w-4 text-violet-300" />}
       >
         <div className="grid gap-3 md:grid-cols-3">
           {[
@@ -805,7 +828,7 @@ function StructuredCard({
         tone === "warning" ? (
           <CircleAlert className="h-4 w-4 text-orange-200" />
         ) : (
-          <Sparkles className="h-4 w-4 text-violet-300" />
+          <Bot className="h-4 w-4 text-violet-300" />
         )
       }
     >
@@ -1043,6 +1066,12 @@ function formatFileSize(size: number) {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isPaidLanguageSelection(value: string, defaultLanguage = "en") {
+  const normalized = String(value || "auto").trim().toLowerCase();
+  const freeLanguages = new Set(["auto", "en", "english", String(defaultLanguage || "en").toLowerCase()]);
+  return !freeLanguages.has(normalized);
 }
 
 function makeId(prefix: string) {

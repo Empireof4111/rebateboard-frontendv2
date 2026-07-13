@@ -21,7 +21,7 @@ import {
   Rocket,
   Search,
   ShieldCheck,
-  Sparkles,
+  Bot,
   Target,
   Trophy,
   WalletCards,
@@ -46,9 +46,9 @@ export type PublicInfoPageConfig = {
   related?: Array<{ title: string; body: string; to: string; label: string }>;
 };
 
-const kindMeta: Record<PageKind, { label: string; icon: typeof Sparkles }> = {
+const kindMeta: Record<PageKind, { label: string; icon: typeof Bot }> = {
   marketplace: { label: "Marketplace", icon: Compass },
-  product: { label: "Product", icon: Sparkles },
+  product: { label: "Product", icon: Bot },
   insight: { label: "Insights", icon: BarChart3 },
   company: { label: "Company", icon: ShieldCheck },
   support: { label: "Support", icon: HelpCircle },
@@ -743,7 +743,7 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
               className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_70px_rgba(42,12,84,0.18)] transition hover:-translate-y-0.5 hover:border-violet-300/25 hover:bg-white/[0.065]"
             >
               <div className="mb-4 grid h-10 w-10 place-items-center rounded-2xl border border-violet-300/20 bg-violet-300/10">
-                <Sparkles className="h-4 w-4 text-violet-100" />
+                <Bot className="h-4 w-4 text-violet-100" />
               </div>
               <h2 className="text-base font-bold text-white">{feature.title}</h2>
               <p className="mt-2 text-sm leading-6 text-white/62">{feature.body}</p>

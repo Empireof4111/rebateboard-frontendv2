@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle, ArrowUp, BadgeCheck, Camera, ChevronDown, Clock, Filter,
   Flag, ImageIcon, MessageSquare, Paperclip, Plus, Search, Send, Shield,
-  ShieldAlert, Sparkles, Trash2, TrendingUp, Upload, X, CheckCircle2, FileText,
+  ShieldAlert, Bot, Trash2, TrendingUp, Upload, X, CheckCircle2, FileText,
   ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -310,7 +310,7 @@ function ComplaintCard({ c, onOpen, onUpvote }: { c: ComplaintRecord; onOpen: ()
               <span className="rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/10">{c.accountType} · {c.accountSize}</span>
               <span className="rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/10">{c.platform}</span>
               <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/10">
-                <Sparkles className="h-3 w-3 text-violet-300" /> Credibility {c.credibility}
+                <Bot className="h-3 w-3 text-violet-300" /> Credibility {c.credibility}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -436,7 +436,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
 
             <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-4 ring-1 ring-violet-300/30">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-violet-200" />
+                <Bot className="h-4 w-4 text-violet-200" />
                 <h4 className="text-sm font-semibold text-white">Credibility score</h4>
               </div>
               <div className="mt-2 flex items-end gap-1">
@@ -721,7 +721,7 @@ function ComplaintForm({
 
               <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-4 ring-1 ring-violet-300/30">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-violet-200" />
+                  <Bot className="h-4 w-4 text-violet-200" />
                   <span className="text-sm font-semibold text-white">Estimated credibility score</span>
                   <span className="ml-auto text-lg font-bold text-white">{credibility}</span>
                 </div>

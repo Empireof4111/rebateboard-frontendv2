@@ -27,6 +27,7 @@ import {
   UserPlus,
   Rocket,
   Info,
+  TimerReset,
   type LucideIcon,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -35,7 +36,6 @@ import { VerificationBadge } from "@/components/VerificationBadge";
 import { FirmReviews } from "@/components/firm/FirmReviews";
 import { FirmChallenges } from "@/components/firm/FirmChallenges";
 import { FirmComplaints } from "@/components/firm/FirmComplaints";
-import { FirmPayouts } from "@/components/firm/FirmPayouts";
 import { FirmAnnouncements } from "@/components/firm/FirmAnnouncements";
 import {
   fetchPublicAdminBrand,
@@ -1783,10 +1783,10 @@ function renderSection(
 
 function FirmDetailsSkeleton() {
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
+    <div className="relative min-h-screen overflow-x-clip bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
-      <div className="glow-orb h-[600px] w-[600px] -left-40 top-20" />
-      <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-60" />
+      <div className="glow-orb h-[600px] w-[600px] -left-40 top-20 opacity-35" />
+      <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-30" />
       <div className="container-app relative pb-10 pt-3 sm:pt-4">
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
           <div className="glass-strong overflow-hidden rounded-3xl bg-[rgba(18,18,25,0.90)] ring-1 ring-violet-400/20">
@@ -1841,6 +1841,48 @@ function FirmDetailsSkeleton() {
                 <div key={index} className="skeleton h-24 rounded-2xl" />
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PayoutsComingSoon({ firmName }: { firmName: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-[2rem] border border-violet-300/18 bg-[rgba(18,18,25,0.92)] p-6 text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)] ring-1 ring-white/8 md:p-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(126,77,255,0.20),transparent_34%),radial-gradient(circle_at_92%_18%,rgba(90,34,241,0.14),transparent_28%)]" />
+      <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/14 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-violet-100 ring-1 ring-violet-300/24">
+            <TimerReset className="h-3.5 w-3.5" />
+            Payout intelligence preview
+          </div>
+          <h2 className="mt-4 text-2xl font-black tracking-tight md:text-3xl">
+            Verified payout insights for {firmName} are coming soon.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/68">
+            We are preparing a premium payout transparency layer with verified payout timelines,
+            proof-backed settlement data, processing windows, and reliability signals. This section
+            is paused until the data source is ready, so RebateBoard does not show placeholder payout claims.
+          </p>
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">
+            Planned Signals
+          </div>
+          <div className="mt-4 space-y-3 text-sm text-white/72">
+            {[
+              "Verified payout proofs",
+              "Average processing windows",
+              "Method and currency breakdown",
+              "Delay and dispute visibility",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-300" />
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1930,8 +1972,8 @@ function FirmDetailsPage() {
   const isBrandOwner = brandOwnerSession?.slug?.toLowerCase() === brandSlug.toLowerCase();
   const canEditProfile = isAdmin || isBrandOwner;
   const followerCount = compactCount(followState.followersCount);
-  const stickyTabsTop = stickyMetrics.headerHeight + 6;
-  const stickySidebarTop = stickyTabsTop + stickyMetrics.tabsHeight + 10;
+  const stickyTabsTop = stickyMetrics.headerHeight + 18;
+  const stickySidebarTop = stickyTabsTop + stickyMetrics.tabsHeight + 14;
 
   useEffect(() => {
     setProfileAssets(readStoredProfileAssets(firmId));
@@ -2118,15 +2160,15 @@ function FirmDetailsPage() {
     }
   }
 
-  if (brandLoading && !brand) {
+  if (brandLoading) {
     return <FirmDetailsSkeleton />;
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
+    <div className="relative min-h-screen overflow-x-clip bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
-      <div className="glow-orb h-[600px] w-[600px] -left-40 top-20" />
-      <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-60" />
+      <div className="glow-orb h-[600px] w-[600px] -left-40 top-20 opacity-35" />
+      <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-30" />
 
       <div className="container-app relative pb-6 pt-3 sm:pt-4">
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
@@ -2139,10 +2181,10 @@ function FirmDetailsPage() {
                   className="h-full w-full object-cover object-center"
                 />
               ) : (
-                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(126,77,255,0.34),transparent_30%),linear-gradient(135deg,#1a0b2e_0%,#39126b_48%,#130824_100%)]">
-                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#130824] to-transparent" />
-                  <div className="absolute left-8 top-12 h-px w-[70%] rotate-[-8deg] bg-violet-300/40 shadow-[0_0_30px_rgba(126,77,255,0.8)]" />
-                  <div className="absolute bottom-10 right-10 h-px w-[45%] rotate-[-14deg] bg-violet-200/45 shadow-[0_0_24px_rgba(196,181,253,0.7)]" />
+                <div className="h-full w-full bg-[radial-gradient(circle_at_18%_18%,rgba(90,34,241,0.16),transparent_32%),radial-gradient(circle_at_82%_22%,rgba(126,77,255,0.10),transparent_34%),linear-gradient(135deg,var(--rb-bg-section)_0%,var(--rb-bg-card)_52%,var(--rb-bg-canvas)_100%)]">
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-[linear-gradient(180deg,transparent,rgba(9,9,13,0.78))]" />
+                  <div className="absolute left-8 top-12 h-px w-[70%] rotate-[-8deg] bg-violet-300/20 shadow-[0_0_26px_rgba(90,34,241,0.32)]" />
+                  <div className="absolute bottom-10 right-10 h-px w-[45%] rotate-[-14deg] bg-violet-200/18 shadow-[0_0_22px_rgba(126,77,255,0.26)]" />
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-black/[0.02] to-black/15" />
@@ -2341,45 +2383,53 @@ function FirmDetailsPage() {
                 {profileOffer.hasOffer ? (
                   <div className="mt-5 max-w-3xl">
                     <div
-                      className="overflow-hidden rounded-[24px] bg-[var(--rb-bg-card)] text-white ring-1 ring-white/10"
-                      style={{ boxShadow: `0 0 34px ${profileOffer.accentFrom}38` }}
+                      className="relative isolate overflow-hidden rounded-[28px] border border-white/12 bg-[rgba(22,22,31,0.96)] text-white shadow-[0_24px_70px_rgba(0,0,0,0.30)]"
+                      style={{
+                        boxShadow: `0 24px 70px rgba(0,0,0,0.32), 0 0 34px ${profileOffer.accentFrom}26`,
+                      }}
                     >
-                      <div className="grid sm:grid-cols-[minmax(0,1fr)_190px]">
-                        <div className="relative px-5 py-4">
+                      <div
+                        className="pointer-events-none absolute inset-0 opacity-90"
+                        style={{
+                          backgroundImage: `radial-gradient(circle at 88% 50%, ${profileOffer.accentTo}28, transparent 30%), radial-gradient(circle at 16% 12%, ${profileOffer.accentFrom}18, transparent 34%)`,
+                        }}
+                      />
+                      <div className="relative grid sm:grid-cols-[minmax(0,1fr)_210px]">
+                        <div className="relative px-5 py-5 sm:px-6">
+                          <div className="absolute -right-3 top-0 hidden h-full border-r border-dashed border-white/18 sm:block" />
+                          <div className="absolute -right-5 -top-5 hidden h-10 w-10 rounded-full bg-[var(--rb-bg-canvas)] sm:block" />
+                          <div className="absolute -bottom-5 -right-5 hidden h-10 w-10 rounded-full bg-[var(--rb-bg-canvas)] sm:block" />
                           <div className="flex items-center gap-2">
-                            <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70 ring-1 ring-white/10">
-                              Offer
+                            <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/74 ring-1 ring-white/12">
+                              Verified Offer
                             </span>
                             {profileOffer.terms ? (
                               <span
                                 title={profileOffer.terms}
-                                className="grid h-5 w-5 place-items-center rounded-full bg-white/15 text-white/70"
+                                className="grid h-5 w-5 place-items-center rounded-full bg-white/[0.08] text-white/70 ring-1 ring-white/10"
                               >
                                 <Info className="h-3 w-3" />
                               </span>
                             ) : null}
                           </div>
-                          <div className="mt-2 text-3xl font-black leading-none sm:text-4xl">
+                          <div className="mt-3 text-4xl font-black leading-none tracking-tight sm:text-5xl">
                             {profileOffer.discountLabel}
                           </div>
-                          <p className="mt-2 line-clamp-2 max-w-xl text-sm font-medium leading-relaxed text-white/62">
+                          <p className="mt-2 line-clamp-2 max-w-xl text-sm font-semibold leading-relaxed text-white/68">
                             {profileOffer.description ||
                               "Verified RebateBoard offer for this brand."}
                           </p>
                         </div>
 
-                        <div
-                          className="flex flex-col justify-center gap-2 border-t border-white/10 px-5 py-4 text-[#120814] sm:border-l sm:border-t-0"
-                          style={{
-                            backgroundImage: `linear-gradient(135deg, ${profileOffer.accentFrom}, ${profileOffer.accentTo})`,
-                          }}
-                        >
-                          <div className="text-center text-sm font-black">Use Code</div>
+                        <div className="relative flex flex-col justify-center gap-3 border-t border-dashed border-white/16 bg-white/[0.045] px-5 py-5 sm:border-l sm:border-t-0">
+                          <div className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/48">
+                            Use Code
+                          </div>
                           {profileOffer.code ? (
                             <button
                               type="button"
                               onClick={() => void copyDiscountCode(profileOffer.code)}
-                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--rb-bg-input)] px-4 py-2.5 text-sm font-black tracking-wide text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
+                              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--rb-bg-input)] px-4 py-3 text-sm font-black tracking-wide text-white shadow-lg shadow-black/25 ring-1 ring-white/12 transition hover:scale-[1.02] hover:ring-white/22"
                             >
                               <Copy className="h-4 w-4" />
                               {copiedCode ? "Copied" : profileOffer.code}
@@ -2389,12 +2439,12 @@ function FirmDetailsPage() {
                               href={profileOffer.ctaUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--rb-bg-input)] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
+                              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--rb-bg-input)] px-4 py-3 text-sm font-black text-white shadow-lg shadow-black/25 ring-1 ring-white/12 transition hover:scale-[1.02] hover:ring-white/22"
                             >
                               Claim Offer
                             </a>
                           ) : (
-                            <div className="rounded-xl bg-[var(--rb-bg-input)] px-4 py-2.5 text-center text-sm font-black text-white">
+                            <div className="rounded-2xl bg-[var(--rb-bg-input)] px-4 py-3 text-center text-sm font-black text-white ring-1 ring-white/12">
                               No code needed
                             </div>
                           )}
@@ -2430,7 +2480,7 @@ function FirmDetailsPage() {
 
         <div
           ref={tabsRef}
-          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[rgba(18,18,25,0.92)] px-2 py-2 shadow-xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl lg:px-3"
+          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[rgba(18,18,25,0.96)] px-2 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.36)] ring-1 ring-white/12 backdrop-blur-2xl lg:px-3"
           style={{ top: `${stickyTabsTop}px` }}
         >
           <div className="no-scrollbar flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto overscroll-x-contain py-0.5 lg:justify-center">
@@ -2480,7 +2530,7 @@ function FirmDetailsPage() {
           </div>
         ) : topTab === "Payouts" ? (
           <div className="mt-4">
-            <FirmPayouts firmName={name} />
+            <PayoutsComingSoon firmName={name} />
           </div>
         ) : topTab === "Announcement" ? (
           <div className="mt-4">
@@ -2489,40 +2539,48 @@ function FirmDetailsPage() {
         ) : topTab === "TBI Breakdown" ? (
           <TbiIndexContent brand={brand} profile={tbiProfile} score={tbiScore} />
         ) : topTab === "Offers" ? (
-          <div className="mt-4 glass rounded-2xl p-6 ring-1 ring-white/10">
+          <div className="mt-4 rounded-[28px] border border-white/10 bg-[rgba(22,22,31,0.94)] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.24)]">
             {profileOffer.hasOffer ? (
-              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-center">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-violet-200/70">
-                    {profileOffer.label}
-                  </div>
-                  <h2 className="mt-2 text-2xl font-black text-white">
+              <div className="relative isolate overflow-hidden rounded-[24px] border border-dashed border-white/14 bg-[rgba(18,18,25,0.74)] p-5">
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-80"
+                  style={{
+                    backgroundImage: `radial-gradient(circle at 84% 42%, ${profileOffer.accentTo}24, transparent 32%), radial-gradient(circle at 10% 0%, ${profileOffer.accentFrom}16, transparent 34%)`,
+                  }}
+                />
+                <div className="relative grid gap-5 md:grid-cols-[minmax(0,1fr)_230px] md:items-center">
+                  <div>
+                    <div className="inline-flex rounded-full bg-white/[0.07] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/70 ring-1 ring-white/12">
+                      {profileOffer.label}
+                    </div>
+                    <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
                     {profileOffer.discountLabel}
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-white/70">
-                    {profileOffer.description ||
-                      "A verified RebateBoard offer is available for this brand."}
-                  </p>
+                    </h2>
+                    <p className="mt-2 text-sm font-medium leading-relaxed text-white/68">
+                      {profileOffer.description ||
+                        "A verified RebateBoard offer is available for this brand."}
+                    </p>
+                  </div>
+                  {profileOffer.code ? (
+                    <button
+                      type="button"
+                      onClick={() => void copyDiscountCode(profileOffer.code)}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--rb-bg-input)] px-4 py-3 text-sm font-black text-white shadow-lg shadow-black/25 ring-1 ring-white/12 transition hover:bg-[var(--rb-bg-card-hover)]"
+                    >
+                      <Copy className="h-4 w-4" />
+                      {copiedCode ? "Copied" : profileOffer.code}
+                    </button>
+                  ) : profileOffer.ctaUrl ? (
+                    <a
+                      href={profileOffer.ctaUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center rounded-2xl rb-gradient-primary px-4 py-3 text-sm font-black text-white"
+                    >
+                      Claim Offer
+                    </a>
+                  ) : null}
                 </div>
-                {profileOffer.code ? (
-                  <button
-                    type="button"
-                    onClick={() => void copyDiscountCode(profileOffer.code)}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white ring-1 ring-white/15 transition hover:bg-white/15"
-                  >
-                    <Copy className="h-4 w-4" />
-                    {copiedCode ? "Copied" : profileOffer.code}
-                  </button>
-                ) : profileOffer.ctaUrl ? (
-                  <a
-                    href={profileOffer.ctaUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-2xl rb-gradient-primary px-4 py-3 text-sm font-black text-white"
-                  >
-                    Claim Offer
-                  </a>
-                ) : null}
               </div>
             ) : (
               <div className="py-8 text-center">

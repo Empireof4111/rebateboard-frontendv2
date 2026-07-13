@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Coins, Download, ExternalLink, Funnel, Search, Sparkles, Trophy } from "lucide-react";
+import { Coins, Download, ExternalLink, Funnel, Search, Bot, Trophy } from "lucide-react";
 import { DataTable, PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
 import {
@@ -146,7 +146,7 @@ function ChallengePurchasesPage() {
           )}
         </Panel>
 
-        <Panel title="Reward Preference Mix" action={<Sparkles className="h-3.5 w-3.5 text-violet-300" />}>
+        <Panel title="Reward Preference Mix" action={<Bot className="h-3.5 w-3.5 text-violet-300" />}>
           {rows.length === 0 ? (
             <EmptyPanelText />
           ) : (

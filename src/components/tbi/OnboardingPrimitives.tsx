@@ -3,7 +3,7 @@
  * Premium glass aesthetic, mobile-first, design-system tokens only.
  */
 import { ReactNode, useRef } from "react";
-import { Check, Lock, Upload, X, Info, AlertTriangle, Sparkles, ChevronDown } from "lucide-react";
+import { Check, Lock, Upload, X, Info, AlertTriangle, Bot, ChevronDown } from "lucide-react";
 import type { TrustScoreMode, UploadedFile, TrustBreakdown } from "@/lib/tbi-onboarding";
 import { UNLOCK_THRESHOLDS } from "@/lib/tbi-onboarding";
 import { filterFilesByUploadLimit } from "@/lib/upload-limits";
@@ -176,7 +176,7 @@ export function ImprovementSuggestions({ items }: { items: { text: string; score
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-violet-300" />
+        <Bot className="h-4 w-4 text-violet-300" />
         <div className="text-sm font-bold">Improve your score</div>
       </div>
       <ul className="mt-3 space-y-2">
@@ -435,7 +435,7 @@ export function PublicTrustStateBanner({ state, reviewCount }: { state: TrustSco
   return (
     <div className={`flex items-center justify-between gap-3 rounded-2xl border bg-gradient-to-r ${meta.tone} px-4 py-3 text-xs backdrop-blur`}>
       <div className="flex items-center gap-2">
-        {state === "full" ? <Check className="h-4 w-4" /> : state === "partial" ? <Sparkles className="h-4 w-4" /> : <Info className="h-4 w-4" />}
+        {state === "full" ? <Check className="h-4 w-4" /> : state === "partial" ? <Bot className="h-4 w-4" /> : <Info className="h-4 w-4" />}
         <div>
           <div className="font-bold">{meta.label}</div>
           <div className="opacity-80">{meta.body}</div>

@@ -5,7 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plus, Wallet, ArrowDownToLine, ArrowUpFromLine, Sparkles, Target, BarChart3,
+  Plus, Wallet, ArrowDownToLine, ArrowUpFromLine, Bot, Target, BarChart3,
   Building2, Receipt, Lightbulb, Share2, Filter, Edit3, Trash2, Search, Download,
 } from "lucide-react";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
@@ -154,7 +154,7 @@ function TrtPage() {
           {insights.length === 0 ? (
             <div className="md:col-span-2 lg:col-span-3">
               <EmptyTracker
-                icon={Sparkles}
+                icon={Bot}
                 title="No insights yet"
                 description="Log a few transactions and we'll surface where money is being made, lost, or wasted."
               />

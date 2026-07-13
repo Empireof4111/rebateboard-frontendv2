@@ -112,6 +112,12 @@
   --rb-glass-highlight: rgba(255, 255, 255, 0.06);
   --rb-glass-shadow: 0 20px 60px rgba(0, 0, 0, 0.38);
   --rb-glass-blur: 22px;
+  --rb-header-glass-bg: linear-gradient(135deg, rgba(22, 18, 34, 0.74), rgba(10, 10, 15, 0.6));
+  --rb-header-glass-border: rgba(255, 255, 255, 0.11);
+  --rb-header-glass-highlight: rgba(255, 255, 255, 0.075);
+  --rb-header-glass-violet: rgba(90, 34, 241, 0.1);
+  --rb-header-glass-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+  --rb-header-blur: 24px;
 
   --rb-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.22);
   --rb-shadow-card-hover: 0 18px 42px rgba(45, 18, 105, 0.2);
@@ -327,22 +333,60 @@
     backdrop-filter: blur(26px) saturate(150%);
     -webkit-backdrop-filter: blur(26px) saturate(150%);
   }
+  .navigation-glass-panel {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(126, 77, 255, 0.12), transparent 34%),
+      radial-gradient(circle at 92% 10%, rgba(255, 255, 255, 0.07), transparent 32%),
+      linear-gradient(135deg, rgba(24, 20, 36, 0.9), rgba(11, 10, 16, 0.82));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 0 rgba(126, 77, 255, 0.08),
+      0 24px 80px rgba(5, 1, 12, 0.52);
+    backdrop-filter: blur(28px) saturate(155%);
+    -webkit-backdrop-filter: blur(28px) saturate(155%);
+  }
+  .navigation-glass-panel::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+      linear-gradient(120deg, rgba(255, 255, 255, 0.1), transparent 22% 68%, rgba(155, 116, 255, 0.08)),
+      radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.09), transparent 50%);
+    opacity: 0.7;
+    mix-blend-mode: screen;
+  }
+  .navigation-glass-panel > * {
+    position: relative;
+    z-index: 1;
+  }
   .site-header-glass {
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(circle at 14% -34%, rgba(255, 255, 255, 0.2), transparent 28%),
-      radial-gradient(circle at 88% 0%, rgba(126, 77, 255, 0.18), transparent 34%),
-      linear-gradient(135deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.032)),
-      rgba(15, 12, 24, 0.74);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+      radial-gradient(circle at 20% 0%, rgba(126, 77, 255, 0.1), transparent 34%),
+      radial-gradient(circle at 86% 18%, rgba(255, 255, 255, 0.055), transparent 30%),
+      var(--rb-header-glass-bg);
+    border: 1px solid var(--rb-header-glass-border);
+    border-top-color: rgba(255, 255, 255, 0.16);
     box-shadow:
-      0 22px 70px rgba(0, 0, 0, 0.46),
-      0 8px 24px rgba(45, 18, 105, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(28px) saturate(170%) contrast(1.08) brightness(0.96);
-    -webkit-backdrop-filter: blur(28px) saturate(170%) contrast(1.08) brightness(0.96);
+      inset 0 1px 0 var(--rb-header-glass-highlight),
+      inset 0 -1px 0 rgba(126, 77, 255, 0.075),
+      0 1px 0 rgba(255, 255, 255, 0.035),
+      var(--rb-header-glass-shadow);
+    backdrop-filter: blur(var(--rb-header-blur)) saturate(145%) contrast(1.03);
+    -webkit-backdrop-filter: blur(var(--rb-header-blur)) saturate(145%) contrast(1.03);
+    transition:
+      background var(--rb-motion-standard) var(--rb-ease-out),
+      border-color var(--rb-motion-standard) var(--rb-ease-out),
+      box-shadow var(--rb-motion-standard) var(--rb-ease-out),
+      backdrop-filter var(--rb-motion-standard) var(--rb-ease-out);
   }
   .site-header-glass::before {
     content: "";
@@ -352,9 +396,9 @@
     pointer-events: none;
     border-radius: inherit;
     background:
-      linear-gradient(105deg, rgba(255, 255, 255, 0.1), transparent 18% 72%, rgba(182, 154, 255, 0.08)),
-      radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 54%);
-    opacity: 0.9;
+      linear-gradient(116deg, rgba(255, 255, 255, 0.095), transparent 20% 66%, rgba(155, 116, 255, 0.075)),
+      radial-gradient(circle at 52% 0%, rgba(255, 255, 255, 0.08), transparent 48%);
+    opacity: 0.68;
     mix-blend-mode: screen;
   }
   .site-header-glass::after {
@@ -364,7 +408,21 @@
     z-index: 0;
     pointer-events: none;
     border-radius: inherit;
-    background: rgba(8, 7, 12, 0.28);
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.028), transparent 15%, rgba(126, 77, 255, 0.06) 55%, transparent 88%),
+      linear-gradient(180deg, transparent, rgba(8, 7, 12, 0.2));
+  }
+  [data-site-header="scrolled"] .site-header-glass {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(126, 77, 255, 0.12), transparent 34%),
+      radial-gradient(circle at 86% 18%, rgba(255, 255, 255, 0.065), transparent 30%),
+      linear-gradient(135deg, rgba(22, 18, 34, 0.82), rgba(10, 10, 15, 0.68));
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.09),
+      inset 0 -1px 0 rgba(126, 77, 255, 0.095),
+      0 22px 70px rgba(0, 0, 0, 0.5),
+      0 8px 26px rgba(45, 18, 105, 0.14);
   }
   .site-header-glass > * {
     position: relative;
@@ -378,6 +436,74 @@
     color: #7c4dff;
     border: 1px solid rgba(124, 77, 255, 0.35);
     box-shadow: 0 0 16px rgba(124, 77, 255, 0.18);
+  }
+  .hero-action-ring {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hero-action-ring::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        transparent 228deg,
+        rgba(182, 154, 255, 0.28) 258deg,
+        #7e4dff 306deg,
+        #d2c3ff 344deg,
+        transparent 360deg
+      );
+    opacity: 0;
+    animation: hero-action-ring-sweep 4.8s linear infinite;
+  }
+  .hero-action-ring::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: -1;
+    border-radius: 0.65rem;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 58%),
+      rgba(24, 16, 44, 0.92);
+  }
+  .hero-action-ring > svg {
+    position: relative;
+    z-index: 1;
+  }
+  .hero-action-ring.ring-seq-1::before {
+    animation-delay: 0s;
+  }
+  .hero-action-ring.ring-seq-2::before {
+    animation-delay: 1.6s;
+  }
+  .hero-action-ring.ring-seq-3::before {
+    animation-delay: 3.2s;
+  }
+  @keyframes hero-action-ring-sweep {
+    0% {
+      opacity: 1;
+      transform: rotate(0turn);
+    }
+    31% {
+      opacity: 1;
+      transform: rotate(1turn);
+    }
+    34%,
+    100% {
+      opacity: 0;
+      transform: rotate(1turn);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-action-ring::before {
+      animation: none;
+      opacity: 0.55;
+    }
   }
   .text-gradient {
     background: linear-gradient(

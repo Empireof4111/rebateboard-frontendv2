@@ -7,7 +7,7 @@ import { type AdminOffer, type OfferCategory } from "@/lib/admin-data";
 import { fetchPublicOffers } from "@/lib/offers-api";
 import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
 import { enrichOffersWithBrandAssets } from "@/lib/offer-brand-assets";
-import { Flame, Sparkles, Clock, LayoutGrid, Search } from "lucide-react";
+import { Flame, Bot, Clock, LayoutGrid, Search } from "lucide-react";
 
 export const Route = createFileRoute("/offers")({
   head: () => ({
@@ -140,7 +140,7 @@ function PublicOffers() {
         {/* Hero */}
         <header className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-500/20 via-violet-600/15 to-cyan-500/15 p-8 sm:p-12">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white">
-            <Sparkles className="h-3 w-3 text-violet-300" /> Updated daily · Verified codes
+            <Bot className="h-3 w-3 text-violet-300" /> Updated daily · Verified codes
           </div>
           <h1 className="mt-4 text-3xl font-extrabold sm:text-5xl">Exclusive offers & promos</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70 sm:text-base">
@@ -209,7 +209,7 @@ function PublicOffers() {
         {/* Latest */}
         {!loading && latest.length > 0 && <section>
           <SectionHeader
-            icon={Sparkles}
+            icon={Bot}
             title="Latest offers"
             subtitle="Freshly added this week."
             accent="bg-gradient-to-br from-emerald-500 to-cyan-600"

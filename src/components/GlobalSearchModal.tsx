@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Newspaper,
   Search,
-  Sparkles,
+  Bot,
   Trash2,
   Trophy,
   Wallet,
@@ -69,7 +69,7 @@ const QUICK_LINKS: Hit[] = [
 
 const EMPTY_BROWSE_LINKS: Hit[] = [
   { id: "empty-programs", label: "Programs", sub: "Explore funded trader programs", group: "Browse", to: "/programs", icon: Trophy },
-  { id: "empty-reviews", label: "Reviews", sub: "Read verified trader feedback", group: "Browse", to: "/reviews", icon: Sparkles },
+  { id: "empty-reviews", label: "Reviews", sub: "Read verified trader feedback", group: "Browse", to: "/reviews", icon: Bot },
   { id: "empty-cashback", label: "Cashback", sub: "Find active rebate offers", group: "Browse", to: "/offers", icon: BadgePercent },
   { id: "empty-blogs", label: "Blogs", sub: "Learn from trader guides", group: "Browse", to: "/blog", icon: Newspaper },
   { id: "empty-offers", label: "Offers", sub: "Browse bonuses and deals", group: "Browse", to: "/offers", icon: Flame },
@@ -521,7 +521,7 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
               )}
 
               <section>
-                <SectionHeader icon={Sparkles} label="Trending brands" />
+                <SectionHeader icon={Bot} label="Trending brands" />
                 {loading ? (
                   <LoadingRows />
                 ) : trendingBrands.length ? (
