@@ -391,28 +391,20 @@ function LandingRankBadge({ rank }: { rank: number }) {
   const theme = landingRankTheme(rank);
   const Icon = theme.Icon;
   return (
-    <span className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-full border px-2 text-[10px] font-black ${theme.badge}`}>
-      {Icon ? <Icon className="h-3 w-3" strokeWidth={2.4} /> : null}
+    <span className={`inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-full border px-2 text-[12px] font-black ${theme.badge}`}>
+      {Icon ? <Icon className="h-3.5 w-3.5" strokeWidth={2.8} /> : null}
       {rank}
     </span>
   );
-}
-
-function logoAccentForTbi(state: string) {
-  if (state === "full") return "ring-emerald-300/35 shadow-[0_0_18px_rgba(52,211,153,0.16)]";
-  if (state === "partial") return "ring-cyan-300/32 shadow-[0_0_16px_rgba(34,211,238,0.13)]";
-  return "ring-violet-300/24 shadow-[0_0_14px_rgba(167,139,250,0.12)]";
 }
 
 function LandingRankingSkeleton() {
   return (
     <div className="mt-4 space-y-2" aria-label="Loading rankings">
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="skeleton-card grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl p-2.5">
-          <div className="relative">
-            <div className="skeleton h-11 w-11 rounded-[14px]" />
-            <div className="skeleton absolute -left-1 -top-1 h-6 w-8 rounded-full" />
-          </div>
+        <div key={index} className="skeleton-card grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-2xl p-2.5">
+          <div className="skeleton h-8 w-8 rounded-full" />
+          <div className="skeleton h-11 w-11 rounded-[14px]" />
           <div className="min-w-0 space-y-2">
             <div className="skeleton h-3.5 w-3/5" />
             <div className="skeleton h-5 w-4/5 rounded-full" />
@@ -439,35 +431,30 @@ function BrandRankRow({
   const stage = resolveBrandTbiState(brand, tbiProfile);
   const theme = publicTbiStageTheme(stage);
   const rankTheme = landingRankTheme(rank);
-  const logoAccent = logoAccentForTbi(stage);
 
   return (
     <Link
       to="/firm/$firmId"
       params={{ firmId: brand.slug }}
-      className={`ranking-card-enter group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25 ${rankTheme.card}`}
+      className={`ranking-card-enter group grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-2xl border bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25 ${rankTheme.card}`}
       style={{ animationDelay: `${Math.min(rank - 1, 9) * 40}ms` }}
     >
-      <div className="relative">
-        <div
-          className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ring-1 ${logoAccent} ${
-            brand.thumbnail ? "bg-transparent" : "bg-primary/20 text-white"
-          }`}
-        >
-          {brand.thumbnail ? (
-            <img
-              src={brand.thumbnail}
-              alt={`${brand.name} logo`}
-              className="h-full w-full object-contain bg-white/[0.04] p-1"
-              loading="lazy"
-            />
-          ) : (
-            initials(brand.name)
-          )}
-        </div>
-        <span className="absolute -left-2 -top-2">
-          <LandingRankBadge rank={rank} />
-        </span>
+      <LandingRankBadge rank={rank} />
+      <div
+        className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ${
+          brand.thumbnail ? "bg-white/[0.035]" : "bg-primary/20 text-white"
+        }`}
+      >
+        {brand.thumbnail ? (
+          <img
+            src={brand.thumbnail}
+            alt={`${brand.name} logo`}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          initials(brand.name)
+        )}
       </div>
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
@@ -517,7 +504,7 @@ function RankingPanel({
     <div className="liquid-glass rounded-[1.75rem] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.08] text-cyan-200 ring-1 ring-white/12">
+          <span className="rb-icon-tile h-8 w-8 rounded-full">
             {icon}
           </span>
           <h2 className="text-base font-bold">{title}</h2>
@@ -571,7 +558,7 @@ function HeroActionStrip() {
   const linkClass =
     "group flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.055] px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-violet-300/35";
   const iconClass =
-    "grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#7c4dff]/15 text-[#7c4dff] ring-1 ring-[#7c4dff]/35 shadow-[0_0_16px_rgba(124,77,255,0.18)]";
+    "rb-icon-tile h-8 w-8 rounded-xl";
   const labelClass = "min-w-0 text-[11px] font-bold leading-tight text-white/90 sm:text-xs";
 
   return (
@@ -1065,11 +1052,13 @@ function ExclusiveOffersPanel({
   active,
   onChange,
   onSelect,
+  loading = false,
 }: {
   offers: (AdminOffer & OfferBrandFields)[];
   active: OfferCategory;
   onChange: (category: OfferCategory) => void;
   onSelect: (offer: AdminOffer) => void;
+  loading?: boolean;
 }) {
   const { t } = useI18n();
   const activeTab = offerRankingTabs.find((tab) => tab.key === active) ?? offerRankingTabs[0];
@@ -1078,7 +1067,7 @@ function ExclusiveOffersPanel({
     <div className="liquid-glass rounded-[1.75rem] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-fuchsia-400/15 text-fuchsia-100 ring-1 ring-fuchsia-300/25">
+          <span className="rb-icon-tile h-8 w-8 rounded-full">
             <BadgePercent className="h-4 w-4" />
           </span>
           <h2 className="text-base font-bold">{t("home.exclusiveOffers")}</h2>
@@ -1104,7 +1093,9 @@ function ExclusiveOffersPanel({
         ))}
       </div>
       <div className="mt-4 space-y-2">
-        {offers.length ? (
+        {loading ? (
+          <LandingRankingSkeleton />
+        ) : offers.length ? (
           offers.map((offer, index) => (
             <button
               key={offer.id}
@@ -1216,6 +1207,7 @@ function Index() {
   const [compareOpen, setCompareOpen] = useState<null | { a: string; b: string }>(null);
   const [activeOffer, setActiveOffer] = useState<AdminOffer | null>(null);
   const [liveOffers, setLiveOffers] = useState<AdminOffer[]>(seedOffers);
+  const [offersLoading, setOffersLoading] = useState(true);
   const [liveBrands, setLiveBrands] = useState<AdminBrandRecord[]>(fallbackBrands);
   const [brandsLoading, setBrandsLoading] = useState(true);
   const [tbiProfiles, setTbiProfiles] = useState<TbiProfile[]>([]);
@@ -1232,11 +1224,14 @@ function Index() {
     let cancelled = false;
 
     async function loadOffers() {
+      setOffersLoading(true);
       try {
         const offers = await fetchPublicOffers();
         if (!cancelled) setLiveOffers(offers.length ? offers : seedOffers);
       } catch {
         if (!cancelled) setLiveOffers(seedOffers);
+      } finally {
+        if (!cancelled) setOffersLoading(false);
       }
     }
 
@@ -1440,6 +1435,7 @@ function Index() {
             active={offerCategory}
             onChange={setOfferCategory}
             onSelect={setActiveOffer}
+            loading={offersLoading}
           />
           <RankingPanel
             title={t("home.topBrokersExchanges")}

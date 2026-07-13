@@ -455,7 +455,7 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
                         to={sub.to}
                         className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
                       >
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200 ring-1 ring-violet-300/18 transition group-hover/menu:bg-violet-400/20 group-hover/menu:text-white">
+                        <span className="rb-icon-tile h-10 w-10 rounded-xl transition group-hover/menu:brightness-125">
                           <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                         </span>
                         <span className="min-w-0 pt-0.5">
@@ -496,7 +496,7 @@ function LanguageSelector() {
         aria-label={t("common.language")}
         className="flex h-9 items-center gap-1 rounded-full bg-white/[0.045] px-2 text-xs font-semibold text-white outline-none ring-1 ring-white/10 transition hover:bg-white/[0.08] sm:px-3"
       >
-        <Globe2 className="h-3.5 w-3.5 text-fuchsia-200" />
+        <Globe2 className="h-3.5 w-3.5 text-primary" />
         <span className="hidden sm:inline">{languageMeta.code.toUpperCase()}</span>
         <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -519,7 +519,7 @@ function LanguageSelector() {
               <span className="font-semibold">{item.nativeLabel}</span>
               <span className="ml-1 text-muted-foreground">({item.code.toUpperCase()})</span>
             </span>
-            {language === item.code && <Check className="h-3.5 w-3.5 text-fuchsia-200" />}
+            {language === item.code && <Check className="h-3.5 w-3.5 text-primary" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -618,7 +618,7 @@ function UtilityMenu() {
                   to={item.to}
                   className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200 ring-1 ring-violet-300/18 transition group-hover/menu:bg-violet-400/20 group-hover/menu:text-white">
+                  <span className="rb-icon-tile h-10 w-10 rounded-xl transition group-hover/menu:brightness-125">
                     <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                   </span>
                   <span className="min-w-0 pt-0.5">
@@ -752,7 +752,7 @@ function MobileNavigationDrawer({
                               onClick={onClose}
                               className="group/menu flex min-w-0 items-start gap-3 rounded-xl p-3 transition hover:bg-white/[0.075]"
                             >
-                              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200 ring-1 ring-violet-300/18 transition group-hover/menu:bg-violet-400/20 group-hover/menu:text-white">
+                              <span className="rb-icon-tile h-10 w-10 rounded-xl transition group-hover/menu:brightness-125">
                                 <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                               </span>
                               <span className="min-w-0 pt-0.5">
@@ -788,7 +788,7 @@ function MobileNavigationDrawer({
                     onClick={onClose}
                     className="flex items-center gap-3 rounded-xl bg-white/[0.035] p-3 ring-1 ring-white/8 transition hover:bg-white/[0.075]"
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200">
+                    <span className="rb-icon-tile h-9 w-9 rounded-xl">
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="min-w-0">

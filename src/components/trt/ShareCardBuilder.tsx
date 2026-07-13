@@ -18,6 +18,7 @@ import {
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 import { createTrtShareableAsset, type ShareableAssetRecord } from "@/lib/shareable-assets-api";
+import { downloadBlob, exportElementToPngBlob, waitForImages, waitForNextPaint } from "@/lib/shareable-export";
 import { money, summarize, useTrt } from "@/lib/trt-store";
 
 type Preset =
@@ -449,26 +450,12 @@ export function ShareCardBuilder() {
 
   const createPngBlob = async () => {
     if (!cardRef.current) return null;
-    const mod = await import("html-to-image");
     const { exportWidth, exportHeight } = RATIOS[ratio];
-    await document.fonts?.ready;
-    await waitForImages(cardRef.current);
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const blob = await mod.toBlob(cardRef.current, {
+    const blob = await exportElementToPngBlob(cardRef.current, {
       pixelRatio: 2,
       backgroundColor: theme === "platinum" ? "#f2edf8" : "#07070c",
-      cacheBust: true,
-      width: exportWidth,
-      height: exportHeight,
-      style: {
-        width: `${exportWidth}px`,
-        height: `${exportHeight}px`,
-        maxWidth: "none",
-        minWidth: "0",
-        transform: "none",
-        transformOrigin: "top left",
-        overflow: "hidden",
-      },
+      targetWidth: exportWidth,
+      targetHeight: exportHeight,
     });
     return blob;
   };
@@ -903,25 +890,6 @@ function getShareCaption(preset: Preset, verificationUrl: string) {
   return `${opening[preset]}\n\nView the verified record:\n${verificationUrl}`;
 }
 
-function waitForNextPaint() {
-  return new Promise<void>((resolve) => {
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
-  });
-}
-
-async function waitForImages(root: HTMLElement) {
-  const images = Array.from(root.querySelectorAll("img"));
-  await Promise.all(
-    images.map((image) => {
-      if (image.complete && image.naturalWidth > 0) return Promise.resolve();
-      return new Promise<void>((resolve) => {
-        image.onload = () => resolve();
-        image.onerror = () => resolve();
-      });
-    }),
-  );
-}
-
 function MetaChip({
   icon: Icon,
   label,
@@ -1024,15 +992,6 @@ function getPresetStory(preset: Preset) {
     custom: "A signature RebateBoard achievement designed for sharing.",
   };
   return map[preset];
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.download = filename;
-  a.href = url;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 function fieldLabel(field: keyof Visibility) {

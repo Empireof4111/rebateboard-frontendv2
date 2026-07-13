@@ -9,6 +9,7 @@ import {
   Course, Faculty, Module, Lesson, QuizQuestion, getCourse,
   useAcademyStore, courseTotals, progressPct, allCourses, useFaculties,
 } from "@/lib/academy-data";
+import { downloadBlob, exportElementToCanvas, exportElementToPngBlob } from "@/lib/shareable-export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type View =
@@ -879,12 +880,13 @@ function CertificatePreviewModal({
     if (!ref.current) return;
     setBusy("png");
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(ref.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true });
-      const link = document.createElement("a");
-      link.download = `${safeName}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      const blob = await exportElementToPngBlob(ref.current, {
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+        targetWidth: 2400,
+        targetHeight: 1697,
+      });
+      if (blob) downloadBlob(blob, `${safeName}.png`);
     } finally { setBusy(null); }
   }
 
@@ -892,9 +894,13 @@ function CertificatePreviewModal({
     if (!ref.current) return;
     setBusy("pdf");
     try {
-      const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(ref.current, { backgroundColor: "#ffffff", scale: 2, useCORS: true });
+      const canvas = await exportElementToCanvas(ref.current, {
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+        targetWidth: 2400,
+        targetHeight: 1697,
+      });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
