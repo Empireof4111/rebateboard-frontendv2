@@ -74,6 +74,8 @@ const MARKETS: { id: Market; label: string; icon: LucideIcon }[] = [
   { id: "indices", label: "Indices", icon: ChartNoAxesCombined },
   { id: "stocks", label: "Stocks", icon: Landmark },
   { id: "commodities", label: "Commodities", icon: Droplets },
+  { id: "futures", label: "Futures", icon: ChartNoAxesCombined },
+  { id: "options", label: "Options", icon: Compass },
   { id: "propfirms", label: "Prop Firms", icon: Trophy },
 ];
 
@@ -89,6 +91,8 @@ const MARKET_CATEGORY_PRIORITY: Record<Market, string[]> = {
   forex: ["Forex Broker"],
   crypto: ["Crypto Exchange", "Crypto Prop Firm"],
   propfirms: ["Prop Firm", "Futures Prop Firm", "Crypto Prop Firm"],
+  futures: ["Futures Prop Firm", "Prop Firm", "Forex Broker"],
+  options: ["Trading Platform", "Forex Broker"],
   indices: ["Forex Broker", "Prop Firm"],
   stocks: ["Stock Prop Firm", "Trading Platform", "Forex Broker"],
   commodities: ["Forex Broker", "Prop Firm"],
@@ -120,8 +124,10 @@ const GOALS: { id: PrimaryGoal; label: string; icon: LucideIcon }[] = [
   { id: "reduce_costs", label: "Reduce trading costs", icon: BadgePercent },
   { id: "find_brokers", label: "Find better brokers", icon: SearchCheck },
   { id: "track_performance", label: "Track performance", icon: BarChart3 },
-  { id: "earn_rewards", label: "Earn rewards / cashback", icon: Gift },
+  { id: "earn_rewards", label: "Cashback & RR rewards", icon: Gift },
   { id: "improve_strategy", label: "Improve strategy", icon: Brain },
+  { id: "trading_psychology", label: "Trading psychology", icon: Brain },
+  { id: "funded_accounts", label: "Funded accounts", icon: Trophy },
 ];
 
 function SignupPage() {
@@ -232,6 +238,7 @@ function emptyAnswers(): OnboardingAnswers {
     monthlyVolume: null,
     acquisitionSource: null,
     primaryGoal: null,
+    interestGoals: [],
   };
 }
 
@@ -242,11 +249,19 @@ function Stepper({ step }: { step: Step }) {
     { n: 2, label: "Personalize", desc: "Tell us about your trading" },
     { n: 3, label: "Done", desc: "Start exploring" },
   ];
+  const progress = Math.round((stepNum / items.length) * 100);
   return (
     <div className="relative w-full max-w-lg px-2">
-      <div className="absolute left-[16.666%] right-[16.666%] top-4 h-px bg-white/10" />
+      <div className="mb-3 flex items-center justify-between text-[11px] font-semibold text-white/60">
+        <span>Step {stepNum} of {items.length}</span>
+        <span>{progress}% complete</span>
+      </div>
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full rb-gradient-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+      </div>
+      <div className="absolute left-[16.666%] right-[16.666%] top-[4.45rem] h-px bg-white/10" />
       <div
-        className="absolute left-[16.666%] top-4 h-px bg-emerald-500/60 transition-all duration-300"
+        className="absolute left-[16.666%] top-[4.45rem] h-px bg-emerald-500/60 transition-all duration-300"
         style={{ width: `${Math.max(0, ((stepNum - 1) / 2) * 66.666)}%` }}
       />
       <div className="relative grid grid-cols-3">
@@ -784,7 +799,7 @@ function StepQuestionnaire({
 }) {
   const [markets, setMarkets] = useState<Market[]>(initial?.preferredMarkets ?? []);
   const [platform, setPlatform] = useState<string>(initial?.currentPlatform ?? "");
-  const [selectedBrandId, setSelectedBrandId] = useState<string>(initial?.selectedBrandIds?.[0] ?? "");
+  const [selectedBrandIds, setSelectedBrandIds] = useState<string[]>(initial?.selectedBrandIds ?? []);
   const [otherBrandName, setOtherBrandName] = useState<string>(initial?.otherBrands?.[0] ?? "");
   const [brandQuery, setBrandQuery] = useState("");
   const [liveBrands, setLiveBrands] = useState<LiveOnboardingBrand[]>([]);
@@ -792,7 +807,7 @@ function StepQuestionnaire({
   const [exp, setExp] = useState<TradingExperience | null>(initial?.tradingExperience ?? null);
   const [vol, setVol] = useState<MonthlyVolume | null>(initial?.monthlyVolume ?? null);
   const [src, setSrc] = useState<AcquisitionSource | null>(initial?.acquisitionSource ?? null);
-  const [goal, setGoal] = useState<PrimaryGoal | null>(initial?.primaryGoal ?? null);
+  const [goals, setGoals] = useState<PrimaryGoal[]>(initial?.interestGoals?.length ? initial.interestGoals : initial?.primaryGoal ? [initial.primaryGoal] : []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -837,10 +852,34 @@ function StepQuestionnaire({
       .slice(0, 9);
   }, [brandQuery, liveBrands, markets]);
 
-  const canSubmit = markets.length > 0 && exp && goal;
+  const groupedBrandOptions = useMemo(() => {
+    const selected = liveBrands.filter((brand) => selectedBrandIds.includes(brand.id));
+    const popular = brandOptions.filter((brand) => !selectedBrandIds.includes(brand.id)).slice(0, 4);
+    const suggested = brandOptions.filter((brand) => !selectedBrandIds.includes(brand.id) && !popular.some((item) => item.id === brand.id));
+    return {
+      recent: selected,
+      popular,
+      suggested,
+    };
+  }, [brandOptions, liveBrands, selectedBrandIds]);
+
+  const canSubmit = markets.length > 0 && exp && goals.length > 0;
 
   function toggleMarket(m: Market) {
     setMarkets((prev) => prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]);
+  }
+
+  function toggleBrand(brand: LiveOnboardingBrand) {
+    setSelectedBrandIds((prev) => {
+      const next = prev.includes(brand.id) ? prev.filter((id) => id !== brand.id) : [...prev, brand.id];
+      const names = liveBrands.filter((item) => next.includes(item.id)).map((item) => item.name);
+      setPlatform(names.join(", "));
+      return next;
+    });
+  }
+
+  function toggleGoal(id: PrimaryGoal) {
+    setGoals((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
   }
 
   async function submit() {
@@ -851,14 +890,15 @@ function StepQuestionnaire({
     try {
       await onSubmit({
         preferredMarkets: markets,
-        currentPlatform: selectedBrandId === "other" ? otherBrandName.trim() : platform.trim(),
-        selectedBrandIds: selectedBrandId && selectedBrandId !== "other" ? [selectedBrandId] : [],
-        currentBrands: selectedBrandId && selectedBrandId !== "other" ? liveBrands.filter((brand) => brand.id === selectedBrandId) : [],
-        otherBrands: selectedBrandId === "other" && otherBrandName.trim() ? [otherBrandName.trim()] : [],
+        currentPlatform: [platform.trim(), otherBrandName.trim()].filter(Boolean).join(", "),
+        selectedBrandIds,
+        currentBrands: liveBrands.filter((brand) => selectedBrandIds.includes(brand.id)),
+        otherBrands: otherBrandName.trim() ? [otherBrandName.trim()] : [],
         tradingExperience: exp,
         monthlyVolume: vol,
         acquisitionSource: src,
-        primaryGoal: goal,
+        primaryGoal: goals[0] ?? null,
+        interestGoals: goals,
       });
     } catch {
       setError("We couldn’t save your trading profile right now. Please try again shortly.");
@@ -912,7 +952,7 @@ function StepQuestionnaire({
               />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-3">
               {brandsLoading && (
                 Array.from({ length: 4 }).map((_, index) => (
                   <div
@@ -928,52 +968,24 @@ function StepQuestionnaire({
                 ))
               )}
 
-              {!brandsLoading && brandOptions.map((brand) => {
-                const on = selectedBrandId === brand.id;
-                return (
-                  <button
-                    key={brand.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedBrandId(brand.id);
-                      setPlatform(brand.name);
-                      setOtherBrandName("");
-                    }}
-                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition duration-200 ${on ? "scale-[1.01] border-violet-400/60 bg-violet-500/15 text-white shadow-[0_0_22px_rgba(192,132,252,0.18)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/20 hover:bg-white/[0.07]"}`}
-                  >
-                    <BrandLogo brand={brand} />
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold">{brand.name}</span>
-                      <span className="block truncate text-[11px] text-white/45">{brand.category}</span>
-                    </span>
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedBrandId("other");
-                  setPlatform("");
-                }}
-                className={`rounded-xl border p-3 text-left transition duration-200 ${selectedBrandId === "other" ? "scale-[1.01] border-violet-400/60 bg-violet-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.07]"}`}
-              >
-                <span className="block text-sm font-semibold">Other</span>
-                <span className="block text-[11px] text-white/45">Add a brand not listed yet.</span>
-              </button>
+              {!brandsLoading && (
+                <>
+                  <BrandOptionGroup title="Recent" brands={groupedBrandOptions.recent} selectedBrandIds={selectedBrandIds} onToggle={toggleBrand} />
+                  <BrandOptionGroup title="Popular" brands={groupedBrandOptions.popular} selectedBrandIds={selectedBrandIds} onToggle={toggleBrand} />
+                  <BrandOptionGroup title="Suggested" brands={groupedBrandOptions.suggested} selectedBrandIds={selectedBrandIds} onToggle={toggleBrand} />
+                </>
+              )}
             </div>
 
-            {selectedBrandId === "other" && (
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={otherBrandName}
-                  onChange={(event) => setOtherBrandName(event.target.value)}
-                  placeholder="Enter brand name"
-                  className={inputCls}
-                />
-              </div>
-            )}
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={otherBrandName}
+                onChange={(event) => setOtherBrandName(event.target.value)}
+                placeholder="Add another brand not listed yet (optional)"
+                className={inputCls}
+              />
+            </div>
           </div>
         </Question>
 
@@ -1001,16 +1013,16 @@ function StepQuestionnaire({
           />
         </Question>
 
-        <Question n={6} title="Primary goal on RebateBoard" required>
+        <Question n={6} title="Interests and goals on RebateBoard" hint="Select all that apply. Your first choice becomes your primary goal." required>
           <div className="grid gap-2 sm:grid-cols-2">
             {GOALS.map((g) => {
-              const on = goal === g.id;
+              const on = goals.includes(g.id);
               const Icon = g.icon;
               return (
                 <button
                   key={g.id}
                   type="button"
-                  onClick={() => setGoal(g.id)}
+                  onClick={() => toggleGoal(g.id)}
                   className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition duration-200 ${on ? "scale-[1.02] border-violet-400/60 bg-violet-500/15 text-white shadow-[0_0_18px_rgba(192,132,252,0.16)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:text-white"}`}
                 >
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${on ? "bg-violet-500/25 text-violet-100" : "bg-violet-500/10 text-violet-300"}`}>
@@ -1091,6 +1103,49 @@ function BrandLogo({ brand }: { brand: LiveOnboardingBrand }) {
   ) : (
     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-xs font-bold text-white ring-1 ring-white/10">
       {brand.name.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
+function BrandOptionGroup({
+  title,
+  brands,
+  selectedBrandIds,
+  onToggle,
+}: {
+  title: string;
+  brands: LiveOnboardingBrand[];
+  selectedBrandIds: string[];
+  onToggle: (brand: LiveOnboardingBrand) => void;
+}) {
+  if (!brands.length) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">{title}</div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {brands.map((brand) => {
+          const on = selectedBrandIds.includes(brand.id);
+          return (
+            <button
+              key={`${title}-${brand.id}`}
+              type="button"
+              onClick={() => onToggle(brand)}
+              className={`flex items-center gap-3 rounded-xl border p-3 text-left transition duration-200 ${on ? "scale-[1.01] border-violet-400/60 bg-violet-500/15 text-white shadow-[0_0_22px_rgba(90,34,241,0.18)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/20 hover:bg-white/[0.07]"}`}
+              aria-pressed={on}
+            >
+              <BrandLogo brand={brand} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{brand.name}</span>
+                <span className="block truncate text-[11px] text-white/45">{brand.category}</span>
+              </span>
+              <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] ${on ? "border-violet-300 bg-violet-500 text-white" : "border-white/15 text-white/35"}`}>
+                {on ? <Check className="h-3 w-3" /> : "+"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

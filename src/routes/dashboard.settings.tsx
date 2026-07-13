@@ -4,6 +4,12 @@ import { useAuth } from "@/lib/auth";
 import { DashboardChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { apiRequest } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
+import {
+  LIVE_NOTIFICATION_OPTIONS,
+  readLiveNotificationPreferences,
+  writeLiveNotificationPreferences,
+  type LiveNotificationPreferences,
+} from "@/lib/notification-preferences";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
@@ -17,6 +23,7 @@ function SettingsPage() {
   const [preferenceError, setPreferenceError] = useState("");
   const [preferenceSaved, setPreferenceSaved] = useState(false);
   const [testEmailStatus, setTestEmailStatus] = useState("");
+  const [livePreferences, setLivePreferences] = useState<LiveNotificationPreferences>(() => readLiveNotificationPreferences());
 
   const preferenceGroups = useMemo(
     () => [
@@ -124,6 +131,14 @@ function SettingsPage() {
     }
   }
 
+  function updateLivePreference(key: keyof LiveNotificationPreferences, value: boolean) {
+    const next = { ...livePreferences, [key]: value };
+    setLivePreferences(next);
+    writeLiveNotificationPreferences(next);
+    setPreferenceSaved(true);
+    window.setTimeout(() => setPreferenceSaved(false), 1800);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" subtitle="Account, notifications, and privacy." />
@@ -134,6 +149,39 @@ function SettingsPage() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span className="text-white">{user?.name}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span className="text-white">{user?.email}</span></div>
+        </div>
+      </Panel>
+
+      <Panel title="Live Notification Feed">
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-violet-300/20 bg-violet-400/10 p-4 text-sm text-violet-50">
+            <p className="font-semibold">One live update at a time.</p>
+            <p className="mt-1 text-violet-50/70">
+              RebateBoard cycles public activity and campaign popups through a single feed. Turn off categories you do not want to see.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {LIVE_NOTIFICATION_OPTIONS.map((item) => (
+              <label
+                key={item.key}
+                className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-violet-300/35 hover:bg-white/[0.07]"
+              >
+                <span>
+                  <span className="block text-sm font-semibold text-white">{item.label}</span>
+                  <span className="mt-1 block text-xs leading-5 text-white/55">{item.hint}</span>
+                </span>
+                <span className="relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-white/10 transition data-[checked=true]:bg-violet-500" data-checked={livePreferences[item.key] !== false}>
+                  <input
+                    type="checkbox"
+                    checked={livePreferences[item.key] !== false}
+                    onChange={(event) => updateLivePreference(item.key, event.target.checked)}
+                    className="sr-only"
+                  />
+                  <span className="pointer-events-none h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition data-[checked=true]:translate-x-5" data-checked={livePreferences[item.key] !== false} />
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
       </Panel>
 

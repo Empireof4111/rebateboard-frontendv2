@@ -7,8 +7,9 @@ export type MonthlyVolume = "lt1k" | "1k_10k" | "10k_50k" | "gt50k";
 export type AcquisitionSource =
   | "tiktok" | "twitter" | "youtube" | "google" | "referral" | "other";
 export type PrimaryGoal =
-  | "reduce_costs" | "find_brokers" | "track_performance" | "earn_rewards" | "improve_strategy";
-export type Market = "forex" | "crypto" | "indices" | "stocks" | "commodities" | "propfirms";
+  | "reduce_costs" | "find_brokers" | "track_performance" | "earn_rewards" | "improve_strategy"
+  | "trading_psychology" | "funded_accounts";
+export type Market = "forex" | "crypto" | "indices" | "stocks" | "commodities" | "futures" | "options" | "propfirms";
 
 export type OnboardingBrandSelection = {
   id: string;
@@ -28,6 +29,7 @@ export type OnboardingAnswers = {
   monthlyVolume: MonthlyVolume | null;
   acquisitionSource: AcquisitionSource | null;
   primaryGoal: PrimaryGoal | null;
+  interestGoals: PrimaryGoal[];
 };
 
 export type User = {
@@ -180,10 +182,17 @@ function emptyAnswers(): OnboardingAnswers {
     monthlyVolume: null,
     acquisitionSource: null,
     primaryGoal: null,
+    interestGoals: [],
   };
 }
 
 function normalizeAnswers(raw?: Partial<OnboardingAnswers> | null): OnboardingAnswers {
+  const primaryGoal = raw?.primaryGoal ?? null;
+  const interestGoals = Array.isArray(raw?.interestGoals)
+    ? raw!.interestGoals as PrimaryGoal[]
+    : primaryGoal
+      ? [primaryGoal]
+      : [];
   return {
     preferredMarkets: Array.isArray(raw?.preferredMarkets) ? raw!.preferredMarkets as Market[] : [],
     currentPlatform: raw?.currentPlatform ?? "",
@@ -193,7 +202,8 @@ function normalizeAnswers(raw?: Partial<OnboardingAnswers> | null): OnboardingAn
     tradingExperience: raw?.tradingExperience ?? null,
     monthlyVolume: raw?.monthlyVolume ?? null,
     acquisitionSource: raw?.acquisitionSource ?? null,
-    primaryGoal: raw?.primaryGoal ?? null,
+    primaryGoal,
+    interestGoals,
   };
 }
 
@@ -467,6 +477,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         monthlyVolume: answers.monthlyVolume,
         acquisitionSource: answers.acquisitionSource,
         primaryGoal: answers.primaryGoal,
+        interestGoals: answers.interestGoals,
       },
       token,
     });
@@ -536,18 +547,22 @@ export function usePersonalization() {
   return {
     markets: o?.preferredMarkets ?? [],
     goal: o?.primaryGoal ?? null,
+    goals: o?.interestGoals?.length ? o.interestGoals : o?.primaryGoal ? [o.primaryGoal] : [],
     experience: o?.tradingExperience ?? null,
     primaryMarketLabel: o?.preferredMarkets?.[0]
       ? marketLabel(o.preferredMarkets[0])
       : null,
+    marketLabels: (o?.preferredMarkets ?? []).map(marketLabel),
     goalLabel: o?.primaryGoal ? goalLabel(o.primaryGoal) : null,
+    goalLabels: (o?.interestGoals?.length ? o.interestGoals : o?.primaryGoal ? [o.primaryGoal] : []).map(goalLabel),
   };
 }
 
 export function marketLabel(m: Market): string {
   return ({
     forex: "Forex", crypto: "Crypto", indices: "Indices",
-    stocks: "Stocks", commodities: "Commodities", propfirms: "Prop Firms",
+    stocks: "Stocks", commodities: "Commodities", futures: "Futures",
+    options: "Options", propfirms: "Prop Firms",
   } as const)[m];
 }
 
@@ -558,5 +573,7 @@ export function goalLabel(g: PrimaryGoal): string {
     track_performance: "Track performance",
     earn_rewards: "Earn rewards & cashback",
     improve_strategy: "Improve strategy",
+    trading_psychology: "Trading psychology",
+    funded_accounts: "Funded accounts",
   } as const)[g];
 }

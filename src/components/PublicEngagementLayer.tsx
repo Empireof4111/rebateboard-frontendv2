@@ -12,6 +12,12 @@ import {
 } from "@/lib/public-engagement-api";
 import { useAuth } from "@/lib/auth";
 import { brandInitials, firstBrandText, resolveMediaUrl } from "@/lib/brand-assets";
+import {
+  LIVE_NOTIFICATION_EVENT,
+  liveNotificationCategoryFor,
+  readLiveNotificationPreferences,
+  type LiveNotificationPreferences,
+} from "@/lib/notification-preferences";
 
 const SENSITIVE_ROUTES = ["/login", "/signup", "/review", "/business/onboarding", "/verify"];
 
@@ -23,6 +29,17 @@ export function PublicEngagementLayer() {
   const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
   const [activity, setActivity] = useState<PublicActivityEvent | null>(null);
   const [activityQueue, setActivityQueue] = useState<PublicActivityEvent[]>([]);
+  const [notificationPreferences, setNotificationPreferences] = useState<LiveNotificationPreferences>(() => readLiveNotificationPreferences());
+
+  useEffect(() => {
+    const refresh = () => setNotificationPreferences(readLiveNotificationPreferences());
+    window.addEventListener("storage", refresh);
+    window.addEventListener(LIVE_NOTIFICATION_EVENT, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(LIVE_NOTIFICATION_EVENT, refresh);
+    };
+  }, []);
 
   useEffect(() => {
     if (sensitive) return;
@@ -38,6 +55,10 @@ export function PublicEngagementLayer() {
 
     fetchPublicCampaigns(route, user ? "logged_in" : "guests").then((campaigns) => {
       if (!active) return;
+      if (notificationPreferences.promotions === false) {
+        setCampaign(null);
+        return;
+      }
       const eligible = campaigns
         .filter((item) => !isDismissed(item))
         .sort((a, b) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0];
@@ -73,27 +94,32 @@ export function PublicEngagementLayer() {
       if (timeout) window.clearTimeout(timeout);
       removeExitIntent?.();
     };
-  }, [route, sensitive, user]);
+  }, [route, sensitive, user, notificationPreferences.promotions]);
 
   useEffect(() => {
     if (sensitive) return;
     let active = true;
     fetchPublicActivityEvents().then((events) => {
-      if (active) setActivityQueue(events.filter((event) => !isActivityDismissed(event)));
+      if (active) {
+        setActivityQueue(events.filter((event) => {
+          const category = liveNotificationCategoryFor(event);
+          return notificationPreferences[category] !== false && !isActivityDismissed(event);
+        }));
+      }
     });
     return () => {
       active = false;
     };
-  }, [sensitive, route]);
+  }, [sensitive, route, notificationPreferences]);
 
   useEffect(() => {
-    if (sensitive || activity || activityQueue.length === 0 || document.hidden) return;
+    if (sensitive || campaign || activity || activityQueue.length === 0 || document.hidden) return;
     const timer = window.setTimeout(() => {
       setActivity(activityQueue[0]);
       setActivityQueue((current) => current.slice(1));
     }, 1600);
     return () => window.clearTimeout(timer);
-  }, [activity, activityQueue, sensitive]);
+  }, [activity, activityQueue, campaign, sensitive]);
 
   useEffect(() => {
     if (!activity) return;
@@ -168,7 +194,7 @@ export function PublicEngagementLayer() {
       )}
 
       {activity && (
-        <div className="fixed bottom-5 left-4 z-[80] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/12 bg-[rgba(18,18,25,0.95)] p-4 text-white shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl md:bottom-6 md:left-6">
+        <div className="fixed bottom-5 left-4 z-[80] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/12 bg-[rgba(18,18,25,0.95)] p-4 text-white shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl transition-all duration-300 md:bottom-6 md:left-6" aria-live="polite">
           <button
             type="button"
             onClick={() => dismissActivity(activity, setActivity)}

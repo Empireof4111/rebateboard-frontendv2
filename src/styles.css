@@ -188,6 +188,7 @@
   }
   html {
     max-width: 100%;
+    overflow-x: hidden;
     overflow-x: clip;
     scroll-behavior: smooth;
   }
@@ -200,8 +201,14 @@
     max-width: 100%;
     min-width: 320px;
     min-height: 100vh;
+    overflow-x: hidden;
     overflow-x: clip;
     overscroll-behavior-y: none;
+  }
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
   }
   img,
   video,

@@ -92,7 +92,7 @@ function DashboardHome() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const { primaryMarketLabel, goalLabel } = usePersonalization();
+  const { marketLabels, goalLabels } = usePersonalization();
   const hasTradingPlan = Boolean(
     tradingPlan.profile || tradingPlan.strategies.length > 0 || tradingPlan.checklist.length > 0,
   );
@@ -152,8 +152,10 @@ function DashboardHome() {
     if (h < 18) return t("dashboard.greetingAfternoon");
     return t("dashboard.greetingEvening");
   }, [localNow, t]);
-  const subtitle = primaryMarketLabel || goalLabel
-    ? `${t("dashboard.tunedFor")} ${primaryMarketLabel ?? t("dashboard.yourMarkets")}${goalLabel ? ` · ${t("dashboard.goal")}: ${goalLabel}` : ""}.`
+  const visibleMarkets = marketLabels.slice(0, 3).join(", ");
+  const visibleGoals = goalLabels.slice(0, 2).join(", ");
+  const subtitle = visibleMarkets || visibleGoals
+    ? `${t("dashboard.tunedFor")} ${visibleMarkets || t("dashboard.yourMarkets")}${visibleGoals ? ` · ${t("dashboard.goal")}: ${visibleGoals}` : ""}.`
     : t("dashboard.commandCenter");
 
   return (

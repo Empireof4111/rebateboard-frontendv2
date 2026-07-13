@@ -2087,8 +2087,9 @@ function Index() {
         </section>
 
         {/* AI BACKTEST LAB */}
-        <section className="relative mt-10 overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a0b2e] via-[#150829] to-[#0a0418] p-6 ring-1 ring-violet-500/20 md:p-8">
-          <div className="glow-orb left-[-10%] top-[-20%] h-[400px] w-[400px]" />
+        <section className="relative mt-10 overflow-hidden rounded-3xl border border-white/10 bg-[rgba(22,22,31,0.94)] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)] ring-1 ring-violet-500/12 md:p-8">
+          <div className="pointer-events-none absolute left-[-10%] top-[-20%] h-[400px] w-[400px] rounded-full bg-violet-500/[0.08] blur-[120px]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(90,34,241,0.12),transparent_36%),radial-gradient(circle_at_88%_18%,rgba(126,77,255,0.07),transparent_30%)]" />
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3 py-1 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
               ✨ NEW • AI Backtest Lab
@@ -2322,7 +2323,7 @@ function CompareDialog({
         }
       }}
     >
-      <DialogContent className="max-w-[1100px] border-violet-400/20 bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] p-0 text-white">
+      <DialogContent className="max-w-[1100px] border-violet-400/18 bg-[rgba(18,18,25,0.98)] p-0 text-white shadow-[0_28px_90px_rgba(0,0,0,0.44)]">
         <div className="max-h-[90vh] overflow-y-auto p-6">
           {/* Header */}
           <div className="glass-strong mb-4 flex items-center justify-between rounded-2xl bg-violet-900/30 p-4 ring-1 ring-violet-400/20">

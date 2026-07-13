@@ -766,7 +766,9 @@ function CheckoutModal({
   return (
     <div className="fixed inset-0 z-50 grid animate-in place-items-center px-4 py-6 duration-200 fade-in">
       <div className="absolute inset-0 bg-[rgba(8,8,12,0.80)] backdrop-blur-sm" onClick={onClose} />
-      <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-violet-400/30 bg-gradient-to-br from-[#26113f] via-[#1f0d3d] to-[#150829] p-5 shadow-[0_30px_80px_rgba(120,30,180,0.5)] animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+      <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-violet-400/18 bg-[rgba(18,18,25,0.98)] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)] animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(90,34,241,0.12),transparent_34%),radial-gradient(circle_at_88%_18%,rgba(126,77,255,0.08),transparent_30%)]" />
+        <div className="relative">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-200">
@@ -782,6 +784,7 @@ function CheckoutModal({
           >
             <X className="h-3.5 w-3.5" />
           </button>
+        </div>
         </div>
 
         {completed ? (

@@ -604,25 +604,23 @@ function MobileNavigationDrawer({
     };
   }, [open]);
 
+  if (!open) return null;
+
   return (
     <div
-      className={`fixed inset-0 z-[70] lg:hidden ${
-        open ? "pointer-events-auto" : "pointer-events-none"
-      }`}
-      aria-hidden={!open}
+      className="fixed inset-0 z-[70] overflow-hidden lg:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mobile navigation"
     >
       <button
         type="button"
         aria-label="Close navigation"
         onClick={onClose}
-        className={`absolute inset-0 bg-black/55 backdrop-blur-sm transition-opacity duration-200 ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
+        className="absolute inset-0 bg-black/55 opacity-100 backdrop-blur-sm transition-opacity duration-200"
       />
       <aside
-        className={`navigation-glass-panel absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className="navigation-glass-panel absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] max-w-[calc(100vw-0.75rem)] translate-x-0 flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300"
       >
         <div className="flex items-center justify-between gap-3">
           <Logo heightClass="h-8" />
