@@ -6,11 +6,12 @@ import {
   ChevronDown, Newspaper, Megaphone, FileWarning, Layers, ClipboardCheck, FlaskConical, Globe2, Share2, Check,
   PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { AddTradeModal } from "@/components/dashboard/AddTradeModal";
 import { DashboardAdBanner } from "@/components/dashboard/DashboardAdBanner";
+import { DashboardSearch, type DashboardSearchRoute } from "@/components/dashboard/DashboardSearch";
 import { openAddTrade, onAddTradeOpen } from "@/lib/ui-bus";
 import { useI18n, type LanguageCode } from "@/lib/i18n";
 import { useNotifications, type NotificationKind } from "@/lib/notifications-store";
@@ -27,6 +28,8 @@ import { markDashboardVisit } from "@/components/dashboard/OnboardingChecklist";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; exact?: boolean; badge?: string };
 type NavGroup = { id: string; labelKey: string; items: NavItem[] };
+
+const SIDEBAR_PREF_KEY = "rb.dashboard.sidebar.collapsed";
 
 const groups: NavGroup[] = [
   {
@@ -163,8 +166,13 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(SIDEBAR_PREF_KEY) === "true";
+  });
+  const [searchOpen, setSearchOpen] = useState(false);
   const notifications = useNotifications(token);
+  const sidebarWidth = sidebarCollapsed ? "5rem" : "16rem";
 
   const initialOpen = useMemo(() => {
     const open: Record<string, boolean> = {};
@@ -180,7 +188,41 @@ export function DashboardLayout() {
   const [tradeOpen, setTradeOpen] = useState(false);
   const toggle = (id: string) => setOpenGroups((s) => ({ ...s, [id]: !s[id] }));
 
+  const searchRoutes = useMemo<DashboardSearchRoute[]>(
+    () =>
+      groups.flatMap((group) =>
+        group.items.map((item) => ({
+          id: `${group.id}-${item.to}-${item.labelKey}`,
+          group: t(group.labelKey),
+          label: t(item.labelKey),
+          to: item.to,
+          icon: item.icon,
+          badge: item.badge,
+        })),
+      ),
+    [t],
+  );
+
   useEffect(() => { const off = onAddTradeOpen(() => setTradeOpen(true)); return () => { off(); }; }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_PREF_KEY, String(sidebarCollapsed));
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     if (pathname.startsWith("/dashboard/brands")) markDashboardVisit("programs");
@@ -193,7 +235,7 @@ export function DashboardLayout() {
 
   if (loading || !user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#12051f] p-6">
+      <div className="grid min-h-screen place-items-center bg-[var(--rb-bg-canvas)] p-6">
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl">
           <Logo heightClass="h-9" />
           <div className="mt-6 space-y-3">
@@ -211,13 +253,16 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      className="relative min-h-screen"
+      style={{ "--dashboard-sidebar-width": sidebarWidth } as CSSProperties}
+    >
       <div className="glow-orb left-[-10%] top-[-10%] h-[500px] w-[500px]" />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-2rem))] transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-all duration-200 ease-out lg:w-64 lg:translate-x-0 ${
-          sidebarCollapsed ? "lg:w-20" : "lg:w-64"
-        } ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-2rem))] transform border-r border-white/5 bg-[rgba(18,18,25,0.90)] backdrop-blur-xl transition-[width,transform] duration-200 ease-out lg:w-[var(--dashboard-sidebar-width)] lg:translate-x-0 ${
+          mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
         aria-label="Dashboard navigation"
       >
         <div className={`flex h-16 items-center justify-between border-b border-white/5 px-4 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
@@ -234,8 +279,9 @@ export function DashboardLayout() {
         </div>
         <button
           onClick={() => setSidebarCollapsed((value) => !value)}
-          className="absolute -right-4 top-5 hidden h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#24113e]/95 text-fuchsia-100 shadow-xl shadow-black/30 backdrop-blur-xl transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
+          className="absolute -right-4 top-5 hidden h-8 w-8 place-items-center rounded-full border border-white/10 bg-[rgba(18,18,25,0.95)] text-fuchsia-100 shadow-xl shadow-black/30 backdrop-blur-xl transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!sidebarCollapsed}
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -284,7 +330,7 @@ export function DashboardLayout() {
                           <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-fuchsia-300" : "group-hover:text-white/90"}`} />
                           <span className={`flex-1 truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>{t(item.labelKey)}</span>
                           {item.badge && (
-                            <span className={`rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                            <span className={`rounded-full rb-gradient-primary px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                               {item.badge}
                             </span>
                           )}
@@ -312,8 +358,8 @@ export function DashboardLayout() {
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div className={sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}>
-        <header className="sticky top-0 z-30 border-b border-white/5 bg-[#150829]/75 backdrop-blur-xl">
+      <div className="transition-[padding] duration-200 ease-out lg:pl-[var(--dashboard-sidebar-width)]">
+        <header className="sticky top-0 z-30 border-b border-white/5 bg-[rgba(18,18,25,0.75)] backdrop-blur-xl">
           <div className="flex h-14 min-w-0 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6">
             <button
               onClick={() => setMobileOpen(true)}
@@ -322,15 +368,23 @@ export function DashboardLayout() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="glass hidden flex-1 items-center gap-2 rounded-full px-4 py-2 md:flex md:max-w-md">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="glass hidden flex-1 items-center gap-2 rounded-full px-4 py-2 text-left transition-colors hover:bg-white/5 md:flex md:max-w-md"
+            >
               <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                placeholder={t("dashboard.searchPlaceholder")}
-                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-muted-foreground"
-                aria-label={t("common.search")}
-              />
-            </div>
-            <button className="grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/5 md:hidden" aria-label={t("common.search")}>
+              <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+                {t("dashboard.searchPlaceholder")}
+              </span>
+              <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">⌘K</kbd>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/5 md:hidden"
+              aria-label={t("common.search")}
+            >
               <Search className="h-4 w-4" />
             </button>
             <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
@@ -338,10 +392,10 @@ export function DashboardLayout() {
               <Link to={"/dashboard/wallet" as string} className="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.45)] transition-transform hover:scale-[1.02] active:scale-[0.98] sm:inline-flex">
                 <Wallet className="h-3.5 w-3.5" /> {t("dashboard.wallet")}
               </Link>
-              <button onClick={openAddTrade} className="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)] transition-transform hover:scale-[1.02] active:scale-[0.98] sm:inline-flex">
+              <button onClick={openAddTrade} className="hidden items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)] transition-transform hover:scale-[1.02] active:scale-[0.98] sm:inline-flex">
                 <Plus className="h-3.5 w-3.5" /> {t("dashboard.addTrade")}
               </button>
-              <button onClick={openAddTrade} className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_18px_rgba(192,132,252,0.45)] sm:hidden" aria-label={t("dashboard.addTrade")}>
+              <button onClick={openAddTrade} className="grid h-9 w-9 place-items-center rounded-full rb-gradient-primary text-white shadow-[0_0_18px_rgba(192,132,252,0.45)] sm:hidden" aria-label={t("dashboard.addTrade")}>
                 <Plus className="h-4 w-4" />
               </button>
               <Link to={"/dashboard/ai-coach" as string} className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
@@ -354,7 +408,7 @@ export function DashboardLayout() {
                 >
                   <Bell className="h-4 w-4" />
                   {notifications.unread > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-fuchsia-500 px-1 text-[9px] font-bold text-white ring-2 ring-[#150829]">
+                    <span className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-fuchsia-500 px-1 text-[9px] font-bold text-white ring-2 ring-[var(--rb-bg-elevated)]">
                       {notifications.unread > 9 ? "9+" : notifications.unread}
                     </span>
                   )}
@@ -467,6 +521,7 @@ export function DashboardLayout() {
       </div>
 
       <AddTradeModal open={tradeOpen} onClose={() => setTradeOpen(false)} />
+      <DashboardSearch open={searchOpen} onClose={() => setSearchOpen(false)} routes={searchRoutes} />
     </div>
   );
 }

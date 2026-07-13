@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { EmptyState, PageHeader, Panel } from "@/components/dashboard/Primitives";
 import { openAddTrade } from "@/lib/ui-bus";
-import { useTrades } from "@/lib/trading-plan";
+import { resolveTradeNetPnl, resolveTradeOutcome, useTrades } from "@/lib/trading-plan";
 import { CalendarDays, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/calendar")({
@@ -33,14 +33,18 @@ function CalendarPage() {
       return date.getFullYear() === year && date.getMonth() === month;
     });
 
-    const dayRows = Array.from({ length: leadingBlanks }, () => null as null | { day: number; pnl: number; trades: number }).concat(
+    const dayRows = Array.from({ length: leadingBlanks }, () => null as null | { day: number; pnl: number; trades: number; pending: number }).concat(
       Array.from({ length: daysInMonth }, (_, index) => {
         const day = index + 1;
         const dayTrades = monthTrades.filter((trade) => new Date(trade.createdAt).getDate() === day);
+        const completed = dayTrades
+          .map((trade) => resolveTradeNetPnl(trade))
+          .filter((value): value is number => value !== null);
         return {
           day,
-          pnl: dayTrades.reduce((sum, trade) => sum + Number(trade.pnl ?? 0), 0),
+          pnl: completed.reduce((sum, value) => sum + value, 0),
           trades: dayTrades.length,
+          pending: dayTrades.filter((trade) => resolveTradeOutcome(trade) === "pending").length,
         };
       }),
     );
@@ -85,7 +89,7 @@ function CalendarPage() {
               <button
                 type="button"
                 onClick={openAddTrade}
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add trade
@@ -101,7 +105,7 @@ function CalendarPage() {
               day ? (
                 <div key={day.day} className={`flex min-h-16 flex-col items-center justify-center rounded-xl p-2 ${colorFor(day.pnl, day.trades)}`}>
                   <div className="text-[10px] opacity-70">{day.day}</div>
-                  <div className="text-xs font-semibold">{money(day.pnl)}</div>
+                  <div className="text-xs font-semibold">{day.trades === day.pending ? "Pending" : money(day.pnl)}</div>
                   {day.trades > 0 && <div className="mt-0.5 text-[9px] opacity-70">{day.trades} trade{day.trades === 1 ? "" : "s"}</div>}
                 </div>
               ) : (

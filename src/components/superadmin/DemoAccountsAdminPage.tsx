@@ -292,7 +292,7 @@ export function DemoAccountsAdminPage() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
+              className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
             >
               <Plus className="h-4 w-4" />
               New Demo Account
@@ -326,7 +326,7 @@ export function DemoAccountsAdminPage() {
             className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
           >
             {PLATFORM_OPTIONS.map((platform) => (
-              <option key={platform} value={platform} className="bg-[#150829] text-white">
+              <option key={platform} value={platform} className="bg-[var(--rb-bg-elevated)] text-white">
                 {platform === "all" ? "All platforms" : platform}
               </option>
             ))}
@@ -366,7 +366,7 @@ export function DemoAccountsAdminPage() {
                   {row.logo ? (
                     <img src={row.logo} alt={row.brand} className="h-10 w-10 rounded-full object-cover ring-1 ring-white/10" />
                   ) : (
-                    <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500/70 to-violet-600/70 text-xs font-bold text-white ring-1 ring-white/10">
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-[rgba(126,77,255,0.28)] text-xs font-bold text-white ring-1 ring-white/10">
                       {row.brand
                         .split(" ")
                         .slice(0, 2)
@@ -469,7 +469,7 @@ export function DemoAccountsAdminPage() {
                   </div>
                   <div className="h-2 rounded-full bg-white/10">
                     <div
-                      className="h-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500"
+                      className="h-2 rounded-full rb-gradient-primary"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -495,7 +495,7 @@ export function DemoAccountsAdminPage() {
               type="button"
               onClick={() => void handleSubmit()}
               disabled={saving}
-              className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+              className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
             >
               {saving ? "Saving..." : form.id ? "Save changes" : "Create demo account"}
             </button>

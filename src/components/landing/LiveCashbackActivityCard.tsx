@@ -139,7 +139,7 @@ export function LiveCashbackActivityCard({ selectedBrand }: LiveCashbackActivity
         <Link
           to="/firm/$firmId"
           params={{ firmId: slugOrId(selectedBrand) }}
-          className="mt-3 inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-[0_14px_34px_rgba(168,85,247,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
+          className="mt-3 inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[0_14px_34px_rgba(168,85,247,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
         >
           <span className="min-w-0 truncate">{ctaLabel}</span>
           <ArrowRight className="h-3.5 w-3.5 shrink-0" />
@@ -147,7 +147,7 @@ export function LiveCashbackActivityCard({ selectedBrand }: LiveCashbackActivity
       ) : (
         <Link
           to="/offers"
-          className="mt-3 inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-[0_14px_34px_rgba(168,85,247,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
+          className="mt-3 inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[0_14px_34px_rgba(168,85,247,0.28)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
         >
           <span className="min-w-0 truncate">{ctaLabel}</span>
           <ArrowRight className="h-3.5 w-3.5 shrink-0" />

@@ -58,7 +58,7 @@ function VerifyAssetPage() {
   const visibleName = record?.visibleFields?.includes("profile") ? String(record?.metadata?.traderName ?? "RebateBoard Trader") : null;
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-8 sm:py-12">
         <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-violet-950/60 via-[#16072d] to-[#08030f] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)] md:p-10">
@@ -120,7 +120,7 @@ function VerifyAssetPage() {
                 <Link to="/trt" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10">
                   Learn about TRT <ExternalLink className="h-4 w-4" />
                 </Link>
-                <Link to="/signup" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white shadow-[0_0_30px_rgba(192,132,252,0.3)]">
+                <Link to="/signup" className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white shadow-[0_0_30px_rgba(192,132,252,0.3)]">
                   Create free account
                 </Link>
               </div>

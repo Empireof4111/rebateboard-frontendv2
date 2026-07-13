@@ -74,7 +74,7 @@ export function BrandDashboardLayout() {
       <div className="glow-orb left-[-10%] top-[-10%] h-[500px] w-[500px]" />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#0d0820]/90 backdrop-blur-xl transition-transform duration-200 ease-out lg:translate-x-0 ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[rgba(18,18,25,0.90)] backdrop-blur-xl transition-transform duration-200 ease-out lg:translate-x-0 ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
       >
         <div className="flex h-16 items-center justify-between border-b border-white/5 px-4">
           <Link to="/" className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export function BrandDashboardLayout() {
                           {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" />}
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1 truncate">{item.label}</span>
-                          {item.badge && <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">{item.badge}</span>}
+                          {item.badge && <span className="rounded-full rb-gradient-primary px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">{item.badge}</span>}
                         </Link>
                       );
                     })}
@@ -138,7 +138,7 @@ export function BrandDashboardLayout() {
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />}
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0d0820]/75 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 border-b border-white/5 bg-[rgba(18,18,25,0.75)] backdrop-blur-xl">
           <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:px-4 md:px-6">
             <button onClick={() => setMobileOpen(true)} className="grid h-9 w-9 place-items-center rounded-lg text-white hover:bg-white/5 lg:hidden" aria-label="Open menu">
               <Menu className="h-5 w-5" />
@@ -153,7 +153,7 @@ export function BrandDashboardLayout() {
               {switcherOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setSwitcherOpen(false)} />
-                  <div className="absolute left-0 top-full z-40 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-white/15 bg-[#1f0d3d]/95 p-1 backdrop-blur">
+                  <div className="absolute left-0 top-full z-40 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-white/15 bg-[rgba(18,18,25,0.95)] p-1 backdrop-blur">
                     {TBI_BRANDS.map((b) => (
                       <button key={b.slug} onClick={() => { signIn(b.slug); setSwitcherOpen(false); }} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition ${b.slug === brand.slug ? "bg-fuchsia-500/30 text-white" : "text-muted-foreground hover:bg-white/10 hover:text-white"}`}>
                         <span className={`grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br ${b.logoColor} text-[9px] font-bold text-white`}>{b.name.slice(0, 2).toUpperCase()}</span>

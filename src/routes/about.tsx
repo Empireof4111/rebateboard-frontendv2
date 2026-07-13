@@ -31,7 +31,7 @@ const pillars = [
 
 function AboutPage() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-8 py-8 sm:py-12">
         <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:p-10">
@@ -116,7 +116,7 @@ function AboutPage() {
             Explore the marketplace, meet Rebeta, compare trusted brands, or create your free trader account.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white">Explore RebateBoard</Link>
+            <Link to="/" className="rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white">Explore RebateBoard</Link>
             <Link to="/signup" className="rounded-full border border-white/12 px-5 py-3 text-sm font-bold text-white/82">Create Free Account</Link>
             <Link to="/dashboard/ai-coach" className="rounded-full border border-white/12 px-5 py-3 text-sm font-bold text-white/82">Meet Rebeta</Link>
             <Link to="/programs" className="rounded-full border border-white/12 px-5 py-3 text-sm font-bold text-white/82">Browse Trusted Brands</Link>

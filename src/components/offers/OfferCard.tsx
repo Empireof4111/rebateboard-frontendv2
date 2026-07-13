@@ -121,7 +121,7 @@ export function OfferCard({
   return (
     <article
       onClick={() => onOpen?.(offer)}
-      className="group relative flex h-full min-h-[360px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d0618]/85 text-left shadow-[0_18px_50px_rgba(5,1,14,0.28)] transition hover:border-fuchsia-300/30 hover:bg-[#120821]/90 hover:shadow-[0_22px_70px_rgba(168,85,247,0.18)]"
+      className="group relative flex h-full min-h-[360px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[rgba(18,18,25,0.85)] text-left shadow-[0_18px_50px_rgba(5,1,14,0.28)] transition hover:border-fuchsia-300/30 hover:bg-[rgba(27,25,38,0.90)] hover:shadow-[0_22px_70px_rgba(168,85,247,0.18)]"
     >
       <div
         className="relative aspect-[16/9] overflow-hidden bg-white/[0.035]"
@@ -275,7 +275,7 @@ export function OfferDetailModal({
       onClick={onClose}
     >
       <div
-        className="relative grid max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[#090414] shadow-2xl lg:grid-cols-[1.05fr_0.95fr]"
+        className="relative grid max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[var(--rb-bg-canvas)] shadow-2xl lg:grid-cols-[1.05fr_0.95fr]"
         onClick={(event) => event.stopPropagation()}
       >
         <button

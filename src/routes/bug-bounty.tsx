@@ -7,6 +7,7 @@ import { uploadMediaFiles } from "@/lib/media-api";
 import { fetchMyBugBountyReports, submitBugBountyReport, type BugBountyReportRecord, type BugBountySeverity } from "@/lib/bug-bounty-api";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { filterFilesByUploadLimit, formatUploadLimit } from "@/lib/upload-limits";
 
 export const Route = createFileRoute("/bug-bounty")({
   component: BugBountyPage,
@@ -48,7 +49,10 @@ function BugBountyPage() {
 
   function onAttachmentChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
-    setAttachments(files);
+    const { accepted, rejected } = filterFilesByUploadLimit(files);
+    rejected.forEach((message) => toast.error(message));
+    setAttachments(accepted);
+    event.target.value = "";
   }
 
   async function onSubmit(event: FormEvent) {
@@ -137,7 +141,7 @@ function BugBountyPage() {
               </div>
               <Link
                 to={loginHref}
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
+                className="inline-flex items-center justify-center rounded-xl rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
               >
                 Log in to report
               </Link>
@@ -172,7 +176,7 @@ function BugBountyPage() {
                   <select
                     value={form.severity}
                     onChange={(event) => setForm((current) => ({ ...current, severity: event.target.value as BugBountySeverity }))}
-                    className="w-full rounded-xl border border-white/10 bg-[#1c1031] px-3 py-2.5 text-sm text-white outline-none focus:border-primary/60"
+                    className="w-full rounded-xl border border-white/10 bg-[var(--rb-bg-input)] px-3 py-2.5 text-sm text-white outline-none focus:border-primary/60"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -262,7 +266,7 @@ function BugBountyPage() {
                       <ImagePlus className="h-4 w-4 text-fuchsia-300" /> Attach screenshots or proof
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Upload screenshots, recordings, or supporting proof. Clear visual evidence speeds up validation.
+                      Upload screenshots, recordings, or supporting proof up to {formatUploadLimit()} each. Clear visual evidence speeds up validation.
                     </p>
                   </div>
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15">
@@ -289,7 +293,7 @@ function BugBountyPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-xl rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] disabled:opacity-60"
                 >
                   <Bug className="h-4 w-4" /> {submitting ? "Submitting..." : "Submit bug report"}
                 </button>

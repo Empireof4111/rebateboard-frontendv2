@@ -58,7 +58,7 @@ function BrandRequestsPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${
-                active ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-transparent" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
+                active ? "rb-gradient-primary text-white ring-transparent" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
               }`}
             >
               {t.label}
@@ -95,7 +95,7 @@ function BrandRequestsPage() {
               <tr key={s.id}>
                 <td>
                   <div className="flex items-center gap-2">
-                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 text-base">{meta.emoji}</div>
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-[rgba(126,77,255,0.18)] text-base">{meta.emoji}</div>
                     <div>
                       <div className="font-semibold">{s.brandName}</div>
                       <div className="text-[10px] text-muted-foreground">{s.contactEmail}</div>

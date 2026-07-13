@@ -99,7 +99,7 @@ function MeritAwardsPage() {
   const finalists = board.nominees.filter((item) => item.finalist && !item.winner);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-7 py-8 sm:py-12">
         <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(245,158,11,0.16),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:p-10">
@@ -116,7 +116,7 @@ function MeritAwardsPage() {
                 "The Merit Awards recognize brands, tools, communities, and people helping raise the standard of trader trust, transparency, support, education, innovation, and reliable value."}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <a href={state.ctaHref} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-center text-sm font-black text-white">
+              <a href={state.ctaHref} className="rounded-full rb-gradient-primary px-5 py-3 text-center text-sm font-black text-white">
                 {state.ctaLabel}
               </a>
               <Link to="/signup" className="rounded-full border border-white/12 px-5 py-3 text-center text-sm font-bold text-white/80">

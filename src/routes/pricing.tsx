@@ -245,7 +245,7 @@ function EarlyAccessPage() {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 to="/signup"
-                className="inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.38)] transition hover:-translate-y-0.5"
+                className="inline-flex h-12 items-center justify-center rounded-full rb-gradient-primary px-6 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.38)] transition hover:-translate-y-0.5"
               >
                 Create Free Account
               </Link>
@@ -442,7 +442,7 @@ function EarlyAccessPage() {
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               to="/signup"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.38)] transition hover:-translate-y-0.5"
+              className="inline-flex h-12 items-center justify-center rounded-full rb-gradient-primary px-6 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.38)] transition hover:-translate-y-0.5"
             >
               Create Free Account
             </Link>

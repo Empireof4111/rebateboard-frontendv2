@@ -107,7 +107,7 @@ const faqs = [
 
 function HowWeMakeMoneyPage() {
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-8 sm:py-10">
         <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-8 md:p-14">
@@ -123,7 +123,7 @@ function HowWeMakeMoneyPage() {
               Our business only succeeds when our community succeeds.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/programs" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.35)] transition hover:brightness-110">
+              <Link to="/programs" className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-6 py-3 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.35)] transition hover:brightness-110">
                 Browse Trusted Brands <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/signup" className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-fuchsia-300/40">
@@ -248,7 +248,7 @@ function HowWeMakeMoneyPage() {
             Explore transparent brands, verified reviews, cashback, and trust data designed around trader confidence.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link to="/signup" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-[0_0_28px_rgba(192,132,252,0.35)]">
+            <Link to="/signup" className="rounded-full rb-gradient-primary px-6 py-3 text-sm font-bold text-white shadow-[0_0_28px_rgba(192,132,252,0.35)]">
               Create Free Account
             </Link>
             <Link to="/programs" className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white">

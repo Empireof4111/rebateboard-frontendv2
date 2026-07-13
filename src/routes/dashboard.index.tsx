@@ -15,7 +15,7 @@ import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/fi
 import { completeDailyTask, fetchMyDailyTasks, type DailyTaskUserBoard } from "@/lib/daily-tasks-api";
 import { toast } from "@/components/superadmin/AdminActions";
 import { useI18n } from "@/lib/i18n";
-import { useTrades, useTradingPlan } from "@/lib/trading-plan";
+import { resolveTradeNetPnl, resolveTradeOutcome, useTrades, useTradingPlan } from "@/lib/trading-plan";
 import { fetchMyReviews } from "@/lib/reviews-api";
 import { getNextUnlock, getTraderLevelProgress, PROGRESSION_TASKS } from "@/lib/trader-levels";
 
@@ -102,9 +102,10 @@ function DashboardHome() {
   const todayTradeStats = useMemo(() => {
     const todayKey = new Date().toDateString();
     const todayTrades = trades.filter((trade) => new Date(trade.createdAt).toDateString() === todayKey);
-    const pnl = todayTrades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
-    const wins = todayTrades.filter((trade) => Number(trade.pnl || 0) > 0).length;
-    const losses = todayTrades.filter((trade) => Number(trade.pnl || 0) < 0).length;
+    const completed = todayTrades.map((trade) => resolveTradeNetPnl(trade)).filter((value): value is number => value !== null);
+    const pnl = completed.reduce((sum, value) => sum + value, 0);
+    const wins = todayTrades.filter((trade) => resolveTradeOutcome(trade) === "profit").length;
+    const losses = todayTrades.filter((trade) => resolveTradeOutcome(trade) === "loss").length;
     const violations = todayTrades.reduce((sum, trade) => sum + (trade.violations?.length ?? 0), 0);
     const adherence = todayTrades.length
       ? Math.round(todayTrades.reduce((sum, trade) => sum + Number(trade.adherence || 0), 0) / todayTrades.length)
@@ -112,8 +113,9 @@ function DashboardHome() {
     return { todayTrades, pnl, wins, losses, violations, adherence };
   }, [trades]);
   const journalSnapshot = useMemo(() => {
-    const wins = trades.filter((trade) => Number(trade.pnl || 0) > 0).length;
-    const winRate = trades.length ? Math.round((wins / trades.length) * 100) : 0;
+    const completedTrades = trades.filter((trade) => resolveTradeNetPnl(trade) !== null);
+    const wins = completedTrades.filter((trade) => resolveTradeOutcome(trade) === "profit").length;
+    const winRate = completedTrades.length ? Math.round((wins / completedTrades.length) * 100) : 0;
     const adherence = trades.length
       ? Math.round(trades.reduce((sum, trade) => sum + Number(trade.adherence || 0), 0) / trades.length)
       : 0;
@@ -121,7 +123,7 @@ function DashboardHome() {
     const byAsset = trades.reduce<Record<string, { pnl: number; count: number }>>((acc, trade) => {
       const key = trade.asset || "Unknown";
       acc[key] = acc[key] ?? { pnl: 0, count: 0 };
-      acc[key].pnl += Number(trade.pnl || 0);
+      acc[key].pnl += resolveTradeNetPnl(trade) ?? 0;
       acc[key].count += 1;
       return acc;
     }, {});
@@ -160,7 +162,7 @@ function DashboardHome() {
             <button onClick={openAddTrade} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Plus className="h-3.5 w-3.5" /> {t("dashboard.addTrade")}
             </button>
-            <Link to={"/dashboard/ai-coach" as string} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
+            <Link to={"/dashboard/ai-coach" as string} className="rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
               {t("dashboard.askRebeta")}
             </Link>
           </>
@@ -346,7 +348,7 @@ function DashboardHome() {
           <div className="text-[11px] text-muted-foreground">{t("dashboard.newSignups")}</div>
         </div>
         <div className="flex items-end justify-end">
-          <Link to={"/dashboard/referrals" as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
+          <Link to={"/dashboard/referrals" as string} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
             {t("dashboard.inviteEarn")} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -360,7 +362,7 @@ function DashboardHome() {
               icon={Activity}
               title="No trades logged today"
               description="Log today’s trades to see PnL, win/loss count, rule adherence, and guardrail status."
-              action={<button onClick={openAddTrade} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">Add trade</button>}
+              action={<button onClick={openAddTrade} className="rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">Add trade</button>}
             />
           ) : (
             <>
@@ -519,7 +521,7 @@ function DashboardHome() {
                         className={`rounded-full px-3 py-1.5 text-[11px] font-semibold ${
                           task.completedToday
                             ? "bg-emerald-500/15 text-emerald-300"
-                            : "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white"
+                            : "rb-gradient-primary text-white"
                         }`}
                       >
                         {task.completedToday ? "Completed" : claimingTaskId === task.id ? "Claiming..." : "Claim RR"}

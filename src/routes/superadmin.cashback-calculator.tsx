@@ -155,7 +155,7 @@ function CashbackCalculatorAdminPage() {
             <Field label="Category">
               <select className={inputCls} value={category} onChange={(event) => setCategory(event.target.value)}>
                 {categoryOptions.map((option) => (
-                  <option key={option} value={option} className="bg-[#150829]">
+                  <option key={option} value={option} className="bg-[var(--rb-bg-elevated)]">
                     {option}
                   </option>
                 ))}
@@ -164,7 +164,7 @@ function CashbackCalculatorAdminPage() {
             <Field label="Brand">
               <select className={inputCls} value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
                 {filteredBrands.map((brand) => (
-                  <option key={brand.id} value={brand.id} className="bg-[#150829]">
+                  <option key={brand.id} value={brand.id} className="bg-[var(--rb-bg-elevated)]">
                     {brand.name} · {brand.category}
                   </option>
                 ))}
@@ -211,7 +211,7 @@ function CashbackCalculatorAdminPage() {
                     <Field label="Asset">
                       <select className={inputCls} value={rate.asset ?? "Forex"} onChange={(event) => updateRate(index, { asset: event.target.value })}>
                         {assetOptions.map((option) => (
-                          <option key={option} value={option} className="bg-[#150829]">
+                          <option key={option} value={option} className="bg-[var(--rb-bg-elevated)]">
                             {option}
                           </option>
                         ))}

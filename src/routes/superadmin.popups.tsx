@@ -65,7 +65,7 @@ function PopupsPage() {
         title="Pop-ups"
         subtitle="Modal pop-ups triggered on the public site & dashboard."
         actions={
-          <button onClick={() => setEditing(empty())} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+          <button onClick={() => setEditing(empty())} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
             <Plus className="h-3.5 w-3.5" /> New pop-up
           </button>
         }
@@ -144,7 +144,7 @@ function PopupsPage() {
                     toast.error(error instanceof Error ? error.message : "Unable to save pop-up");
                   }
                 }}
-                className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"
+                className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white"
               >Save</button>
             </>
           }

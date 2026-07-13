@@ -66,7 +66,7 @@ function TrtPage() {
             </button>
             <button
               onClick={() => openDrawer("expense")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_22px_rgba(192,132,252,0.45)]"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_22px_rgba(192,132,252,0.45)]"
             >
               <Plus className="h-3.5 w-3.5" /> Add transaction
             </button>
@@ -206,7 +206,7 @@ function OverviewTab({
         description="Log every challenge fee, broker deposit, payout, and rebate. We'll show you what's working and where money leaks."
         action={
           <div className="flex flex-wrap justify-center gap-2">
-            <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+            <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
               <Plus className="h-3.5 w-3.5" /> Add challenge fee
             </button>
             <button onClick={onAdd} className="glass-pill rounded-full px-3 py-1.5 text-xs text-white">Add payout</button>
@@ -315,7 +315,7 @@ function Ledger({ direction, period, onAdd }: { direction: TrtDirection; period:
         <Pill tone={direction === "income" ? "success" : "warning"}>
           {direction === "income" ? "+" : "−"}{money(total)}
         </Pill>
-        <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+        <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
           <Plus className="h-3.5 w-3.5" /> Add {direction === "income" ? "income" : "expense"}
         </button>
       </div>
@@ -326,7 +326,7 @@ function Ledger({ direction, period, onAdd }: { direction: TrtDirection; period:
           title={direction === "income" ? "No income logged" : "No expenses logged"}
           description={direction === "income" ? "Track payouts, rebates, and withdrawals to see what trading is paying you back." : "Track every dollar you spend on trading — fees, deposits, tools, education."}
           action={
-            <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+            <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
               <Plus className="h-3.5 w-3.5" /> Add {direction === "income" ? "income" : "expense"}
             </button>
           }
@@ -410,7 +410,7 @@ function AccountsTab({ onAdd }: { onAdd: () => void }) {
       </div>
 
       <div className="flex items-center justify-end">
-        <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+        <button onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
           <Plus className="h-3.5 w-3.5" /> Add account
         </button>
       </div>

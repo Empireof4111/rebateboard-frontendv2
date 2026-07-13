@@ -143,7 +143,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
   }, [events]);
 
   return (
-    <div className={embedded ? "" : "min-h-screen bg-[#0a0418] text-white"}>
+    <div className={embedded ? "" : "min-h-screen bg-[var(--rb-bg-canvas)] text-white"}>
       <div className={embedded ? "space-y-6" : "mx-auto max-w-7xl space-y-6 px-4 py-8"}>
         {/* HEADER */}
         <div className="flex flex-wrap items-end justify-between gap-3">

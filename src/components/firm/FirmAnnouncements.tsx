@@ -139,7 +139,7 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
 
       <div className="relative">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-fuchsia-500/30">
+          <span className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-fuchsia-500/30">
             <Sparkles className="h-3 w-3" /> Featured
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-200 ring-1 ring-emerald-300/30">
@@ -168,7 +168,7 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
         {a.cta && a.link && (
           <a
             href={a.link}
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/30 transition hover:brightness-110 hover:shadow-fuchsia-500/50"
+            className="mt-5 inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/30 transition hover:brightness-110 hover:shadow-fuchsia-500/50"
           >
             {a.cta}
             <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -184,7 +184,7 @@ function AnnouncementCard({ a, firmName }: { a: Announcement; firmName: string }
   return (
     <article className="group glass flex flex-col rounded-2xl p-4 ring-1 ring-white/10 transition hover:ring-fuchsia-300/30">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-fuchsia-300/30">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] ring-1 ring-fuchsia-300/30">
           <Megaphone className="h-4 w-4 text-fuchsia-200" />
         </div>
         <div className="min-w-0 flex-1">

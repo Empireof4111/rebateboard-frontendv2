@@ -55,7 +55,7 @@ function ReviewsPage() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         {(["pending", "approved", "rejected", "flagged", "all"] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${filter === f ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>
+          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>
             {f} <span className="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px]">{counts[f]}</span>
           </button>
         ))}
@@ -194,7 +194,7 @@ function ReviewDrawer({
   ];
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <aside onClick={(e) => e.stopPropagation()} className="h-full w-full max-w-xl overflow-y-auto bg-[#1a0b2e] p-6 ring-1 ring-white/10">
+      <aside onClick={(e) => e.stopPropagation()} className="h-full w-full max-w-xl overflow-y-auto bg-[var(--rb-bg-elevated)] p-6 ring-1 ring-white/10">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-lg font-bold text-white">{review.brandName}</div>

@@ -241,7 +241,7 @@ function FooterCTA() {
         </div>
         <a
           href="mailto:support@rebateboard.com"
-          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)]"
+          className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)]"
         >
           <MessageCircle className="h-3 w-3" /> Contact support
         </a>

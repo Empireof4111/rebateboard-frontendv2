@@ -4,6 +4,7 @@ import { Search, X, ArrowRight } from "lucide-react";
 import { userAdminApi } from "@/lib/admin-api";
 import { fetchAdminBrands } from "@/lib/admin-brands-api";
 import { useAuth } from "@/lib/auth";
+import { useAdminPermissions } from "@/lib/admin-permissions";
 
 type Hit = { id: string; label: string; sub: string; group: string; to: string };
 
@@ -40,10 +41,11 @@ function buildModuleIndex(): Hit[] {
 
 export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { token } = useAuth();
+  const { canRoute } = useAdminPermissions();
   const [q, setQ] = useState("");
   const [liveHits, setLiveHits] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
-  const modules = useMemo(buildModuleIndex, []);
+  const modules = useMemo(() => buildModuleIndex().filter((hit) => canRoute(hit.to)), [canRoute]);
 
   useEffect(() => {
     if (!open) return;
@@ -132,7 +134,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[150] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="mt-16 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#1a0d36]/95 shadow-2xl ring-1 ring-fuchsia-400/10">
+      <div onClick={(e) => e.stopPropagation()} className="mt-16 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl ring-1 ring-fuchsia-400/10">
         <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
           <Search className="h-4 w-4 text-fuchsia-300" />
           <input

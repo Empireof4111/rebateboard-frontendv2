@@ -378,7 +378,7 @@ function BrandsPage() {
             <button onClick={handleResync} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <RefreshCw className="h-3.5 w-3.5" /> Re-sync rank from TBI
             </button>
-            <Link to="/superadmin/brands/new" className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <Link to="/superadmin/brands/new" className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
               <Plus className="h-3.5 w-3.5" /> Add brand
             </Link>
           </>
@@ -395,7 +395,7 @@ function BrandsPage() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${
                 active
-                  ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-transparent"
+                  ? "rb-gradient-primary text-white ring-transparent"
                   : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
               }`}
             >
@@ -477,7 +477,7 @@ function BrandsPage() {
                     {b.thumbnail ? (
                       <img src={b.thumbnail} className="h-8 w-8 rounded-lg object-cover ring-1 ring-white/10" alt="" />
                     ) : (
-                      <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 text-[10px] font-bold text-white ring-1 ring-white/10">
+                      <div className="grid h-8 w-8 place-items-center rounded-lg bg-[rgba(126,77,255,0.18)] text-[10px] font-bold text-white ring-1 ring-white/10">
                         {b.name.slice(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -670,7 +670,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
       footer={
         <>
           <button onClick={onClose} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-          <button onClick={() => void submit()} disabled={saving} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60">
+          <button onClick={() => void submit()} disabled={saving} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-60">
             {saving ? "Saving..." : "Save changes"}
           </button>
         </>
@@ -839,7 +839,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
               <div className="text-sm font-semibold text-white">Challenges</div>
               <div className="text-[11px] text-muted-foreground">Maintain the same challenge cards and payout economics used on the create flow.</div>
             </div>
-            <button type="button" onClick={addChallenge} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-bold text-white">
+            <button type="button" onClick={addChallenge} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[11px] font-bold text-white">
               <Plus className="h-3 w-3" /> Add challenge
             </button>
           </div>

@@ -5,6 +5,14 @@ export type TradingStyle = "scalping" | "intraday" | "swing" | "position";
 export type MarketType = "forex" | "crypto" | "futures" | "stocks" | "indices" | "commodities";
 export type Session = "asia" | "london" | "ny" | "sydney";
 export type Experience = "beginner" | "intermediate" | "advanced" | "pro";
+export type TradeOutcome = "profit" | "loss" | "breakeven" | "pending";
+export type TradeResultSource =
+  | "manual"
+  | "csv_import"
+  | "broker_import"
+  | "exchange_import"
+  | "calculated"
+  | "legacy_unverified";
 
 export type TraderProfile = {
   style: TradingStyle;
@@ -68,6 +76,9 @@ export type Trade = {
   target: number;
   session: Session;
   venue?: string;
+  instrumentId?: string;
+  instrumentDisplayName?: string;
+  instrumentSource?: string;
   contract?: string;
   instrumentMode?: string;
   leverage?: number;
@@ -89,6 +100,12 @@ export type Trade = {
   checklistChecked?: string[]; // ids
   // results
   pnl: number;
+  outcome?: TradeOutcome;
+  grossPnl?: number | null;
+  netPnl?: number | null;
+  pnlCurrency?: string;
+  resultSource?: TradeResultSource;
+  resultNotes?: string;
   rr: number;
   pips?: number;
   points?: number;
@@ -222,8 +239,8 @@ export function calcRR(entry: number, stop: number, target: number, direction: "
   return Math.max(0, reward / risk);
 }
 
-export function calcPnL(entry: number, exit: number, lot: number, direction: "long" | "short") {
-  return calculateTradeMetrics({ market: "stocks", entry, exit, lot, direction }).pnl;
+export function calcPnL(_entry: number, _exit: number, _lot: number, _direction: "long" | "short") {
+  return 0;
 }
 
 export type TradeCalculationInput = {
@@ -286,11 +303,9 @@ export function calculateTradeMetrics(input: TradeCalculationInput): TradeCalcul
   const stop = Number(input.stop) || 0;
   const target = Number(input.target) || 0;
   const lot = Number(input.lot) || 0;
-  const costs = (Number(input.commission) || 0) + (Number(input.fees) || 0);
   const signedMove = input.direction === "long" ? exit - entry : entry - exit;
   const rawPoints = signedMove;
   const multiplier = contractMultiplier(input.market, input.asset);
-  const pnl = rawPoints * lot * multiplier - costs;
   const pips = input.market === "forex" ? rawPoints / forexPipSize(input.asset) : 0;
   const points = input.market === "forex" ? 0 : rawPoints;
   const percentageGain = entry > 0 ? (signedMove / entry) * 100 : 0;
@@ -303,11 +318,13 @@ export function calculateTradeMetrics(input: TradeCalculationInput): TradeCalcul
     : 0;
   const riskAmount = Math.max(0, riskDistance * lot * multiplier);
   const rewardRatio = riskDistance > 0 ? Math.max(0, rewardDistance / riskDistance) : 0;
-  const rMultiple = riskAmount > 0 ? pnl / riskAmount : 0;
-  const winLossStatus = Math.abs(pnl) < 0.000001 ? "breakeven" : pnl > 0 ? "win" : "loss";
+  const rMultiple = riskDistance > 0 ? signedMove / riskDistance : 0;
+  const winLossStatus = Math.abs(signedMove) < 0.000001 ? "breakeven" : signedMove > 0 ? "win" : "loss";
 
   return {
-    pnl: roundMetric(pnl),
+    // Launch-safe: monetary P&L is manually entered by the trader.
+    // Price fields only describe the trade until a contract-spec engine exists.
+    pnl: 0,
     pips: roundMetric(pips),
     points: roundMetric(points),
     percentageGain: roundMetric(percentageGain),
@@ -318,14 +335,69 @@ export function calculateTradeMetrics(input: TradeCalculationInput): TradeCalcul
   };
 }
 
+export function calculateManualTradeResult(
+  outcome: TradeOutcome = "pending",
+  absoluteAmount: number | null | undefined,
+  fees: number | null | undefined,
+) {
+  const safeFees = Math.max(0, roundMetric(Number(fees) || 0));
+  const amount = Math.max(0, roundMetric(Number(absoluteAmount) || 0));
+  if (outcome === "pending") {
+    return { grossPnl: null, netPnl: null, pnl: 0, winLossStatus: "breakeven" as const };
+  }
+  if (outcome === "breakeven") {
+    const netPnl = roundMetric(0 - safeFees);
+    return { grossPnl: 0, netPnl, pnl: netPnl, winLossStatus: "breakeven" as const };
+  }
+  const grossPnl = outcome === "profit" ? amount : -amount;
+  const netPnl = roundMetric(grossPnl - safeFees);
+  return {
+    grossPnl,
+    netPnl,
+    pnl: netPnl,
+    winLossStatus: outcome === "profit" ? "win" as const : "loss" as const,
+  };
+}
+
+export function resolveTradeNetPnl(trade: Trade): number | null {
+  if (trade.outcome === "pending") return null;
+  if (trade.netPnl !== undefined && trade.netPnl !== null && Number.isFinite(Number(trade.netPnl))) {
+    return Number(trade.netPnl);
+  }
+  if (trade.resultSource && trade.resultSource !== "legacy_unverified" && Number.isFinite(Number(trade.pnl))) {
+    return Number(trade.pnl);
+  }
+  return null;
+}
+
+export function resolveTradeOutcome(trade: Trade): TradeOutcome {
+  if (trade.outcome) return trade.outcome;
+  const pnl = resolveTradeNetPnl(trade);
+  if (pnl == null) return "pending";
+  if (pnl > 0) return "profit";
+  if (pnl < 0) return "loss";
+  return "breakeven";
+}
+
+export function formatTradePnl(trade: Trade) {
+  const value = resolveTradeNetPnl(trade);
+  const currency = trade.pnlCurrency || "USD";
+  if (value == null) return "Result Pending";
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  return `${sign}${currency} ${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
 export function summarizeTrades(trades: Trade[]): TradeAnalyticsSummary {
   const totalTrades = trades.length;
-  const statusFor = (trade: Trade) => trade.winLossStatus ?? (trade.pnl > 0 ? "win" : trade.pnl < 0 ? "loss" : "breakeven");
-  const wins = trades.filter((trade) => statusFor(trade) === "win").length;
-  const losses = trades.filter((trade) => statusFor(trade) === "loss").length;
-  const netPnl = roundMetric(trades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0));
-  const grossProfit = trades.reduce((sum, trade) => sum + Math.max(0, Number(trade.pnl || 0)), 0);
-  const grossLoss = Math.abs(trades.reduce((sum, trade) => sum + Math.min(0, Number(trade.pnl || 0)), 0));
+  const completed = trades
+    .map((trade) => ({ trade, pnl: resolveTradeNetPnl(trade), outcome: resolveTradeOutcome(trade) }))
+    .filter((row) => row.pnl !== null);
+  const completedTrades = completed.length;
+  const wins = completed.filter((row) => row.outcome === "profit" || Number(row.pnl) > 0).length;
+  const losses = completed.filter((row) => row.outcome === "loss" || Number(row.pnl) < 0).length;
+  const netPnl = roundMetric(completed.reduce((sum, row) => sum + Number(row.pnl || 0), 0));
+  const grossProfit = completed.reduce((sum, row) => sum + Math.max(0, Number(row.pnl || 0)), 0);
+  const grossLoss = Math.abs(completed.reduce((sum, row) => sum + Math.min(0, Number(row.pnl || 0)), 0));
   const averageR = totalTrades
     ? roundMetric(trades.reduce((sum, trade) => sum + Number((trade.rMultiple ?? trade.rr) || 0), 0) / totalTrades)
     : 0;
@@ -336,7 +408,7 @@ export function summarizeTrades(trades: Trade[]): TradeAnalyticsSummary {
   return {
     totalTrades,
     netPnl,
-    winRate: totalTrades ? Math.round((wins / totalTrades) * 100) : 0,
+    winRate: completedTrades ? Math.round((wins / completedTrades) * 100) : 0,
     averageR,
     profitFactor: grossLoss > 0 ? roundMetric(grossProfit / grossLoss) : grossProfit > 0 ? roundMetric(grossProfit) : 0,
     adherence,

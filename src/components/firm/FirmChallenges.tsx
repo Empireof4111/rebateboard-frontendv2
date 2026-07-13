@@ -276,7 +276,7 @@ export function FirmChallenges({
           >
             <span
               className={`relative inline-block h-4 w-7 rounded-full transition ${
-                discount ? "bg-gradient-to-r from-fuchsia-500 to-violet-500" : "bg-white/15"
+                discount ? "rb-gradient-primary" : "bg-white/15"
               }`}
             >
               <span
@@ -382,7 +382,7 @@ export function FirmChallenges({
           <button
             type="button"
             onClick={clearFilters}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-bold text-white shadow-[0_12px_30px_rgba(168,85,247,0.28)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-sm font-bold text-white shadow-[0_12px_30px_rgba(168,85,247,0.28)]"
           >
             <RotateCcw className="h-4 w-4" /> Clear Filters
           </button>
@@ -433,7 +433,7 @@ function ChallengeCard({
     <article
       onMouseEnter={onFocus}
       onFocus={onFocus}
-      className={`group relative overflow-hidden rounded-2xl bg-[#170929]/92 p-3 ring-1 transition ${
+      className={`group relative overflow-hidden rounded-2xl bg-[rgba(18,18,25,0.92)] p-3 ring-1 transition ${
         highlighted
           ? "shadow-[0_22px_70px_rgba(147,51,234,0.28)] ring-fuchsia-300/35"
           : "ring-violet-400/18 hover:ring-fuchsia-300/30"
@@ -454,7 +454,7 @@ function ChallengeCard({
                 {challenge.asset}
               </span>
               {challenge.badge ? (
-                <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-white shadow-[0_0_18px_rgba(217,70,239,0.3)]">
+                <span className="rounded-full rb-gradient-primary px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-white shadow-[0_0_18px_rgba(217,70,239,0.3)]">
                   {challenge.badge}
                 </span>
               ) : null}
@@ -522,7 +522,7 @@ function ChallengeCard({
               <button
                 type="button"
                 onClick={onBuy}
-                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:shadow-[0_0_20px_rgba(192,132,252,0.46)]"
+                className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[11px] font-bold text-white transition hover:shadow-[0_0_20px_rgba(192,132,252,0.46)]"
               >
                 Start <ArrowRight className="h-3 w-3" />
               </button>
@@ -559,7 +559,7 @@ function ChallengeCard({
             <button
               type="button"
               onClick={onBuy}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:shadow-[0_0_20px_rgba(192,132,252,0.46)]"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[11px] font-bold text-white transition hover:shadow-[0_0_20px_rgba(192,132,252,0.46)]"
             >
               Start Challenge <ArrowRight className="h-3 w-3" />
             </button>
@@ -765,7 +765,7 @@ function CheckoutModal({
 
   return (
     <div className="fixed inset-0 z-50 grid animate-in place-items-center px-4 py-6 duration-200 fade-in">
-      <div className="absolute inset-0 bg-[#0b0517]/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-[rgba(8,8,12,0.80)] backdrop-blur-sm" onClick={onClose} />
       <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-violet-400/30 bg-gradient-to-br from-[#26113f] via-[#1f0d3d] to-[#150829] p-5 shadow-[0_30px_80px_rgba(120,30,180,0.5)] animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
         <div className="flex items-center justify-between">
           <div>
@@ -802,7 +802,7 @@ function CheckoutModal({
               type="button"
               disabled={preparing}
               onClick={() => void updatePurchaseStatus("user_marked_completed")}
-              className="w-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 py-3 text-sm font-bold text-white disabled:opacity-50"
+              className="w-full rounded-full rb-gradient-primary py-3 text-sm font-bold text-white disabled:opacity-50"
             >
               Yes, I completed the purchase
             </button>
@@ -936,7 +936,7 @@ function CheckoutModal({
         <button
           onClick={() => void handleProceedCheckout()}
           disabled={!agreeTerms || !safeCheckoutLink || preparing}
-          className="mt-4 w-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 py-3 text-sm font-bold text-white shadow-[0_10px_30px_rgba(192,132,252,0.4)] transition hover:shadow-[0_14px_40px_rgba(192,132,252,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 w-full rounded-full rb-gradient-primary py-3 text-sm font-bold text-white shadow-[0_10px_30px_rgba(192,132,252,0.4)] transition hover:shadow-[0_14px_40px_rgba(192,132,252,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {preparing ? "Preparing your tracked checkout..." : `Proceed to ${firmName} · ${formatMoney(challenge.price)}`}
         </button>
@@ -1013,7 +1013,7 @@ function PurchaseNextSteps({
       </div>
       <a
         href={claimUrl}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 py-3 text-sm font-bold text-white"
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full rb-gradient-primary py-3 text-sm font-bold text-white"
       >
         Submit Proof <ArrowRight className="h-4 w-4" />
       </a>
@@ -1391,7 +1391,7 @@ function Checkbox({
       onClick={() => onChange(!checked)}
       className={`mt-0.5 grid h-3.5 w-3.5 shrink-0 place-items-center rounded ring-1 transition ${
         checked
-          ? "bg-gradient-to-br from-fuchsia-500 to-violet-600 ring-fuchsia-300/40"
+          ? "rb-gradient-primary ring-fuchsia-300/40"
           : "bg-white/5 ring-white/20"
       }`}
     >
@@ -1417,7 +1417,7 @@ function ChoiceChip({
       onClick={onClick}
       className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold ring-1 transition ${
         active
-          ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40"
+          ? "rb-gradient-primary text-white ring-fuchsia-400/40"
           : "bg-white/5 text-white ring-white/10 hover:ring-white/20"
       }`}
     >
@@ -1455,7 +1455,7 @@ function PillSelect({
       {open ? (
         <>
           <div className="fixed inset-0 z-[80]" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-[110] mt-1 max-h-64 min-w-[140px] overflow-auto rounded-xl border border-white/15 bg-[#1f0d3d]/95 p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur">
+          <div className="absolute left-0 top-full z-[110] mt-1 max-h-64 min-w-[140px] overflow-auto rounded-xl border border-white/15 bg-[rgba(18,18,25,0.95)] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur">
             {options.map((option) => (
               <button
                 key={option}

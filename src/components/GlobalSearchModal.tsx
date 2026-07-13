@@ -107,6 +107,20 @@ function text(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function collectSearchText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim();
+  }
+  if (Array.isArray(value)) {
+    return value.map(collectSearchText).filter(Boolean).join(" ");
+  }
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).map(collectSearchText).filter(Boolean).join(" ");
+  }
+  return "";
+}
+
 function initials(value: string) {
   return value
     .trim()
@@ -121,7 +135,7 @@ function initials(value: string) {
 function normalizeScore(value: unknown) {
   const num = Number(value);
   if (!Number.isFinite(num) || num <= 0) return undefined;
-  return num > 10 ? num / 10 : num;
+  return Math.min(100, Math.max(0, num));
 }
 
 function formatTbi(value?: number) {
@@ -161,7 +175,7 @@ function buildBrandHit(brand: AdminBrandRecord, tbi?: TbiProfile): Hit {
   return {
     id: `brand-${brand.id}`,
     label: brand.name,
-    sub: `${brand.category}${score ? ` | TBI ${formatTbi(score)}` : ""}${
+    sub: `${brand.category}${score ? ` | TBI ${formatTbi(score)}/100` : ""}${
       country.label ? ` | ${country.label}` : ""
     }`,
     group: brandGroup(brand.category),
@@ -174,10 +188,21 @@ function buildBrandHit(brand: AdminBrandRecord, tbi?: TbiProfile): Hit {
       brand.name,
       brand.slug,
       brand.category,
+      text(brand.supportEmail),
       text(brand.identity?.tagline),
       text(brand.identity?.description),
       text(brand.website),
       text(country.label),
+      collectSearchText(brand.identity),
+      collectSearchText(brand.profile),
+      collectSearchText(brand.broker),
+      collectSearchText(brand.prop),
+      collectSearchText(brand.exchange),
+      collectSearchText(brand.tool),
+      collectSearchText(brand.editorial),
+      collectSearchText(brand.cashback),
+      collectSearchText(brand.challenges),
+      collectSearchText(brand.seo),
     ],
   };
 }
@@ -419,13 +444,13 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
 
   return createPortal(
     <div
-      className="mobile-scroll fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[#090313]/82 p-2 backdrop-blur-md sm:p-4"
+      className="mobile-scroll fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[rgba(9,9,13,0.82)] p-2 backdrop-blur-md sm:p-4"
       onClick={onClose}
     >
       <div className="pointer-events-none absolute left-1/2 top-10 h-[300px] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-fuchsia-500/18 blur-3xl sm:top-20 sm:h-[460px]" />
       <div
         onClick={(event) => event.stopPropagation()}
-        className="relative mt-3 max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-hidden rounded-[1.4rem] bg-[#12051f]/96 ring-1 ring-fuchsia-300/20 sm:mt-20 sm:rounded-[2rem]"
+        className="relative mt-3 max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-hidden rounded-[1.4rem] bg-[var(--rb-bg-canvas)]/96 ring-1 ring-fuchsia-300/20 sm:mt-20 sm:rounded-[2rem]"
       >
         <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4">
           <Search className="h-4 w-4 text-fuchsia-200" />

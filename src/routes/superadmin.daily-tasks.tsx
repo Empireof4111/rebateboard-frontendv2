@@ -369,7 +369,7 @@ function DailyTasksPage() {
                     className={fieldClassName}
                   >
                   {ACTION_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value} className="bg-[#150829] text-white">
+                    <option key={option.value} value={option.value} className="bg-[var(--rb-bg-elevated)] text-white">
                       {option.label}
                     </option>
                   ))}
@@ -383,7 +383,7 @@ function DailyTasksPage() {
                     className={fieldClassName}
                   >
                   {CATEGORY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value} className="bg-[#150829] text-white">
+                    <option key={option.value} value={option.value} className="bg-[var(--rb-bg-elevated)] text-white">
                       {option.label}
                     </option>
                   ))}

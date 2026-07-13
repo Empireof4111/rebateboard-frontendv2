@@ -16,6 +16,7 @@ import {
 } from "@/lib/complaints-api";
 import { uploadMediaFiles } from "@/lib/media-api";
 import { toast } from "sonner";
+import { filterFilesByUploadLimit, formatUploadLimit } from "@/lib/upload-limits";
 
 type StatusFilter = "All" | ComplaintStatus;
 type SeverityFilter = "All" | ComplaintSeverity;
@@ -155,7 +156,7 @@ export function FirmComplaints({ firmName, firmSlug }: { firmName: string; firmS
           </div>
           <button
             onClick={handleOpenForm}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] transition hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] transition hover:opacity-95"
           >
             <Plus className="h-3.5 w-3.5" /> Drop Complaint
           </button>
@@ -260,7 +261,7 @@ function Select({
         {options.map((o) => {
           const v = typeof o === "string" ? o : o.value;
           const l = typeof o === "string" ? o : o.label;
-          return <option key={v} value={v} className="bg-[#160a25]">{typeof o === "string" && (label === "Status" || label === "Severity") ? l.charAt(0).toUpperCase() + l.slice(1) : l}</option>;
+          return <option key={v} value={v} className="bg-[var(--rb-bg-input)]">{typeof o === "string" && (label === "Status" || label === "Severity") ? l.charAt(0).toUpperCase() + l.slice(1) : l}</option>;
         })}
       </select>
       <ChevronDown className="h-3 w-3 text-muted-foreground" />
@@ -336,7 +337,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
-      <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-3xl bg-[#10071c] p-5 ring-1 ring-white/10 sm:rounded-3xl sm:p-6">
+      <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-3xl bg-[var(--rb-bg-card)] p-5 ring-1 ring-white/10 sm:rounded-3xl sm:p-6">
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full bg-white/5 p-1.5 text-white ring-1 ring-white/10 hover:bg-white/10">
           <X className="h-4 w-4" />
         </button>
@@ -513,7 +514,9 @@ function ComplaintForm({
 
   function addFiles(list: FileList | null) {
     if (!list) return;
-    const arr = Array.from(list).slice(0, 10 - files.length);
+    const { accepted, rejected } = filterFilesByUploadLimit(Array.from(list));
+    rejected.forEach((message) => toast.error(message));
+    const arr = accepted.slice(0, 10 - files.length);
     setFiles((prev) => [...prev, ...arr].slice(0, 10));
   }
 
@@ -571,7 +574,7 @@ function ComplaintForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
-      <div className="relative max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-[#10071c] p-5 ring-1 ring-white/10 sm:rounded-3xl sm:p-6">
+      <div className="relative max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-[var(--rb-bg-card)] p-5 ring-1 ring-white/10 sm:rounded-3xl sm:p-6">
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full bg-white/5 p-1.5 text-white ring-1 ring-white/10 hover:bg-white/10">
           <X className="h-4 w-4" />
         </button>
@@ -659,7 +662,7 @@ function ComplaintForm({
                 onClick={() => fileRef.current?.click()}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-3 py-6 text-xs text-muted-foreground hover:border-fuchsia-300/40 hover:text-white"
               >
-                <Upload className="h-4 w-4" /> Drag & drop or click to upload (PNG, PDF, CSV, EML)
+                <Upload className="h-4 w-4" /> Drag & drop or click to upload (PNG, PDF, CSV, EML · max {formatUploadLimit()} each)
               </button>
               <input ref={fileRef} type="file" multiple hidden onChange={(e) => addFiles(e.target.files)} />
               {files.length > 0 && (
@@ -743,7 +746,7 @@ function ComplaintForm({
             <button
               onClick={() => canNext && setStep((s) => s + 1)}
               disabled={!canNext || saving}
-              className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] disabled:opacity-50"
+              className="rounded-full rb-gradient-primary px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] disabled:opacity-50"
             >
               Continue
             </button>
@@ -792,7 +795,7 @@ function BasicSelect({ value, onChange, options }: { value: string; onChange: (v
       value={value} onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
     >
-      {options.map((o) => <option key={o} value={o} className="bg-[#160a25]">{o}</option>)}
+      {options.map((o) => <option key={o} value={o} className="bg-[var(--rb-bg-input)]">{o}</option>)}
     </select>
   );
 }

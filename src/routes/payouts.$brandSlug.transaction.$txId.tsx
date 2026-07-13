@@ -18,7 +18,7 @@ export const Route = createFileRoute("/payouts/$brandSlug/transaction/$txId")({
     ],
   }),
   notFoundComponent: () => (
-    <div className="min-h-screen bg-[#0c0418] text-white"><SiteHeader />
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white"><SiteHeader />
       <div className="container-app max-w-2xl py-16 text-center sm:py-20">
         <h1 className="text-3xl font-bold">Transaction not found</h1>
         <Link to="/payouts" className="mt-4 inline-block text-fuchsia-300">← Back to Payouts</Link>
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/payouts/$brandSlug/transaction/$txId")({
       <SiteFooter />
     </div>
   ),
-  errorComponent: ({ error }) => <div className="min-h-screen bg-[#0c0418] text-white p-8">{error.message}</div>,
+  errorComponent: ({ error }) => <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white p-8">{error.message}</div>,
   component: TxPage,
 });
 
@@ -52,7 +52,7 @@ function Row({ label, value, mono }: { label: string; value: any; mono?: boolean
 function TxPage() {
   const { tx, brand } = Route.useLoaderData();
   return (
-    <div className="min-h-screen bg-[#0c0418] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app max-w-3xl space-y-6 py-6 sm:py-8">
         <div className="text-xs text-muted-foreground">
@@ -96,7 +96,7 @@ function TxPage() {
 
           <div className="mt-6 flex flex-wrap gap-2">
             <button onClick={() => navigator.clipboard?.writeText(tx.txHash)} className="glass rounded-full px-4 py-2 text-xs inline-flex items-center gap-2"><Copy className="h-3.5 w-3.5" /> Copy TX Hash</button>
-            <a href={`${tx.explorerUrl}${tx.txHash}`} target="_blank" rel="noopener" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold inline-flex items-center gap-2"><ExternalLink className="h-3.5 w-3.5" /> Open in Explorer</a>
+            <a href={`${tx.explorerUrl}${tx.txHash}`} target="_blank" rel="noopener" className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold inline-flex items-center gap-2"><ExternalLink className="h-3.5 w-3.5" /> Open in Explorer</a>
             <button className="glass rounded-full px-4 py-2 text-xs inline-flex items-center gap-2"><Flag className="h-3.5 w-3.5" /> Report Incorrect Data</button>
           </div>
         </section>

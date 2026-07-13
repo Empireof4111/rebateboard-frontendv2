@@ -4,6 +4,7 @@ import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dash
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/api";
 import { uploadMediaFile } from "@/lib/media-api";
+import { validateFileSize } from "@/lib/upload-limits";
 import { fetchMyReviews } from "@/lib/reviews-api";
 import type { ReviewRecord } from "@/lib/reviews-store";
 import { summarize, useTrt } from "@/lib/trt-store";
@@ -151,8 +152,9 @@ function ProfilePage() {
       setProfileStatus("Choose a PNG, JPG, or WebP image.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setProfileStatus("Profile images must be smaller than 5 MB.");
+    const sizeError = validateFileSize(file);
+    if (sizeError) {
+      setProfileStatus(sizeError);
       return;
     }
 
@@ -189,6 +191,11 @@ function ProfilePage() {
     if (!file) return;
     if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
       setVerificationError("Upload an image or PDF document.");
+      return;
+    }
+    const sizeError = validateFileSize(file);
+    if (sizeError) {
+      setVerificationError(sizeError);
       return;
     }
     setVerificationBusy(true);
@@ -276,7 +283,7 @@ function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             {avatarBusy && (
-              <span className="absolute inset-0 grid place-items-center rounded-2xl bg-[#150829]/75">
+              <span className="absolute inset-0 grid place-items-center rounded-2xl bg-[rgba(18,18,25,0.75)]">
                 <Loader2 className="h-5 w-5 animate-spin text-white" />
               </span>
             )}
@@ -439,7 +446,7 @@ function ProfilePage() {
               type="button"
               onClick={() => void submitVerification()}
               disabled={verificationBusy}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {verificationBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <IdCard className="h-4 w-4" />}
               {verificationStatus === "rejected" ? "Resubmit verification" : "Submit verification"}

@@ -102,7 +102,7 @@ function SubscribersPage() {
             <button onClick={() => setAddForm(emptyNew())} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
-            <button onClick={() => setComposing(true)} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button onClick={() => setComposing(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
               <Mail className="h-3.5 w-3.5" /> Compose
             </button>
           </>
@@ -154,7 +154,7 @@ function SubscribersPage() {
         <Modal open onClose={() => setAddForm(null)} title="Add subscriber" size="sm"
           footer={<>
             <button onClick={() => setAddForm(null)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-            <button onClick={addSubscriber} disabled={adding} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
+            <button onClick={addSubscriber} disabled={adding} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
               {adding ? "Adding…" : "Add"}
             </button>
           </>}
@@ -175,7 +175,7 @@ function SubscribersPage() {
         <Modal open onClose={() => setComposing(false)} title={`Compose to ${counts.active} active subscribers`} size="lg"
           footer={<>
             <button onClick={() => setComposing(false)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-            <button onClick={() => { toast.success(`Email queued for ${counts.active} subscribers`); setComposing(false); }} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Queue send</button>
+            <button onClick={() => { toast.success(`Email queued for ${counts.active} subscribers`); setComposing(false); }} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Queue send</button>
           </>}
         >
           <div className="grid gap-3">

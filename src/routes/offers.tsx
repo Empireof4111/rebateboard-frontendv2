@@ -134,7 +134,7 @@ function PublicOffers() {
   }, [live, filter, offerFilter, q]);
 
   return (
-    <div className="min-h-screen bg-[#0a0418] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-10 py-8 sm:py-9">
         {/* Hero */}
@@ -252,7 +252,7 @@ function PublicOffers() {
               <button
                 key={c}
                 onClick={() => setFilter(c)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === c ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-lg shadow-fuchsia-500/30" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === c ? "rb-gradient-primary text-white shadow-lg shadow-fuchsia-500/30" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
               >
                 {c}{" "}
                 <span className="ml-1 text-[10px] text-white/40">

@@ -106,7 +106,7 @@ function Shell({
     <div
       className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${accent ?? "from-fuchsia-500/20 to-violet-600/20"} backdrop-blur-xl`}
     >
-      <div className="absolute inset-0 bg-[#150829]/40" />
+      <div className="absolute inset-0 bg-[rgba(18,18,25,0.40)]" />
       <div className="relative">{children}</div>
     </div>
   );
@@ -225,14 +225,6 @@ function Trending({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   );
 }
 
-function categoryAccent(brand: AdminBrandRecord) {
-  const category = String(brand.category ?? "");
-  if (category.includes("Crypto")) return "from-cyan-400 to-blue-600";
-  if (category.includes("Broker")) return "from-emerald-400 to-teal-600";
-  if (category.includes("Tool") || category.includes("Software")) return "from-violet-500 to-fuchsia-600";
-  return "from-fuchsia-500 to-violet-600";
-}
-
 function trendingSlidesFromBrands(brands: AdminBrandRecord[], limit: number): AdSlide[] {
   return [...brands]
     .filter((brand) => brand.visibility === "published")
@@ -245,7 +237,6 @@ function trendingSlidesFromBrands(brands: AdminBrandRecord[], limit: number): Ad
         label: brand.name,
         sub: tbi > 0 ? `TBI ${tbi.toFixed(1)}/100` : "Preliminary",
         href: `/firm/${brand.slug || brand.id}`,
-        accent: categoryAccent(brand),
         image: brand.thumbnail || brand.cover,
       };
     });
@@ -259,7 +250,7 @@ function SlideChip({ slide, badge, onClick }: { slide: AdSlide; badge: string; o
       className="group/slide relative inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition hover:bg-white/20"
     >
       <span
-        className={`relative grid h-7 w-7 place-items-center overflow-hidden rounded-full text-[9px] font-bold text-white ring-1 ring-white/10 ${slide.image ? "bg-white/[0.04]" : slide.accent?.includes("bg-gradient") ? slide.accent : `bg-gradient-to-r ${slide.accent ?? "from-fuchsia-500 to-violet-600"}`}`}
+        className={`relative grid h-7 w-7 place-items-center overflow-hidden rounded-full text-[9px] font-bold text-white ring-1 ring-white/10 ${slide.image ? "bg-white/[0.04]" : "rb-gradient-primary"}`}
       >
         {slide.image ? (
           <img src={slide.image} alt="" className="h-full w-full object-contain" loading="lazy" />

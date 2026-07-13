@@ -228,7 +228,7 @@ function OverviewPage() {
               {loading ? "Refreshing" : "Refresh"}
             </button>
             <button
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               disabled={loading}
               onClick={() => exportOverviewCsv(data)}
               type="button"
@@ -303,7 +303,7 @@ function OverviewPage() {
                   </div>
                   <div className="h-1.5 rounded-full bg-white/5">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600"
+                      className="h-full rounded-full rb-gradient-primary"
                       style={{ width: `${item.pct}%` }}
                     />
                   </div>
@@ -507,7 +507,7 @@ function OverviewPage() {
             <ul className="space-y-3">
               {data.recentSignups.slice(0, 6).map((user) => (
                 <li key={user.id} className="flex items-center gap-3">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-xs font-bold text-white">
+                  <div className="grid h-9 w-9 place-items-center rounded-full rb-gradient-primary text-xs font-bold text-white">
                     {user.name
                       .split(" ")
                       .map((part) => part[0])

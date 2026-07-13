@@ -1,10 +1,10 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   LayoutDashboard, Users, Building2, Star, FileWarning, Wallet, Trophy, Award,
   GraduationCap, Newspaper, Megaphone, Shield, Flag, Settings, KeyRound,
   Bell, Activity, Coins, Handshake, Scale, Search, Menu, X, ChevronDown, Sparkles,
-  CircleDollarSign, ClipboardCheck, ArrowDownToLine, HelpCircle, BadgePlus,
+  CircleDollarSign, ClipboardCheck, ArrowDownToLine, HelpCircle,
   ShieldCheck, Inbox, Mail, Radio, MousePointerClick, FlaskConical, BarChart3,
   Bug,
   ListTodo,
@@ -24,88 +24,108 @@ import { fetchAdminBugBountyStats } from "@/lib/bug-bounty-api";
 type Item = { to: string; label: string; icon: typeof Users; badge?: string; exact?: boolean };
 type Group = { id: string; label: string; items: Item[] };
 
+const SIDEBAR_PREF_KEY = "rb.superadmin.sidebar.collapsed";
+const SIDEBAR_GROUPS_PREF_KEY = "rb.superadmin.sidebar.open-groups";
+
 const groups: Group[] = [
   {
-    id: "core",
-    label: "Core",
+    id: "command-center",
+    label: "Command Center",
     items: [
       { to: "/superadmin", label: "Mission Control", icon: LayoutDashboard, exact: true },
-      { to: "/superadmin/analytics", label: "Analytics", icon: BarChart3, badge: "LIVE" },
-      { to: "/superadmin/journal-analytics", label: "Journal Analytics", icon: BookOpen, badge: "NEW" },
-      { to: "/superadmin/daily-tasks", label: "Daily Tasks", icon: ListTodo, badge: "NEW" },
-      { to: "/superadmin/search-analytics", label: "Search Analytics", icon: Search, badge: "NEW" },
-      { to: "/superadmin/users", label: "Users", icon: Users, badge: "48K" },
-      { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck },
-      { to: "/superadmin/inbox", label: "Inbox", icon: Inbox, badge: "5" },
+      { to: "/superadmin/analytics", label: "Platform Analytics", icon: BarChart3 },
+      { to: "/superadmin/search-analytics", label: "Search Analytics", icon: Search },
+      { to: "/superadmin/daily-tasks", label: "Daily Tasks", icon: ListTodo },
     ],
   },
   {
-    id: "brands",
-    label: "Brands & Trust",
+    id: "users-support",
+    label: "Users & Support",
     items: [
-      { to: "/superadmin/brands", label: "Brands", icon: Building2 },
-      { to: "/superadmin/brands/new", label: "Add Brand", icon: BadgePlus },
-      { to: "/superadmin/offers", label: "Offers & Discounts", icon: Megaphone },
-      { to: "/superadmin/reviews", label: "Reviews", icon: Star, badge: "214" },
-      { to: "/superadmin/complaints", label: "Complaints", icon: FileWarning, badge: "38" },
-      { to: "/superadmin/tbi", label: "TBI Engine", icon: Shield },
-      { to: "/superadmin/brand-requests", label: "Brand Requests", icon: Mail, badge: "NEW" },
-      { to: "/superadmin/backtest", label: "AI Backtest Lab", icon: FlaskConical, badge: "NEW" },
-    ],
-  },
-  {
-    id: "finance",
-    label: "Finance & Ops",
-    items: [
-      { to: "/superadmin/wallets", label: "User Wallets", icon: Wallet },
-      { to: "/superadmin/withdrawals", label: "Withdrawals", icon: ArrowDownToLine },
-      { to: "/superadmin/transactions", label: "Transactions", icon: Activity },
-      { to: "/superadmin/trt", label: "ROI Tracker", icon: BarChart3, badge: "TRT" },
-      { to: "/superadmin/claims", label: "Cashback Claims", icon: ClipboardCheck, badge: "47" },
-      { to: "/superadmin/partner-requests", label: "Partner Requests", icon: Mail },
-      { to: "/superadmin/cashback", label: "Cashback Engine", icon: CircleDollarSign },
-      { to: "/superadmin/payouts", label: "Payouts", icon: Wallet },
-      { to: "/superadmin/wallet", label: "RR Ledger", icon: Coins },
-      { to: "/superadmin/affiliates", label: "Affiliates / IB", icon: Handshake },
+      { to: "/superadmin/users", label: "User Management", icon: Users },
+      { to: "/superadmin/inbox", label: "Inbox", icon: Inbox },
+      { to: "/superadmin/complaints", label: "Complaints", icon: FileWarning },
+      { to: "/superadmin/reviews", label: "Reviews", icon: Star },
       { to: "/superadmin/disputes", label: "Disputes", icon: Scale },
     ],
   },
   {
-    id: "content",
-    label: "Growth & Content",
+    id: "brands-trust",
+    label: "Brands & Trust",
     items: [
-      { to: "/superadmin/rr", label: "RR Control Center", icon: Coins, badge: "HUB" },
-      { to: "/superadmin/rr-purchases", label: "RR Purchases", icon: CircleDollarSign, badge: "NEW" },
+      { to: "/superadmin/brands", label: "Brand Management", icon: Building2 },
+      { to: "/superadmin/brand-requests", label: "Brand Applications", icon: Mail },
+      { to: "/superadmin/tbi", label: "TBI Management", icon: Shield },
+      { to: "/superadmin/payouts", label: "Payout Verification", icon: Wallet },
+      { to: "/superadmin/demo-accounts", label: "Demo Accounts", icon: Monitor },
+      { to: "/superadmin/merit-awards", label: "Merit Awards", icon: Award },
+      { to: "/superadmin/top-sellers", label: "Top Sellers", icon: Trophy },
+    ],
+  },
+  {
+    id: "financial-operations",
+    label: "Financial Operations",
+    items: [
+      { to: "/superadmin/wallets", label: "User Wallets", icon: Wallet },
+      { to: "/superadmin/withdrawals", label: "Withdrawals", icon: ArrowDownToLine },
+      { to: "/superadmin/transactions", label: "Transactions", icon: Activity },
+      { to: "/superadmin/claims", label: "Cashback Claims", icon: ClipboardCheck },
+      { to: "/superadmin/cashback", label: "Cashback Engine", icon: CircleDollarSign },
+      { to: "/superadmin/wallet", label: "RR Ledger", icon: Coins },
+      { to: "/superadmin/rr", label: "Rebate Rewards", icon: Coins },
+      { to: "/superadmin/rr-purchases", label: "RR Purchases", icon: CircleDollarSign },
+    ],
+  },
+  {
+    id: "trading-intelligence",
+    label: "Trading Intelligence",
+    items: [
+      { to: "/superadmin/journal-analytics", label: "Journal Analytics", icon: BookOpen },
+      { to: "/superadmin/trt", label: "ROI Tracker", icon: BarChart3 },
+      { to: "/superadmin/backtest", label: "AI Backtest Lab", icon: FlaskConical },
+      { to: "/superadmin/challenge-purchases", label: "Challenge Purchases", icon: ClipboardCheck },
+      { to: "/superadmin/cashback-calculator", label: "Cashback Calculator", icon: Calculator },
+    ],
+  },
+  {
+    id: "content-marketing",
+    label: "Content & Marketing",
+    items: [
+      { to: "/superadmin/blog", label: "Blog & News", icon: Newspaper },
+      { to: "/superadmin/news", label: "Company News", icon: Radio },
+      { to: "/superadmin/homepage-videos", label: "Homepage Videos", icon: Youtube },
+      { to: "/superadmin/faqs", label: "FAQs", icon: HelpCircle },
+      { to: "/superadmin/offers", label: "Offers & Discounts", icon: Megaphone },
+      { to: "/superadmin/popups", label: "Pop-ups", icon: MousePointerClick },
+      { to: "/superadmin/announcements", label: "Announcements", icon: Megaphone },
+      { to: "/superadmin/ads", label: "Dashboard Ads", icon: Megaphone },
       { to: "/superadmin/leaderboards", label: "Leaderboards", icon: Trophy },
       { to: "/superadmin/academy", label: "Academy", icon: GraduationCap },
-      { to: "/superadmin/demo-accounts", label: "Demo Accounts", icon: Monitor, badge: "NEW" },
-      { to: "/superadmin/challenge-purchases", label: "Challenge Purchases", icon: ClipboardCheck, badge: "NEW" },
-      { to: "/superadmin/top-sellers", label: "Top Sellers", icon: Trophy, badge: "NEW" },
-      { to: "/superadmin/merit-awards", label: "Merit Awards", icon: Award, badge: "NEW" },
-      { to: "/superadmin/popups", label: "Pop-ups", icon: MousePointerClick },
       { to: "/superadmin/subscribers", label: "Subscribers", icon: Mail },
     ],
   },
   {
-    id: "contentManagement",
-    label: "Content Management",
+    id: "partners-growth",
+    label: "Partners & Growth",
     items: [
-      { to: "/superadmin/blog", label: "Blog & News", icon: Newspaper },
-      { to: "/superadmin/news", label: "Company News", icon: Radio },
-      { to: "/superadmin/homepage-videos", label: "Homepage Videos", icon: Youtube, badge: "NEW" },
-      { to: "/superadmin/faqs", label: "FAQs", icon: HelpCircle },
-      { to: "/superadmin/announcements", label: "Announcements", icon: Megaphone },
-      { to: "/superadmin/ads", label: "Dashboard Ads", icon: Megaphone, badge: "NEW" },
-      { to: "/superadmin/cashback-calculator", label: "Cashback Calculator", icon: Calculator, badge: "NEW" },
+      { to: "/superadmin/affiliates", label: "Affiliates / IB", icon: Handshake },
+      { to: "/superadmin/partner-requests", label: "Partner Requests", icon: Mail },
     ],
   },
   {
-    id: "system",
-    label: "System",
+    id: "communications",
+    label: "Communications",
     items: [
+      { to: "/superadmin/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    id: "platform-system",
+    label: "Platform & System",
+    items: [
+      { to: "/superadmin/roles", label: "Roles & Permissions", icon: ShieldCheck },
       { to: "/superadmin/audit", label: "Audit Log", icon: Activity },
       { to: "/superadmin/flags", label: "Feature Flags", icon: Flag },
-      { to: "/superadmin/notifications", label: "Notifications", icon: Bell },
       { to: "/superadmin/api-keys", label: "API Keys", icon: KeyRound },
       { to: "/superadmin/Bug-bounty", label: "Bug Bounty", icon: Bug },
       { to: "/superadmin/settings", label: "Settings", icon: Settings },
@@ -113,22 +133,72 @@ const groups: Group[] = [
   },
 ];
 
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
+  "command-center": true,
+};
+
+function isActiveRoute(pathname: string, item: Item) {
+  return item.exact
+    ? pathname === item.to
+    : pathname === item.to || pathname.startsWith(item.to + "/");
+}
+
+function loadOpenGroups() {
+  if (typeof window === "undefined") return DEFAULT_OPEN_GROUPS;
+  try {
+    const raw = window.localStorage.getItem(SIDEBAR_GROUPS_PREF_KEY);
+    return raw ? { ...DEFAULT_OPEN_GROUPS, ...JSON.parse(raw) } : DEFAULT_OPEN_GROUPS;
+  } catch {
+    return DEFAULT_OPEN_GROUPS;
+  }
+}
+
 export function SuperadminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { canRoute, roles, activeRoleId, setActiveRoleId, activeRole } = useAdminPermissions();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [bugBountyOpenCount, setBugBountyOpenCount] = useState<string>("");
-  const [open, setOpen] = useState<Record<string, boolean>>({
-    core: true, brands: true, finance: true, content: true, contentManagement: true, system: true,
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(SIDEBAR_PREF_KEY) === "true";
   });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [navQuery, setNavQuery] = useState("");
+  const [bugBountyOpenCount, setBugBountyOpenCount] = useState<string>("");
+  const sidebarWidth = sidebarCollapsed ? "5rem" : "16rem";
+  const [open, setOpen] = useState<Record<string, boolean>>(loadOpenGroups);
   const toggle = (id: string) => setOpen((s) => ({ ...s, [id]: !s[id] }));
 
   // Filter every group's items by current role permissions. Hides empty groups.
-  const visibleGroups = groups
-    .map((g) => ({ ...g, items: g.items.filter((it) => canRoute(it.to)) }))
-    .filter((g) => g.items.length > 0);
+  const permittedGroups = useMemo(
+    () => groups
+      .map((g) => ({ ...g, items: g.items.filter((it) => canRoute(it.to)) }))
+      .filter((g) => g.items.length > 0),
+    [canRoute],
+  );
+
+  const visibleGroups = useMemo(() => {
+    const term = navQuery.trim().toLowerCase();
+    if (!term) return permittedGroups;
+    return permittedGroups
+      .map((group) => {
+        const groupMatches = group.label.toLowerCase().includes(term);
+        const items = groupMatches
+          ? group.items
+          : group.items.filter((item) =>
+            [item.label, item.to, group.label]
+              .some((value) => value.toLowerCase().includes(term)),
+          );
+        return { ...group, items };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [navQuery, permittedGroups]);
+
+  const activeGroupIds = useMemo(
+    () => permittedGroups
+      .filter((group) => group.items.some((item) => isActiveRoute(pathname, item)))
+      .map((group) => group.id),
+    [pathname, permittedGroups],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -140,6 +210,46 @@ export function SuperadminLayout() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_PREF_KEY, String(sidebarCollapsed));
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_GROUPS_PREF_KEY, JSON.stringify(open));
+    } catch {
+      /* ignore */
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!activeGroupIds.length) return;
+    setOpen((state) => {
+      let changed = false;
+      const next = { ...state };
+      activeGroupIds.forEach((id) => {
+        if (!next[id]) {
+          next[id] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : state;
+    });
+  }, [activeGroupIds]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      document
+        .querySelector("[data-admin-nav-active='true']")
+        ?.scrollIntoView({ block: "nearest" });
+    }, 80);
+    return () => window.clearTimeout(handle);
+  }, [pathname, visibleGroups.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,14 +274,15 @@ export function SuperadminLayout() {
   }, [pathname]);
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      className="relative min-h-screen"
+      style={{ "--dashboard-sidebar-width": sidebarWidth } as CSSProperties}
+    >
       <div className="glow-orb left-[-10%] top-[-10%] h-[500px] w-[500px]" />
       <div className="glow-orb right-[-10%] bottom-[-10%] h-[600px] w-[600px]" />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-white/5 bg-[#150829]/90 backdrop-blur-xl transition-all duration-200 ease-out lg:translate-x-0 ${
-          sidebarCollapsed ? "lg:w-20" : "lg:w-64"
-        } ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,calc(100vw-2rem))] transform flex-col border-r border-white/5 bg-[rgba(18,18,25,0.90)] backdrop-blur-xl transition-[width,transform] duration-200 ease-out lg:w-[var(--dashboard-sidebar-width)] lg:translate-x-0 ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
         aria-label="Superadmin navigation"
@@ -179,7 +290,7 @@ export function SuperadminLayout() {
         <div className={`flex h-16 items-center justify-between border-b border-white/5 px-4 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
           <Link to="/" className={`flex min-w-0 items-center gap-2 ${sidebarCollapsed ? "lg:justify-center" : ""}`}>
             <Logo heightClass="h-9" iconOnly={sidebarCollapsed} />
-            <span className={`rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+            <span className={`rounded-full rb-gradient-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
               ADMIN
             </span>
           </Link>
@@ -187,6 +298,7 @@ export function SuperadminLayout() {
             onClick={() => setSidebarCollapsed((value) => !value)}
             className="hidden h-9 w-9 place-items-center rounded-xl text-fuchsia-100 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {sidebarCollapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
@@ -200,10 +312,35 @@ export function SuperadminLayout() {
           </button>
         </div>
 
-        <nav className={`flex flex-col gap-1 overflow-y-auto px-2 py-3 ${sidebarCollapsed ? "lg:px-2" : ""}`} style={{ maxHeight: "calc(100vh - 4rem)" }}>
+        <div className={`px-2 pt-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+          <label className="sr-only" htmlFor="admin-sidebar-page-search">Search admin pages</label>
+          <div className="flex h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <Search className="h-4 w-4 shrink-0 text-violet-200/80" />
+            <input
+              id="admin-sidebar-page-search"
+              value={navQuery}
+              onChange={(event) => setNavQuery(event.target.value)}
+              placeholder="Search admin pages..."
+              className="min-w-0 flex-1 bg-transparent text-xs font-medium text-white outline-none placeholder:text-white/38"
+            />
+            {navQuery && (
+              <button
+                type="button"
+                onClick={() => setNavQuery("")}
+                className="grid h-6 w-6 place-items-center rounded-full text-white/55 transition hover:bg-white/10 hover:text-white"
+                aria-label="Clear admin page search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <nav className={`admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
           {visibleGroups.map((g) => {
             const isOpen = open[g.id];
-            const showItems = sidebarCollapsed || isOpen;
+            const searching = Boolean(navQuery.trim());
+            const showItems = sidebarCollapsed || isOpen || searching;
             return (
               <div key={g.id} className="mb-1">
                 {sidebarCollapsed ? (
@@ -231,6 +368,7 @@ export function SuperadminLayout() {
                           to={item.to as string}
                           onClick={() => setMobileOpen(false)}
                           aria-current={active ? "page" : undefined}
+                          data-admin-nav-active={active ? "true" : undefined}
                           title={sidebarCollapsed ? item.label : undefined}
                           className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring/60 ${
                             active
@@ -254,6 +392,11 @@ export function SuperadminLayout() {
               </div>
             );
           })}
+          {visibleGroups.length === 0 && (
+            <div className={`rounded-2xl border border-white/8 bg-white/[0.035] px-3 py-4 text-center text-xs text-white/50 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+              No admin pages match “{navQuery.trim()}”.
+            </div>
+          )}
         </nav>
       </aside>
 
@@ -261,8 +404,8 @@ export function SuperadminLayout() {
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div className={sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}>
-        <header className="sticky top-0 z-30 border-b border-white/5 bg-[#150829]/75 backdrop-blur-xl">
+      <div className="transition-[padding] duration-200 ease-out lg:pl-[var(--dashboard-sidebar-width)]">
+        <header className="sticky top-0 z-30 border-b border-white/5 bg-[rgba(18,18,25,0.75)] backdrop-blur-xl">
           <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6">
             <button
               onClick={() => setMobileOpen(true)}
@@ -304,7 +447,7 @@ export function SuperadminLayout() {
                   className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-semibold text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
                 >
                   {roles.filter((r) => r.status === "active").map((r) => (
-                    <option key={r.id} value={r.id} className="bg-[#150829]">{r.name}</option>
+                    <option key={r.id} value={r.id} className="bg-[var(--rb-bg-elevated)]">{r.name}</option>
                   ))}
                 </select>
               </label>
@@ -316,7 +459,7 @@ export function SuperadminLayout() {
                 <Bell className="h-4 w-4" />
               </button>
               <div
-                className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-xs font-bold text-white shadow-[0_0_14px_rgba(192,132,252,0.35)]"
+                className="grid h-9 w-9 place-items-center rounded-full rb-gradient-primary text-xs font-bold text-white shadow-[0_0_14px_rgba(192,132,252,0.35)]"
                 title={activeRole?.name}
               >
                 {activeRole?.name?.split(" ").map((w) => w[0]).slice(0, 2).join("") ?? "SA"}

@@ -32,7 +32,7 @@ function RolesPage() {
         title="Roles & Permissions"
         subtitle="Define sub-admin roles and what each one can do across the platform."
         actions={
-          <button onClick={() => setEditing(empty())} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+          <button onClick={() => setEditing(empty())} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
             <Plus className="h-3.5 w-3.5" /> New role
           </button>
         }
@@ -105,7 +105,7 @@ function RolesPage() {
               const exists = items.some((x) => x.id === editing.id);
               if (exists) update(editing.id, editing); else add(editing);
               toast.success(exists ? "Role updated" : "Role created"); setEditing(null);
-            }} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Save role</button>
+            }} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Save role</button>
           </>}
         >
           <div className="grid gap-3">

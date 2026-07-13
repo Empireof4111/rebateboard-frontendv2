@@ -190,7 +190,7 @@ function JournalAnalyticsPage() {
               type="button"
               disabled={loading}
               onClick={() => exportCsv(data)}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Download className="h-4 w-4" />
               Export CSV
@@ -433,7 +433,7 @@ function FilterSelect({
         className="w-full rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
       >
         {options.map((option) => (
-          <option key={option} value={option} className="bg-[#150829] text-white">
+          <option key={option} value={option} className="bg-[var(--rb-bg-elevated)] text-white">
             {option}
           </option>
         ))}

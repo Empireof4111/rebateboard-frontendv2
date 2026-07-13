@@ -14,7 +14,7 @@ export function ComingSoonPage({
   eyebrow = "Coming Soon",
 }: ComingSoonPageProps) {
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
 
       <main className="container-app py-10 sm:py-14 lg:py-16">
@@ -42,7 +42,7 @@ export function ComingSoonPage({
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
               href="/"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_28px_rgba(192,132,252,0.34)] transition hover:opacity-95"
+              className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_28px_rgba(192,132,252,0.34)] transition hover:opacity-95"
             >
               Back to homepage
               <ArrowRight className="h-4 w-4" />

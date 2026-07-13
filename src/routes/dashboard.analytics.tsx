@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { openAddTrade } from "@/lib/ui-bus";
-import { useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { resolveTradeNetPnl, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
 import { BarChart3, Plus, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
   component: AnalyticsPage,
 });
 
-type GroupMetric = { label: string; rr: number; trades: number };
+type GroupMetric = { label: string; netPnl: number; trades: number };
 
 function money(value: number) {
   const sign = value < 0 ? "-" : "";
@@ -19,13 +19,15 @@ function money(value: number) {
 function groupBy(trades: Trade[], key: (trade: Trade) => string): GroupMetric[] {
   const map = new Map<string, GroupMetric>();
   trades.forEach((trade) => {
+    const pnl = resolveTradeNetPnl(trade);
+    if (pnl == null) return;
     const label = key(trade) || "Unclassified";
-    const current = map.get(label) ?? { label, rr: 0, trades: 0 };
-    current.rr += Number(trade.rr ?? 0);
+    const current = map.get(label) ?? { label, netPnl: 0, trades: 0 };
+    current.netPnl += pnl;
     current.trades += 1;
     map.set(label, current);
   });
-  return [...map.values()].sort((a, b) => b.rr - a.rr);
+  return [...map.values()].sort((a, b) => b.netPnl - a.netPnl);
 }
 
 function maxDrawdown(trades: Trade[]) {
@@ -34,7 +36,9 @@ function maxDrawdown(trades: Trade[]) {
   let peak = 0;
   let drawdown = 0;
   chronological.forEach((trade) => {
-    equity += Number(trade.pnl ?? 0);
+    const pnl = resolveTradeNetPnl(trade);
+    if (pnl == null) return;
+    equity += pnl;
     peak = Math.max(peak, equity);
     drawdown = Math.min(drawdown, equity - peak);
   });
@@ -48,7 +52,7 @@ function Bar({ label, value, max, trades }: { label: string; value: number; max:
       <div className="mb-1 flex justify-between gap-3">
         <span className="truncate text-muted-foreground">{label}</span>
         <span className="shrink-0 font-semibold text-white">
-          {value > 0 ? "+" : ""}{value.toFixed(2)}R · {trades}
+          {value > 0 ? "+" : ""}${value.toFixed(2)} · {trades}
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
@@ -62,13 +66,13 @@ function Bar({ label, value, max, trades }: { label: string; value: number; max:
 }
 
 function MetricPanel({ title, rows }: { title: string; rows: GroupMetric[] }) {
-  const max = Math.max(...rows.map((row) => Math.abs(row.rr)), 0);
+  const max = Math.max(...rows.map((row) => Math.abs(row.netPnl)), 0);
   return (
     <Panel title={title}>
       {rows.length > 0 ? (
         <div className="space-y-3">
           {rows.slice(0, 5).map((row) => (
-            <Bar key={row.label} label={row.label} value={row.rr} max={max} trades={row.trades} />
+            <Bar key={row.label} label={row.label} value={row.netPnl} max={max} trades={row.trades} />
           ))}
         </div>
       ) : (
@@ -83,10 +87,13 @@ function AnalyticsPage() {
   const plan = useTradingPlan();
 
   const metrics = useMemo(() => {
-    const total = trades.length;
-    const wins = trades.filter((trade) => Number(trade.pnl ?? 0) > 0).length;
-    const grossWin = trades.filter((trade) => Number(trade.pnl ?? 0) > 0).reduce((sum, trade) => sum + Number(trade.pnl ?? 0), 0);
-    const grossLoss = Math.abs(trades.filter((trade) => Number(trade.pnl ?? 0) < 0).reduce((sum, trade) => sum + Number(trade.pnl ?? 0), 0));
+    const completed = trades
+      .map((trade) => ({ trade, pnl: resolveTradeNetPnl(trade) }))
+      .filter((row): row is { trade: Trade; pnl: number } => row.pnl !== null);
+    const total = completed.length;
+    const wins = completed.filter((row) => row.pnl > 0).length;
+    const grossWin = completed.filter((row) => row.pnl > 0).reduce((sum, row) => sum + row.pnl, 0);
+    const grossLoss = Math.abs(completed.filter((row) => row.pnl < 0).reduce((sum, row) => sum + row.pnl, 0));
     const avgR = total ? trades.reduce((sum, trade) => sum + Number(trade.rr ?? 0), 0) / total : 0;
     const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
     const strategyName = new Map(plan.strategies.map((strategy) => [strategy.id, strategy.name]));
@@ -97,18 +104,18 @@ function AnalyticsPage() {
       avgR,
       profitFactor,
       drawdown: maxDrawdown(trades),
-      strategyRows: groupBy(trades, (trade) => strategyName.get(trade.strategyId ?? "") ?? "No strategy selected"),
-      sessionRows: groupBy(trades, (trade) => trade.session.toUpperCase()),
-      emotionRows: groupBy(trades, (trade) => trade.emotionBefore ? trade.emotionBefore.replace(/_/g, " ") : "Not tagged"),
-      assetRows: groupBy(trades, (trade) => trade.asset.toUpperCase()),
+      strategyRows: groupBy(completed.map((row) => row.trade), (trade) => strategyName.get(trade.strategyId ?? "") ?? "No strategy selected"),
+      sessionRows: groupBy(completed.map((row) => row.trade), (trade) => trade.session.toUpperCase()),
+      emotionRows: groupBy(completed.map((row) => row.trade), (trade) => trade.emotionBefore ? trade.emotionBefore.replace(/_/g, " ") : "Not tagged"),
+      assetRows: groupBy(completed.map((row) => row.trade), (trade) => trade.asset.toUpperCase()),
     };
   }, [plan.strategies, trades]);
 
   const bestConditions = [
-    metrics.sessionRows[0]?.rr > 0 ? metrics.sessionRows[0].label : null,
-    metrics.assetRows[0]?.rr > 0 ? metrics.assetRows[0].label : null,
-    metrics.strategyRows[0]?.rr > 0 ? metrics.strategyRows[0].label : null,
-    metrics.emotionRows[0]?.rr > 0 ? metrics.emotionRows[0].label : null,
+    metrics.sessionRows[0]?.netPnl > 0 ? metrics.sessionRows[0].label : null,
+    metrics.assetRows[0]?.netPnl > 0 ? metrics.assetRows[0].label : null,
+    metrics.strategyRows[0]?.netPnl > 0 ? metrics.strategyRows[0].label : null,
+    metrics.emotionRows[0]?.netPnl > 0 ? metrics.emotionRows[0].label : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -124,7 +131,7 @@ function AnalyticsPage() {
             <button
               type="button"
               onClick={openAddTrade}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white"
+              className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white"
             >
               <Plus className="h-3.5 w-3.5" />
               Add trade

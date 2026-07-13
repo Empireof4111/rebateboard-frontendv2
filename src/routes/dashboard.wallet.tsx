@@ -11,6 +11,7 @@ import { LinkAccountModal } from "@/components/dashboard/LinkAccountModal";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type WalletSummary, type PartnerRequestRecord } from "@/lib/finance-api";
 import { ApiError } from "@/lib/api";
+import { formatUploadLimit, validateFileSize } from "@/lib/upload-limits";
 
 const PAYOUT_PREF_KEY = "rb-user:payoutPref";
 type PayoutTarget = "rr-wallet" | "rebate-wallet" | "revete-wallet" | "broker-wallet";
@@ -248,7 +249,7 @@ function WalletPage() {
               <button onClick={() => setTransferOpen(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
                 <Send className="h-3.5 w-3.5" /> Send to user
               </button>
-              <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
+              <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
                 <Building2 className="h-3.5 w-3.5" /> Link account · earn
               </button>
               <button onClick={() => setClaimOpen(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
@@ -472,7 +473,7 @@ function WalletPage() {
 
       {/* Linked accounts — partner attach requests */}
       <Panel title={`Linked accounts (${linkedAccts.length})`} action={
-        <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-bold text-white">
+        <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[11px] font-bold text-white">
           + Link new
         </button>
       }>
@@ -705,7 +706,7 @@ function WithdrawModal({
           <Link
             to="/dashboard/profile"
             onClick={onClose}
-            className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
           >
             <IdCard className="h-4 w-4" /> Go to Verification
           </Link>
@@ -786,7 +787,7 @@ function TransferModal({ token, onClose, onSuccess }: { token: string; onClose: 
           <input value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="What's it for?" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
         </div>
         {error && <p className="text-[11px] text-rose-400">{error}</p>}
-        <button onClick={submit} disabled={loading} className="mt-2 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+        <button onClick={submit} disabled={loading} className="mt-2 w-full rounded-xl rb-gradient-primary py-2.5 text-sm font-semibold text-white disabled:opacity-50">
           {loading ? "Sending…" : "Send instantly"}
         </button>
         <p className="text-center text-[10px] text-muted-foreground">Internal transfers are free and instant.</p>
@@ -899,6 +900,11 @@ function ClaimCashbackModal({
     if (!fl) return;
     const next: string[] = [];
     for (const f of Array.from(fl).slice(0, 4)) {
+      const sizeError = validateFileSize(f);
+      if (sizeError) {
+        setError(sizeError);
+        continue;
+      }
       const url = await new Promise<string>((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(String(r.result));
@@ -1006,7 +1012,7 @@ function ClaimCashbackModal({
             {proof.screenshot && (
               <Labeled label="Screenshot / receipt (up to 4)">
                 <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-3 text-xs text-muted-foreground hover:bg-white/[0.06]">
-                  <Upload className="h-4 w-4" /> Click to upload images
+                  <Upload className="h-4 w-4" /> Click to upload images up to {formatUploadLimit()}
                   <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onFile(e.target.files)} />
                 </label>
                 {files.length > 0 && (
@@ -1031,7 +1037,7 @@ function ClaimCashbackModal({
         </div>
 
         {error && <p className="text-[11px] text-rose-400">{error}</p>}
-        <button onClick={submit} disabled={loading} className="mt-1 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+        <button onClick={submit} disabled={loading} className="mt-1 w-full rounded-xl rb-gradient-primary py-2.5 text-sm font-semibold text-white disabled:opacity-50">
           {loading ? "Submitting…" : "Submit claim for review"}
         </button>
         <p className="text-center text-[10px] text-muted-foreground">Our team reviews every claim within 24h. You'll see status updates in this wallet.</p>
@@ -1055,7 +1061,7 @@ function ChoiceChip({ active, onClick, icon, label, disabled }: { active: boolea
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40" : "bg-white/5 text-white ring-white/10 hover:ring-white/20"}`}
+      className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-white ring-white/10 hover:ring-white/20"}`}
     >
       {icon}{label}
     </button>

@@ -34,7 +34,7 @@ export function Modal({
     <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`mt-12 w-full ${sizeCls} rounded-2xl border border-white/10 bg-[#1a0d36]/95 shadow-2xl ring-1 ring-fuchsia-400/10`}
+        className={`mt-12 w-full ${sizeCls} rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl ring-1 ring-fuchsia-400/10`}
       >
         <div className="flex items-start justify-between gap-3 border-b border-white/5 p-5">
           <div>
@@ -78,7 +78,7 @@ export function ConfirmDialog({
             className={`rounded-xl px-4 py-2 text-xs font-bold text-white ${
               tone === "danger"
                 ? "bg-gradient-to-r from-rose-500 to-rose-600"
-                : "bg-gradient-to-r from-fuchsia-500 to-violet-600"
+                : "rb-gradient-primary"
             }`}
           >
             {confirmText}
@@ -99,7 +99,7 @@ export const fieldCls =
   "w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-fuchsia-400/40 focus:outline-none placeholder:text-muted-foreground";
 
 export const selectCls =
-  "w-full rounded-lg bg-[#160b2e] px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-fuchsia-400/40 focus:outline-none [color-scheme:dark] [&>option]:bg-[#160b2e] [&>option]:text-white";
+  "w-full rounded-lg bg-[var(--rb-bg-input)] px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-fuchsia-400/40 focus:outline-none [color-scheme:dark] [&>option]:bg-[var(--rb-bg-input)] [&>option]:text-white";
 
 export function Field({
   label, children, span = 1, hint,

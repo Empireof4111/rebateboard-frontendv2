@@ -42,7 +42,7 @@ function AdminBacktest() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
                 active
-                  ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white"
+                  ? "rb-gradient-primary text-white"
                   : "text-muted-foreground hover:bg-white/5 hover:text-white"
               }`}
             >
@@ -94,7 +94,7 @@ function AdminBacktest() {
                 {mockReports.map((r, i) => (
                   <tr key={r.id} className="border-t border-white/5 text-white/90">
                     <td className="px-2 py-2 flex items-center gap-2">
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[9px] font-bold text-white">U{i + 1}</span>
+                      <span className="grid h-6 w-6 place-items-center rounded-full rb-gradient-primary text-[9px] font-bold text-white">U{i + 1}</span>
                       user{i + 1}@rb.io
                     </td>
                     <td className="px-2 py-2">{r.name}</td>

@@ -6,6 +6,7 @@ import { ReactNode, useRef } from "react";
 import { Check, Lock, Upload, X, Info, AlertTriangle, Sparkles, ChevronDown } from "lucide-react";
 import type { TrustScoreMode, UploadedFile, TrustBreakdown } from "@/lib/tbi-onboarding";
 import { UNLOCK_THRESHOLDS } from "@/lib/tbi-onboarding";
+import { filterFilesByUploadLimit } from "@/lib/upload-limits";
 
 /* ============================================================ */
 export function StepProgressBar({ totalSteps, currentStep }: { totalSteps: number; currentStep: number }) {
@@ -125,7 +126,7 @@ export function TrustBreakdownCard({ breakdown }: { breakdown: TrustBreakdown })
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
                 <div
-                  className={`h-full rounded-full transition-all ${locked ? "bg-white/10" : "bg-gradient-to-r from-fuchsia-500 to-violet-500"}`}
+                  className={`h-full rounded-full transition-all ${locked ? "bg-white/10" : "rb-gradient-primary"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -162,7 +163,7 @@ export function UnlockProgressCard({ currentReviews }: { currentReviews: number 
         }`}>{state}</div>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
-        <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full rb-gradient-primary transition-all" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-3 text-xs text-muted-foreground">{copy}</p>
     </div>
@@ -244,7 +245,7 @@ export function TextAreaField({ value, onChange, placeholder, rows = 3 }: { valu
 export function SelectField({ value, onChange, options, placeholder = "Select…" }: { value: string; onChange: (v: string) => void; options: { label: string; value: string }[]; placeholder?: string }) {
   return (
     <div className="relative">
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={fieldBase + " appearance-none pr-8 [&>option]:bg-[#1a0b2e]"}>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={fieldBase + " appearance-none pr-8 [&>option]:bg-[var(--rb-bg-elevated)]"}>
         <option value="">{placeholder}</option>
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -275,7 +276,7 @@ export function ToggleChoiceGroup({ value, onChange, options }: { value: string 
             onClick={() => onChange(o.value)}
             className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
               active
-                ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_16px_rgba(192,132,252,0.4)]"
+                ? "rb-gradient-primary text-white shadow-[0_0_16px_rgba(192,132,252,0.4)]"
                 : "border border-white/10 bg-white/[0.04] text-muted-foreground hover:border-white/30 hover:text-white"
             }`}
           >
@@ -400,7 +401,9 @@ export function FileUploadBlock({
         className="hidden"
         onChange={(e) => {
           const list = Array.from(e.target.files ?? []);
-          if (list.length) onAdd(list);
+          const { accepted, rejected } = filterFilesByUploadLimit(list);
+          if (rejected.length) window.alert(rejected.join("\n"));
+          if (accepted.length) onAdd(accepted);
           e.target.value = "";
         }}
       />

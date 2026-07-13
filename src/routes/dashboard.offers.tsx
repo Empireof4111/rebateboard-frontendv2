@@ -155,7 +155,7 @@ function DashboardOffers() {
             <button
               key={c}
               onClick={() => setFilter(c)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${filter === c ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${filter === c ? "rb-gradient-primary text-white" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
             >
               {c}
             </button>

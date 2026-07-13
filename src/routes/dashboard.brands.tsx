@@ -123,7 +123,7 @@ function ProgramsPage() {
                 onClick={() => setCat(tab.id)}
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   active
-                    ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_18px_rgba(192,132,252,0.4)]"
+                    ? "rb-gradient-primary text-white shadow-[0_0_18px_rgba(192,132,252,0.4)]"
                     : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white"
                 }`}
               >
@@ -216,7 +216,7 @@ function ProgramsPage() {
                 <Link
                   to={"/firm/$firmId" as string}
                   params={{ firmId: brand.slug }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white"
+                  className="inline-flex items-center gap-1 rounded-lg rb-gradient-primary px-3 py-2 text-xs font-semibold text-white"
                 >
                   View brand <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -229,7 +229,7 @@ function ProgramsPage() {
           icon={Layers}
           title="No published programs yet"
           description="Browse Programs to find supported brokers, prop firms, exchanges, and tools as they become available."
-          action={<Link to="/programs" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">Browse Programs</Link>}
+          action={<Link to="/programs" className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white">Browse Programs</Link>}
         />
       )}
     </div>

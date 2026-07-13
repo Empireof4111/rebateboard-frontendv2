@@ -3,10 +3,19 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Calculator, DollarSign, TrendingUp, ArrowLeftRight, Gift, Search,
   Star, History, Sparkles, X, Save, BookPlus, Share2, AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { useTrades } from "@/lib/trading-plan";
 import { RebateCalculator } from "@/components/calculators/RebateCalculator";
+import {
+  GENERIC_CONSISTENCY_RULES,
+  buildDailyEntriesFromTrades,
+  calculateProfitConsistency,
+  dailyEntriesToConsistencyInput,
+  formatCalculatorMoney,
+  type DailyProfitEntry,
+} from "@/lib/calculators";
 
 export const Route = createFileRoute("/dashboard/tools")({
   head: () => ({
@@ -18,7 +27,7 @@ export const Route = createFileRoute("/dashboard/tools")({
   component: ToolsPage,
 });
 
-type ToolKey = "fees" | "margin" | "profit" | "currency" | "rebate";
+type ToolKey = "consistency" | "fees" | "margin" | "profit" | "currency" | "rebate";
 
 type ToolMeta = {
   key: ToolKey;
@@ -26,15 +35,15 @@ type ToolMeta = {
   description: string;
   icon: typeof Calculator;
   preview: string;
-  accent: string;
 };
 
 const TOOLS: ToolMeta[] = [
-  { key: "rebate",   title: "Rebate Calculator",   description: "Estimate how much cashback you earn per trade", icon: Gift,           preview: "Cashback estimate", accent: "from-fuchsia-500 to-violet-600" },
-  { key: "fees",     title: "Fees Calculator",     description: "Calculate spread + commission cost",            icon: DollarSign,     preview: "Fee estimate",      accent: "from-violet-400 to-fuchsia-500" },
-  { key: "margin",   title: "Margin Calculator",   description: "Required margin for any position",              icon: Calculator,     preview: "Margin estimate",   accent: "from-cyan-400 to-blue-600" },
-  { key: "profit",   title: "Profit Calculator",   description: "Profit, loss, pips and RR ratio",               icon: TrendingUp,     preview: "PnL scenario",      accent: "from-emerald-400 to-teal-600" },
-  { key: "currency", title: "Currency Converter",  description: "Convert across 20+ currencies",                 icon: ArrowLeftRight, preview: "Manual rate mode",   accent: "from-pink-400 to-rose-600" },
+  { key: "consistency", title: "Profit Consistency Calculator", description: "Measure how much profit came from your best trading day", icon: BarChart3, preview: "Best-day rule" },
+  { key: "rebate",   title: "Rebate Calculator",   description: "Estimate how much cashback you earn per trade", icon: Gift,           preview: "Cashback estimate" },
+  { key: "fees",     title: "Fees Calculator",     description: "Calculate spread + commission cost",            icon: DollarSign,     preview: "Fee estimate" },
+  { key: "margin",   title: "Margin Calculator",   description: "Required margin for any position",              icon: Calculator,     preview: "Margin estimate" },
+  { key: "profit",   title: "Profit Calculator",   description: "Profit, loss, pips and RR ratio",               icon: TrendingUp,     preview: "PnL scenario" },
+  { key: "currency", title: "Currency Converter",  description: "Convert across 20+ currencies",                 icon: ArrowLeftRight, preview: "Manual rate mode" },
 ];
 
 function ToolsPage() {
@@ -122,9 +131,9 @@ function ToolsPage() {
           const isFav = favs.includes(t.key);
           return (
             <div key={t.key} className="glass group relative overflow-hidden rounded-2xl p-5">
-              <div className={`absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br ${t.accent} opacity-20 blur-2xl`} />
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[rgba(126,77,255,0.18)] opacity-70 blur-2xl" />
               <div className="flex items-start justify-between">
-                <div className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${t.accent} text-white shadow-lg`}>
+                <div className="grid h-10 w-10 place-items-center rounded-xl rb-gradient-primary text-white shadow-lg">
                   <Icon className="h-5 w-5" />
                 </div>
                 <button
@@ -140,7 +149,7 @@ function ToolsPage() {
               <div className="mt-3 text-[11px] text-fuchsia-300">Mode · {t.preview}</div>
               <button
                 onClick={() => setActive(t.key)}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] transition hover:brightness-110"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full rb-gradient-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] transition hover:brightness-110"
               >
                 Open Tool
               </button>
@@ -209,9 +218,9 @@ function ToolModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-6">
       <div className="glass relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-t-3xl border border-white/10 sm:rounded-3xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#150829]/90 px-5 py-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[rgba(18,18,25,0.90)] px-5 py-4 backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className={`grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br ${meta.accent} text-white`}>
+            <div className="grid h-9 w-9 place-items-center rounded-xl rb-gradient-primary text-white">
               <Icon className="h-4 w-4" />
             </div>
             <div>
@@ -224,6 +233,7 @@ function ToolModal({
           </button>
         </div>
         <div className="p-5">
+          {meta.key === "consistency" && <ProfitConsistencyCalculator onResult={onSave} />}
           {meta.key === "fees" && <FeesCalculator onResult={onSave} />}
           {meta.key === "margin" && <MarginCalculator onResult={onSave} />}
           {meta.key === "profit" && <ProfitCalculator onResult={onSave} />}
@@ -269,7 +279,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-accent/60"
     >
-      {options.map(o => <option key={o} value={o} className="bg-[#150829]">{o}</option>)}
+      {options.map(o => <option key={o} value={o} className="bg-[var(--rb-bg-elevated)]">{o}</option>)}
     </select>
   );
 }
@@ -316,6 +326,252 @@ function TwoCol({ left, right }: { left: React.ReactNode; right: React.ReactNode
 }
 
 /* ==================== Calculators ==================== */
+
+function ProfitConsistencyCalculator({ onResult }: { onResult: (v: string) => void }) {
+  const trades = useTrades();
+  const [mode, setMode] = useState<"totals" | "daily">("totals");
+  const [currency, setCurrency] = useState("USD");
+  const [totalNetProfit, setTotalNetProfit] = useState(2000);
+  const [bestDay, setBestDay] = useState(500);
+  const [ruleId, setRuleId] = useState("generic-30");
+  const [entries, setEntries] = useState<DailyProfitEntry[]>([
+    { id: "mon", label: "Monday", amount: 350 },
+    { id: "tue", label: "Tuesday", amount: 120 },
+    { id: "wed", label: "Wednesday", amount: -80 },
+    { id: "thu", label: "Thursday", amount: 500 },
+    { id: "fri", label: "Friday", amount: 260 },
+  ]);
+
+  const rule = GENERIC_CONSISTENCY_RULES.find((item) => item.id === ruleId) ?? GENERIC_CONSISTENCY_RULES[0];
+  const input = mode === "daily"
+    ? dailyEntriesToConsistencyInput(entries, rule)
+    : { totalNetProfit, highestProfitableDay: bestDay, rule };
+  const result = calculateProfitConsistency(input);
+  const profitableDays = entries.filter((entry) => Number(entry.amount) > 0);
+  const averageProfitableDay = profitableDays.length
+    ? profitableDays.reduce((sum, entry) => sum + Number(entry.amount || 0), 0) / profitableDays.length
+    : 0;
+  const maxAbsEntry = Math.max(...entries.map((entry) => Math.abs(Number(entry.amount) || 0)), 1);
+  const marker = result.consistencyPercentage === null ? 0 : Math.min(100, result.consistencyPercentage);
+  const limitMarker = result.ruleLimit === null ? null : Math.min(100, result.ruleLimit);
+
+  const updateEntry = (id: string, patch: Partial<DailyProfitEntry>) => {
+    setEntries((current) => current.map((entry) => entry.id === id ? { ...entry, ...patch } : entry));
+  };
+
+  const addEntry = () => {
+    setEntries((current) => [
+      ...current,
+      { id: `entry-${Date.now()}`, label: `Day ${current.length + 1}`, amount: 0 },
+    ]);
+  };
+
+  const removeEntry = (id: string) => {
+    setEntries((current) => current.length <= 1 ? current : current.filter((entry) => entry.id !== id));
+  };
+
+  const useJournalData = () => {
+    const journalEntries = buildDailyEntriesFromTrades(trades, currency);
+    if (journalEntries.length === 0) return;
+    setEntries(journalEntries);
+    setMode("daily");
+  };
+
+  const statusLabel =
+    result.status === "within_limit" ? "Within Limit" :
+    result.status === "above_limit" ? "Above Limit" :
+    result.status === "no_rule" ? "No Rule Selected" :
+    "Not Yet Calculable";
+  const statusTone =
+    result.status === "within_limit" ? "text-success" :
+    result.status === "above_limit" ? "text-destructive" :
+    "text-fuchsia-300";
+
+  return (
+    <TwoCol
+      left={
+        <>
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-1">
+            {[
+              ["totals", "Best-day totals"],
+              ["daily", "Daily entries"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMode(value as "totals" | "daily")}
+                className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
+                  mode === value ? "rb-gradient-primary text-white" : "text-muted-foreground hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <Field label="Selected rule" hint={rule.id === "none" ? "math only" : `${rule.thresholdPercentage}% max`}>
+            <select
+              value={ruleId}
+              onChange={(event) => setRuleId(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-accent/60"
+            >
+              {GENERIC_CONSISTENCY_RULES.map((item) => (
+                <option key={item.id} value={item.id} className="bg-[var(--rb-bg-elevated)]">
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="-mt-2 rounded-xl bg-white/[0.04] p-3 text-[11px] leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-white">{rule.name}:</span> {rule.ruleDescription}
+          </div>
+
+          <Field label="Currency">
+            <Select value={currency} onChange={setCurrency} options={["USD", "EUR", "GBP", "NGN", "USDT", "USDC", "CAD", "AUD"]} />
+          </Field>
+
+          {mode === "totals" ? (
+            <>
+              <Field label="Total net profit" hint="same currency">
+                <NumberInput value={totalNetProfit} onChange={setTotalNetProfit} step={50} />
+              </Field>
+              <Field label="Highest profitable day">
+                <NumberInput value={bestDay} onChange={(value) => setBestDay(Math.max(0, value))} step={25} min={0} />
+              </Field>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Daily net results</div>
+                <button type="button" onClick={addEntry} className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white hover:bg-white/15">
+                  Add day
+                </button>
+              </div>
+              {entries.map((entry) => (
+                <div key={entry.id} className="grid grid-cols-[1fr_120px_auto] items-center gap-2">
+                  <input
+                    value={entry.label}
+                    onChange={(event) => updateEntry(entry.id, { label: event.target.value })}
+                    className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white outline-none focus:border-accent/60"
+                  />
+                  <input
+                    type="number"
+                    value={entry.amount}
+                    step={10}
+                    onChange={(event) => updateEntry(entry.id, { amount: parseFloat(event.target.value) || 0 })}
+                    className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white outline-none focus:border-accent/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeEntry(entry.id)}
+                    className="rounded-full p-2 text-muted-foreground hover:bg-white/10 hover:text-white"
+                    aria-label="Remove daily result"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={useJournalData}
+                disabled={trades.length === 0}
+                className="glass-pill inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-white hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <History className="h-3.5 w-3.5 text-fuchsia-300" />
+                Use my journal data
+              </button>
+            </div>
+          )}
+        </>
+      }
+      right={
+        <>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Current consistency</div>
+              <div className="mt-1 text-3xl font-bold text-white">
+                {result.consistencyPercentage === null ? "—" : `${result.consistencyPercentage.toFixed(2)}%`}
+              </div>
+            </div>
+            <div className={`rounded-full bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] ${statusTone}`}>
+              {statusLabel}
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-muted-foreground">Total net profit</div>
+              <div className="mt-1 font-mono font-bold text-white">{formatCalculatorMoney(result.totalNetProfit, currency)}</div>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-muted-foreground">Best day</div>
+              <div className="mt-1 font-mono font-bold text-white">{formatCalculatorMoney(result.highestProfitableDay, currency)}</div>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-muted-foreground">Rule limit</div>
+              <div className="mt-1 font-mono font-bold text-white">{result.ruleLimit === null ? "None" : `${result.ruleLimit.toFixed(2)}%`}</div>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-muted-foreground">Additional profit needed</div>
+              <div className="mt-1 font-mono font-bold text-white">{formatCalculatorMoney(result.additionalProfitRequired, currency)}</div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>0%</span>
+              {result.ruleLimit !== null && <span>Limit {result.ruleLimit.toFixed(0)}%</span>}
+              <span>100%</span>
+            </div>
+            <div className="relative h-3 rounded-full bg-white/10">
+              <div className="absolute inset-y-0 left-0 rounded-full rb-gradient-primary" style={{ width: `${marker}%` }} />
+              {limitMarker !== null && (
+                <div className="absolute -top-1 h-5 w-0.5 rounded-full bg-warning" style={{ left: `${limitMarker}%` }} />
+              )}
+            </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{result.message}</p>
+          </div>
+
+          {mode === "daily" && (
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>{profitableDays.length} profitable days</span>
+                <span>Avg profitable day: {formatCalculatorMoney(averageProfitableDay, currency)}</span>
+              </div>
+              {entries.map((entry) => {
+                const width = Math.max(4, Math.abs(Number(entry.amount) || 0) / maxAbsEntry * 100);
+                const positive = Number(entry.amount) > 0;
+                return (
+                  <div key={entry.id} className="grid grid-cols-[86px_1fr_92px] items-center gap-2 text-[11px]">
+                    <span className="truncate text-muted-foreground">{entry.label}</span>
+                    <div className="h-2 rounded-full bg-white/10">
+                      <div
+                        className={`h-2 rounded-full ${positive ? "bg-success" : Number(entry.amount) < 0 ? "bg-destructive" : "bg-white/30"}`}
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                    <span className={`text-right font-mono ${positive ? "text-success" : Number(entry.amount) < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                      {formatCalculatorMoney(Number(entry.amount) || 0, currency)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-4 rounded-xl bg-warning/10 p-3 text-[11px] leading-relaxed text-fuchsia-100 ring-1 ring-warning/20">
+            This tool provides a mathematical estimate based on the selected rule. Always confirm the latest requirements directly with your trading provider. Do not take unnecessary trades solely to change a consistency percentage.
+          </div>
+
+          <ResultActions
+            value={`Consistency ${result.consistencyPercentage === null ? "N/A" : `${result.consistencyPercentage.toFixed(2)}%`} · ${statusLabel}`}
+            onSave={onResult}
+          />
+        </>
+      }
+    />
+  );
+}
 
 function FeesCalculator({ onResult }: { onResult: (v: string) => void }) {
   const [asset, setAsset] = useState("EUR/USD");

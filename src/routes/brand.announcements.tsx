@@ -57,7 +57,7 @@ function BrandAnnouncements() {
           <input type="date" value={draft.start} onChange={(e) => setDraft((p) => ({ ...p, start: e.target.value }))} className="rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10" />
           <input type="date" value={draft.end} onChange={(e) => setDraft((p) => ({ ...p, end: e.target.value }))} className="rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10" />
         </div>
-        <button onClick={publish} className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">
+        <button onClick={publish} className="mt-4 inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white">
           <Plus className="h-3.5 w-3.5" /> Publish
         </button>
       </div>
@@ -65,7 +65,7 @@ function BrandAnnouncements() {
       <div className="grid gap-3">
         {mine.map((a) => (
           <div key={a.id} className="glass flex items-start gap-3 rounded-2xl p-4 ring-1 ring-white/10">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-fuchsia-300/30"><Megaphone className="h-4 w-4 text-fuchsia-200" /></div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] ring-1 ring-fuchsia-300/30"><Megaphone className="h-4 w-4 text-fuchsia-200" /></div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${a.status === "active" ? "bg-emerald-500/15 text-emerald-300" : a.status === "scheduled" ? "bg-sky-500/15 text-sky-300" : "bg-white/5 text-muted-foreground"}`}>{a.status}</span>
@@ -74,9 +74,9 @@ function BrandAnnouncements() {
               <p className="mt-1 text-sm text-white">{a.message}</p>
               <div className="mt-2 flex items-center gap-2">
                 <select value={a.status} onChange={(e) => update(a.id, { status: e.target.value as any })} className="rounded-md bg-white/5 px-2 py-1 text-[10px] text-white ring-1 ring-white/10">
-                  <option value="active" className="bg-[#160a25]">active</option>
-                  <option value="scheduled" className="bg-[#160a25]">scheduled</option>
-                  <option value="expired" className="bg-[#160a25]">expired</option>
+                  <option value="active" className="bg-[var(--rb-bg-input)]">active</option>
+                  <option value="scheduled" className="bg-[var(--rb-bg-input)]">scheduled</option>
+                  <option value="expired" className="bg-[var(--rb-bg-input)]">expired</option>
                 </select>
               </div>
             </div>

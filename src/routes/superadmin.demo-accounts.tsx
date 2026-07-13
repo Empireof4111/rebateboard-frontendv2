@@ -180,7 +180,7 @@ function DemoAccountsPage() {
             <button
               type="button"
               onClick={() => toast.success("New demo account flow ready for connection")}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
+              className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
             >
               <Plus className="h-4 w-4" />
               New Demo Account
@@ -214,7 +214,7 @@ function DemoAccountsPage() {
             className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
           >
             {PLATFORM_OPTIONS.map((platform) => (
-              <option key={platform} value={platform} className="bg-[#150829] text-white">
+              <option key={platform} value={platform} className="bg-[var(--rb-bg-elevated)] text-white">
                 {platform === "all" ? "All platforms" : platform}
               </option>
             ))}
@@ -239,7 +239,7 @@ function DemoAccountsPage() {
             <tr key={row.id}>
               <td>
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500/70 to-violet-600/70 text-xs font-bold text-white ring-1 ring-white/10">
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-[rgba(126,77,255,0.28)] text-xs font-bold text-white ring-1 ring-white/10">
                     {row.brand
                       .split(" ")
                       .slice(0, 2)
@@ -348,7 +348,7 @@ function DemoAccountsPage() {
                   </div>
                   <div className="h-2 rounded-full bg-white/10">
                     <div
-                      className="h-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500"
+                      className="h-2 rounded-full rb-gradient-primary"
                       style={{ width: `${pct}%` }}
                     />
                   </div>

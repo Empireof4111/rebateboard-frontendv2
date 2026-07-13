@@ -195,7 +195,7 @@ function TraderTBIPage() {
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Community benchmark</div>
                   <div className="mt-1 text-sm font-semibold text-white">Available after more verified activity</div>
                 </div>
-                <Link to="/dashboard/reviews" className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+                <Link to="/dashboard/reviews" className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
                   Submit Verified Review
                 </Link>
               </div>

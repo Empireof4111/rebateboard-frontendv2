@@ -315,7 +315,7 @@ function CourseCard({ course, onOpen }: { course: Course; onOpen: () => void }) 
                 <span className="text-white/70">{pct}%</span>
               </div>
               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5">
-                <div className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-500" style={{ width: `${pct}%` }} />
+                <div className="h-full rb-gradient-primary" style={{ width: `${pct}%` }} />
               </div>
             </>
           ) : (
@@ -359,7 +359,7 @@ function CourseDetail({
     <div className="space-y-6">
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="grid h-24 w-24 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 text-5xl">
+          <div className="grid h-24 w-24 shrink-0 place-items-center rounded-2xl bg-[rgba(126,77,255,0.18)] text-5xl">
             {course.cover}
           </div>
           <div className="flex-1">
@@ -388,7 +388,7 @@ function CourseDetail({
                   <span>Your progress</span><span className="font-semibold text-white">{pct}%</span>
                 </div>
                 <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-500" style={{ width: `${pct}%` }} />
+                  <div className="h-full rb-gradient-primary" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             )}
@@ -396,7 +396,7 @@ function CourseDetail({
             {/* Action area */}
             <div className="mt-5 flex flex-wrap gap-2">
               {preview ? (
-                <Link to={loginHref} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-sm font-bold text-white">
+                <Link to={loginHref} className="rounded-full rb-gradient-primary px-5 py-2 text-sm font-bold text-white">
                   Sign in to start
                 </Link>
               ) : course.access === "free" || unlocked ? (
@@ -405,7 +405,7 @@ function CourseDetail({
                     const first = course.modules[0]?.lessons[0];
                     if (first) setView({ kind: "lesson", courseId, lessonId: first.id });
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-sm font-bold text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-5 py-2 text-sm font-bold text-white"
                 >
                   <PlayCircle className="h-4 w-4" /> {p && p.completedLessons.length > 0 ? "Continue learning" : "Start course"}
                 </button>
@@ -518,7 +518,7 @@ function CourseDetail({
                   <Award className="h-3.5 w-3.5" /> View certificate
                 </button>
               ) : !preview && unlocked ? (
-                <button onClick={() => setView({ kind: "final-exam", courseId })} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">
+                <button onClick={() => setView({ kind: "final-exam", courseId })} className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white">
                   Take final exam
                 </button>
               ) : (
@@ -583,13 +583,13 @@ function LessonPlayer({ courseId, lessonId, setView }: { courseId: string; lesso
         <div className="mt-4 inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1 text-xs">
           <button
             onClick={() => setTab("read")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ${tab === "read" ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "text-white/70 hover:text-white"}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ${tab === "read" ? "rb-gradient-primary text-white" : "text-white/70 hover:text-white"}`}
           >
             <BookOpen className="h-3.5 w-3.5" /> Read
           </button>
           <button
             onClick={() => setTab("video")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ${tab === "video" ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "text-white/70 hover:text-white"}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ${tab === "video" ? "rb-gradient-primary text-white" : "text-white/70 hover:text-white"}`}
           >
             <PlayCircle className="h-3.5 w-3.5" /> Watch video
           </button>
@@ -631,7 +631,7 @@ function LessonPlayer({ courseId, lessonId, setView }: { courseId: string; lesso
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={() => store.completeLesson(courseId, lessonId)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold ${done ? "bg-emerald-500/20 text-emerald-300" : "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white"}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold ${done ? "bg-emerald-500/20 text-emerald-300" : "rb-gradient-primary text-white"}`}
           >
             {done ? <><Check className="h-3.5 w-3.5" /> Marked complete</> : <><Check className="h-3.5 w-3.5" /> Mark as complete</>}
           </button>
@@ -732,7 +732,7 @@ function QuizRunner({
           </div>
           <div className="mt-3 flex gap-2">
             {passed ? (
-              <button onClick={onPass} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Continue</button>
+              <button onClick={onPass} className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Continue</button>
             ) : (
               <button onClick={() => { setSubmitted(false); setAnswers({}); }} className="rounded-full bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/15">Retry</button>
             )}
@@ -744,7 +744,7 @@ function QuizRunner({
           <button
             onClick={() => setSubmitted(true)}
             disabled={Object.keys(answers).length !== questions.length}
-            className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40"
+            className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-40"
           >
             Submit answers
           </button>
@@ -906,7 +906,7 @@ function CertificatePreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl border-white/10 bg-[#0a0418] text-white">
+      <DialogContent className="max-w-4xl border-white/10 bg-[var(--rb-bg-canvas)] text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-4 w-4 text-fuchsia-300" /> Certificate Preview
@@ -937,7 +937,7 @@ function CertificatePreviewModal({
           <button
             onClick={downloadPdf}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
           >
             <FileText className="h-3.5 w-3.5" /> {busy === "pdf" ? "Generating PDF…" : "Download PDF"}
           </button>
@@ -1014,7 +1014,7 @@ function CertificateView({ courseId, setView }: { courseId: string; setView: (v:
           <div className="mt-8 flex flex-wrap justify-center gap-2">
             <button
               onClick={() => setPreviewOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-sm font-bold text-white"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-5 py-2 text-sm font-bold text-white"
             >
               <Eye className="h-4 w-4" /> Preview &amp; Download
             </button>
@@ -1065,17 +1065,17 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white shadow-lg shadow-fuchsia-500/30 transition hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full rb-gradient-primary text-white shadow-lg shadow-fuchsia-500/30 transition hover:scale-105"
         aria-label="Open AI Tutor"
       >
         {open ? <X className="h-5 w-5" /> : <Bot className="h-6 w-6" />}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-40 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#0a0418]/95 shadow-2xl backdrop-blur">
+        <div className="fixed bottom-24 right-6 z-40 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[rgba(9,9,13,0.95)] shadow-2xl backdrop-blur">
           <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 px-4 py-3">
             <div className="flex items-center gap-2">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600">
+              <div className="grid h-8 w-8 place-items-center rounded-full rb-gradient-primary">
                 <Bot className="h-4 w-4 text-white" />
               </div>
               <div>
@@ -1112,7 +1112,7 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
                 placeholder="Ask the tutor…"
                 className="flex-1 bg-transparent px-2 py-2 text-sm text-white outline-none placeholder:text-white/30"
               />
-              <button onClick={send} className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white">
+              <button onClick={send} className="grid h-8 w-8 place-items-center rounded-lg rb-gradient-primary text-white">
                 <Send className="h-3.5 w-3.5" />
               </button>
             </div>

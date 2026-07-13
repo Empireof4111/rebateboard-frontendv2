@@ -49,7 +49,7 @@ function BusinessJoinPage() {
 
   if (!applicationSettings.enabled) {
     return (
-      <div className="min-h-screen bg-[#0b0418] text-foreground">
+      <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
         <SiteHeader />
         <main className="container-app py-8 sm:py-10">
           <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-8 text-center md:p-14">
@@ -68,7 +68,7 @@ function BusinessJoinPage() {
                 <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-fuchsia-300/40">
                   <Bell className="h-4 w-4 text-fuchsia-200" /> Notify Me
                 </Link>
-                <Link to="/contact" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-bold text-white shadow-[0_0_28px_rgba(192,132,252,0.35)] transition hover:brightness-110">
+                <Link to="/contact" className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-bold text-white shadow-[0_0_28px_rgba(192,132,252,0.35)] transition hover:brightness-110">
                   <Mail className="h-4 w-4" /> Contact Us
                 </Link>
               </div>
@@ -81,7 +81,7 @@ function BusinessJoinPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-8 sm:py-10">
         {/* HERO */}
@@ -100,7 +100,7 @@ function BusinessJoinPage() {
                 You're not submitting a listing — you're opening a verified trust journey. Get an instant Preliminary Score, then unlock full TBI as real traders verify their experience.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <a href="#categories" className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.4)] transition hover:brightness-110">
+                <a href="#categories" className="group inline-flex items-center gap-2 rounded-full rb-gradient-primary px-6 py-3 text-sm font-bold text-white shadow-[0_0_30px_rgba(192,132,252,0.4)] transition hover:brightness-110">
                   Start your application <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                 </a>
                 <Link to="/tbi" className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold backdrop-blur hover:border-white/30">
@@ -213,7 +213,7 @@ function BusinessJoinPage() {
               { n: 4, t: "Unlock", d: "As traders verify their experience, your TBI grows." },
             ].map((s) => (
               <div key={s.n} className="relative">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.4)]">{s.n}</div>
+                <div className="grid h-10 w-10 place-items-center rounded-full rb-gradient-primary text-sm font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.4)]">{s.n}</div>
                 <div className="mt-3 text-sm font-bold">{s.t}</div>
                 <p className="mt-1 text-xs text-muted-foreground">{s.d}</p>
               </div>

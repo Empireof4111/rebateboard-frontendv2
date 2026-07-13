@@ -26,7 +26,7 @@ function LeaderboardsPage() {
           icon={Trophy}
           title="No leaderboard data yet"
           description="Keep logging trades and completing missions to qualify for future season rankings."
-          action={<button className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">Add Your First Trade</button>}
+          action={<button className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white">Add Your First Trade</button>}
         />
       </Panel>
     </div>

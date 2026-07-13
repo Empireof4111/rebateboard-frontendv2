@@ -13,6 +13,8 @@ import {
   Youtube,
   BadgePercent,
   Building2,
+  Crown,
+  Medal,
   Trophy,
   Rocket,
   ShieldCheck,
@@ -356,6 +358,75 @@ function sortRankedOffers<T extends AdminOffer>(items: T[], category: OfferCateg
     .slice(0, 5);
 }
 
+function landingRankTheme(rank: number) {
+  if (rank === 1) {
+    return {
+      Icon: Crown,
+      badge: "border-[#f6d77a]/35 bg-[#f6d77a]/16 text-[#ffe8a3] shadow-[0_0_18px_rgba(246,215,122,0.16)]",
+      card: "border-[#f6d77a]/18",
+    };
+  }
+  if (rank === 2) {
+    return {
+      Icon: Medal,
+      badge: "border-white/28 bg-white/12 text-white shadow-[0_0_16px_rgba(255,255,255,0.11)]",
+      card: "border-white/16",
+    };
+  }
+  if (rank === 3) {
+    return {
+      Icon: Trophy,
+      badge: "border-[#d7a06a]/35 bg-[#d7a06a]/14 text-[#ffd1a3] shadow-[0_0_16px_rgba(215,160,106,0.13)]",
+      card: "border-[#d7a06a]/16",
+    };
+  }
+  return {
+    Icon: null,
+    badge: "border-white/12 bg-white/[0.065] text-white/82",
+    card: "border-white/10",
+  };
+}
+
+function LandingRankBadge({ rank }: { rank: number }) {
+  const theme = landingRankTheme(rank);
+  const Icon = theme.Icon;
+  return (
+    <span className={`inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-full border px-2 text-[10px] font-black ${theme.badge}`}>
+      {Icon ? <Icon className="h-3 w-3" strokeWidth={2.4} /> : null}
+      {rank}
+    </span>
+  );
+}
+
+function logoAccentForTbi(state: string) {
+  if (state === "full") return "ring-emerald-300/35 shadow-[0_0_18px_rgba(52,211,153,0.16)]";
+  if (state === "partial") return "ring-cyan-300/32 shadow-[0_0_16px_rgba(34,211,238,0.13)]";
+  return "ring-violet-300/24 shadow-[0_0_14px_rgba(167,139,250,0.12)]";
+}
+
+function LandingRankingSkeleton() {
+  return (
+    <div className="mt-4 space-y-2" aria-label="Loading rankings">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="skeleton-card grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl p-2.5">
+          <div className="relative">
+            <div className="skeleton h-11 w-11 rounded-[14px]" />
+            <div className="skeleton absolute -left-1 -top-1 h-6 w-8 rounded-full" />
+          </div>
+          <div className="min-w-0 space-y-2">
+            <div className="skeleton h-3.5 w-3/5" />
+            <div className="skeleton h-5 w-4/5 rounded-full" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="skeleton h-4 w-9" />
+            <div className="skeleton h-2.5 w-7" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function BrandRankRow({
   brand,
   rank,
@@ -367,16 +438,19 @@ function BrandRankRow({
 }) {
   const stage = resolveBrandTbiState(brand, tbiProfile);
   const theme = publicTbiStageTheme(stage);
+  const rankTheme = landingRankTheme(rank);
+  const logoAccent = logoAccentForTbi(stage);
 
   return (
     <Link
       to="/firm/$firmId"
       params={{ firmId: brand.slug }}
-      className="group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25"
+      className={`ranking-card-enter group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25 ${rankTheme.card}`}
+      style={{ animationDelay: `${Math.min(rank - 1, 9) * 40}ms` }}
     >
       <div className="relative">
         <div
-          className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ${
+          className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ring-1 ${logoAccent} ${
             brand.thumbnail ? "bg-transparent" : "bg-primary/20 text-white"
           }`}
         >
@@ -384,15 +458,15 @@ function BrandRankRow({
             <img
               src={brand.thumbnail}
               alt={`${brand.name} logo`}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain bg-white/[0.04] p-1"
               loading="lazy"
             />
           ) : (
             initials(brand.name)
           )}
         </div>
-        <span className="absolute -left-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[#140821] text-[10px] font-bold text-white ring-1 ring-white/20">
-          {rank}
+        <span className="absolute -left-2 -top-2">
+          <LandingRankBadge rank={rank} />
         </span>
       </div>
       <div className="min-w-0">
@@ -425,6 +499,7 @@ function RankingPanel({
   onChange,
   rows,
   tbiProfilesBySlug,
+  loading = false,
 }: {
   title: string;
   icon: ReactNode;
@@ -433,6 +508,7 @@ function RankingPanel({
   onChange: (id: string) => void;
   rows: AdminBrandRecord[];
   tbiProfilesBySlug: Map<string, TbiProfile>;
+  loading?: boolean;
 }) {
   const { t } = useI18n();
   const activeTab = tabs.find((tab) => tab.id === active) ?? tabs[0];
@@ -466,8 +542,11 @@ function RankingPanel({
           </button>
         ))}
       </div>
-      <div className="mt-4 space-y-2">
-        {rows.length ? (
+      {loading ? (
+        <LandingRankingSkeleton />
+      ) : (
+        <div className="mt-4 space-y-2">
+          {rows.length ? (
           rows.map((brand, index) => (
             <BrandRankRow
               key={brand.id}
@@ -476,12 +555,13 @@ function RankingPanel({
               tbiProfile={tbiProfilesBySlug.get(brand.slug)}
             />
           ))
-        ) : (
-          <div className="rounded-2xl bg-white/[0.035] p-5 text-center text-xs text-muted-foreground ring-1 ring-white/10">
-            {t("home.noRankedBrands")}
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="rounded-2xl bg-white/[0.035] p-5 text-center text-xs text-muted-foreground ring-1 ring-white/10">
+              {t("home.noRankedBrands")}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1137,6 +1217,7 @@ function Index() {
   const [activeOffer, setActiveOffer] = useState<AdminOffer | null>(null);
   const [liveOffers, setLiveOffers] = useState<AdminOffer[]>(seedOffers);
   const [liveBrands, setLiveBrands] = useState<AdminBrandRecord[]>(fallbackBrands);
+  const [brandsLoading, setBrandsLoading] = useState(true);
   const [tbiProfiles, setTbiProfiles] = useState<TbiProfile[]>([]);
   const [homeFaqs, setHomeFaqs] = useState<Faq[]>([]);
   const [homeFaqsLoading, setHomeFaqsLoading] = useState(true);
@@ -1169,12 +1250,15 @@ function Index() {
     let cancelled = false;
 
     async function loadBrands() {
+      setBrandsLoading(true);
       try {
         const brands = await fetchPublicAdminBrands();
         const publishedBrands = brands.filter(isPublishedBrand);
         if (!cancelled) setLiveBrands(publishedBrands.length ? publishedBrands : fallbackBrands);
       } catch {
         if (!cancelled) setLiveBrands(fallbackBrands);
+      } finally {
+        if (!cancelled) setBrandsLoading(false);
       }
     }
 
@@ -1365,6 +1449,7 @@ function Index() {
             onChange={(id) => setBrokerExchangeTab(id as BrokerExchangeTabId)}
             rows={brokerExchangeRows}
             tbiProfilesBySlug={tbiProfilesBySlug}
+            loading={brandsLoading}
           />
           <RankingPanel
             title={t("home.topPropFirms")}
@@ -1374,6 +1459,7 @@ function Index() {
             onChange={(id) => setProFirmTab(id as ProFirmTabId)}
             rows={proFirmRows}
             tbiProfilesBySlug={tbiProfilesBySlug}
+            loading={brandsLoading}
           />
         </section>
 
@@ -1468,7 +1554,7 @@ function Index() {
                   className={
                     "rounded-full px-5 py-2 text-xs font-semibold transition " +
                     (active
-                      ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]"
+                      ? "rb-gradient-primary text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]"
                       : "text-violet-100/80 hover:text-white")
                   }
                 >
@@ -1634,7 +1720,7 @@ function Index() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[10px] font-bold">
+                          <div className="grid h-8 w-8 place-items-center rounded-lg rb-gradient-primary text-[10px] font-bold">
                             {o.broker.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="text-xs font-semibold">{o.broker}</div>
@@ -1689,7 +1775,7 @@ function Index() {
             </div>
             <Link
               to="/offers"
-              className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-xs font-semibold shadow-[0_0_20px_rgba(192,132,252,0.4)]"
+              className="rounded-full rb-gradient-primary px-5 py-2 text-xs font-semibold shadow-[0_0_20px_rgba(192,132,252,0.4)]"
             >
               View all offers →
             </Link>
@@ -1740,7 +1826,7 @@ function Index() {
           <div className="mt-6 flex justify-center">
             <Link
               to="/faqs"
-              className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-2 text-xs font-semibold shadow-[0_0_20px_rgba(192,132,252,0.4)]"
+              className="rounded-full rb-gradient-primary px-6 py-2 text-xs font-semibold shadow-[0_0_20px_rgba(192,132,252,0.4)]"
             >
               View All FAQs
             </Link>
@@ -1801,7 +1887,7 @@ function Index() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/dashboard/backtest"
-                className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)]"
+                className="rounded-full rb-gradient-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)]"
               >
                 Join RebateBoard 2.0
               </Link>
@@ -1845,7 +1931,7 @@ function LiveCompareDialog({
 
   return (
     <Dialog open={!!open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="max-w-xl border-white/15 bg-[#17082a] p-5 text-white">
+      <DialogContent className="max-w-xl border-white/15 bg-[var(--rb-bg-elevated)] p-5 text-white">
         <div>
           <h2 className="text-lg font-black">Compare selected brands</h2>
           <p className="mt-1 text-xs leading-5 text-white/48">

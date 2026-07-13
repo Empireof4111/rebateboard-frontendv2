@@ -41,7 +41,7 @@ function ReviewsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Reviews" subtitle="Share your experience — your reviews shape TBI." actions={
-        <Link to="/review" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">Write Review</Link>
+        <Link to="/review" className="rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">Write Review</Link>
       } />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -84,7 +84,7 @@ function ReviewsPage() {
             icon={ClipboardCheck}
             title="You have not submitted any reviews yet"
             description="Help other traders by sharing your experience. Submitted reviews appear here with moderation status and any RR/TBI impact."
-            action={<Link to="/review" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">Write your first review</Link>}
+            action={<Link to="/review" className="rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">Write your first review</Link>}
           />
         ) : (
           <ul className="space-y-3">

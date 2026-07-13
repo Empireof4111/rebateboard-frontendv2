@@ -37,7 +37,7 @@ function TrustDashboardPage() {
 
   if (!token || !submission) {
     return (
-      <div className="min-h-screen bg-[#0b0418] text-foreground">
+      <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
         <SiteHeader />
         <main className="container-app max-w-2xl py-16 text-center sm:py-20">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white/5">
@@ -47,7 +47,7 @@ function TrustDashboardPage() {
           <p className="mt-3 text-sm text-muted-foreground">
             We sent a secure link to your email when you submitted your application. The link includes a token that signs you in instantly.
           </p>
-          <Link to="/business/join" className="mt-6 inline-block rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-2.5 text-sm font-bold">
+          <Link to="/business/join" className="mt-6 inline-block rounded-full rb-gradient-primary px-6 py-2.5 text-sm font-bold">
             Start a new application →
           </Link>
         </main>
@@ -64,14 +64,14 @@ function TrustDashboardPage() {
     "text-violet-300 bg-violet-500/15 ring-violet-400/30";
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         {/* Header */}
         <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-6 md:p-8">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div className="flex items-center gap-4">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-2xl shadow-[0_0_24px_rgba(192,132,252,0.4)]">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl rb-gradient-primary text-2xl shadow-[0_0_24px_rgba(192,132,252,0.4)]">
                 {meta.emoji}
               </div>
               <div>

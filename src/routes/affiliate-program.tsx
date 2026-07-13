@@ -61,7 +61,7 @@ function AffiliateProgramPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-8 py-8 sm:py-12">
         <section className="grid gap-6 rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:p-10 lg:grid-cols-[1.05fr_0.95fr]">
@@ -75,7 +75,7 @@ function AffiliateProgramPage() {
               Introduce traders to a transparency-first ecosystem and earn through qualified activity, campaign performance, and long-term partner growth.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <a href="#apply" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white">
+              <a href="#apply" className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white">
                 Apply to Become an Affiliate <ArrowRight className="h-4 w-4" />
               </a>
               <Link to="/dashboard/referrals" className="inline-flex items-center justify-center rounded-full border border-white/12 px-5 py-3 text-sm font-bold text-white/80">
@@ -146,7 +146,7 @@ function AffiliateProgramPage() {
                   I confirm this application is accurate and agree to RebateBoard’s affiliate review process.
                 </label>
                 {error && <p className="mt-3 rounded-2xl border border-rose-300/20 bg-rose-500/10 p-3 text-sm text-rose-100">{error}</p>}
-                <button disabled={submitting} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white disabled:opacity-60">
+                <button disabled={submitting} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white disabled:opacity-60">
                   {submitting ? "Submitting..." : "Submit Application"} <Megaphone className="h-4 w-4" />
                 </button>
               </>

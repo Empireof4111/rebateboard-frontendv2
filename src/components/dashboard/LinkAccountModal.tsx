@@ -294,7 +294,7 @@ export function LinkAccountModal({
                   <div className="text-xs font-semibold text-white">Step 1 — Sign up at {brand.name}</div>
                   <p className="mt-1 text-[11px] text-white/80">Use the official partner link if available, then return with your account ID for verification.</p>
                   {affiliateLink ? (
-                    <a href={affiliateLink} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+                    <a href={affiliateLink} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
                       <ExternalLink className="h-3 w-3" /> Open {brand.name}
                     </a>
                   ) : (
@@ -367,7 +367,7 @@ export function LinkAccountModal({
               </p>
               <div className="flex justify-between pt-1">
                 <BackBtn onClick={() => setStep("preference")} />
-                <button onClick={finalize} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                <button onClick={finalize} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
                   <Send className="h-3 w-3" /> {submitting ? "Submitting..." : "Send & link"}
                 </button>
               </div>
@@ -385,7 +385,7 @@ export function LinkAccountModal({
               <p className="max-w-sm text-[12px] text-muted-foreground">
                 We've recorded your {brandName} account request. You can track status in Wallet - Linked accounts. Most partners confirm within 24-72h.
               </p>
-              <button onClick={onClose} className="mt-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Done</button>
+              <button onClick={onClose} className="mt-1 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Done</button>
             </div>
           )}
         </div>
@@ -401,7 +401,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 function NextBtn({ children = "Continue", onClick, disabled }: { children?: React.ReactNode; onClick: () => void; disabled?: boolean }) {
   return (
-    <button onClick={onClick} disabled={disabled} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+    <button onClick={onClick} disabled={disabled} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
       {children} <ChevronRight className="h-3 w-3" />
     </button>
   );
@@ -448,7 +448,7 @@ function Stepper({ step, mode }: { step: Step; mode: "existing" | "new" }) {
     <div className="flex items-center gap-1">
       {all.map((s, i) => (
         <div key={s.id} className="flex flex-1 items-center gap-1">
-          <div className={`h-1 flex-1 rounded-full ${i <= idx ? "bg-gradient-to-r from-fuchsia-500 to-violet-600" : "bg-white/10"}`} />
+          <div className={`h-1 flex-1 rounded-full ${i <= idx ? "rb-gradient-primary" : "bg-white/10"}`} />
         </div>
       ))}
     </div>

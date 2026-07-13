@@ -209,7 +209,7 @@ function InboxPage() {
           subtitle={`${viewing.name} | ${viewing.email || viewing.phoneNumber || "No contact"}`}
           size="lg"
           footer={<>
-            <button onClick={() => { setViewing(null); openReply(viewing); }} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Reply</button>
+            <button onClick={() => { setViewing(null); openReply(viewing); }} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Reply</button>
             <button onClick={() => void updateStatus(viewing, "INACTIVE", "Message closed")} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Close thread</button>
           </>}
         >
@@ -244,7 +244,7 @@ function InboxPage() {
           size="lg"
           footer={<>
             <button onClick={() => setReplying(null)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-            <button onClick={() => void submitReply()} disabled={sending || !replySubject.trim() || !replyBody.trim()} className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40"><Send className="h-3 w-3" /> {sending ? "Sending..." : "Send reply"}</button>
+            <button onClick={() => void submitReply()} disabled={sending || !replySubject.trim() || !replyBody.trim()} className="inline-flex items-center gap-1 rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-40"><Send className="h-3 w-3" /> {sending ? "Sending..." : "Send reply"}</button>
           </>}
         >
           <div className="grid gap-3">

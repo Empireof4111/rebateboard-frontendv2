@@ -131,7 +131,7 @@ function ClaimsPage() {
 
       <Toolbar>
         {(["all", "pending", "approved", "paid", "rejected"] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${filter === f ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>{f}</button>
+          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>{f}</button>
         ))}
         <button onClick={load} className="ml-auto grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10" title="Refresh">
           <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />

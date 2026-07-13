@@ -11,7 +11,7 @@ function ApiKeysAdmin() {
   return (
     <div>
       <PageHeader title="API Keys" subtitle="Manage public, webhook and partner API access."
-        actions={<button className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"><Plus className="h-3.5 w-3.5" /> New key</button>}
+        actions={<button className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white"><Plus className="h-3.5 w-3.5" /> New key</button>}
       />
       <Panel title="Active keys">
         <DataTable head={<><th>Name</th><th>Key</th><th>Created</th><th>Calls</th><th></th></>}>

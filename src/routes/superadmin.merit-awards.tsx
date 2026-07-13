@@ -246,7 +246,7 @@ function MeritAwardsAdminPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Panel
           title={`Award categories — ${board?.categories.length ?? 0}`}
-          action={<button onClick={() => setCategory({ groupName: "Brands", enabled: true, displayOrder: (board?.categories.length ?? 0) + 1 })} className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white"><Plus className="h-3 w-3" />Category</button>}
+          action={<button onClick={() => setCategory({ groupName: "Brands", enabled: true, displayOrder: (board?.categories.length ?? 0) + 1 })} className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white"><Plus className="h-3 w-3" />Category</button>}
         >
           <DataTable head={<><th>Group</th><th>Name</th><th>Status</th><th></th></>}>
             {board?.categories.map((item) => (
@@ -266,7 +266,7 @@ function MeritAwardsAdminPage() {
 
         <Panel
           title={`Nominees — ${board?.nominees.length ?? 0}`}
-          action={<button onClick={() => setNominee({ categoryId: board?.categories[0]?.id, status: "pending" })} className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white"><Plus className="h-3 w-3" />Nominee</button>}
+          action={<button onClick={() => setNominee({ categoryId: board?.categories[0]?.id, status: "pending" })} className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white"><Plus className="h-3 w-3" />Nominee</button>}
         >
           <DataTable head={<><th>Nominee</th><th>Category</th><th>Status</th><th></th></>}>
             {board?.nominees.map((item) => (
@@ -330,7 +330,7 @@ function CategoryModal({ value, onClose, onSave }: { value: Partial<MeritAwardCa
       open
       onClose={onClose}
       title={form.id ? "Edit award category" : "New award category"}
-      footer={<button onClick={() => onSave(form)} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Save category</button>}
+      footer={<button onClick={() => onSave(form)} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Save category</button>}
     >
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="Group"><input className={fieldCls} value={form.groupName ?? ""} onChange={(e) => setForm({ ...form, groupName: e.target.value })} /></Field>
@@ -366,7 +366,7 @@ function NomineeModal({
       onClose={onClose}
       title={form.id ? "Edit nominee" : "New nominee"}
       size="lg"
-      footer={<button onClick={() => onSave(form)} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Save nominee</button>}
+      footer={<button onClick={() => onSave(form)} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Save nominee</button>}
     >
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="Category">

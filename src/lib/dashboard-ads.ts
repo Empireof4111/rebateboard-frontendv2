@@ -38,7 +38,7 @@ export type AdSlide = {
   label: string;       // brand label or short pitch
   sub?: string;        // tagline
   href: string;        // link target
-  accent?: string;     // tailwind from-x to-y gradient or hex
+  accent?: string;     // legacy; ignored by current renderers
   image?: string;      // optional cover image (used by hero card)
 };
 
@@ -47,7 +47,7 @@ export type SponsorLogo = {
   name: string;
   initial?: string;
   logo?: string;
-  color?: string;       // tailwind from-x to-y gradient
+  color?: string;       // legacy; ignored by current renderers
   href?: string;
   tag?: "featured" | "ad" | "sponsor";
 };
@@ -66,7 +66,7 @@ export type DashboardAd = {
   sub?: string;
   cta?: string;
   href?: string;
-  accent?: string;          // gradient from-to e.g. "from-fuchsia-500 to-violet-600"
+  accent?: string;          // legacy; ignored by current renderers
   image?: string;           // optional cover image (used by hero / single banner)
   description?: string;
   videoUrl?: string;
@@ -95,7 +95,6 @@ const seed: DashboardAd[] = [
     headline:
       "🎁 Earn up to 30% rebate on every funded challenge — link your account to start tracking instantly.",
     href: "/dashboard/wallet",
-    accent: "from-fuchsia-500 to-violet-600",
     impressions: 0,
     clicks: 0,
     createdAt: new Date().toISOString(),
@@ -111,7 +110,6 @@ const seed: DashboardAd[] = [
     sub: "Verified payouts, EU regulated. Limited until end of month.",
     cta: "Claim deal",
     href: "/payouts/ftmo",
-    accent: "from-emerald-400 to-teal-600",
     impressions: 0,
     clicks: 0,
     createdAt: new Date().toISOString(),
@@ -124,9 +122,9 @@ const seed: DashboardAd[] = [
     active: true,
     priority: 3,
     slides: [
-      { source: "template", label: "FTMO", sub: "9.2 TBI", href: "/payouts/ftmo", brandSlug: "ftmo", accent: "from-emerald-400 to-teal-600" },
-      { source: "template", label: "FundedNext", sub: "Fast payouts", href: "/payouts/fundednext", brandSlug: "fundednext", accent: "from-sky-400 to-indigo-600" },
-      { source: "template", label: "MyForexFunds", sub: "Up to 90% split", href: "/payouts/myforexfunds", brandSlug: "myforexfunds", accent: "from-amber-400 to-orange-600" },
+      { source: "template", label: "FTMO", sub: "9.2 TBI", href: "/payouts/ftmo", brandSlug: "ftmo" },
+      { source: "template", label: "FundedNext", sub: "Fast payouts", href: "/payouts/fundednext", brandSlug: "fundednext" },
+      { source: "template", label: "MyForexFunds", sub: "Up to 90% split", href: "/payouts/myforexfunds", brandSlug: "myforexfunds" },
     ],
     impressions: 0,
     clicks: 0,
@@ -141,10 +139,10 @@ const seed: DashboardAd[] = [
     active: true,
     priority: 10,
     slides: [
-      { source: "blog", blogId: "bp_1", label: "Why TBI matters in 2026", sub: "Industry · 6 min read", href: "/articles/bp_1", accent: "from-fuchsia-500 to-violet-600" },
-      { source: "blog", blogId: "bp_2", label: "Top 10 Prop Firms — April Report", sub: "Comparison · 9 min read", href: "/articles/bp_2", accent: "from-emerald-400 to-teal-600" },
-      { source: "template", label: "FTMO Spring Bonus", sub: "20% off challenge fee", href: "/payouts/ftmo", accent: "from-amber-400 to-orange-500" },
-      { source: "template", label: "Verified Payout Tracker", sub: "Live across 50+ brands", href: "/payouts", accent: "from-sky-400 to-indigo-600" },
+      { source: "blog", blogId: "bp_1", label: "Why TBI matters in 2026", sub: "Industry · 6 min read", href: "/articles/bp_1" },
+      { source: "blog", blogId: "bp_2", label: "Top 10 Prop Firms — April Report", sub: "Comparison · 9 min read", href: "/articles/bp_2" },
+      { source: "template", label: "FTMO Spring Bonus", sub: "20% off challenge fee", href: "/payouts/ftmo" },
+      { source: "template", label: "Verified Payout Tracker", sub: "Live across 50+ brands", href: "/payouts" },
     ],
     impressions: 0,
     clicks: 0,
@@ -158,12 +156,12 @@ const seed: DashboardAd[] = [
     active: true,
     priority: 10,
     sponsors: [
-      { id: "sp1", name: "Bitget", initial: "B", color: "from-cyan-400 to-blue-500", href: "/payouts/bitget", tag: "sponsor" },
-      { id: "sp2", name: "Bybit", initial: "BY", color: "from-yellow-400 to-orange-500", href: "/payouts/bybit", tag: "featured" },
-      { id: "sp3", name: "Exness", initial: "ex", color: "from-yellow-300 to-yellow-500", href: "/payouts/exness", tag: "ad" },
-      { id: "sp4", name: "FTMO", initial: "F", color: "from-blue-500 to-indigo-600", href: "/payouts/ftmo", tag: "featured" },
-      { id: "sp5", name: "FundedNext", initial: "FN", color: "from-pink-500 to-rose-500", href: "/payouts/fundednext", tag: "sponsor" },
-      { id: "sp6", name: "OKX", initial: "X", color: "from-zinc-700 to-zinc-900", href: "/payouts/okx", tag: "ad" },
+      { id: "sp1", name: "Bitget", initial: "B", href: "/payouts/bitget", tag: "sponsor" },
+      { id: "sp2", name: "Bybit", initial: "BY", href: "/payouts/bybit", tag: "featured" },
+      { id: "sp3", name: "Exness", initial: "ex", href: "/payouts/exness", tag: "ad" },
+      { id: "sp4", name: "FTMO", initial: "F", href: "/payouts/ftmo", tag: "featured" },
+      { id: "sp5", name: "FundedNext", initial: "FN", href: "/payouts/fundednext", tag: "sponsor" },
+      { id: "sp6", name: "OKX", initial: "X", href: "/payouts/okx", tag: "ad" },
     ],
     impressions: 0,
     clicks: 0,
@@ -180,7 +178,6 @@ const seed: DashboardAd[] = [
     sub: "Reach thousands of active traders and investors. Premium placements convert.",
     cta: "Get Started",
     href: "/business/join",
-    accent: "from-fuchsia-500 to-violet-600",
     impressions: 0,
     clicks: 0,
     createdAt: new Date().toISOString(),
@@ -318,6 +315,5 @@ export function trendingSlides(limit = 5): AdSlide[] {
       label: b.name,
       sub: `TBI ${b.score.toFixed(1)} • ${b.tag}`,
       href: `/payouts/${b.slug}`,
-      accent: `bg-gradient-to-r ${b.logoColor}`,
     }));
 }

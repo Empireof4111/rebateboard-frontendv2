@@ -200,7 +200,7 @@ function WalletsPage() {
             <button
               disabled={selected.size === 0}
               onClick={() => setBulkOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
             >
               <Send className="h-3.5 w-3.5" /> Bulk adjust{" "}
               {selected.size > 0 && `(${selected.size})`}
@@ -573,7 +573,7 @@ function BulkAdjustmentModal({
               }
               onConfirm(amount, narration, type);
             }}
-            className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"
+            className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white"
           >
             {type === "credit" ? `Credit $${amount} × ${count}` : `Debit $${amount} × ${count}`}
           </button>

@@ -4,6 +4,8 @@ type LogoProps = {
   className?: string;
   /** Show only the icon mark. Default false shows icon + wordmark. */
   iconOnly?: boolean;
+  /** Deprecated alias for older callers. Prefer iconOnly. */
+  showText?: boolean;
   /** Tailwind height class, e.g. "h-9". Width auto-adjusts. */
   heightClass?: string;
   /** Deprecated: kept for callers that still pass width classes. */
@@ -14,21 +16,23 @@ type LogoProps = {
 export function Logo({
   className = "",
   iconOnly = false,
+  showText,
   heightClass = "h-9",
   widthClass: _widthClass = "",
   alt = "RebateBoard",
 }: LogoProps) {
+  const resolvedIconOnly = iconOnly || showText === false;
   const mark = (
     <span className={`inline-flex ${heightClass} aspect-square shrink-0 items-center justify-center`} aria-hidden>
       <img
         src={logoMarkSrc}
         alt=""
-        className="h-[128%] w-[128%] max-w-none object-contain"
+        className="h-[138%] w-[138%] max-w-none object-contain"
       />
     </span>
   );
 
-  if (iconOnly) {
+  if (resolvedIconOnly) {
     return (
       <span className={`inline-flex ${className}`} aria-label={alt}>
         {mark}
@@ -38,7 +42,7 @@ export function Logo({
 
   return (
     <span
-      className={`inline-flex items-center gap-2.5 ${className}`}
+      className={`inline-flex items-center gap-1.5 sm:gap-2 ${className}`}
       aria-label={alt}
     >
       {mark}

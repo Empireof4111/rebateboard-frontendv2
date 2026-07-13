@@ -188,7 +188,7 @@ function UsersPage() {
             <tr key={user.id}>
               <td>
                 <div className="flex items-center gap-2">
-                  <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[10px] font-bold text-white">
+                  <div className="grid h-8 w-8 place-items-center rounded-full rb-gradient-primary text-[10px] font-bold text-white">
                     {(user.name || "?").split(" ").map((name) => name[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
                   <div>
@@ -242,7 +242,7 @@ function UsersPage() {
           size="md"
           footer={<>
             <button onClick={() => setEditing(null)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-            <button onClick={() => void saveEdit()} disabled={saving} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">{saving ? "Saving..." : "Save"}</button>
+            <button onClick={() => void saveEdit()} disabled={saving} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-40">{saving ? "Saving..." : "Save"}</button>
           </>}
         >
           <div className="grid gap-3 md:grid-cols-2">

@@ -58,7 +58,7 @@ function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-8 py-8 sm:py-12">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:p-10">
@@ -127,7 +127,7 @@ function ContactPage() {
                   I agree that RebateBoard may use these details to respond to this inquiry and route it to the right team.
                 </label>
                 {error && <p className="mt-3 rounded-2xl border border-rose-300/20 bg-rose-500/10 p-3 text-sm text-rose-100">{error}</p>}
-                <button disabled={submitting} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white disabled:opacity-60">
+                <button disabled={submitting} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white disabled:opacity-60">
                   {submitting ? "Sending..." : "Send Message"} <ArrowRight className="h-4 w-4" />
                 </button>
               </>

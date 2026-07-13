@@ -68,7 +68,7 @@ export type Faculty = {
   title: string;
   emoji: string;
   tagline: string;
-  color: string; // tailwind gradient stops
+  color: string; // legacy visual metadata; current UI uses the RebateBoard default treatment
   programs: Program[];
 };
 
@@ -343,7 +343,7 @@ export const FACULTIES_SEED: Faculty[] = [
     title: "Faculty of Prop Firms",
     emoji: "🏛️",
     tagline: "Pass challenges, scale capital, and survive the rules.",
-    color: "from-fuchsia-500 to-violet-600",
+    color: "",
     programs: [
       {
         id: "pg-pf-found",
@@ -360,7 +360,7 @@ export const FACULTIES_SEED: Faculty[] = [
     title: "Faculty of Forex",
     emoji: "💱",
     tagline: "From your first pip to professional execution models.",
-    color: "from-emerald-500 to-cyan-600",
+    color: "",
     programs: [
       {
         id: "pg-fx-beg",
@@ -384,7 +384,7 @@ export const FACULTIES_SEED: Faculty[] = [
     title: "Faculty of Crypto",
     emoji: "₿",
     tagline: "Spot, perps, DeFi — and the risks they hide.",
-    color: "from-amber-500 to-orange-600",
+    color: "",
     programs: [
       {
         id: "pg-cr-beg",
@@ -401,7 +401,7 @@ export const FACULTIES_SEED: Faculty[] = [
     title: "Faculty of Risk & Psychology",
     emoji: "🧘",
     tagline: "The discipline layer that turns edge into profit.",
-    color: "from-rose-500 to-pink-600",
+    color: "",
     programs: [
       {
         id: "pg-rp",
@@ -436,7 +436,7 @@ function mapProgram(p: any): Program {
   return { id: String(p.id), title: p.title ?? "", level: (p.level ?? "Beginner") as Level, summary: p.summary ?? "", courses: (p.courses ?? []).map(mapCourse), _dbId: p.id } as any;
 }
 function mapFaculty(f: any): Faculty {
-  return { id: String(f.id), slug: f.slug ?? "", title: f.title ?? "", emoji: f.emoji ?? "🎓", tagline: f.tagline ?? "", color: f.color ?? "from-fuchsia-500 to-violet-600", programs: (f.programs ?? []).map(mapProgram), _dbId: f.id } as any;
+  return { id: String(f.id), slug: f.slug ?? "", title: f.title ?? "", emoji: f.emoji ?? "🎓", tagline: f.tagline ?? "", color: f.color ?? "", programs: (f.programs ?? []).map(mapProgram), _dbId: f.id } as any;
 }
 
 async function fetchCurriculumFromApi(): Promise<Faculty[] | null> {

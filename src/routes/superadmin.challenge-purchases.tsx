@@ -170,7 +170,7 @@ function ChallengePurchasesPage() {
                 </div>
                 <div className="h-2 rounded-full bg-white/10">
                   <div
-                    className="h-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500"
+                    className="h-2 rounded-full rb-gradient-primary"
                     style={{ width: `${Math.max(item.pct, item.step === "buy_click" ? 100 : 0)}%` }}
                   />
                 </div>
@@ -199,7 +199,7 @@ function ChallengePurchasesPage() {
               className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
             >
               {firmOptions.map((firm) => (
-                <option key={firm} value={firm} className="bg-[#150829] text-white">
+                <option key={firm} value={firm} className="bg-[var(--rb-bg-elevated)] text-white">
                   {firm === "all" ? "All firms" : firm}
                 </option>
               ))}
@@ -211,7 +211,7 @@ function ChallengePurchasesPage() {
               className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
             >
               {STEP_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value} className="bg-[#150829] text-white">
+                <option key={option.value} value={option.value} className="bg-[var(--rb-bg-elevated)] text-white">
                   {option.label}
                 </option>
               ))}
@@ -220,7 +220,7 @@ function ChallengePurchasesPage() {
             <button
               type="button"
               onClick={() => toast.success("Challenge purchases export started")}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
+              className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.28)]"
             >
               <Download className="h-4 w-4" />
               Export

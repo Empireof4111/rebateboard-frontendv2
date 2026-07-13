@@ -826,7 +826,7 @@ function BrandCard({
         <div className="relative shrink-0">
           <BrandLogo brand={brand} />
           <span
-            className={`absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full ring-2 ring-[#1f0d3d] ${stage.dot}`}
+            className={`absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full ring-2 ring-[var(--rb-bg-input)] ${stage.dot}`}
             title={stage.label}
           >
             <ShieldCheck className="h-2.5 w-2.5 text-white" />
@@ -953,7 +953,7 @@ function BrandCard({
               href={website}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-2 py-2 text-[10px] font-bold text-white transition hover:brightness-110"
+              className="inline-flex items-center justify-center gap-1 rounded-full rb-gradient-primary px-2 py-2 text-[10px] font-bold text-white transition hover:brightness-110"
             >
               <Rocket className="h-3 w-3" /> Visit Website
             </a>
@@ -1270,6 +1270,28 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
           </div>
         </div>
 
+        {!loading && !error && recommendedBrands.length > 0 && (
+          <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div>
+                  <h2 className="text-sm font-black text-white">Recommended Brands</h2>
+                  <p className="text-[10px] text-white/42">Admin-featured profiles for this category.</p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-[10px] font-bold text-primary ring-1 ring-primary/20">
+                <ShieldCheck className="h-3 w-3" /> Featured by RebateBoard
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {recommendedBrands.map((brand) => (
+                <RecommendationCard key={brand.id} brand={brand} />
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="relative mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -1296,10 +1318,10 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
                 className="h-9 bg-transparent pr-1 text-xs font-bold text-white outline-none"
                 aria-label="Sort listings"
               >
-                <option value="recommended" className="bg-[#1f0d3d]">Recommended</option>
-                <option value="recent" className="bg-[#1f0d3d]">Recently Added</option>
-                <option value="tbi" className="bg-[#1f0d3d]">Highest TBI</option>
-                <option value="name" className="bg-[#1f0d3d]">Brand Name</option>
+                <option value="recommended" className="bg-[var(--rb-bg-input)]">Recommended</option>
+                <option value="recent" className="bg-[var(--rb-bg-input)]">Recently Added</option>
+                <option value="tbi" className="bg-[var(--rb-bg-input)]">Highest TBI</option>
+                <option value="name" className="bg-[var(--rb-bg-input)]">Brand Name</option>
               </select>
             </label>
           </div>
@@ -1308,28 +1330,6 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
             {filteredBrands.length} {filteredBrands.length === 1 ? "brand" : "brands"}
           </span>
         </section>
-
-        {!loading && !error && recommendedBrands.length > 0 && (
-          <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <div>
-                  <h2 className="text-sm font-black text-white">Recommended Brands</h2>
-                  <p className="text-[10px] text-white/42">Admin-featured profiles for this category.</p>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-[10px] font-bold text-primary ring-1 ring-primary/20">
-                <ShieldCheck className="h-3 w-3" /> Featured by RebateBoard
-              </span>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              {recommendedBrands.map((brand) => (
-                <RecommendationCard key={brand.id} brand={brand} />
-              ))}
-            </div>
-          </section>
-        )}
 
         {mobileFiltersOpen && (
           <div className="relative mb-4 lg:hidden">

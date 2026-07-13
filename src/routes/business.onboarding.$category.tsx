@@ -53,7 +53,7 @@ export const Route = createFileRoute("/business/onboarding/$category")({
   }),
   component: OnboardingFlow,
   notFoundComponent: () => (
-    <div className="grid min-h-screen place-items-center bg-[#0b0418] text-foreground">
+    <div className="grid min-h-screen place-items-center bg-[var(--rb-bg-canvas)] text-foreground">
       <div className="text-center">
         <h1 className="text-2xl font-bold">Unknown category</h1>
         <Link to="/business/join" className="mt-4 inline-block text-fuchsia-300">← Back to categories</Link>
@@ -161,7 +161,7 @@ function OnboardingFlow() {
 
   if (!applicationSettings.enabled) {
     return (
-      <div className="min-h-screen bg-[#0b0418] text-foreground">
+      <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
         <SiteHeader />
         <main className="container-app max-w-3xl py-12 sm:py-16">
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-xl md:p-12">
@@ -172,7 +172,7 @@ function OnboardingFlow() {
             <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-muted-foreground">
               We're currently reviewing submitted applications. Your saved progress will remain available when applications reopen.
             </p>
-            <Link to="/business/join" className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-bold text-white">
+            <Link to="/business/join" className="mt-6 inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-bold text-white">
               Back to List Your Brand <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -183,7 +183,7 @@ function OnboardingFlow() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         {/* Header */}
@@ -233,7 +233,7 @@ function OnboardingFlow() {
             </div>
 
             {/* Nav footer */}
-            <div className="sticky bottom-3 z-10 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#150829]/90 p-3 backdrop-blur-xl">
+            <div className="sticky bottom-3 z-10 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.90)] p-3 backdrop-blur-xl">
               <button
                 onClick={goBack}
                 disabled={step === 1}
@@ -254,7 +254,7 @@ function OnboardingFlow() {
               {step < totalSteps ? (
                 <button
                   onClick={goNext}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2 text-xs font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.4)] hover:brightness-110"
+                  className="inline-flex items-center gap-1.5 rounded-xl rb-gradient-primary px-5 py-2 text-xs font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.4)] hover:brightness-110"
                 >
                   Continue <ArrowRight className="h-3.5 w-3.5" />
                 </button>
@@ -718,7 +718,7 @@ function ReviewStep({ contact, setContact, data, score, cap, mode, breakdown, on
 function SuccessScreen({ brandName, magicLink, onGoToDashboard }: { brandName: string; magicLink: string; onGoToDashboard: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app max-w-3xl py-12 sm:py-16">
         <div className="rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-teal-500/5 p-10 text-center backdrop-blur-xl">
@@ -746,7 +746,7 @@ function SuccessScreen({ brandName, magicLink, onGoToDashboard }: { brandName: s
 
           <button
             onClick={onGoToDashboard}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-3 text-sm font-bold shadow-[0_0_24px_rgba(192,132,252,0.4)] hover:brightness-110"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl rb-gradient-primary px-6 py-3 text-sm font-bold shadow-[0_0_24px_rgba(192,132,252,0.4)] hover:brightness-110"
           >
             Go to Trust Dashboard <ArrowRight className="h-4 w-4" />
           </button>

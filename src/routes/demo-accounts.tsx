@@ -88,7 +88,7 @@ function PublicDemoAccountsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-6 py-8 sm:py-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -128,7 +128,7 @@ function PublicDemoAccountsPage() {
             <select
               value={platformFilter}
               onChange={(event) => setPlatformFilter(event.target.value as DemoAccountPlatform | "all")}
-              className="rounded-full border border-white/10 bg-[#1b0d33] px-4 py-3 text-sm text-white outline-none [color-scheme:dark]"
+              className="rounded-full border border-white/10 bg-[var(--rb-bg-input)] px-4 py-3 text-sm text-white outline-none [color-scheme:dark]"
             >
               {PLATFORM_OPTIONS.map((platform) => (
                 <option key={platform} value={platform}>
@@ -139,7 +139,7 @@ function PublicDemoAccountsPage() {
             <button
               type="button"
               onClick={() => void load(query, platformFilter === "all" ? "" : platformFilter)}
-              className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_26px_rgba(192,132,252,0.32)]"
+              className="rounded-full rb-gradient-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_0_26px_rgba(192,132,252,0.32)]"
             >
               Refresh list
             </button>
@@ -193,7 +193,7 @@ function PublicDemoAccountsPage() {
                   {row.logo ? (
                     <img src={row.logo} alt={row.brand} className="h-14 w-14 rounded-2xl object-cover ring-1 ring-white/10" />
                   ) : (
-                    <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-700 text-sm font-bold text-white ring-1 ring-white/10">
+                    <div className="grid h-14 w-14 place-items-center rounded-2xl rb-gradient-primary text-sm font-bold text-white ring-1 ring-white/10">
                       {row.brand
                         .split(" ")
                         .slice(0, 2)
@@ -256,7 +256,7 @@ function PublicDemoAccountsPage() {
                       href={row.terminalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.28)]"
+                      className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.28)]"
                     >
                       Open Platform
                       <ExternalLink className="h-4 w-4" />

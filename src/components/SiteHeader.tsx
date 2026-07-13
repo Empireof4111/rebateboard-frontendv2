@@ -51,12 +51,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
 import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 import { useI18n, type LanguageCode, type TranslationKey } from "@/lib/i18n";
-
-function truncateName(name: string, maxWords = 2): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length <= maxWords) return name;
-  return parts.slice(0, maxWords).join(" ") + "…";
-}
+import { getTraderLevelProgress } from "@/lib/trader-levels";
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -69,12 +64,13 @@ function UserPill() {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   if (!user) return null;
-  const display = truncateName(user.fullName || user.name);
+  const display = user.fullName || user.name;
   const initials = initialsOf(user.fullName || user.name);
+  const level = getTraderLevelProgress(user.rrBalance).current;
   const dashboardHref = `/login?reauth=1&email=${encodeURIComponent(user.email)}&redirect=/dashboard`;
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-3 text-left transition hover:border-white/20 hover:bg-white/[0.08] outline-none">
+      <DropdownMenuTrigger className="group flex max-w-[18rem] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-2.5 text-left outline-none transition hover:border-white/20 hover:bg-white/[0.08]">
         <Avatar className="h-8 w-8 shrink-0 shadow-[0_0_18px_rgba(192,132,252,0.38)]">
           <AvatarImage
             src={user.dp || undefined}
@@ -85,18 +81,21 @@ function UserPill() {
             {initials}
           </AvatarFallback>
         </Avatar>
-        <span className="hidden flex-col leading-tight sm:flex">
-          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-            {t("header.welcome")}
+        <span className="hidden min-w-0 flex-col leading-tight md:flex">
+          <span className="max-w-[11rem] truncate text-xs font-semibold text-white" title={display}>
+            {display}
           </span>
-          <span className="text-xs font-semibold text-white">{display}</span>
+          <span className={`mt-1 inline-flex w-fit max-w-[11rem] items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] ${traderLevelBadgeClass(level.id)}`}>
+            <ShieldCheck className="h-2.5 w-2.5" />
+            <span className="truncate">{level.name}</span>
+          </span>
         </span>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition group-hover:text-white" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="glass-strong w-56 border border-white/18 bg-[#16072b]/95 p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+        className="glass-strong w-56 border border-white/18 bg-[rgba(18,18,25,0.95)] p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
       >
         <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
           <span className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">
@@ -133,6 +132,15 @@ function UserPill() {
   );
 }
 
+function traderLevelBadgeClass(levelId: string) {
+  if (levelId === "elite") return "border-emerald-300/35 bg-emerald-400/15 text-emerald-100 shadow-[0_0_16px_rgba(52,211,153,0.18)]";
+  if (levelId === "platinum") return "border-cyan-200/30 bg-cyan-300/12 text-cyan-100 shadow-[0_0_16px_rgba(103,232,249,0.14)]";
+  if (levelId === "gold") return "border-violet-200/35 bg-violet-300/14 text-violet-50 shadow-[0_0_16px_rgba(167,139,250,0.16)]";
+  if (levelId === "silver") return "border-indigo-200/25 bg-indigo-300/12 text-indigo-100";
+  if (levelId === "bronze") return "border-fuchsia-200/25 bg-fuchsia-300/12 text-fuchsia-100";
+  return "border-white/12 bg-white/[0.055] text-white/72";
+}
+
 function GuestActions() {
   const { t } = useI18n();
 
@@ -146,7 +154,7 @@ function GuestActions() {
       </Link>
       <Link
         to="/signup"
-        className="hidden rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.5)] sm:inline-flex"
+        className="hidden rounded-full rb-gradient-primary px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.5)] sm:inline-flex"
       >
         {t("common.signUp")}
       </Link>
@@ -210,32 +218,61 @@ const navItems: HeaderNavItem[] = [
     labelKey: "nav.products",
     items: [
       {
-        labelKey: "nav.propFirms",
-        to: "/programs",
-        description: "Compare funded trading programs and rules",
-        icon: TrendingUp,
+        labelKey: "nav.productTradingJournal",
+        to: "/trading-journals",
+        description: "Log trades, screenshots, strategy notes, and lessons",
+        icon: NotebookTabs,
       },
       {
-        labelKey: "nav.brokers",
-        to: "/brokers",
-        description: "Research brokers, conditions, and regulation",
-        icon: Building2,
+        labelKey: "nav.tradingPlan",
+        to: "/trading-plan",
+        description: "Build rules, guardrails, goals, and daily discipline",
+        icon: ClipboardList,
       },
       {
-        labelKey: "nav.cryptoExchanges",
-        to: "/exchanges",
-        description: "Compare exchange fees, features, and trust",
-        icon: Bitcoin,
+        labelKey: "nav.aiBacktestingLab",
+        to: "/ai-backtesting-lab",
+        description: "Test strategy ideas before risking real capital",
+        icon: FlaskConical,
       },
       {
-        labelKey: "nav.tradingTools",
-        to: "/trading-tools",
-        description: "Discover software, journals, and trader tools",
-        icon: Wrench,
+        labelKey: "nav.traderTbi",
+        to: "/trader-tbi",
+        description: "Build a personal trust and consistency profile",
+        icon: ShieldCheck,
+      },
+      {
+        labelKey: "nav.traderReturnTracker",
+        to: "/trt",
+        description: "Track real return across spend, cashback, and payouts",
+        icon: LineChart,
+      },
+      {
+        labelKey: "nav.rebetaAi",
+        to: "/rebeta-ai",
+        description: "Ask Rebeta for trading and platform intelligence",
+        icon: MessageSquare,
+      },
+      {
+        labelKey: "nav.rebateRewards",
+        to: "/rebate-rewards",
+        description: "Progress through RR, levels, streaks, and unlocks",
+        icon: Tags,
+      },
+      {
+        labelKey: "nav.cashbackCalculator",
+        to: "/cashback-calculator",
+        description: "Estimate possible cashback and cost recovery",
+        icon: Calculator,
+      },
+      {
+        labelKey: "nav.payoutTracker",
+        to: "/payouts",
+        description: "Review verified payout transparency across brands",
+        icon: WalletCards,
       },
     ],
   },
-  { labelKey: "nav.payouts", to: "/payouts" },
   { labelKey: "nav.tbi", to: "/tbi" },
   { labelKey: "nav.reviews", to: "/reviews" },
   { labelKey: "nav.topSellers", to: "/offers" },
@@ -402,7 +439,7 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
             sideOffset={10}
             onPointerEnter={openMenu}
             onPointerLeave={scheduleClose}
-            className={`glass-strong ${menuWidth} border border-white/18 bg-[#16072b]/95 p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl`}
+            className={`glass-strong ${menuWidth} border border-white/18 bg-[rgba(18,18,25,0.95)] p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl`}
           >
             <div className="grid gap-1 sm:grid-cols-2">
               {item.items.map((sub) => {
@@ -466,7 +503,7 @@ function LanguageSelector() {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="glass-strong w-56 border border-white/18 bg-[#16072b]/95 p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+        className="glass-strong w-56 border border-white/18 bg-[rgba(18,18,25,0.95)] p-2 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
       >
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {t("common.language")}
@@ -558,7 +595,7 @@ function UtilityMenu() {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="glass-strong w-[min(34rem,calc(100vw-2rem))] border border-white/18 bg-[#16072b]/95 p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
+        className="glass-strong w-[min(34rem,calc(100vw-2rem))] border border-white/18 bg-[rgba(18,18,25,0.95)] p-3 text-foreground shadow-[0_24px_80px_rgba(5,1,12,0.5)] backdrop-blur-3xl"
       >
         <DropdownMenuLabel className="px-2 pb-2 pt-1">
           <span className="block text-[10px] uppercase tracking-[0.22em] text-violet-100/55">
@@ -635,7 +672,7 @@ function MobileNavigationDrawer({
         }`}
       />
       <aside
-        className={`absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] flex-col border-l border-white/12 bg-[#12061f]/96 p-4 text-white shadow-[0_24px_100px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-transform duration-300 ${
+        className={`absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] flex-col border-l border-white/12 bg-[rgba(18,18,25,0.96)] p-4 text-white shadow-[0_24px_100px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -656,7 +693,7 @@ function MobileNavigationDrawer({
           <Link
             to="/signup"
             onClick={onClose}
-            className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 text-xs font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
+            className="inline-flex h-9 flex-1 items-center justify-center rounded-full rb-gradient-primary px-4 text-xs font-bold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
           >
             {t("common.signUp")}
           </Link>

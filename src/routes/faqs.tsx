@@ -114,7 +114,7 @@ function FaqsPage() {
   }, [query, activeCat, categories]);
 
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
 
       <main className="container-app py-8 sm:py-10">
@@ -145,7 +145,7 @@ function FaqsPage() {
               onClick={() => setActiveCat("all")}
               className={`rounded-full px-3 py-1 text-[11px] font-semibold ring-1 transition ${
                 activeCat === "all"
-                  ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40"
+                  ? "rb-gradient-primary text-white ring-fuchsia-300/40"
                   : "bg-white/[0.04] text-white/80 ring-white/10 hover:bg-white/[0.08]"
               }`}
             >
@@ -157,7 +157,7 @@ function FaqsPage() {
                 onClick={() => setActiveCat(c.key)}
                 className={`rounded-full px-3 py-1 text-[11px] font-semibold ring-1 transition ${
                   activeCat === c.key
-                    ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40"
+                    ? "rb-gradient-primary text-white ring-fuchsia-300/40"
                     : "bg-white/[0.04] text-white/80 ring-white/10 hover:bg-white/[0.08]"
                 }`}
               >
@@ -303,7 +303,7 @@ function FaqsPage() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/dashboard"
-                  className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white"
+                  className="rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-semibold text-white"
                 >
                   Open Support
                 </Link>

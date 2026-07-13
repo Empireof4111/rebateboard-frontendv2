@@ -71,10 +71,10 @@ export function TransactionDrawer({
   return (
     <div className="fixed inset-0 z-[60] flex items-stretch justify-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="ml-auto flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-white/10 bg-[#150829]/95 shadow-2xl backdrop-blur-2xl"
+        className="ml-auto flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl backdrop-blur-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/5 bg-[#150829]/95 px-5 py-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/5 bg-[rgba(18,18,25,0.95)] px-5 py-4 backdrop-blur-xl">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Trader Return Tracker</div>
             <h2 className="text-lg font-bold text-white">Add transaction</h2>
@@ -181,9 +181,9 @@ export function TransactionDrawer({
                 onChange={(e) => setAccountId(e.target.value || undefined)}
                 className="glass w-full rounded-xl bg-transparent px-3 py-2.5 text-sm text-white outline-none ring-1 ring-white/10"
               >
-                <option value="" className="bg-[#150829]">— None —</option>
+                <option value="" className="bg-[var(--rb-bg-elevated)]">— None —</option>
                 {linkedAccountOptions.map((a) => (
-                  <option key={a.id} value={a.id} className="bg-[#150829]">
+                  <option key={a.id} value={a.id} className="bg-[var(--rb-bg-elevated)]">
                     {a.name} ({a.brand.name})
                   </option>
                 ))}
@@ -221,7 +221,7 @@ export function TransactionDrawer({
           </div>
         </div>
 
-        <div className="sticky bottom-0 mt-auto flex items-center gap-2 border-t border-white/5 bg-[#150829]/95 p-4 backdrop-blur-xl">
+        <div className="sticky bottom-0 mt-auto flex items-center gap-2 border-t border-white/5 bg-[rgba(18,18,25,0.95)] p-4 backdrop-blur-xl">
           <button
             type="button"
             onClick={() => apply("another")}
@@ -234,7 +234,7 @@ export function TransactionDrawer({
             type="button"
             onClick={() => apply()}
             disabled={!valid}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-xs font-bold text-white shadow-[0_0_22px_rgba(192,132,252,0.45)] disabled:opacity-40"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full rb-gradient-primary px-3 py-2 text-xs font-bold text-white shadow-[0_0_22px_rgba(192,132,252,0.45)] disabled:opacity-40"
           >
             {saved ? <Check className="h-4 w-4" /> : <Save className="h-3.5 w-3.5" />}
             {saved ? "Saved" : "Save transaction"}

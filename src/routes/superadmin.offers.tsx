@@ -158,7 +158,7 @@ function BrandPicker({
         />
       </div>
       {open && matches.length > 0 && (
-        <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-white/10 bg-[#150826] p-1 shadow-2xl">
+        <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-white/10 bg-[var(--rb-bg-elevated)] p-1 shadow-2xl">
           {matches.map((brand) => (
             <button
               key={brand.id}
@@ -328,7 +328,7 @@ function OffersAdmin() {
         actions={
           <button
             onClick={() => setEditing(empty())}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"
+            className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white"
           >
             <Plus className="h-3.5 w-3.5" /> New offer
           </button>
@@ -472,7 +472,7 @@ function OffersAdmin() {
               <button
                 onClick={() => void saveOffer()}
                 disabled={saving}
-                className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save & sync"}
               </button>

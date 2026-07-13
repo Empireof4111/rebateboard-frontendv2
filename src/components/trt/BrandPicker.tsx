@@ -65,7 +65,7 @@ export function BrandPicker({
           <Search className="h-4 w-4 text-muted-foreground" />
         </button>
         {open && (
-          <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#1a0d33]/95 shadow-2xl backdrop-blur-xl">
+          <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl backdrop-blur-xl">
             <div className="border-b border-white/5 p-2">
               <div className="glass flex items-center gap-2 rounded-lg px-2.5 py-2">
                 <Search className="h-3.5 w-3.5 text-muted-foreground" />

@@ -241,121 +241,164 @@ export function ShareCardBuilder() {
     ? achievement.value
     : formatAnimatedMetric(animatedNumber, achievement.value);
 
-  const renderPerformanceCard = (ref?: typeof cardRef) => (
-    <div
-      ref={ref}
-      className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_18px_58px_rgba(0,0,0,0.34)] ring-1 ${themeSpec.line} transition-[max-width,aspect-ratio,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5`}
-    >
-      <div className={`absolute -right-[14%] -top-[22%] h-[46%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
-      <div className={`absolute -bottom-[22%] left-[5%] h-[38%] w-[30%] rounded-full ${themeSpec.glow} blur-3xl`} />
-      <div
-        className="absolute inset-0 opacity-[0.045]"
-        style={{
-          backgroundImage:
-            "linear-gradient(120deg, transparent 0 28px, currentColor 29px, transparent 30px)",
-          backgroundSize: "118px 118px",
-          color: platinum ? "#2e174f" : "#ffffff",
-        }}
-      />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-      <div className="relative flex h-full flex-col p-[6.2%]">
-        <header className="flex items-start justify-between gap-6">
-          <Logo heightClass={ratio === "story" ? "h-10" : "h-8"} className={platinum ? "[&_*]:text-slate-950" : ""} />
-          <div className={`text-right text-[0.62rem] font-semibold uppercase tracking-[0.22em] ${textMuted}`}>
-            <div>Trader Performance Card</div>
-            <div className="mt-1 opacity-70">Version 1.0</div>
-          </div>
-        </header>
+  const renderPerformanceCard = (ref?: typeof cardRef) => {
+    const isLandscape = ratio === "landscape";
+    const isSquare = ratio === "square";
+    const isStory = ratio === "story";
+    const shellPadding = isLandscape ? "p-[4.4%]" : isSquare ? "p-[5.2%]" : "p-[6.4%]";
+    const metricClass = textMetric
+      ? isStory
+        ? "text-[3.1rem] leading-[0.95]"
+        : isSquare
+          ? "text-[clamp(3.4rem,7vw,5.4rem)] leading-[0.92]"
+          : "text-[clamp(3.5rem,6.2vw,6.4rem)] leading-[0.9]"
+      : isStory
+        ? "text-[4.35rem] leading-[0.86]"
+        : isSquare
+          ? "text-[clamp(4rem,8.4vw,6.4rem)] leading-[0.86]"
+          : "text-[clamp(4.3rem,8vw,7rem)] leading-[0.86]";
 
-        <main className={`flex flex-1 flex-col ${ratio === "story" ? "justify-center py-[8%]" : ratio === "square" ? "justify-center py-[5%]" : "justify-end py-[4%]"}`}>
-          <div className={`transition duration-300 ease-out ${ratio === "story" ? "max-w-full text-center" : ratio === "square" ? "max-w-[88%]" : "max-w-[74%]"}`}>
-            <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] ${themeSpec.line} ${themeSpec.accent}`}>
-              <Trophy className="h-3.5 w-3.5" />
-              {achievement.title}
-            </div>
-            <div
-              key={`hero-${preset}-${animateKey}`}
-              className={`mt-3 text-sm font-bold uppercase tracking-[0.16em] ${themeSpec.accent} transition-all duration-300 ease-out`}
-            >
-              {heroMessage}
-            </div>
-            <div
-              key={`${preset}-${ratio}-${animateKey}`}
-              className={`mt-3 font-black tracking-[-0.055em] ${textPrimary} transition-all duration-300 ease-out ${
-                textMetric
-                  ? ratio === "story"
-                    ? "text-[3.25rem] leading-[0.95]"
-                    : "text-[clamp(3rem,5.8vw,5.2rem)] leading-[0.95]"
-                  : ratio === "story"
-                  ? "text-[4.85rem] leading-[0.88]"
-                  : "text-[clamp(4.2rem,9vw,7.4rem)] leading-[0.88]"
-              }`}
-            >
-              {displayMetric}
-            </div>
-            <div className={`mt-3 ${ratio === "story" ? "mx-auto max-w-[19rem] text-base" : "max-w-xl text-sm"} font-medium leading-relaxed ${textMuted}`}>
-              {storyCopy}
-            </div>
-          </div>
-        </main>
+    const heroBlock = (
+      <div className={`transition duration-300 ease-out ${isStory ? "text-center" : ""}`}>
+        <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] ${themeSpec.line} ${themeSpec.accent}`}>
+          <Trophy className="h-3.5 w-3.5" />
+          {achievement.title}
+        </div>
+        <div
+          key={`hero-${preset}-${animateKey}`}
+          className={`mt-3 text-sm font-bold uppercase tracking-[0.16em] ${themeSpec.accent} transition-all duration-300 ease-out`}
+        >
+          {heroMessage}
+        </div>
+        <div
+          key={`${preset}-${ratio}-${animateKey}`}
+          className={`mt-3 font-black tracking-[-0.055em] ${textPrimary} ${metricClass} transition-all duration-300 ease-out`}
+        >
+          {displayMetric}
+        </div>
+        <div className={`mt-3 ${isStory ? "mx-auto max-w-[19rem] text-base" : "max-w-xl text-sm"} font-medium leading-relaxed ${textMuted}`}>
+          {storyCopy}
+        </div>
+      </div>
+    );
 
-        {vis.stats && (
-          <div className={`grid ${ratio === "story" ? "grid-cols-1 divide-y" : "grid-cols-3 border-y"} ${themeSpec.line}`}>
-            {supportStats.map((stat, index) => (
-              <div key={stat.label} className={`py-4 ${ratio === "story" ? "text-center" : index > 0 ? `border-l ${themeSpec.line} pl-5` : "pr-5"}`}>
-                <div className={`text-[0.58rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{stat.label}</div>
-                <div className={`mt-1 text-lg font-bold tabular-nums ${textPrimary}`}>{stat.value}</div>
-              </div>
-            ))}
+    const statsBlock = vis.stats ? (
+      <div className={`grid ${isStory ? "grid-cols-1 divide-y" : "grid-cols-3 border-y"} ${themeSpec.line}`}>
+        {supportStats.map((stat, index) => (
+          <div key={stat.label} className={`${isStory ? "py-3.5 text-center" : isSquare ? "px-3 py-4" : "px-4 py-4"} ${!isStory && index > 0 ? `border-l ${themeSpec.line}` : ""}`}>
+            <div className={`text-[0.56rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{stat.label}</div>
+            <div className={`mt-1 text-base font-bold tabular-nums ${textPrimary}`}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
+    const identityBlock = vis.profile ? (
+      <div className={`flex min-w-0 items-center gap-3 ${isStory ? "w-full justify-center text-center" : ""}`}>
+        <div className={`grid ${isStory ? "h-14 w-14" : "h-12 w-12"} shrink-0 place-items-center overflow-hidden rounded-2xl border ${themeSpec.line} ${platinum ? "bg-slate-950/5" : "bg-white/[0.055]"}`}>
+          {user?.dp ? (
+            <img src={user.dp} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <UserRound className={`h-5 w-5 ${themeSpec.accent}`} />
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className={`truncate text-base font-bold ${textPrimary}`}>{traderName}</div>
+          <div className={`truncate text-xs font-medium ${textMuted}`}>@{username}</div>
+          <div className={`mt-2 flex flex-wrap gap-2 ${isStory ? "justify-center" : ""}`}>
+            {vis.country && user?.country && <MetaChip icon={Globe2} label={user.country} platinum={platinum} />}
+            {vis.memberSince && <MetaChip icon={BadgeCheck} label={`Member since ${memberSince}`} platinum={platinum} />}
+            {vis.traderLevel && <MetaChip icon={Trophy} label={traderLevel} platinum={platinum} premium />}
+            {vis.traderTbi && <MetaChip icon={Gauge} label={`Trader TBI ${Math.round(user?.traderScore ?? 0)}/100`} platinum={platinum} />}
+          </div>
+        </div>
+      </div>
+    ) : null;
+
+    const verificationBlock = (vis.verification || vis.qr) ? (
+      <div className={`flex shrink-0 items-center gap-3 rounded-2xl border ${themeSpec.line} ${platinum ? "bg-white/45" : "bg-black/18"} p-3 backdrop-blur ${isStory ? "w-full justify-between" : ""}`}>
+        {vis.verification && (
+          <div className={isStory ? "min-w-0 max-w-[220px]" : "min-w-0 max-w-[280px]"}>
+            <div className={`flex items-center gap-1.5 text-xs font-bold ${textPrimary}`}>
+              <ShieldCheck className={`h-4 w-4 shrink-0 ${themeSpec.accent}`} />
+              Verified by RebateBoard
+            </div>
+            <p className={`mt-1 text-[0.64rem] leading-snug ${textMuted}`}>
+              Data verified from platform activity. Asset ID {publicAssetId}
+            </p>
+            <div className={`mt-1 break-words text-[0.58rem] font-semibold uppercase tracking-[0.12em] ${themeSpec.accent}`}>
+              {shortVerificationUrl(verificationUrl)}
+            </div>
           </div>
         )}
-
-        <footer className={`mt-5 flex items-end justify-between gap-5 ${ratio === "story" ? "flex-col items-start" : ""}`}>
-          {vis.profile && (
-            <div className="flex min-w-0 items-center gap-3">
-              <div className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border ${themeSpec.line} ${platinum ? "bg-slate-950/5" : "bg-white/[0.055]"}`}>
-                {user?.dp ? (
-                  <img src={user.dp} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <UserRound className={`h-5 w-5 ${themeSpec.accent}`} />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className={`truncate text-base font-bold ${textPrimary}`}>{traderName}</div>
-                <div className={`truncate text-xs font-medium ${textMuted}`}>@{username}</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {vis.country && user?.country && <MetaChip icon={Globe2} label={user.country} platinum={platinum} />}
-                  {vis.memberSince && <MetaChip icon={BadgeCheck} label={`Member since ${memberSince}`} platinum={platinum} />}
-                  {vis.traderLevel && <MetaChip icon={Trophy} label={traderLevel} platinum={platinum} premium />}
-                  {vis.traderTbi && <MetaChip icon={Gauge} label={`Trader TBI ${Math.round(user?.traderScore ?? 0)}/100`} platinum={platinum} />}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(vis.verification || vis.qr) && (
-            <div className={`flex shrink-0 items-center gap-3 rounded-2xl border ${themeSpec.line} ${platinum ? "bg-white/45" : "bg-black/18"} p-3 backdrop-blur`}>
-              {vis.verification && (
-                <div className={ratio === "story" ? "max-w-[210px]" : "max-w-[250px]"}>
-                  <div className={`flex items-center gap-1.5 text-xs font-bold ${textPrimary}`}>
-                    <ShieldCheck className={`h-4 w-4 ${themeSpec.accent}`} />
-                    Verified by RebateBoard
-                  </div>
-                  <p className={`mt-1 text-[0.64rem] leading-snug ${textMuted}`}>
-                    Data verified from platform activity. Asset ID {publicAssetId}
-                  </p>
-                  <div className={`mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.14em] ${themeSpec.accent}`}>
-                    {shortVerificationUrl(verificationUrl)}
-                  </div>
-                </div>
-              )}
-              {vis.qr && <QrMark platinum={platinum} url={verificationUrl} />}
-            </div>
-          )}
-        </footer>
+        {vis.qr && <QrMark platinum={platinum} url={verificationUrl} compact={isLandscape} />}
       </div>
-    </div>
-  );
+    ) : null;
+
+    return (
+      <div
+        ref={ref}
+        className={`relative mx-auto w-full overflow-hidden rounded-[2rem] bg-gradient-to-br ${themeSpec.shell} ${RATIOS[ratio].className} shadow-[0_18px_58px_rgba(0,0,0,0.34)] ring-1 ${themeSpec.line} transition-[max-width,aspect-ratio,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5`}
+      >
+        <div className={`absolute -right-[14%] -top-[22%] h-[46%] w-[38%] rounded-full ${themeSpec.glow} blur-3xl`} />
+        <div className={`absolute -bottom-[22%] left-[5%] h-[38%] w-[30%] rounded-full ${themeSpec.glow} blur-3xl`} />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(120deg, transparent 0 28px, currentColor 29px, transparent 30px)",
+            backgroundSize: "118px 118px",
+            color: platinum ? "#2e174f" : "#ffffff",
+          }}
+        />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+        <div className={`relative flex h-full flex-col ${shellPadding}`}>
+          <header className="flex items-start justify-between gap-6">
+            <Logo heightClass={isStory ? "h-10" : "h-8"} className={platinum ? "[&_*]:text-slate-950" : ""} />
+            <div className={`text-right text-[0.62rem] font-semibold uppercase tracking-[0.22em] ${textMuted}`}>
+              <div>Trader Performance Card</div>
+              <div className="mt-1 opacity-70">Version 1.0</div>
+            </div>
+          </header>
+
+          {isLandscape ? (
+            <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.05fr)_minmax(310px,0.72fr)] items-end gap-[5%] pb-[1.5%] pt-[3%]">
+              <section className="min-w-0">
+                {heroBlock}
+                <div className="mt-7">{statsBlock}</div>
+              </section>
+              <section className="flex min-w-0 flex-col gap-4">
+                <div className={`rounded-3xl border ${themeSpec.line} ${platinum ? "bg-white/35" : "bg-white/[0.035]"} p-4 backdrop-blur-sm`}>
+                  {identityBlock}
+                </div>
+                {verificationBlock}
+              </section>
+            </main>
+          ) : isSquare ? (
+            <main className="flex min-h-0 flex-1 flex-col justify-between gap-6 pb-[1%] pt-[5%]">
+              <section className="max-w-[92%]">{heroBlock}</section>
+              <section className="space-y-5">
+                {statsBlock}
+                <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(280px,1fr)]">
+                  {identityBlock}
+                  {verificationBlock}
+                </div>
+              </section>
+            </main>
+          ) : (
+            <main className="flex min-h-0 flex-1 flex-col justify-between gap-6 pb-[2%] pt-[8%]">
+              {heroBlock}
+              <section className="space-y-5">
+                {statsBlock}
+                {identityBlock}
+                {verificationBlock}
+              </section>
+            </main>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const buildVerificationPayload = () => {
     const visibleFields = (Object.keys(vis) as (keyof Visibility)[]).filter((field) => vis[field]);
@@ -523,7 +566,7 @@ export function ShareCardBuilder() {
               setExportComplete(false);
               setExportOpen(true);
             }}
-            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(192,132,252,0.5)]"
+            className="group inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(192,132,252,0.5)]"
           >
             <Download className="h-4 w-4 transition group-hover:-translate-y-0.5" />
             Export Card
@@ -647,7 +690,7 @@ export function ShareCardBuilder() {
               setExportComplete(false);
               setExportOpen(true);
             }}
-            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-4 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(192,132,252,0.4)]"
+            className="group flex w-full items-center justify-center gap-2 rounded-2xl rb-gradient-primary px-4 py-4 text-sm font-black text-white shadow-[0_0_22px_rgba(192,132,252,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(192,132,252,0.4)]"
           >
             <Download className="h-4 w-4 transition group-hover:-translate-y-0.5" />
             Export Card
@@ -908,10 +951,10 @@ function MetaChip({
   );
 }
 
-function QrMark({ platinum, url }: { platinum: boolean; url: string }) {
+function QrMark({ platinum, url, compact = false }: { platinum: boolean; url: string; compact?: boolean }) {
   const src = `https://api.qrserver.com/v1/create-qr-code/?size=192x192&ecc=H&margin=12&data=${encodeURIComponent(url)}`;
   return (
-    <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-xl border p-1 ${
+    <div className={`grid ${compact ? "h-14 w-14" : "h-16 w-16"} shrink-0 place-items-center rounded-xl border p-1 ${
       platinum ? "border-slate-950/10 bg-white" : "border-white/12 bg-white"
     }`}>
       <img src={src} alt="Verification QR code" className="h-full w-full rounded-lg object-contain" crossOrigin="anonymous" />

@@ -61,7 +61,7 @@ function BrandAvatar({ profile }: { profile: TbiProfile }) {
     );
   }
   return (
-    <div className="grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-xl font-bold text-white">
+    <div className="grid h-20 w-20 place-items-center rounded-3xl rb-gradient-primary text-xl font-bold text-white">
       {profile.name.slice(0, 2).toUpperCase()}
     </div>
   );
@@ -164,7 +164,7 @@ function BrandPage() {
   }, [profile]);
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         <Link to="/tbi/explore" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -237,7 +237,7 @@ function BrandPage() {
                           </button>
                           <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600"
+                              className="h-full rounded-full rb-gradient-primary"
                               style={{ width: `${Math.max(0, Math.min(100, entry.value * 10))}%` }}
                             />
                           </div>

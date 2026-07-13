@@ -83,7 +83,7 @@ function PayoutsPage() {
   const biggest = [...TRANSACTIONS].sort((a, b) => b.amountUsd - a.amountUsd)[0];
 
   return (
-    <div className="min-h-screen bg-[#0c0418] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-8 py-6 sm:py-8">
         {/* HERO */}
@@ -101,7 +101,7 @@ function PayoutsPage() {
               Track real crypto payouts from prop firms — verified on-chain and ranked by payout activity, speed, and reliability.
             </p>
             <div className="mt-6 flex gap-3">
-              <a href="#brands" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold shadow-[0_0_30px_rgba(192,132,252,0.4)]">Explore Payouts</a>
+              <a href="#brands" className="rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-semibold shadow-[0_0_30px_rgba(192,132,252,0.4)]">Explore Payouts</a>
               <a href="#submit" className="glass rounded-full px-5 py-2.5 text-sm">Submit Payout</a>
             </div>
           </div>
@@ -148,23 +148,23 @@ function PayoutsPage() {
               ))}
             </div>
             <select value={chain} onChange={(e) => setChain(e.target.value)} className="glass-pill rounded-full px-3 py-1.5 text-xs bg-transparent">
-              {["All", "TRC20", "ERC20", "BEP20", "BTC"].map((c) => <option key={c} value={c} className="bg-[#150829]">Chain: {c}</option>)}
+              {["All", "TRC20", "ERC20", "BEP20", "BTC"].map((c) => <option key={c} value={c} className="bg-[var(--rb-bg-elevated)]">Chain: {c}</option>)}
             </select>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="glass-pill rounded-full px-3 py-1.5 text-xs bg-transparent">
-              {["All", "USDT", "USDC", "BTC", "ETH"].map((c) => <option key={c} value={c} className="bg-[#150829]">Currency: {c}</option>)}
+              {["All", "USDT", "USDC", "BTC", "ETH"].map((c) => <option key={c} value={c} className="bg-[var(--rb-bg-elevated)]">Currency: {c}</option>)}
             </select>
             <select value={verification} onChange={(e) => setVerification(e.target.value)} className="glass-pill rounded-full px-3 py-1.5 text-xs bg-transparent">
-              {["All", "Verified", "Pending", "Flagged"].map((c) => <option key={c} value={c} className="bg-[#150829]">{c}</option>)}
+              {["All", "Verified", "Pending", "Flagged"].map((c) => <option key={c} value={c} className="bg-[var(--rb-bg-elevated)]">{c}</option>)}
             </select>
             <select value={region} onChange={(e) => setRegion(e.target.value)} className="glass-pill rounded-full px-3 py-1.5 text-xs bg-transparent">
-              {["Global", "Africa", "Asia", "Europe", "North America"].map((c) => <option key={c} value={c} className="bg-[#150829]">{c}</option>)}
+              {["Global", "Africa", "Asia", "Europe", "North America"].map((c) => <option key={c} value={c} className="bg-[var(--rb-bg-elevated)]">{c}</option>)}
             </select>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="glass-pill rounded-full px-3 py-1.5 text-xs bg-transparent">
-              <option value="total" className="bg-[#150829]">Sort: Total Paid</option>
-              <option value="latest" className="bg-[#150829]">Sort: Latest Payout</option>
-              <option value="speed" className="bg-[#150829]">Sort: Speed</option>
-              <option value="reliability" className="bg-[#150829]">Sort: Reliability</option>
-              <option value="tbi" className="bg-[#150829]">Sort: TBI Score</option>
+              <option value="total" className="bg-[var(--rb-bg-elevated)]">Sort: Total Paid</option>
+              <option value="latest" className="bg-[var(--rb-bg-elevated)]">Sort: Latest Payout</option>
+              <option value="speed" className="bg-[var(--rb-bg-elevated)]">Sort: Speed</option>
+              <option value="reliability" className="bg-[var(--rb-bg-elevated)]">Sort: Reliability</option>
+              <option value="tbi" className="bg-[var(--rb-bg-elevated)]">Sort: TBI Score</option>
             </select>
           </div>
         </section>
@@ -367,16 +367,16 @@ function PayoutsPage() {
               <input placeholder="Brand" className="glass rounded-xl px-3 py-2 text-sm bg-transparent col-span-2" />
               <input placeholder="Amount" className="glass rounded-xl px-3 py-2 text-sm bg-transparent" />
               <select className="glass rounded-xl px-3 py-2 text-sm bg-transparent">
-                <option className="bg-[#150829]">USDT</option><option className="bg-[#150829]">USDC</option><option className="bg-[#150829]">BTC</option><option className="bg-[#150829]">ETH</option>
+                <option className="bg-[var(--rb-bg-elevated)]">USDT</option><option className="bg-[var(--rb-bg-elevated)]">USDC</option><option className="bg-[var(--rb-bg-elevated)]">BTC</option><option className="bg-[var(--rb-bg-elevated)]">ETH</option>
               </select>
               <select className="glass rounded-xl px-3 py-2 text-sm bg-transparent col-span-2">
-                <option className="bg-[#150829]">TRC20</option><option className="bg-[#150829]">ERC20</option><option className="bg-[#150829]">BEP20</option><option className="bg-[#150829]">BTC</option>
+                <option className="bg-[var(--rb-bg-elevated)]">TRC20</option><option className="bg-[var(--rb-bg-elevated)]">ERC20</option><option className="bg-[var(--rb-bg-elevated)]">BEP20</option><option className="bg-[var(--rb-bg-elevated)]">BTC</option>
               </select>
               <input placeholder="TX Hash" className="glass rounded-xl px-3 py-2 text-sm bg-transparent col-span-2 font-mono" />
               <input type="date" className="glass rounded-xl px-3 py-2 text-sm bg-transparent" />
               <input type="date" className="glass rounded-xl px-3 py-2 text-sm bg-transparent" />
               <label className="text-xs text-muted-foreground col-span-2 flex items-center gap-2"><input type="checkbox" /> Hide my identity</label>
-              <button type="button" className="col-span-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2"><Send className="h-4 w-4" /> Submit for Verification</button>
+              <button type="button" className="col-span-2 rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2"><Send className="h-4 w-4" /> Submit for Verification</button>
             </form>
           </div>
         </section>

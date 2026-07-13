@@ -238,7 +238,7 @@ export function DashboardChecklist({
 
         <Link
           to={checklist.nextTask.to as string}
-          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] transition hover:brightness-110 active:scale-[0.99]"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl rb-gradient-primary px-4 py-2.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)] transition hover:brightness-110 active:scale-[0.99]"
         >
           {checklist.completed === checklist.total ? "Review Checklist" : checklist.nextTask.label}
           <ArrowRight className="h-3.5 w-3.5" />

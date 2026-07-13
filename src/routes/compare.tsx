@@ -7,7 +7,6 @@ import {
   Clock3,
   Eye,
   Info,
-  LoaderCircle,
   Plus,
   RefreshCw,
   Search,
@@ -51,10 +50,20 @@ type RecentComparison = { brandIds: string[]; ts: number };
 type CompareRow = {
   label: string;
   value: (brand: AdminBrandRecord) => string;
+  overview?: boolean;
+  comparable?: "highest" | "lowest" | "supported";
 };
+type CompareMode = "overview" | "full";
+type DetailState = {
+  row: CompareRow;
+  brand: AdminBrandRecord;
+  value: string;
+} | null;
 
 const RECENT_KEY = "rb_recent_comparisons_v2";
+const MODE_KEY = "rb_compare_mode_v2";
 const EMPTY_VALUE = "Not provided";
+const LONG_VALUE_LENGTH = 74;
 
 function asRecord(value: unknown): DataRecord {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -87,6 +96,20 @@ function firstText(...values: unknown[]) {
   return "";
 }
 
+function collectSearchText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return cleanText(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(collectSearchText).filter(Boolean).join(" ");
+  }
+  if (typeof value === "object") {
+    return Object.values(value as DataRecord).map(collectSearchText).filter(Boolean).join(" ");
+  }
+  return "";
+}
+
 function sectionValue(
   brand: AdminBrandRecord,
   section: keyof AdminBrandRecord,
@@ -109,13 +132,33 @@ function resolveMediaUrl(value: unknown) {
 
 function scoreOutOfTen(brand: AdminBrandRecord) {
   const score = Number(brand.tbi || 0);
-  return score > 10 ? score / 10 : score;
+  return score > 0 ? Math.min(100, Math.max(0, score)) : 0;
+}
+
+function readCompareMode(): CompareMode {
+  if (typeof window === "undefined") return "overview";
+  return window.localStorage.getItem(MODE_KEY) === "full" ? "full" : "overview";
+}
+
+function summarizeCellValue(value: string) {
+  const normalized = cleanText(value) || EMPTY_VALUE;
+  return normalized.replace(/\s+/g, " ");
+}
+
+function isMissingValue(value: string) {
+  const normalized = summarizeCellValue(value).toLowerCase();
+  return normalized === EMPTY_VALUE.toLowerCase() || normalized === "not available" || normalized === "not applicable";
+}
+
+function isLongValue(value: string) {
+  return summarizeCellValue(value).length > LONG_VALUE_LENGTH || /[.;]\s/.test(value);
 }
 
 function categoryGroup(brand: AdminBrandRecord) {
-  if (brand.category.includes("Prop Firm")) return "prop";
-  if (brand.category === "Forex Broker") return "broker";
-  if (brand.category === "Crypto Exchange") return "exchange";
+  const category = brand.category.toLowerCase();
+  if (category.includes("prop firm")) return "prop";
+  if (category.includes("broker")) return "broker";
+  if (category.includes("exchange")) return "exchange";
   return "product";
 }
 
@@ -159,21 +202,25 @@ function challengeValue(brand: AdminBrandRecord, ...keys: string[]) {
 function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
   const groups = new Set(brands.map(categoryGroup));
   const rows: CompareRow[] = [
-    { label: "Category", value: (brand) => brand.category },
+    { label: "Category", overview: true, value: (brand) => brand.category },
     {
       label: "TBI score",
+      overview: true,
+      comparable: "highest",
       value: (brand) => {
         const score = scoreOutOfTen(brand);
-        return score > 0 ? `${score.toFixed(1)} / 10` : "Preliminary";
+        return score > 0 ? `${score.toFixed(0)} / 100` : "Preliminary";
       },
     },
     {
       label: "Trust level",
+      overview: true,
       value: (brand) =>
         publicTbiStageTheme(resolveBrandTbiState(brand)).label,
     },
     {
       label: "Country / HQ",
+      overview: true,
       value: (brand) =>
         firstText(
           sectionValue(brand, "identity", "country", "hq", "headquarters"),
@@ -182,24 +229,30 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
     },
     {
       label: "Founded",
+      overview: false,
       value: (brand) =>
         sectionValue(brand, "identity", "founded", "yearFounded") ||
         EMPTY_VALUE,
     },
     {
       label: "Public reviews",
+      overview: false,
       value: (brand) => String(Number(brand.reviewsCount || 0)),
     },
     {
       label: "Cashback",
+      overview: true,
+      comparable: "supported",
       value: cashbackLabel,
     },
     {
       label: "Payout record",
+      overview: true,
       value: (brand) => cleanText(brand.payouts) || EMPTY_VALUE,
     },
     {
       label: "Website",
+      overview: false,
       value: websiteLabel,
     },
   ];
@@ -208,6 +261,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
     rows.push(
       {
         label: "Program type",
+        overview: true,
         value: (brand) =>
           firstText(
             sectionValue(
@@ -222,6 +276,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Maximum allocation",
+        overview: true,
         value: (brand) =>
           sectionValue(
             brand,
@@ -233,6 +288,8 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Profit split",
+        overview: true,
+        comparable: "highest",
         value: (brand) =>
           firstText(
             sectionValue(brand, "prop", "profitSplit", "maxProfitSplit"),
@@ -241,6 +298,8 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Starting fee",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           firstText(
             sectionValue(brand, "prop", "startingFee", "fees", "price"),
@@ -249,6 +308,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Payout frequency",
+        overview: true,
         value: (brand) =>
           firstText(
             sectionValue(
@@ -262,6 +322,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Trading platforms",
+        overview: true,
         value: (brand) =>
           firstText(
             sectionValue(brand, "prop", "platforms", "tradingPlatforms"),
@@ -270,6 +331,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Maximum daily loss",
+        overview: false,
         value: (brand) =>
           firstText(
             sectionValue(brand, "prop", "dailyLoss", "maxDailyLoss"),
@@ -278,6 +340,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Maximum overall loss",
+        overview: false,
         value: (brand) =>
           firstText(
             sectionValue(brand, "prop", "maxLoss", "maxDrawdown"),
@@ -291,6 +354,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
     rows.push(
       {
         label: "Regulation",
+        overview: true,
         value: (brand) =>
           sectionValue(
             brand,
@@ -301,51 +365,92 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
           ) || EMPTY_VALUE,
       },
       {
+        label: "Operating entities",
+        overview: false,
+        value: (brand) =>
+          sectionValue(brand, "broker", "entities", "operatingEntities", "entity") ||
+          EMPTY_VALUE,
+      },
+      {
         label: "Minimum deposit",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           sectionValue(brand, "broker", "minDeposit", "minimumDeposit") ||
           EMPTY_VALUE,
       },
       {
         label: "Maximum leverage",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "broker", "maxLeverage", "leverage") ||
           EMPTY_VALUE,
       },
       {
         label: "Spreads",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           sectionValue(brand, "broker", "spreads", "spreadType") ||
           EMPTY_VALUE,
       },
       {
         label: "Commission",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           sectionValue(brand, "broker", "commission", "commissions") ||
           EMPTY_VALUE,
       },
       {
         label: "Account types",
+        overview: false,
         value: (brand) =>
           sectionValue(brand, "broker", "accountTypes", "accounts") ||
           EMPTY_VALUE,
       },
       {
         label: "Products / assets",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "broker", "assets", "products", "instruments") ||
           EMPTY_VALUE,
       },
       {
         label: "Trading platforms",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "broker", "platforms", "tradingPlatforms") ||
           EMPTY_VALUE,
       },
       {
+        label: "Deposit methods",
+        overview: false,
+        value: (brand) =>
+          sectionValue(brand, "broker", "depositMethods", "deposits", "fundingMethods") ||
+          EMPTY_VALUE,
+      },
+      {
+        label: "Withdrawal methods",
+        overview: false,
+        value: (brand) =>
+          sectionValue(brand, "broker", "withdrawalMethods", "withdrawals") ||
+          EMPTY_VALUE,
+      },
+      {
         label: "Withdrawal speed",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "broker", "withdrawalSpeed") || EMPTY_VALUE,
+      },
+      {
+        label: "Customer support",
+        overview: false,
+        value: (brand) =>
+          firstText(
+            sectionValue(brand, "broker", "support", "customerSupport"),
+            brand.supportEmail,
+          ) || EMPTY_VALUE,
       },
     );
   }
@@ -354,6 +459,7 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
     rows.push(
       {
         label: "Regulation",
+        overview: true,
         value: (brand) =>
           sectionValue(
             brand,
@@ -365,35 +471,81 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Minimum deposit",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           sectionValue(brand, "exchange", "minDeposit", "minimumDeposit") ||
           EMPTY_VALUE,
       },
       {
         label: "Spot trading fee",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           sectionValue(brand, "exchange", "spotFee", "tradingFee") ||
           EMPTY_VALUE,
       },
       {
         label: "Futures trading fee",
+        overview: true,
+        comparable: "lowest",
         value: (brand) =>
           sectionValue(brand, "exchange", "futuresFee", "derivativesFee") ||
           EMPTY_VALUE,
       },
       {
         label: "KYC level",
+        overview: false,
         value: (brand) =>
           sectionValue(brand, "exchange", "kycLevel", "kyc") || EMPTY_VALUE,
       },
       {
         label: "Supported assets",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "exchange", "assets", "coins", "products") ||
           EMPTY_VALUE,
       },
       {
+        label: "Fiat support",
+        overview: true,
+        comparable: "supported",
+        value: (brand) =>
+          sectionValue(brand, "exchange", "fiatSupport", "fiat", "fiatMethods") ||
+          EMPTY_VALUE,
+      },
+      {
+        label: "Deposit methods",
+        overview: false,
+        value: (brand) =>
+          sectionValue(brand, "exchange", "depositMethods", "deposits", "fundingMethods") ||
+          EMPTY_VALUE,
+      },
+      {
+        label: "Withdrawal methods",
+        overview: false,
+        value: (brand) =>
+          sectionValue(brand, "exchange", "withdrawalMethods", "withdrawals") ||
+          EMPTY_VALUE,
+      },
+      {
+        label: "Proof of reserves",
+        overview: true,
+        comparable: "supported",
+        value: (brand) =>
+          sectionValue(brand, "exchange", "proofOfReserves", "reserves") ||
+          EMPTY_VALUE,
+      },
+      {
+        label: "Security features",
+        overview: false,
+        value: (brand) =>
+          sectionValue(brand, "exchange", "security", "securityFeatures") ||
+          EMPTY_VALUE,
+      },
+      {
         label: "Key features",
+        overview: false,
         value: (brand) =>
           sectionValue(
             brand,
@@ -410,12 +562,14 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
     rows.push(
       {
         label: "Pricing",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "tool", "pricing", "price", "plans") ||
           EMPTY_VALUE,
       },
       {
         label: "Key features",
+        overview: true,
         value: (brand) =>
           firstText(
             sectionValue(brand, "tool", "features", "capabilities"),
@@ -424,17 +578,20 @@ function comparisonRows(brands: AdminBrandRecord[]): CompareRow[] {
       },
       {
         label: "Platforms",
+        overview: true,
         value: (brand) =>
           sectionValue(brand, "tool", "platforms", "supportedPlatforms") ||
           EMPTY_VALUE,
       },
       {
         label: "Integrations",
+        overview: false,
         value: (brand) =>
           sectionValue(brand, "tool", "integrations") || EMPTY_VALUE,
       },
       {
         label: "Best for",
+        overview: true,
         value: (brand) =>
           firstText(
             sectionValue(brand, "tool", "bestFor"),
@@ -513,6 +670,141 @@ function BrandLogo({
   );
 }
 
+function comparableNumber(value: string) {
+  const match = summarizeCellValue(value).replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function cellHighlight(row: CompareRow, brand: AdminBrandRecord, brands: AdminBrandRecord[]) {
+  const value = row.value(brand);
+  if (isMissingValue(value) || !row.comparable) return "";
+  if (row.comparable === "supported") {
+    return /available|yes|true|supported|enabled|proof|fiat/i.test(value) ? "Supported" : "";
+  }
+  const current = comparableNumber(value);
+  if (current === null) return "";
+  const values = brands
+    .map((item) => comparableNumber(row.value(item)))
+    .filter((item): item is number => item !== null);
+  if (values.length < 2) return "";
+  const target = row.comparable === "highest" ? Math.max(...values) : Math.min(...values);
+  if (current !== target) return "";
+  return row.comparable === "highest" ? "Highest" : "Lowest";
+}
+
+function CompareValueCell({
+  brand,
+  row,
+  selectedBrands,
+  onDetails,
+}: {
+  brand: AdminBrandRecord;
+  row: CompareRow;
+  selectedBrands: AdminBrandRecord[];
+  onDetails: (detail: DetailState) => void;
+}) {
+  const rawValue = row.value(brand);
+  const value = summarizeCellValue(rawValue);
+  const missing = isMissingValue(value);
+  const long = isLongValue(value);
+  const highlight = cellHighlight(row, brand, selectedBrands);
+
+  return (
+    <div className="min-h-[3.25rem] border-l border-white/[0.07] px-2.5 py-2.5 text-xs font-semibold leading-5 text-white/82 sm:px-3">
+      <div className="flex items-start justify-between gap-2">
+        <span
+          className={`min-w-0 ${long ? "line-clamp-2" : ""} ${
+            missing ? "text-white/36" : "text-white/82"
+          }`}
+          title={long ? undefined : value}
+        >
+          {value}
+        </span>
+        {long && (
+          <button
+            type="button"
+            onClick={() => onDetails({ row, brand, value })}
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/[0.06] text-primary ring-1 ring-white/10 transition hover:bg-primary/15 hover:text-white"
+            aria-label={`View full ${row.label} details for ${brand.name}`}
+          >
+            <Info className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      {highlight && (
+        <span className="mt-1.5 inline-flex rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-primary">
+          {highlight}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function CompareSkeleton() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04]">
+      <div className="grid grid-cols-[9rem_repeat(3,minmax(10rem,1fr))] border-b border-white/10">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="border-l border-white/10 p-3 first:border-l-0">
+            <div className="h-4 w-20 animate-pulse rounded-full bg-white/10" />
+            {index > 0 && <div className="mt-3 h-9 w-28 animate-pulse rounded-xl bg-white/10" />}
+          </div>
+        ))}
+      </div>
+      {Array.from({ length: 7 }).map((_, row) => (
+        <div key={row} className="grid grid-cols-[9rem_repeat(3,minmax(10rem,1fr))] border-b border-white/[0.07]">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="border-l border-white/[0.07] p-3 first:border-l-0">
+              <div className="h-3.5 w-full animate-pulse rounded-full bg-white/10" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function DetailDrawer({ detail, onClose }: { detail: DetailState; onClose: () => void }) {
+  if (!detail) return null;
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-end bg-black/60 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 cursor-default" type="button" aria-label="Close details" onClick={onClose} />
+      <aside className="relative max-h-[86vh] w-full overflow-y-auto rounded-t-3xl border border-white/10 bg-[rgba(18,18,25,0.98)] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-3xl">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandLogo brand={detail.brand} size="small" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-primary">{detail.row.label}</p>
+              <h2 className="truncate text-base font-black text-white">{detail.brand.name}</h2>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] text-white/60 hover:bg-white/[0.1] hover:text-white" aria-label="Close details">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-7 text-white/82">
+          {detail.value}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            to="/firm/$firmId"
+            params={{ firmId: detail.brand.slug }}
+            className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-xs font-black text-white"
+          >
+            View brand profile
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+          {detail.brand.website && (
+            <a href={detail.brand.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-bold text-white/80 hover:text-white">
+              Visit website
+            </a>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 function ComparePage() {
   const { token } = useAuth();
   const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
@@ -527,6 +819,8 @@ function ComparePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState<CompareMode>(() => readCompareMode());
+  const [detail, setDetail] = useState<DetailState>(null);
 
   const loadBrands = async () => {
     setLoading(true);
@@ -569,6 +863,10 @@ function ComparePage() {
   }, [selectedIds]);
 
   useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(MODE_KEY, mode);
+  }, [mode]);
+
+  useEffect(() => {
     if (!loading && brands.length) {
       setSelectedIds((current) =>
         current.filter((id) => brands.some((brand) => brand.id === id)),
@@ -594,29 +892,48 @@ function ComparePage() {
 
   const filteredBrands = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const selectedGroup = selectedBrands[0] ? categoryGroup(selectedBrands[0]) : "";
     return brands.filter((brand) => {
       const stage = publicTbiStageTheme(resolveBrandTbiState(brand)).label;
       const searchable = [
         brand.name,
+        brand.slug,
         brand.category,
-        cleanText(brand.identity),
-        cleanText(brand.editorial),
+        brand.website,
+        brand.supportEmail,
+        collectSearchText(brand.identity),
+        collectSearchText(brand.profile),
+        collectSearchText(brand.broker),
+        collectSearchText(brand.prop),
+        collectSearchText(brand.exchange),
+        collectSearchText(brand.tool),
+        collectSearchText(brand.editorial),
+        collectSearchText(brand.cashback),
+        collectSearchText(brand.challenges),
+        collectSearchText(brand.seo),
       ]
         .join(" ")
         .toLowerCase();
       return (
+        (!selectedGroup || selectedIds.includes(brand.id) || categoryGroup(brand) === selectedGroup) &&
         (category === "all" || brand.category === category) &&
         (trust === "all" || stage === trust) &&
         (!cashbackOnly || cashbackLabel(brand) !== EMPTY_VALUE) &&
         (!query || searchable.includes(query))
       );
     });
-  }, [brands, cashbackOnly, category, search, trust]);
+  }, [brands, cashbackOnly, category, search, selectedBrands, selectedIds, trust]);
 
   const rows = useMemo(
     () => comparisonRows(selectedBrands),
     [selectedBrands],
   );
+  const visibleRows = useMemo(
+    () => rows.filter((row) => mode === "full" || row.overview !== false),
+    [mode, rows],
+  );
+  const shouldShowPicker =
+    pickerOpen || Boolean(search.trim()) || selectedBrands.length < 2;
   const trustOptions = useMemo(
     () =>
       [
@@ -636,15 +953,16 @@ function ComparePage() {
         ? current
         : [...current, id],
     );
+    setPickerOpen(true);
   };
   const removeBrand = (id: string) =>
     setSelectedIds((current) => current.filter((brandId) => brandId !== id));
 
   const gridTemplate = {
-    gridTemplateColumns: `minmax(10rem,.8fr) repeat(${Math.max(
+    gridTemplateColumns: `minmax(8.5rem,9.5rem) repeat(${Math.max(
       selectedBrands.length,
       1,
-    )}, minmax(12rem,1fr))`,
+    )}, minmax(10.5rem,13rem))`,
   };
 
   return (
@@ -680,15 +998,19 @@ function ComparePage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/38" />
               <input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search brands..."
+                onFocus={() => setPickerOpen(true)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPickerOpen(true);
+                }}
+                placeholder="Search brands, brokers, exchanges, categories..."
                 className="h-10 w-full rounded-xl bg-white/[0.055] pl-10 pr-3 text-xs text-white outline-none ring-1 ring-white/10 placeholder:text-white/32 focus:ring-primary/45"
               />
             </label>
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
-              className="h-10 rounded-xl bg-[#24103c] px-3 text-xs font-semibold text-white outline-none ring-1 ring-white/10"
+              className="h-10 rounded-xl bg-[var(--rb-bg-input)] px-3 text-xs font-semibold text-white outline-none ring-1 ring-white/10"
             >
               <option value="all">All categories</option>
               {categories.map((item) => (
@@ -700,7 +1022,7 @@ function ComparePage() {
             <select
               value={trust}
               onChange={(event) => setTrust(event.target.value)}
-              className="h-10 rounded-xl bg-[#24103c] px-3 text-xs font-semibold text-white outline-none ring-1 ring-white/10"
+              className="h-10 rounded-xl bg-[var(--rb-bg-input)] px-3 text-xs font-semibold text-white outline-none ring-1 ring-white/10"
             >
               <option value="all">All trust levels</option>
               {trustOptions.map((item) => (
@@ -759,14 +1081,7 @@ function ComparePage() {
             </button>
           </section>
         ) : loading ? (
-          <section className="grid min-h-72 place-items-center rounded-2xl border border-white/10 bg-white/[0.035]">
-            <div className="text-center">
-              <LoaderCircle className="mx-auto h-7 w-7 animate-spin text-primary" />
-              <p className="mt-3 text-xs text-white/48">
-                Loading live brand data...
-              </p>
-            </div>
-          </section>
+          <CompareSkeleton />
         ) : (
           <>
             <section className="mb-4 rounded-2xl border border-white/12 bg-white/[0.045] p-4">
@@ -838,8 +1153,8 @@ function ComparePage() {
               </div>
             </section>
 
-            {pickerOpen && (
-              <section className="mb-4 rounded-2xl border border-white/12 bg-[#1b0a30]/96 p-4 shadow-[0_24px_80px_rgba(4,1,10,0.42)]">
+            {shouldShowPicker && (
+              <section className="mb-4 rounded-2xl border border-white/12 bg-[rgba(18,18,25,0.96)] p-4 shadow-[0_24px_80px_rgba(4,1,10,0.42)]">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-4 w-4 text-primary" />
@@ -850,6 +1165,20 @@ function ComparePage() {
                       </p>
                     </div>
                   </div>
+                  {(search || category !== "all" || trust !== "all" || cashbackOnly) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearch("");
+                        setCategory("all");
+                        setTrust("all");
+                        setCashbackOnly(false);
+                      }}
+                      className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[10px] font-bold text-white/58 ring-1 ring-white/10 transition hover:bg-white/[0.1] hover:text-white"
+                    >
+                      Clear filters
+                    </button>
+                  )}
                 </div>
                 {filteredBrands.length ? (
                   <div className="grid max-h-[30rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
@@ -902,7 +1231,11 @@ function ComparePage() {
                   </div>
                 ) : (
                   <div className="rounded-xl bg-white/[0.035] p-8 text-center text-xs text-white/44 ring-1 ring-white/10">
-                    No brands match the selected filters.
+                    <Search className="mx-auto mb-2 h-5 w-5 text-white/35" />
+                    <p>No brands match the selected filters.</p>
+                    <p className="mt-1 text-[10px] text-white/32">
+                      Try a brand name, broker name, category, country, or website.
+                    </p>
                   </div>
                 )}
               </section>
@@ -928,31 +1261,66 @@ function ComparePage() {
               </section>
             ) : (
               <section className="overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04]">
-                <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-                  <h2 className="text-sm font-black">Side-by-side comparison</h2>
-                  <Info className="h-3.5 w-3.5 text-white/36" />
+                <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-black">Side-by-side comparison</h2>
+                    <Info className="h-3.5 w-3.5 text-white/36" />
+                    <span className="text-[10px] text-white/36">
+                      {visibleRows.length} rows
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 rounded-full border border-white/10 bg-white/[0.045] p-1">
+                    {[
+                      ["overview", "Overview"],
+                      ["full", "Full comparison"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setMode(value as CompareMode)}
+                        className={`rounded-full px-3 py-1.5 text-[11px] font-black transition ${
+                          mode === value
+                            ? "rb-gradient-primary text-white"
+                            : "text-white/48 hover:bg-white/[0.06] hover:text-white"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <div className="min-w-max">
+                <div className="compare-scroll relative max-h-[76vh] overflow-auto">
+                  <div className="min-w-max pb-1">
                     <div
-                      className="grid items-stretch border-b border-white/10 bg-white/[0.025]"
+                      className="sticky top-0 z-30 grid items-stretch border-b border-white/10 bg-[rgba(19,13,31,0.98)] backdrop-blur-xl"
                       style={gridTemplate}
                     >
-                      <div className="flex items-center px-4 py-3 text-[10px] font-black uppercase tracking-wider text-white/38">
+                      <div className="sticky left-0 z-40 flex items-center border-r border-white/10 bg-[rgba(19,13,31,0.98)] px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-white/42 backdrop-blur-xl sm:px-4">
                         Data point
                       </div>
                       {selectedBrands.map((brand) => (
                         <div
                           key={brand.id}
-                          className="border-l border-white/10 px-3 py-3"
+                          className="relative border-l border-white/10 px-2.5 py-2.5 sm:px-3"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 pr-7">
                             <BrandLogo brand={brand} size="small" />
                             <div className="min-w-0">
-                              <div className="truncate text-xs font-black">
+                              <div className="truncate text-xs font-black leading-4">
                                 {brand.name}
                               </div>
-                              <div className="mt-1 flex gap-2">
+                              <div className="truncate text-[9px] font-semibold text-white/38">
+                                {brand.category}
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[8px] font-black text-white/68 ring-1 ring-white/10">
+                                  {scoreOutOfTen(brand) > 0 ? `${scoreOutOfTen(brand).toFixed(0)}/100` : "TBI"}
+                                </span>
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[8px] font-black ring-1 ${publicTbiStageTheme(resolveBrandTbiState(brand)).chip}`}
+                                >
+                                  {publicTbiStageTheme(resolveBrandTbiState(brand)).label}
+                                </span>
                                 <Link
                                   to="/firm/$firmId"
                                   params={{ firmId: brand.slug }}
@@ -973,11 +1341,19 @@ function ComparePage() {
                                 )}
                               </div>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => removeBrand(brand.id)}
+                              aria-label={`Remove ${brand.name}`}
+                              className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-white/[0.07] text-white/52 hover:bg-white/[0.12] hover:text-white"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
-                    {rows.map((row, index) => (
+                    {visibleRows.map((row, index) => (
                       <div
                         key={row.label}
                         className={`grid border-b border-white/[0.07] last:border-b-0 ${
@@ -985,16 +1361,17 @@ function ComparePage() {
                         }`}
                         style={gridTemplate}
                       >
-                        <div className="px-4 py-3 text-[11px] font-semibold text-white/48">
+                        <div className="sticky left-0 z-20 flex min-h-[3.25rem] items-center border-r border-white/[0.07] bg-[rgba(18,13,30,0.98)] px-3 py-2.5 text-[11px] font-black text-white/58 backdrop-blur-xl sm:px-4">
                           {row.label}
                         </div>
                         {selectedBrands.map((brand) => (
-                          <div
+                          <CompareValueCell
                             key={brand.id}
-                            className="border-l border-white/[0.07] px-3 py-3 text-xs font-semibold leading-5 text-white/82"
-                          >
-                            {row.value(brand)}
-                          </div>
+                            brand={brand}
+                            row={row}
+                            selectedBrands={selectedBrands}
+                            onDetails={setDetail}
+                          />
                         ))}
                       </div>
                     ))}
@@ -1005,6 +1382,7 @@ function ComparePage() {
           </>
         )}
       </main>
+      <DetailDrawer detail={detail} onClose={() => setDetail(null)} />
       <SiteFooter />
     </div>
   );

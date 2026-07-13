@@ -92,7 +92,7 @@ function AuthorAvatar({
 
   return (
     <span
-      className={`grid ${size} place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 ${textSize} font-bold text-white`}
+      className={`grid ${size} place-items-center rounded-full rb-gradient-primary ${textSize} font-bold text-white`}
     >
       {authorInitials(post.author)}
     </span>
@@ -360,13 +360,13 @@ function ArticlePage() {
   if (!post) return <ArticleNotFound />;
 
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
 
       {/* Reading progress */}
       <div className="sticky top-0 z-30 h-0.5 w-full bg-white/5">
         <div
-          className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-500 transition-[width] duration-150"
+          className="h-full rb-gradient-primary transition-[width] duration-150"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -551,7 +551,7 @@ function ArticlePage() {
 
 function ArticleLoading() {
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <div className="container-app max-w-3xl py-16 text-center sm:py-20">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-sm text-white/60">
@@ -565,7 +565,7 @@ function ArticleLoading() {
 
 function ArticleNotFound() {
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <div className="container-app max-w-3xl py-16 text-center sm:py-20">
         <h1 className="text-3xl font-bold">Article not found</h1>

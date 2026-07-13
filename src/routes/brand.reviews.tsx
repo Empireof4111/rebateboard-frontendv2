@@ -80,7 +80,7 @@ function BrandReviewsInbox() {
                     />
                     <button
                       onClick={() => { if ((replies[r.id] ?? "").trim()) { replyToReview(r.id, replies[r.id], brand.name); setReplies((p) => ({ ...p, [r.id]: "" })); } }}
-                      className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-2 text-[11px] font-bold text-white"
+                      className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-2 text-[11px] font-bold text-white"
                     >
                       <Send className="h-3 w-3" /> Reply
                     </button>

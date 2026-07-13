@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useMemo } from "react";
-import { useTrades, useTradingPlan } from "@/lib/trading-plan";
+import { resolveTradeNetPnl, useTrades, useTradingPlan } from "@/lib/trading-plan";
 
 export const Route = createFileRoute("/dashboard/risk")({
   component: RiskPage,
@@ -19,7 +19,7 @@ function RiskPage() {
     startOfWeek.setHours(0, 0, 0, 0);
     const week = trades.filter((trade) => new Date(trade.createdAt) >= startOfWeek);
     const dailyRisk = today.reduce((sum, trade) => sum + Math.max(0, Number(trade.riskPct || 0)), 0);
-    const weeklyPnl = week.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
+    const weeklyPnl = week.reduce((sum, trade) => sum + (resolveTradeNetPnl(trade) ?? 0), 0);
     const violations = today.flatMap((trade) => trade.violations ?? []);
     return { today, dailyRisk, weeklyPnl, violations };
   }, [trades]);

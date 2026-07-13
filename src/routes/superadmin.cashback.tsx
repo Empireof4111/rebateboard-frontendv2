@@ -137,7 +137,7 @@ function CashbackPage() {
             <button onClick={() => setShowRates(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Settings2 className="h-3.5 w-3.5" /> Rates
             </button>
-            <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
               <Plus className="h-3.5 w-3.5" /> New entry
             </button>
           </>
@@ -154,7 +154,7 @@ function CashbackPage() {
       {/* Engine tabs */}
       <div className="mb-4 flex flex-wrap gap-2">
         {([["auto", "⚙️ Auto · Broker / Exchange"], ["manual", "📝 Manual · Prop Firm"], ["claims", "📋 User Claims"]] as const).map(([key, label]) => (
-          <button key={key} onClick={() => setEngine(key)} className={`rounded-xl px-4 py-2 text-xs font-bold ring-1 transition ${engine === key ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-transparent" : "bg-white/5 text-muted-foreground ring-white/10"}`}>
+          <button key={key} onClick={() => setEngine(key)} className={`rounded-xl px-4 py-2 text-xs font-bold ring-1 transition ${engine === key ? "rb-gradient-primary text-white ring-transparent" : "bg-white/5 text-muted-foreground ring-white/10"}`}>
             {label} ({key === "claims" ? claims.length : key === "auto" ? autoEntries.length : manualEntries.length})
           </button>
         ))}
@@ -287,7 +287,7 @@ function CashbackPage() {
             <Field label="Min payout threshold ($)"><input type="number" defaultValue={20} className={fieldCls} /></Field>
           </div>
           <div className="mt-4 flex justify-end">
-            <button onClick={() => { toast.success("Rates updated"); setShowRates(false); }} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white">Save</button>
+            <button onClick={() => { toast.success("Rates updated"); setShowRates(false); }} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white">Save</button>
           </div>
         </Modal>
       )}
@@ -347,7 +347,7 @@ function NewEntryModal({ token, onClose, onCreate }: { token: string; onClose: (
     <Modal open onClose={onClose} title="New cashback entry" size="md"
       footer={<>
         <button onClick={onClose} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-        <button onClick={submit} disabled={saving} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+        <button onClick={submit} disabled={saving} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
           {saving ? "Creating…" : "Create"}
         </button>
       </>}

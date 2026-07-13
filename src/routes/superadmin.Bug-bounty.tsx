@@ -185,7 +185,7 @@ function BugBountyPage() {
             </Link>
             <a
               href="mailto:security@rebateboardapp.com"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white"
             >
               <LifeBuoy className="h-3.5 w-3.5" /> Contact security
             </a>
@@ -512,7 +512,7 @@ function BugBountyPage() {
                     </label>
                     <button
                       onClick={() => void payReward()}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl rb-gradient-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.35)]"
                     >
                       <Coins className="h-4 w-4" /> Pay RR reward
                     </button>
@@ -530,7 +530,7 @@ function BugBountyPage() {
                   <ol className="space-y-3 border-l border-white/10 pl-4">
                     {active.timeline.map((entry, index) => (
                       <li key={`${entry.stage}-${index}`} className="relative">
-                        <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[#150829]" />
+                        <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[var(--rb-bg-elevated)]" />
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm font-semibold text-white">{entry.stage}</div>
                           <div className="text-[11px] text-muted-foreground">{entry.time}</div>

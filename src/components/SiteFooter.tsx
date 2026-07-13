@@ -133,7 +133,7 @@ export function SiteFooter() {
                 className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
-            <button className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-2 text-sm font-semibold">
+            <button className="rounded-full rb-gradient-primary px-6 py-2 text-sm font-semibold">
               Subscribe
             </button>
           </form>

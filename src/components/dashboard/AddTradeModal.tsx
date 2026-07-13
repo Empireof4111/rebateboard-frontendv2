@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, ChevronLeft, ChevronRight, Camera, Check, AlertTriangle, Sparkles, ShieldCheck } from "lucide-react";
 import {
-  addTrade, calculateTradeMetrics, computeAdherence, detectSession, uid, useTradingPlan,
-  type Emotion, type MarketType, type Session, type Trade,
+  addTrade, calculateManualTradeResult, calculateTradeMetrics, computeAdherence, detectSession, formatTradePnl, uid, useTradingPlan,
+  type Emotion, type MarketType, type Session, type Trade, type TradeOutcome,
 } from "@/lib/trading-plan";
 import { saveJournalTradeToBackend } from "@/lib/financial-intelligence-api";
+import { formatUploadLimit, validateFileSize } from "@/lib/upload-limits";
+import { getPopularInstruments, makeCustomInstrument, resolveTradingInstrument, searchTradingInstruments, type TradingInstrument } from "@/lib/trading-instruments";
 
 type Mode = "quick" | "advanced";
 
 const EMOTIONS: Emotion[] = ["calm", "confident", "neutral", "fomo", "fearful", "angry", "tilt"];
 const MISTAKES = ["No SL", "Moved SL", "Overleverage", "Revenge trade", "Chased entry", "Closed early", "FOMO entry", "Ignored bias"];
-const MARKET_CONFIG: Record<MarketType, { label: string; sizeLabel: string; assets: string[]; helper: string }> = {
-  forex: { label: "Forex", sizeLabel: "Lot size", assets: ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "AUDUSD"], helper: "Pairs, pips, sessions, lot size, and trade cost." },
-  crypto: { label: "Crypto", sizeLabel: "Position size", assets: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"], helper: "Exchange, spot/futures mode, leverage, and fees." },
-  futures: { label: "Futures", sizeLabel: "Contracts", assets: ["ES", "NQ", "YM", "GC", "CL"], helper: "Contracts, session, points, and rule adherence." },
-  indices: { label: "Indices", sizeLabel: "Position size", assets: ["NAS100", "SPX500", "US30", "GER40", "UK100"], helper: "Index, session, points, and execution quality." },
-  commodities: { label: "Commodities", sizeLabel: "Position size", assets: ["XAUUSD", "XAGUSD", "USOIL", "UKOIL", "NGAS"], helper: "Commodity movement, session context, and drawdown risk." },
-  stocks: { label: "Stocks", sizeLabel: "Shares", assets: ["AAPL", "TSLA", "NVDA", "MSFT", "META"], helper: "Shares, entry/exit, fees, and percentage return." },
+const MARKET_CONFIG: Record<MarketType, { label: string; sizeLabel: string; helper: string }> = {
+  forex: { label: "Forex", sizeLabel: "Lot size", helper: "Pairs, pips, sessions, lot size, and trade cost." },
+  crypto: { label: "Crypto", sizeLabel: "Position size", helper: "Exchange, spot/futures mode, leverage, and fees." },
+  futures: { label: "Futures", sizeLabel: "Contracts", helper: "Contracts, session, points, and rule adherence." },
+  indices: { label: "Indices", sizeLabel: "Position size", helper: "Index, session, points, and execution quality." },
+  commodities: { label: "Commodities", sizeLabel: "Position size", helper: "Commodity movement, session context, and drawdown risk." },
+  stocks: { label: "Stocks", sizeLabel: "Shares", helper: "Shares, entry/exit, fees, and percentage return." },
 };
 const MARKET_OPTIONS = Object.keys(MARKET_CONFIG) as MarketType[];
 
@@ -26,10 +28,16 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
   const [step, setStep] = useState(0);
   const [savedTrade, setSavedTrade] = useState<Trade | null>(null);
   const [form, setForm] = useState<Partial<Trade>>(() => ({
-    asset: "EURUSD",
+    asset: "EUR/USD",
     market: "forex",
     direction: "long",
     entry: 0, exit: 0, lot: 1, stop: 0, target: 0, riskPct: 1,
+    outcome: "pending",
+    grossPnl: null,
+    netPnl: null,
+    fees: 0,
+    pnlCurrency: "USD",
+    resultSource: "manual",
     session: detectSession(),
     strategyId: plan.strategies[0]?.id ?? null,
     checklistChecked: [],
@@ -46,10 +54,14 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const set = <K extends keyof Trade>(k: K, v: Trade[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setMarket = (market: MarketType) => {
+    const first = getPopularInstruments(market, 1)[0] ?? makeCustomInstrument(market, "");
     setForm((f) => ({
       ...f,
       market,
-      asset: MARKET_CONFIG[market].assets[0],
+      asset: first.symbol,
+      instrumentId: first.id,
+      instrumentDisplayName: first.displayName,
+      instrumentSource: first.source,
       venue: market === "crypto" ? f.venue || "Binance" : f.venue,
       instrumentMode: market === "crypto" ? f.instrumentMode || "spot" : f.instrumentMode,
     }));
@@ -70,12 +82,15 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
     }),
     [form.asset, form.commission, form.direction, form.entry, form.exit, form.fees, form.lot, form.market, form.stop, form.target],
   );
-  const pnl = calculation.pnl;
   const rr = calculation.rewardRatio;
+  const manualResult = useMemo(
+    () => calculateManualTradeResult((form.outcome as TradeOutcome) ?? "pending", form.grossPnl, form.fees),
+    [form.outcome, form.grossPnl, form.fees],
+  );
 
   const adherence = useMemo(
-    () => computeAdherence({ ...form, rr, pnl }, plan),
-    [form, rr, pnl, plan],
+    () => computeAdherence({ ...form, rr, pnl: manualResult.pnl }, plan),
+    [form, rr, manualResult.pnl, plan],
   );
   const validationNotes = useMemo(() => validateTrade(form), [form]);
 
@@ -97,7 +112,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             Rebeta will use this trade in your future performance analysis, journal summaries, and risk coaching.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-xs">
-            <Metric label="PnL" value={`${savedTrade.pnl >= 0 ? "+" : "−"}$${Math.abs(savedTrade.pnl).toFixed(2)}`} tone={savedTrade.pnl >= 0 ? "success" : "destructive"} />
+            <Metric label="Net P&L" value={formatTradePnl(savedTrade)} tone={(savedTrade.netPnl ?? 0) >= 0 ? "success" : "destructive"} />
             <Metric label="R Multiple" value={`${(savedTrade.rMultiple ?? savedTrade.rr).toFixed(2)}R`} />
             <Metric label="Adherence" value={`${savedTrade.adherence}%`} tone={savedTrade.adherence >= 80 ? "success" : "default"} />
           </div>
@@ -105,7 +120,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             <button onClick={() => { setSavedTrade(null); setStep(0); }} className="glass-pill rounded-full px-4 py-2 text-xs font-semibold text-white">
               Log another
             </button>
-            <button onClick={onClose} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white">
+            <button onClick={onClose} className="rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white">
               View journal
             </button>
           </div>
@@ -115,6 +130,11 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
   }
 
   const handleSave = () => {
+    const outcome = (form.outcome as TradeOutcome) ?? "pending";
+    if ((outcome === "profit" || outcome === "loss") && Math.abs(Number(form.grossPnl) || 0) <= 0) {
+      alert("Enter the realized P&L amount for profit or loss trades.");
+      return;
+    }
     const trade: Trade = {
       id: uid("t"),
       createdAt: new Date().toISOString(),
@@ -133,7 +153,10 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
       instrumentMode: form.instrumentMode,
       leverage: form.leverage,
       commission: form.commission,
-      fees: form.fees,
+      fees: Math.max(0, Number(form.fees) || 0),
+      instrumentId: form.instrumentId,
+      instrumentDisplayName: form.instrumentDisplayName,
+      instrumentSource: form.instrumentSource,
       strategyId: form.strategyId ?? null,
       setupType: form.setupType,
       htfBias: form.htfBias,
@@ -146,7 +169,13 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
       mistakes: form.mistakes ?? [],
       ruleFollowed: form.ruleFollowed,
       checklistChecked: form.checklistChecked ?? [],
-      pnl,
+      pnl: manualResult.pnl,
+      outcome,
+      grossPnl: manualResult.grossPnl,
+      netPnl: manualResult.netPnl,
+      pnlCurrency: form.pnlCurrency || "USD",
+      resultSource: "manual",
+      resultNotes: form.resultNotes,
       rr,
       quality: form.quality,
       satisfaction: form.satisfaction,
@@ -157,7 +186,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
       percentageGain: calculation.percentageGain,
       rMultiple: calculation.rMultiple,
       rewardRatio: calculation.rewardRatio,
-      winLossStatus: calculation.winLossStatus,
+      winLossStatus: manualResult.winLossStatus,
       adherence: adherence.score,
       violations: adherence.violations,
     };
@@ -228,7 +257,21 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
           {mode === "quick" && step === 0 && (
             <div className="grid grid-cols-2 gap-3">
               <Field label="Market"><Select value={form.market} onChange={(v) => setMarket(v as MarketType)} options={MARKET_OPTIONS} labels={MARKET_OPTIONS.map((m) => MARKET_CONFIG[m].label)} /></Field>
-              <Field label="Asset"><Select value={form.asset} onChange={(v) => set("asset", v)} options={MARKET_CONFIG[(form.market as MarketType) ?? "forex"].assets} /></Field>
+              <Field label="Instrument">
+                <InstrumentSelector
+                  market={(form.market as MarketType) ?? "forex"}
+                  value={form.asset}
+                  onSelect={(instrument) => {
+                    setForm((f) => ({
+                      ...f,
+                      asset: instrument.symbol,
+                      instrumentId: instrument.id,
+                      instrumentDisplayName: instrument.displayName,
+                      instrumentSource: instrument.source,
+                    }));
+                  }}
+                />
+              </Field>
               <Field label="Direction">
                 <Toggle a="long" b="short" value={form.direction as string} onChange={(v) => set("direction", v as "long" | "short")} />
               </Field>
@@ -244,7 +287,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             </div>
           )}
           {mode === "quick" && step === 1 && (
-            <QuickResult form={form} set={set} pnl={pnl} rr={rr} plan={plan} />
+            <QuickResult form={form} set={set} result={manualResult} rr={rr} plan={plan} />
           )}
 
           {/* Advanced */}
@@ -253,7 +296,21 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
               <Field label="Market">
                 <Select value={form.market} onChange={(v) => setMarket(v as MarketType)} options={MARKET_OPTIONS} labels={MARKET_OPTIONS.map((m) => MARKET_CONFIG[m].label)} />
               </Field>
-              <Field label="Asset"><Select value={form.asset} onChange={(v) => set("asset", v)} options={MARKET_CONFIG[(form.market as MarketType) ?? "forex"].assets} /></Field>
+              <Field label="Instrument">
+                <InstrumentSelector
+                  market={(form.market as MarketType) ?? "forex"}
+                  value={form.asset}
+                  onSelect={(instrument) => {
+                    setForm((f) => ({
+                      ...f,
+                      asset: instrument.symbol,
+                      instrumentId: instrument.id,
+                      instrumentDisplayName: instrument.displayName,
+                      instrumentSource: instrument.source,
+                    }));
+                  }}
+                />
+              </Field>
               {form.market === "crypto" && (
                 <>
                   <Field label="Exchange"><Text value={form.venue ?? ""} onChange={(v) => set("venue", v)} placeholder="Binance, Bybit..." /></Field>
@@ -334,7 +391,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
           )}
 
           {mode === "advanced" && step === 3 && (
-            <QuickResult form={form} set={set} pnl={pnl} rr={rr} plan={plan} advanced />
+            <QuickResult form={form} set={set} result={manualResult} rr={rr} plan={plan} advanced />
           )}
 
           {mode === "advanced" && step === 4 && (
@@ -348,7 +405,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             <ChevronLeft className="h-3.5 w-3.5" /> Back
           </button>
           {step < steps.length - 1 ? (
-            <button onClick={next} className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white">
+            <button onClick={next} className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-4 py-1.5 text-xs font-semibold text-white">
               Next <ChevronRight className="h-3.5 w-3.5" />
             </button>
           ) : (
@@ -362,12 +419,74 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
   );
 }
 
-function QuickResult({ form, set, pnl, rr, plan, advanced }: { form: Partial<Trade>; set: <K extends keyof Trade>(k: K, v: Trade[K]) => void; pnl: number; rr: number; plan: ReturnType<typeof useTradingPlan>; advanced?: boolean }) {
+function QuickResult({
+  form,
+  set,
+  result,
+  rr,
+  plan,
+  advanced,
+}: {
+  form: Partial<Trade>;
+  set: <K extends keyof Trade>(k: K, v: Trade[K]) => void;
+  result: ReturnType<typeof calculateManualTradeResult>;
+  rr: number;
+  plan: ReturnType<typeof useTradingPlan>;
+  advanced?: boolean;
+}) {
+  const outcome = (form.outcome as TradeOutcome) ?? "pending";
   return (
     <div className="space-y-3">
       <Field label="Exit price"><Num value={form.exit} onChange={(v) => set("exit", v)} /></Field>
+      <div className="rounded-xl border border-violet-300/15 bg-violet-300/10 p-3 text-xs text-violet-50">
+        Entry, exit, stop loss, and take profit are saved as trade context. Monetary P&L is recorded from your actual realized result below.
+      </div>
+      <Field label="Outcome">
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+          {([
+            ["profit", "Profit"],
+            ["loss", "Loss"],
+            ["breakeven", "Breakeven"],
+            ["pending", "Open / Pending"],
+          ] as Array<[TradeOutcome, string]>).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => set("outcome", value)}
+              className={`rounded-lg border px-2 py-2 text-xs font-semibold ${
+                outcome === value
+                  ? "border-primary/60 bg-primary/20 text-white"
+                  : "border-white/10 bg-white/[0.04] text-muted-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Field>
+      {outcome !== "pending" && outcome !== "breakeven" && (
+        <Field label="Realized P&L amount">
+          <Num value={form.grossPnl ?? 0} onChange={(v) => set("grossPnl", Math.max(0, Math.abs(v)))} step={0.01} />
+        </Field>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Currency">
+          <Select value={form.pnlCurrency ?? "USD"} onChange={(v) => set("pnlCurrency", v)} options={["USD", "EUR", "GBP", "NGN", "USDT", "USDC", "CAD", "AUD"]} />
+        </Field>
+        <Field label="Fees">
+          <Num value={form.fees ?? 0} onChange={(v) => set("fees", Math.max(0, v))} step={0.01} />
+        </Field>
+      </div>
+      <Field label="Result notes">
+        <Text value={form.resultNotes ?? ""} onChange={(v) => set("resultNotes", v)} placeholder="Optional: payout source, broker statement, or correction note" />
+      </Field>
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-white/[0.04] p-3 text-xs">
-        <div><span className="text-muted-foreground">PnL</span><div className={`text-base font-bold ${pnl >= 0 ? "text-success" : "text-destructive"}`}>{pnl >= 0 ? "+" : ""}{pnl.toFixed(2)}</div></div>
+        <div>
+          <span className="text-muted-foreground">Net P&L</span>
+          <div className={`text-base font-bold ${result.netPnl == null ? "text-muted-foreground" : result.netPnl >= 0 ? "text-success" : "text-destructive"}`}>
+            {result.netPnl == null ? "Pending" : `${result.netPnl >= 0 ? "+" : "−"}${form.pnlCurrency ?? "USD"} ${Math.abs(result.netPnl).toFixed(2)}`}
+          </div>
+        </div>
         <div><span className="text-muted-foreground">RR achieved</span><div className="text-base font-bold text-white">{rr.toFixed(2)}</div></div>
       </div>
       {advanced && (
@@ -391,7 +510,7 @@ function ScreenshotStep({ form, set }: { form: Partial<Trade>; set: <K extends k
   return (
     <div className="space-y-3">
       <div className="rounded-xl border border-violet-300/15 bg-violet-300/10 p-3 text-xs leading-relaxed text-violet-50">
-        Upload before and after chart screenshots for richer Rebeta review. Screenshots are available to every trader during launch.
+        Upload before and after chart screenshots for richer Rebeta review. Screenshots are available to every trader during launch. Max {formatUploadLimit()} each.
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {(["before", "after"] as const).map((k) => {
@@ -409,12 +528,104 @@ function ScreenshotStep({ form, set }: { form: Partial<Trade>; set: <K extends k
               )}
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
                 const f = e.target.files?.[0]; if (!f) return;
+                const sizeError = validateFileSize(f);
+                if (sizeError) {
+                  alert(sizeError);
+                  e.currentTarget.value = "";
+                  return;
+                }
                 const r = new FileReader(); r.onload = () => set(key as keyof Trade, r.result as string); r.readAsDataURL(f);
               }} />
             </label>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function InstrumentSelector({
+  market,
+  value,
+  onSelect,
+}: {
+  market: MarketType;
+  value?: string;
+  onSelect: (instrument: TradingInstrument) => void;
+}) {
+  const selected = value ? resolveTradingInstrument(market, value) : null;
+  const [query, setQuery] = useState(value ?? "");
+  const [open, setOpen] = useState(false);
+  const results = useMemo(() => searchTradingInstruments(market, query, 24), [market, query]);
+  const canAddCustom = query.trim().length > 0 && !results.some((item) => item.symbol.toLowerCase() === query.trim().toLowerCase());
+
+  useEffect(() => {
+    setQuery(value ?? "");
+  }, [market, value]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((next) => !next)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-sm text-white outline-none focus:border-primary/60"
+      >
+        <span className="min-w-0">
+          <span className="block truncate font-semibold">{value || "Search instruments"}</span>
+          <span className="block truncate text-[10px] text-muted-foreground">
+            {selected?.displayName && selected.displayName !== selected.symbol ? selected.displayName : "Search symbol, alias, company, or exchange"}
+          </span>
+        </span>
+        <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase text-muted-foreground">{market}</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-xl border border-white/10 bg-[rgba(18,18,25,0.98)] shadow-2xl backdrop-blur">
+          <input
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Search ${MARKET_CONFIG[market].label} instruments...`}
+            className="w-full border-b border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none placeholder:text-muted-foreground"
+          />
+          <div className="max-h-64 overflow-y-auto p-1.5">
+            {results.map((instrument) => (
+              <button
+                key={instrument.id}
+                type="button"
+                onClick={() => {
+                  onSelect(instrument);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-xs text-white hover:bg-white/[0.07]"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{instrument.symbol}</span>
+                  <span className="block truncate text-muted-foreground">
+                    {instrument.displayName}{instrument.exchange ? ` · ${instrument.exchange}` : ""}{instrument.subgroup ? ` · ${instrument.subgroup}` : ""}
+                  </span>
+                </span>
+                {instrument.isPopular && <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] text-violet-100">Popular</span>}
+              </button>
+            ))}
+            {canAddCustom && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSelect(makeCustomInstrument(market, query));
+                  setOpen(false);
+                }}
+                className="mt-1 flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-primary/40 px-2.5 py-2 text-left text-xs text-violet-100 hover:bg-primary/10"
+              >
+                <span>Add custom instrument</span>
+                <span className="font-semibold">{query.trim().toUpperCase()}</span>
+              </button>
+            )}
+            {results.length === 0 && !canAddCustom && (
+              <div className="px-2.5 py-4 text-center text-xs text-muted-foreground">No matching instruments.</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -469,7 +680,7 @@ function Num({ value, onChange, step }: { value: number | undefined; onChange: (
 function Select({ value, onChange, options, labels }: { value: string | undefined; onChange: (v: string) => void; options: string[]; labels?: string[] }) {
   return (
     <select value={value ?? ""} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none">
-      {options.map((o, i) => <option key={o} value={o} className="bg-[#150829]">{labels?.[i] ?? o}</option>)}
+      {options.map((o, i) => <option key={o} value={o} className="bg-[var(--rb-bg-elevated)]">{labels?.[i] ?? o}</option>)}
     </select>
   );
 }

@@ -76,7 +76,7 @@ export function PublicEngagementLayer() {
     <>
       {campaign && (
         <div className="fixed inset-0 z-[95] grid place-items-center bg-black/65 p-4 backdrop-blur-md" role="dialog" aria-modal="true">
-          <div className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/12 bg-[#140722]/95 p-5 text-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/12 bg-[rgba(18,18,25,0.95)] p-5 text-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
             <button
               type="button"
               onClick={() => dismissCampaign(campaign, setCampaign)}
@@ -104,7 +104,7 @@ export function PublicEngagementLayer() {
                     void trackPublicCampaignClick(campaign.id);
                     dismissCampaign(campaign, setCampaign);
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white"
                 >
                   {campaign.primaryCtaLabel || "Learn more"} <ExternalLink className="h-4 w-4" />
                 </a>
@@ -115,7 +115,7 @@ export function PublicEngagementLayer() {
                     void trackPublicCampaignClick(campaign.id);
                     dismissCampaign(campaign, setCampaign);
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white"
                 >
                   {campaign.primaryCtaLabel || "Learn more"} <ExternalLink className="h-4 w-4" />
                 </Link>
@@ -133,7 +133,7 @@ export function PublicEngagementLayer() {
       )}
 
       {activity && (
-        <div className="fixed bottom-5 left-4 z-[80] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/12 bg-[#140722]/95 p-4 text-white shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl md:bottom-6 md:left-6">
+        <div className="fixed bottom-5 left-4 z-[80] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/12 bg-[rgba(18,18,25,0.95)] p-4 text-white shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl md:bottom-6 md:left-6">
           <button
             type="button"
             onClick={() => dismissActivity(activity, setActivity)}

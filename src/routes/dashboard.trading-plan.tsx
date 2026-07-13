@@ -130,7 +130,7 @@ function StrategiesTab() {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={add} className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+        <button onClick={add} className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
           <Plus className="h-3.5 w-3.5" /> Add strategy
         </button>
       </div>

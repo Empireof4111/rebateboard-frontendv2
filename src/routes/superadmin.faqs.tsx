@@ -104,7 +104,7 @@ function FaqsPage() {
             <button onClick={load} className="grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10">
               <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
             </button>
-            <button onClick={() => setEditing(emptyFaq())} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button onClick={() => setEditing(emptyFaq())} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
               <Plus className="h-3.5 w-3.5" /> New FAQ
             </button>
           </div>
@@ -179,7 +179,7 @@ function FaqEditor({ faq, saving, onClose, onSave }: { faq: Faq; saving: boolean
       footer={
         <>
           <button onClick={onClose} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-          <button onClick={() => onSave(form)} disabled={saving || !form.question.trim()} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
+          <button onClick={() => onSave(form)} disabled={saving || !form.question.trim()} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
             {saving ? "Saving…" : "Save FAQ"}
           </button>
         </>

@@ -42,7 +42,7 @@ export type PayoutTransaction = {
 
 export const BRANDS: BrandPayoutProfile[] = [
   {
-    id: "1", slug: "fundingpips", name: "FundingPips", logoColor: "from-cyan-500 to-blue-600",
+    id: "1", slug: "fundingpips", name: "FundingPips", logoColor: "from-fuchsia-500 to-violet-600",
     websiteUrl: "https://fundingpips.com", tbiScore: 8.4, payoutReliabilityScore: 97,
     payoutHealthScore: 8.7, totalPaidUsd: 11516754, totalPayoutCount: 11255,
     largestPayoutUsd: 30955, averagePayoutUsd: 1023, averagePayoutTimeMinutes: 134,
@@ -50,21 +50,21 @@ export const BRANDS: BrandPayoutProfile[] = [
     status: "active", badges: ["Verified", "Fast Payer", "High Activity"],
   },
   {
-    id: "2", slug: "the5ers", name: "The5ers", logoColor: "from-violet-500 to-fuchsia-600",
+    id: "2", slug: "the5ers", name: "The5ers", logoColor: "from-fuchsia-500 to-violet-600",
     tbiScore: 8.1, payoutReliabilityScore: 94, payoutHealthScore: 8.3,
     totalPaidUsd: 8420130, totalPayoutCount: 7890, largestPayoutUsd: 28400,
     averagePayoutUsd: 1067, averagePayoutTimeMinutes: 195, lastPayoutAt: "25 mins ago",
     verifiedChains: ["TRC20", "ERC20"], status: "active", badges: ["Verified", "Reliable"],
   },
   {
-    id: "3", slug: "maven", name: "Maven Trading", logoColor: "from-emerald-500 to-teal-600",
+    id: "3", slug: "maven", name: "Maven Trading", logoColor: "from-fuchsia-500 to-violet-600",
     tbiScore: 7.9, payoutReliabilityScore: 96, payoutHealthScore: 8.5,
     totalPaidUsd: 5210890, totalPayoutCount: 4120, largestPayoutUsd: 22100,
     averagePayoutUsd: 1264, averagePayoutTimeMinutes: 92, lastPayoutAt: "3 mins ago",
     verifiedChains: ["TRC20", "BEP20"], status: "active", badges: ["Verified", "Fastest Payer"],
   },
   {
-    id: "4", slug: "ftmo", name: "FTMO", logoColor: "from-orange-500 to-red-600",
+    id: "4", slug: "ftmo", name: "FTMO", logoColor: "from-fuchsia-500 to-violet-600",
     tbiScore: 9.0, payoutReliabilityScore: 98, payoutHealthScore: 9.1,
     totalPaidUsd: 25890420, totalPayoutCount: 18420, largestPayoutUsd: 48500,
     averagePayoutUsd: 1405, averagePayoutTimeMinutes: 168, lastPayoutAt: "8 mins ago",
@@ -72,14 +72,14 @@ export const BRANDS: BrandPayoutProfile[] = [
     badges: ["Verified", "Most Reliable", "Top Volume"],
   },
   {
-    id: "5", slug: "myfundedfx", name: "MyFundedFX", logoColor: "from-pink-500 to-rose-600",
+    id: "5", slug: "myfundedfx", name: "MyFundedFX", logoColor: "from-fuchsia-500 to-violet-600",
     tbiScore: 7.4, payoutReliabilityScore: 89, payoutHealthScore: 7.6,
     totalPaidUsd: 3120450, totalPayoutCount: 2810, largestPayoutUsd: 18700,
     averagePayoutUsd: 1110, averagePayoutTimeMinutes: 240, lastPayoutAt: "1 hr ago",
     verifiedChains: ["TRC20"], status: "active", badges: ["Verified"],
   },
   {
-    id: "6", slug: "alpha-capital", name: "Alpha Capital", logoColor: "from-amber-500 to-yellow-600",
+    id: "6", slug: "alpha-capital", name: "Alpha Capital", logoColor: "from-fuchsia-500 to-violet-600",
     tbiScore: 7.0, payoutReliabilityScore: 82, payoutHealthScore: 6.8,
     totalPaidUsd: 1820310, totalPayoutCount: 1540, largestPayoutUsd: 14200,
     averagePayoutUsd: 1182, averagePayoutTimeMinutes: 480, lastPayoutAt: "4 hrs ago",

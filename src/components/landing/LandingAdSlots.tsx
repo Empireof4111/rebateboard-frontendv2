@@ -167,30 +167,24 @@ export function LandingHeroAdCard({
         width={1024}
         height={640}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/92 via-[#10051f]/10 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/42 via-transparent to-black/5" />
       {hasCampaign && (
-        <div className="absolute bottom-3 left-3 max-w-[min(74%,22rem)] sm:bottom-4 sm:left-4 sm:max-w-[20rem] lg:max-w-[21rem]">
+        <div className="absolute inset-x-3 bottom-3 sm:inset-x-4 sm:bottom-4">
           <Link
             to={current.href}
             onClick={() => trackAdClick(current.ad)}
-            className="block rounded-2xl border border-white/15 bg-[#130722]/42 p-3 text-left shadow-[0_16px_36px_rgba(7,2,18,0.22)] backdrop-blur-2xl transition hover:bg-[#19092c]/52 sm:p-3.5"
+            className="block rounded-2xl border border-white/14 bg-[rgba(9,9,13,0.24)] px-3.5 py-2.5 text-left shadow-[0_8px_24px_rgba(7,2,18,0.16)] backdrop-blur-md transition hover:bg-[rgba(9,9,13,0.32)] sm:px-4 sm:py-3"
           >
-            <p className="line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-base">{label}</p>
-            {current.sub && (
-              <p className="mt-1 line-clamp-1 text-[11px] leading-relaxed text-white/68 sm:text-xs">
-                {current.sub}
-              </p>
-            )}
+            <p className="line-clamp-2 max-w-[92%] text-sm font-semibold leading-snug text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.85)] sm:text-base">
+              {label}
+            </p>
           </Link>
         </div>
       )}
       {!hasCampaign && (
-        <div className="absolute bottom-3 left-3 max-w-[min(74%,22rem)] sm:bottom-4 sm:left-4 sm:max-w-[20rem]">
-          <div className="rounded-2xl border border-white/15 bg-[#130722]/42 p-3 shadow-[0_16px_36px_rgba(7,2,18,0.22)] backdrop-blur-2xl sm:p-3.5">
+        <div className="absolute inset-x-3 bottom-3 sm:inset-x-4 sm:bottom-4">
+          <div className="rounded-2xl border border-white/14 bg-[rgba(9,9,13,0.24)] px-3.5 py-2.5 shadow-[0_8px_24px_rgba(7,2,18,0.16)] backdrop-blur-md sm:px-4 sm:py-3">
             <p className="text-sm font-semibold text-white">Featured placement ready</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              New partner highlights and trader offers will appear here soon.
-            </p>
           </div>
         </div>
       )}
@@ -304,7 +298,7 @@ export function LandingAdvertiseBox({ className = "" }: { className?: string } =
       <Link
         to={href}
         onClick={() => trackAdClick(ad)}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-1.5 text-xs font-semibold text-white"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-1.5 text-xs font-semibold text-white"
       >
         {cta} <ArrowRight className="h-3 w-3" />
       </Link>

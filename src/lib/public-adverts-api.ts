@@ -85,7 +85,7 @@ function normalizeSlide(raw: unknown): AdSlide | null {
     label: label || "Featured",
     sub: firstText(slide.sub, slide.subtitle, slide.description, slide.excerpt) || undefined,
     href,
-    accent: firstText(slide.accent, slide.color) || undefined,
+    accent: undefined,
     image:
       firstText(slide.image, slide.thumbnail, slide.cover, slide.coverUrl, slide.imageUrl, slide.logo) ||
       undefined,
@@ -106,7 +106,7 @@ function normalizeSponsor(raw: unknown): SponsorLogo | null {
     logo:
       firstText(sponsor.logo, sponsor.image, sponsor.thumbnail, sponsor.cover, sponsor.imageUrl) ||
       undefined,
-    color: firstText(sponsor.color, sponsor.accent) || undefined,
+    color: undefined,
     href: firstText(sponsor.href, sponsor.url, sponsor.link) || undefined,
     tag: tag === "featured" || tag === "ad" || tag === "sponsor" ? tag : undefined,
   };
@@ -136,7 +136,7 @@ function mapPublicAdvert(raw: unknown): DashboardAd {
     sub: text(row.subTitle || meta.sub) || undefined,
     cta: cta || undefined,
     href,
-    accent: text(meta.accent) || "from-fuchsia-500 to-violet-600",
+    accent: undefined,
     image,
     description: text(row.description || meta.description) || undefined,
     videoUrl: text(meta.videoUrl || row.videoUrl || (looksLikeHref(action) ? action : "")) || undefined,

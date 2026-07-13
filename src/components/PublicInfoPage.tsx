@@ -675,7 +675,7 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
   const resolveCtaSearch = (to: string) => (!user && to.startsWith("/dashboard") ? { redirect: to } : undefined);
 
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app py-8 sm:py-12 lg:py-16">
         <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(217,70,239,0.18),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-6 shadow-[0_24px_110px_rgba(88,28,135,0.24)] sm:p-8 lg:p-10">
@@ -701,7 +701,7 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
                   <Link
                     to={resolveCtaTo(page.primaryCta.to) as any}
                     search={resolveCtaSearch(page.primaryCta.to) as any}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-semibold shadow-[0_0_30px_rgba(192,132,252,0.32)] transition hover:scale-[1.01]"
+                    className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-semibold shadow-[0_0_30px_rgba(192,132,252,0.32)] transition hover:scale-[1.01]"
                   >
                     {page.primaryCta.label}
                     <ArrowRight className="h-4 w-4" />

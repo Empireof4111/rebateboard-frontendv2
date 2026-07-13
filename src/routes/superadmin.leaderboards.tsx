@@ -20,7 +20,7 @@ function LeaderboardsAdmin() {
                   <span className="font-mono text-muted-foreground">{s.weight}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-600" style={{ width: `${s.weight * 2.5}%` }} />
+                  <div className="h-full rb-gradient-primary" style={{ width: `${s.weight * 2.5}%` }} />
                 </div>
               </li>
             ))}
@@ -33,7 +33,7 @@ function LeaderboardsAdmin() {
             <div className="flex items-center justify-between"><span className="text-muted-foreground">Ends</span><span className="text-white">Jun 30, 2026</span></div>
             <div className="flex items-center justify-between"><span className="text-muted-foreground">Prize pool</span><span className="font-mono font-bold text-emerald-300">$50,000</span></div>
             <div className="flex items-center justify-between"><span className="text-muted-foreground">Participants</span><span className="font-mono text-white">12,418</span></div>
-            <button className="mt-3 w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-2 text-xs font-bold text-white">End season early</button>
+            <button className="mt-3 w-full rounded-xl rb-gradient-primary py-2 text-xs font-bold text-white">End season early</button>
           </div>
         </Panel>
       </div>

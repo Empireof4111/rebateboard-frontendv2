@@ -47,6 +47,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { resolveCountryDisplay } from "@/lib/country-format";
 import { uploadMediaFile } from "@/lib/media-api";
+import { validateFileSize } from "@/lib/upload-limits";
 import {
   normalizePropFirmProfile,
   type NormalizedPropFirmProfile,
@@ -435,6 +436,11 @@ function writeStoredProfileAssets(firmId: string, assets: ProfileAssets) {
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
+    const sizeError = validateFileSize(file);
+    if (sizeError) {
+      reject(new Error(sizeError));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(reader.error);
@@ -2044,8 +2050,8 @@ function FirmDetailsPage() {
 
       <div className="container-app relative pb-6 pt-3 sm:pt-4">
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
-          <div className="glass-strong h-full overflow-hidden rounded-3xl bg-[#130824]/90 ring-1 ring-violet-400/20">
-            <div className="relative h-24 overflow-hidden bg-[#07131f] sm:h-28 lg:h-32 xl:h-[136px]">
+          <div className="glass-strong h-full overflow-hidden rounded-3xl bg-[rgba(18,18,25,0.90)] ring-1 ring-violet-400/20">
+            <div className="relative h-24 overflow-hidden bg-[var(--rb-bg-section)] sm:h-28 lg:h-32 xl:h-[136px]">
               {displayBanner ? (
                 <img
                   src={displayBanner}
@@ -2062,7 +2068,7 @@ function FirmDetailsPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-black/[0.02] to-black/15" />
               <button
                 onClick={() => navigate({ to: "/" })}
-                className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full bg-[#130824]/72 px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/18 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:bg-[#1f0d3d]/86 hover:ring-white/28"
+                className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full bg-[rgba(18,18,25,0.72)] px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/18 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:bg-[rgba(27,25,38,0.86)] hover:ring-white/28"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back
               </button>
@@ -2093,7 +2099,7 @@ function FirmDetailsPage() {
             <div className="px-5 pb-5 sm:px-6">
               <div className="min-w-0">
                 <div className="-mt-8 flex flex-col items-start gap-3 sm:-mt-11 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="relative h-20 w-20 shrink-0 rounded-[22px] border-[3px] border-[#130824] bg-white shadow-2xl sm:h-28 sm:w-28 sm:rounded-[26px] sm:border-4">
+                  <div className="relative h-20 w-20 shrink-0 rounded-[22px] border-[3px] border-[var(--rb-bg-card)] bg-white shadow-2xl sm:h-28 sm:w-28 sm:rounded-[26px] sm:border-4">
                     {displayAvatar ? (
                       <img
                         src={displayAvatar}
@@ -2110,7 +2116,7 @@ function FirmDetailsPage() {
                         <button
                           type="button"
                           onClick={() => avatarInputRef.current?.click()}
-                          className="absolute bottom-1.5 right-1.5 grid h-8 w-8 place-items-center rounded-full bg-[#1a0b2e] text-white ring-2 ring-white/70 hover:bg-violet-700"
+                          className="absolute bottom-1.5 right-1.5 grid h-8 w-8 place-items-center rounded-full bg-[var(--rb-bg-elevated)] text-white ring-2 ring-white/70 hover:bg-violet-700"
                           aria-label="Change profile image"
                         >
                           <Camera className="h-3.5 w-3.5" />
@@ -2164,7 +2170,7 @@ function FirmDetailsPage() {
                       aria-disabled={!signupUrl}
                       className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         signupUrl
-                          ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40 hover:brightness-110"
+                          ? "rb-gradient-primary text-white ring-fuchsia-300/40 hover:brightness-110"
                           : "cursor-not-allowed bg-white/5 text-white/35 ring-white/10"
                       }`}
                     >
@@ -2177,7 +2183,7 @@ function FirmDetailsPage() {
                       className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         followState.isFollowing
                           ? "bg-white text-[#1a0b2e] ring-white/70 hover:bg-rose-50 hover:text-rose-700"
-                          : "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-300/40 hover:brightness-110"
+                          : "rb-gradient-primary text-white ring-fuchsia-300/40 hover:brightness-110"
                       } ${followBusy || !brand?.id ? "opacity-60" : ""}`}
                     >
                       {followState.isFollowing ? (
@@ -2255,7 +2261,7 @@ function FirmDetailsPage() {
                 {profileOffer.hasOffer ? (
                   <div className="mt-5 max-w-3xl">
                     <div
-                      className="overflow-hidden rounded-[24px] bg-[#101018] text-white ring-1 ring-white/10"
+                      className="overflow-hidden rounded-[24px] bg-[var(--rb-bg-card)] text-white ring-1 ring-white/10"
                       style={{ boxShadow: `0 0 34px ${profileOffer.accentFrom}38` }}
                     >
                       <div className="grid sm:grid-cols-[minmax(0,1fr)_190px]">
@@ -2293,7 +2299,7 @@ function FirmDetailsPage() {
                             <button
                               type="button"
                               onClick={() => void copyDiscountCode(profileOffer.code)}
-                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111018] px-4 py-2.5 text-sm font-black tracking-wide text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--rb-bg-input)] px-4 py-2.5 text-sm font-black tracking-wide text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
                             >
                               <Copy className="h-4 w-4" />
                               {copiedCode ? "Copied" : profileOffer.code}
@@ -2303,12 +2309,12 @@ function FirmDetailsPage() {
                               href={profileOffer.ctaUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111018] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--rb-bg-input)] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-black/25 transition hover:scale-[1.02]"
                             >
                               Claim Offer
                             </a>
                           ) : (
-                            <div className="rounded-xl bg-[#111018] px-4 py-2.5 text-center text-sm font-black text-white">
+                            <div className="rounded-xl bg-[var(--rb-bg-input)] px-4 py-2.5 text-center text-sm font-black text-white">
                               No code needed
                             </div>
                           )}
@@ -2344,7 +2350,7 @@ function FirmDetailsPage() {
 
         <div
           ref={tabsRef}
-          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[#16082a]/92 px-2 py-2 shadow-xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl lg:px-3"
+          className="sticky z-40 mt-4 flex justify-center rounded-2xl bg-[rgba(18,18,25,0.92)] px-2 py-2 shadow-xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl lg:px-3"
           style={{ top: `${stickyTabsTop}px` }}
         >
           <div className="no-scrollbar flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto overscroll-x-contain py-0.5 lg:justify-center">
@@ -2432,7 +2438,7 @@ function FirmDetailsPage() {
                     href={profileOffer.ctaUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-black text-white"
+                    className="inline-flex items-center justify-center rounded-2xl rb-gradient-primary px-4 py-3 text-sm font-black text-white"
                   >
                     Claim Offer
                   </a>

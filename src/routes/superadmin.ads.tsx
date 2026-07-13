@@ -43,7 +43,6 @@ function emptyAd(): DashboardAd {
     sub: "",
     cta: "",
     href: "",
-    accent: "from-fuchsia-500 to-violet-600",
     thumbnail: "",
     slides: [],
     sponsors: [],
@@ -172,7 +171,7 @@ function AdsPage() {
             <button onClick={load} className="grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10">
               <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
             </button>
-            <button onClick={create} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.45)] disabled:opacity-40">
+            <button onClick={create} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(192,132,252,0.45)] disabled:opacity-40">
               <Plus className="h-3.5 w-3.5" /> New banner
             </button>
           </div>
@@ -201,7 +200,7 @@ function AdsPage() {
                 <button key={ad.id} onClick={() => setEditingId(ad.id)}
                   className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${editingId === ad.id ? "border-fuchsia-400/40 bg-white/[0.07]" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
                 >
-                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${ad.accent ?? "from-fuchsia-500 to-violet-600"}`}>
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg rb-gradient-primary">
                     <FormatIcon format={ad.format} />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -279,14 +278,6 @@ function brandInitial(name: string) {
   return name.slice(0, 2).toUpperCase();
 }
 
-function brandAccent(brand: AdminBrandRecord) {
-  const category = String(brand.category ?? "");
-  if (category.includes("Crypto")) return "from-cyan-400 to-blue-600";
-  if (category.includes("Broker")) return "from-emerald-400 to-teal-600";
-  if (category.includes("Tool") || category.includes("Software")) return "from-violet-500 to-fuchsia-600";
-  return "from-fuchsia-500 to-violet-600";
-}
-
 function brandTbiLabel(brand: AdminBrandRecord) {
   return Number.isFinite(brand.tbi) ? `TBI ${Number(brand.tbi).toFixed(1)}/100` : "TBI not provided";
 }
@@ -297,7 +288,6 @@ function slideFromBrand(brand: AdminBrandRecord): Partial<AdSlide> {
     label: brand.name,
     sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
     href: brandHref(brand),
-    accent: brandAccent(brand),
     image: brand.thumbnail || brand.cover,
   };
 }
@@ -308,9 +298,17 @@ function sponsorFromBrand(brand: AdminBrandRecord, tag: SponsorLogo["tag"] = "sp
     name: brand.name,
     initial: brandInitial(brand.name),
     logo: brand.thumbnail || brand.cover,
-    color: brandAccent(brand),
     href: brandHref(brand),
     tag,
+  };
+}
+
+function sanitizeAdVisuals(ad: DashboardAd): DashboardAd {
+  return {
+    ...ad,
+    accent: undefined,
+    slides: ad.slides?.map((slide) => ({ ...slide, accent: undefined })),
+    sponsors: ad.sponsors?.map((sponsor) => ({ ...sponsor, color: undefined })),
   };
 }
 
@@ -346,7 +344,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
           label: brand.name,
           sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
           href: brandHref(brand),
-          accent: brandAccent(brand),
           image: brand.thumbnail || brand.cover,
           brandSlug: slugFromBrand(brand),
         }
@@ -355,7 +352,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
           label: "Manual slide",
           sub: "",
           href: "/blog",
-          accent: "from-fuchsia-500 to-violet-600",
         };
     set("slides", [...(draft.slides ?? []), next]);
   };
@@ -373,7 +369,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
       headline: brand.name,
       sub: `${brand.category || "Brand"} · ${brandTbiLabel(brand)}`,
       href: brandHref(brand),
-      accent: brandAccent(brand),
       thumbnail: image,
       image,
     }));
@@ -387,7 +382,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
           id: `sp-${Math.random().toString(36).slice(2, 8)}`,
           name: "Brand",
           initial: "B",
-          color: "from-fuchsia-500 to-violet-600",
           href: "/",
           tag: "sponsor" as const,
         };
@@ -518,7 +512,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Link target"><input className={inputCls} value={draft.href ?? ""} onChange={(e) => set("href", e.target.value)} /></Field>
           </div>
-          <Field label="Accent gradient"><input className={inputCls} value={draft.accent ?? ""} onChange={(e) => set("accent", e.target.value)} /></Field>
         </>
       )}
 
@@ -547,7 +540,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
                       <option value="">— Pick platform brand (optional) —</option>
                       {selectableBrands.map((b) => <option key={b.id} value={slugFromBrand(b)}>{b.name} · {b.category}</option>)}
                     </select>
-                    <input className={inputCls} placeholder="Accent" value={s.accent ?? ""} onChange={(e) => updateSlide(i, { accent: e.target.value })} />
                   </div>
                 )}
                 <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.1fr]">
@@ -588,7 +580,6 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
                   </select>
                   <input className={inputCls} placeholder="Brand name" value={s.name} onChange={(e) => updateSponsor(i, { name: e.target.value })} />
                   <input className={inputCls} placeholder="Initial" value={s.initial ?? ""} onChange={(e) => updateSponsor(i, { initial: e.target.value })} />
-                  <input className={inputCls} placeholder="Color gradient" value={s.color ?? ""} onChange={(e) => updateSponsor(i, { color: e.target.value })} />
                   <input className={inputCls} placeholder="Link" value={s.href ?? ""} onChange={(e) => updateSponsor(i, { href: e.target.value })} />
                   <input className={inputCls} placeholder="Logo URL" value={s.logo ?? ""} onChange={(e) => updateSponsor(i, { logo: e.target.value })} />
                   <ThumbnailUploader
@@ -624,7 +615,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
       </label>
 
       <div className="flex items-center gap-2 pt-2">
-        <button onClick={() => onSave(draft)} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(16,185,129,0.45)] disabled:opacity-40">
+        <button onClick={() => onSave(sanitizeAdVisuals(draft))} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_24px_rgba(16,185,129,0.45)] disabled:opacity-40">
           <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save changes"}
         </button>
         <button onClick={onClose} className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15">Close</button>

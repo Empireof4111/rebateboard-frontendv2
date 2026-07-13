@@ -162,7 +162,7 @@ function SuperadminTrtPage() {
                 )}
               </div>
               {userSearchOpen && (
-                <div className="absolute right-0 z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-[#140726] shadow-2xl">
+                <div className="absolute right-0 z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-[var(--rb-bg-elevated)] shadow-2xl">
                   <button
                     type="button"
                     onMouseDown={() => {
@@ -304,7 +304,7 @@ function SuperadminTrtPage() {
                           <span className="tabular-nums text-muted-foreground">{money(item.amount)}</span>
                         </div>
                         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                          <div className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-600" style={{ width: `${pct}%` }} />
+                          <div className="h-full rb-gradient-primary" style={{ width: `${pct}%` }} />
                         </div>
                       </li>
                     );

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/academy")({
 
 function PublicAcademy() {
   return (
-    <div className="min-h-screen bg-[#0a0418] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         <AcademyShell preview loginHref="/login" />

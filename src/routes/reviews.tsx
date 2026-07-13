@@ -87,7 +87,7 @@ function ReviewsHub() {
                 <Stat value={String(brands.length)} label="Listed brands" />
               </div>
             </div>
-            <Link to="/review" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-bold text-white">
+            <Link to="/review" className="inline-flex items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-bold text-white">
               <MessageSquare className="h-4 w-4" /> Write a Review
             </Link>
           </div>
@@ -200,7 +200,7 @@ function Badge({ label }: { label: string }) {
 }
 
 function Filter({ value, onChange, children }: { value: string; onChange: (value: string) => void; children: ReactNode }) {
-  return <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-xl bg-[#21103d] px-3 py-2 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40">{children}</select>;
+  return <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-xl bg-[var(--rb-bg-input)] px-3 py-2 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40">{children}</select>;
 }
 
 function Stat({ value, label }: { value: string; label: string }) {

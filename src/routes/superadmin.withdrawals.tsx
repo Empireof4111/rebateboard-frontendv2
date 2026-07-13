@@ -123,7 +123,7 @@ function WithdrawalsPage() {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search user, ID, destination…" className="w-full bg-transparent text-white outline-none placeholder:text-muted-foreground" />
           </div>
           {(["all", "PENDING", "ACTIVE", "APPROVED", "DECLINED"] as StatusFilter[]).map((f) => (
-            <button key={f} onClick={() => changeFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === f ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>
+            <button key={f} onClick={() => changeFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>
               {f === "ACTIVE" ? "Approved" : f.charAt(0) + f.slice(1).toLowerCase()}
             </button>
           ))}

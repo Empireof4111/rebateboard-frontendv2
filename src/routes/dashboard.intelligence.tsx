@@ -4,7 +4,7 @@ import { EmptyState, PageHeader, StatCard, Panel, Pill } from "@/components/dash
 import { AlertTriangle, Target, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type WalletSummary, type ClaimStats } from "@/lib/finance-api";
-import { useTrades } from "@/lib/trading-plan";
+import { resolveTradeNetPnl, useTrades } from "@/lib/trading-plan";
 
 export const Route = createFileRoute("/dashboard/intelligence")({
   component: IntelligencePage,
@@ -38,7 +38,7 @@ function IntelligencePage() {
       ["angry", "tilt", "fomo"].includes(trade.emotionBefore ?? "") ||
       (trade.mistakes ?? []).some((mistake) => /revenge|overtrad|fomo|tilt/i.test(mistake))
     );
-    const emotionalCost = emotionalTrades.reduce((sum, trade) => sum + Math.min(0, Number(trade.pnl || 0)), 0);
+    const emotionalCost = emotionalTrades.reduce((sum, trade) => sum + Math.min(0, resolveTradeNetPnl(trade) ?? 0), 0);
     return { violations, adherence, emotionalTrades, emotionalCost };
   }, [trades]);
 

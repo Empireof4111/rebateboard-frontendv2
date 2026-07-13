@@ -30,6 +30,7 @@ import {
   runBacktestStrategy,
   saveBacktestTemplate,
 } from "@/lib/backtest-api";
+import { formatUploadLimit, validateFileSize } from "@/lib/upload-limits";
 
 export const Route = createFileRoute("/dashboard/backtest")({
   head: () => ({
@@ -119,7 +120,7 @@ function BacktestLab() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
                 active
-                  ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_20px_rgba(192,132,252,0.4)]"
+                  ? "rb-gradient-primary text-white shadow-[0_0_20px_rgba(192,132,252,0.4)]"
                   : "text-muted-foreground hover:bg-white/5 hover:text-white"
               }`}
             >
@@ -336,7 +337,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
           <span
             key={s}
             className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
-              step >= s ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "bg-white/10 text-muted-foreground"
+              step >= s ? "rb-gradient-primary text-white" : "bg-white/10 text-muted-foreground"
             }`}
           >
             {s}
@@ -387,7 +388,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
             <button
               onClick={interpret}
               disabled={interpretLoading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl rb-gradient-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               {interpretLoading
                 ? <span className="h-3.5 w-3.5 animate-spin rounded-full border border-white border-t-transparent" />
@@ -483,8 +484,9 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
       setError("Please upload a .csv or .txt file. (Excel/HTML statements coming soon.)");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File too large (max 5MB).");
+    const sizeError = validateFileSize(file);
+    if (sizeError) {
+      setError(sizeError);
       return;
     }
     const text = await file.text();
@@ -538,7 +540,7 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
             >
               <Upload className="mb-2 h-5 w-5 text-fuchsia-300" />
               <div className="text-sm font-semibold text-white">Upload CSV / Statement</div>
-              <div className="mt-1 text-[11px] text-muted-foreground">Drag, drop or click. Max 5MB.</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">Drag, drop or click. Max {formatUploadLimit()}.</div>
             </button>
             {[
               { l: "Connect Exchange API", icon: Zap, hint: "Read-only — coming soon" },
@@ -680,7 +682,7 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
             <button
               onClick={analyze}
               disabled={analyzeLoading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl rb-gradient-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {analyzeLoading ? <span className="h-4 w-4 animate-spin rounded-full border border-white border-t-transparent" /> : <Brain className="h-4 w-4" />}
               {analyzeLoading ? "Analyzing..." : "Analyze with AI"}
@@ -859,7 +861,7 @@ function Templates({ onUse }: { onUse: () => void }) {
             </div>
             <button
               onClick={() => { setPreset(t); onUse(); }}
-              className="shrink-0 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white"
+              className="shrink-0 rounded-lg rb-gradient-primary px-3 py-1.5 text-[11px] font-semibold text-white"
             >
               Use Template
             </button>
@@ -913,7 +915,7 @@ function Insights() {
         <button
           onClick={run}
           disabled={loading || !report}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg rb-gradient-primary px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
         >
           {loading ? <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" /> : <Sparkles className="h-3 w-3" />}
           {loading ? "Analyzing…" : "Generate AI Insights"}

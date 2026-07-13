@@ -320,7 +320,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
         <div className="pointer-events-none absolute -inset-x-10 -top-20 h-40 bg-fuchsia-500/10 blur-3xl" />
         <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 text-sm font-bold text-white ring-1 ring-white/10">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] text-sm font-bold text-white ring-1 ring-white/10">
               {firm.abbr}
             </div>
             <div>
@@ -509,7 +509,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
                     isMe ? "rounded-lg bg-fuchsia-500/10 px-2 ring-1 ring-fuchsia-400/30" : ""
                   }`}>
                     <span className={`grid h-5 w-5 place-items-center rounded text-[10px] font-bold ${rankBg}`}>{i + 1}</span>
-                    <span className="grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 text-[9px] font-bold text-white ring-1 ring-white/10">
+                    <span className="grid h-6 w-6 place-items-center rounded-md bg-[rgba(126,77,255,0.18)] text-[9px] font-bold text-white ring-1 ring-white/10">
                       {f.abbr}
                     </span>
                     <span className={`flex-1 text-xs ${isMe ? "font-semibold text-white" : "text-muted-foreground"}`}>

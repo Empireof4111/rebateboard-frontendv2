@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, type ApiResponse } from "@/lib/api";
+import { filterFilesByUploadLimit, validateFileSize } from "@/lib/upload-limits";
 
 const AUTH_STORAGE_KEY = "rb_auth_session";
 
@@ -45,6 +46,9 @@ async function parseUploadResponse<T>(response: Response) {
 }
 
 export async function uploadMediaFile(file: File, options: UploadOptions = {}) {
+  const sizeError = validateFileSize(file);
+  if (sizeError) throw new ApiError(sizeError);
+
   const token = readToken();
   const formData = new FormData();
   formData.append("file", file);
@@ -63,6 +67,9 @@ export async function uploadMediaFile(file: File, options: UploadOptions = {}) {
 }
 
 export async function uploadMediaFiles(files: File[], options: UploadOptions = {}) {
+  const { rejected } = filterFilesByUploadLimit(files);
+  if (rejected.length) throw new ApiError(rejected[0]);
+
   const uploads = await Promise.all(files.map((file) => uploadMediaFile(file, options)));
   return uploads;
 }

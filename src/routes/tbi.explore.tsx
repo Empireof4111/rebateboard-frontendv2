@@ -49,7 +49,7 @@ function BrandAvatar({ profile }: { profile: TbiProfile }) {
     );
   }
   return (
-    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white">
+    <div className="grid h-12 w-12 place-items-center rounded-2xl rb-gradient-primary text-sm font-bold text-white">
       {profile.name.slice(0, 2).toUpperCase()}
     </div>
   );
@@ -138,7 +138,7 @@ function ExplorePage() {
   }, [profiles, query, category, state, confidence, minScore, region]);
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         <div className="mb-6">
@@ -222,7 +222,7 @@ function ExplorePage() {
               <select
                 value={region}
                 onChange={(event) => setRegion(event.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#160924] px-3 py-2 text-sm text-white outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[var(--rb-bg-input)] px-3 py-2 text-sm text-white outline-none"
               >
                 <option value="">All regions</option>
                 {regions.map((entry) => (

@@ -180,7 +180,7 @@ function ReferralsPage() {
                   <option value="newsletter">newsletter</option>
                   <option value="other">other</option>
                 </select>
-                <button onClick={() => copy(link)} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
+                <button onClick={() => copy(link)} className="inline-flex items-center gap-1.5 rounded-xl rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? "Copied" : "Copy"}
                 </button>
@@ -213,7 +213,7 @@ function ReferralsPage() {
 
             {showQr && (
               <div className="mt-3 flex justify-center">
-                <img src={qrUrl} alt="Referral QR code" width={180} height={180} className="rounded-xl border border-white/10 bg-[#150829] p-2" />
+                <img src={qrUrl} alt="Referral QR code" width={180} height={180} className="rounded-xl border border-white/10 bg-[var(--rb-bg-elevated)] p-2" />
               </div>
             )}
           </div>
@@ -227,7 +227,7 @@ function ReferralsPage() {
             ].map((s) => (
               <div key={s.title} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/20 to-violet-500/20 text-fuchsia-300">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[rgba(126,77,255,0.14)] text-fuchsia-300">
                     <s.icon className="h-3.5 w-3.5" />
                   </span>
                   <div className="text-xs font-semibold text-white">{s.title}</div>

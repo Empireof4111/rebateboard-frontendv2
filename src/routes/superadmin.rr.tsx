@@ -120,7 +120,7 @@ function RrControlCenter() {
         {(["overview", "earn", "tiers", "caps", "social", "streaks", "spend", "claims", "ledger"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${
-              tab === t ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
+              tab === t ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
             }`}
           >
             {t === "claims" && (stats?.pendingClaims ?? 0) > 0 ? `Claims (${stats!.pendingClaims})` : t}
@@ -166,7 +166,7 @@ function SaveBar({ onSave, onReset, saving }: { onSave: () => void; onReset: () 
       <button onClick={onReset} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-white/15">
         <RotateCcw className="h-3 w-3" /> Reset defaults
       </button>
-      <button onClick={onSave} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-40">
+      <button onClick={onSave} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-40">
         <Save className="h-3 w-3" /> {saving ? "Saving…" : "Save changes"}
       </button>
     </div>
@@ -214,7 +214,7 @@ function LabeledInput({ label, value, onChange }: { label: string; value: string
 function Mini({ icon: Icon, label, value, tone }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; tone?: "warn" }) {
   return (
     <div className={`flex items-center gap-3 rounded-2xl bg-white/[0.04] p-3 ring-1 ${tone === "warn" ? "ring-amber-400/30" : "ring-white/10"}`}>
-      <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
+      <div className="grid h-9 w-9 place-items-center rounded-lg bg-[rgba(126,77,255,0.18)] ring-1 ring-white/10">
         <Icon className="h-4 w-4 text-white" />
       </div>
       <div>
@@ -290,7 +290,7 @@ function EarnRulesPanel({ rules, saving, onSave, onReset }: { rules: RrRule[]; s
               className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 transition md:grid-cols-[1fr_auto_auto_auto] md:items-center ${r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"}`}
             >
               <div className="flex items-start gap-3">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgba(126,77,255,0.18)] ring-1 ring-white/10">
                   <Icon className="h-4 w-4 text-white" />
                 </div>
                 <div>
@@ -348,7 +348,7 @@ function TiersPanel({ tiers, saving, onSave, onReset }: { tiers: RrTier[]; savin
           <div key={t.id} className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
             <div className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
               <div className="flex items-start gap-3">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10 text-sm font-bold text-white">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgba(126,77,255,0.18)] ring-1 ring-white/10 text-sm font-bold text-white">
                   {t.rank}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -472,7 +472,7 @@ function SocialRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSocialR
               className={`grid gap-3 rounded-2xl bg-white/[0.03] p-4 ring-1 md:grid-cols-[1fr_auto_auto_auto] md:items-center ${r.enabled ? "ring-white/10" : "opacity-60 ring-white/5"}`}
             >
               <div className="flex items-start gap-3">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 ring-1 ring-white/10">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgba(126,77,255,0.18)] ring-1 ring-white/10">
                   <Icon className="h-4 w-4 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -609,7 +609,7 @@ function NewSpendForm({ onAdd }: { onAdd: (r: Omit<RrSpendRule, "id" | "redeemed
 
   if (!show) {
     return (
-      <button onClick={() => setShow(true)} className="mb-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white">
+      <button onClick={() => setShow(true)} className="mb-3 inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1 text-[10px] font-bold text-white">
         <Plus className="h-3 w-3" /> New rule
       </button>
     );
@@ -626,7 +626,7 @@ function NewSpendForm({ onAdd }: { onAdd: (r: Omit<RrSpendRule, "id" | "redeemed
       <input type="number" min={0} value={cost} onChange={(e) => setCost(Math.max(0, Number(e.target.value) || 0))} className="rounded-md bg-black/30 px-2 py-1.5 text-right font-mono text-sm text-white ring-1 ring-white/10 outline-none" />
       <div className="flex gap-2">
         <button onClick={() => { if (!label.trim()) return; onAdd({ label, description, cost, category, accountSize: accountSize.trim() || undefined, tierGate: null, stock: null, enabled: true }); setLabel(""); setDescription(""); setAccountSize("5K"); setShow(false); }}
-          className="rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">Add</button>
+          className="rounded-md rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">Add</button>
         <button onClick={() => setShow(false)} className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Cancel</button>
       </div>
     </div>
@@ -732,7 +732,7 @@ function StreaksPanel({ cfg, stats, saving, onSave, onReset }: { cfg: RrStreakCo
             <input value={newMilestone.label} onChange={(e) => setNewMilestone((d) => ({ ...d, label: e.target.value }))} placeholder="e.g. 21-day momentum"
               className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
           </label>
-          <button onClick={addMilestone} className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+          <button onClick={addMilestone} className="inline-flex items-center gap-1 rounded-md rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
             <Plus className="h-3 w-3" /> Add
           </button>
         </div>
@@ -929,7 +929,7 @@ function LedgerPanel() {
       <Panel title="Manual RR award"
         action={
           <button onClick={() => setAwardForm(awardForm ? null : { userId: "", amount: "", narration: "" })}
-            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white">
+            className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1 text-[10px] font-bold text-white">
             <Plus className="h-3 w-3" /> Award RR
           </button>
         }
@@ -939,7 +939,7 @@ function LedgerPanel() {
             <input value={awardForm.userId} onChange={(e) => setAwardForm((d) => d && { ...d, userId: e.target.value })} placeholder="User ID" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
             <input type="number" value={awardForm.amount} onChange={(e) => setAwardForm((d) => d && { ...d, amount: e.target.value })} placeholder="Amount (RR)" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
             <input value={awardForm.narration} onChange={(e) => setAwardForm((d) => d && { ...d, narration: e.target.value })} placeholder="Narration" className="rounded-md bg-black/30 px-2 py-1.5 text-sm text-white ring-1 ring-white/10 outline-none" />
-            <button onClick={doAward} disabled={awarding} className="rounded-md bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40">
+            <button onClick={doAward} disabled={awarding} className="rounded-md rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40">
               {awarding ? "…" : "Award"}
             </button>
           </div>

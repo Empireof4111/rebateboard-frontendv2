@@ -138,7 +138,7 @@ function AnnouncementsPage() {
             <button onClick={load} className="grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10">
               <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
             </button>
-            <button onClick={() => setEditing(emptyAnnouncement())} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button onClick={() => setEditing(emptyAnnouncement())} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
               <Plus className="h-3.5 w-3.5" /> New announcement
             </button>
           </div>
@@ -155,7 +155,7 @@ function AnnouncementsPage() {
               className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1 transition " + (active ? "bg-white text-[#1a0b2e] ring-white/40" : "bg-white/5 text-white ring-white/10 hover:bg-white/10")}
             >
               {t.icon}{t.label}
-              <span className={"rounded-full px-1.5 py-0.5 text-[10px] font-bold " + (isPending && !active ? "bg-amber-400/20 text-amber-200 ring-1 ring-amber-300/30" : active ? "bg-[#1a0b2e]/10 text-[#1a0b2e]" : "bg-white/10 text-white/80")}>{count}</span>
+              <span className={"rounded-full px-1.5 py-0.5 text-[10px] font-bold " + (isPending && !active ? "bg-amber-400/20 text-amber-200 ring-1 ring-amber-300/30" : active ? "bg-[var(--rb-bg-elevated)]/10 text-[#1a0b2e]" : "bg-white/10 text-white/80")}>{count}</span>
             </button>
           );
         })}
@@ -223,7 +223,7 @@ function AnnouncementsPage() {
           footer={
             <>
               <button onClick={() => setEditing(null)} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white">Cancel</button>
-              <button onClick={save} disabled={saving} className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
+              <button onClick={save} disabled={saving} className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
                 {saving ? "Saving…" : "Save"}
               </button>
             </>
@@ -234,7 +234,7 @@ function AnnouncementsPage() {
               const active = editing.category === c;
               return (
                 <button key={c} onClick={() => setEditing({ ...editing, category: c, placement: c === "Brand" ? "Brand pages" : (editing.placement === "Brand pages" ? "Top bar" : editing.placement), brandId: c === "Brand" ? editing.brandId : undefined, brandName: c === "Brand" ? editing.brandName : undefined })}
-                  className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition " + (active ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "text-white/70 hover:text-white")}
+                  className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition " + (active ? "rb-gradient-primary text-white" : "text-white/70 hover:text-white")}
                 >
                   {c === "Global" ? <Globe className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
                   {c === "Global" ? "Global announcement" : "Brand-specific"}

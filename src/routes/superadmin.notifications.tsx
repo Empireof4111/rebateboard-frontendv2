@@ -112,7 +112,7 @@ function NotificationsAdmin() {
             <button
               type="button"
               onClick={() => setBroadcastOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white"
             >
               <Send className="h-3.5 w-3.5" /> New broadcast
             </button>
@@ -242,8 +242,8 @@ function NotificationsAdmin() {
       </Panel>
 
       {broadcastOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#08020f]/80 px-4 backdrop-blur-sm">
-          <form onSubmit={submitBroadcast} className="w-full max-w-xl rounded-[28px] bg-[#1b0b32] p-5 ring-1 ring-white/15 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(8,8,12,0.80)] px-4 backdrop-blur-sm">
+          <form onSubmit={submitBroadcast} className="w-full max-w-xl rounded-[28px] bg-[var(--rb-bg-elevated)] p-5 ring-1 ring-white/15 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-lg font-bold text-white">New broadcast</div>
@@ -287,7 +287,7 @@ function NotificationsAdmin() {
               <button
                 type="submit"
                 disabled={broadcasting}
-                className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full rb-gradient-primary px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {broadcasting ? "Sending..." : "Send broadcast"}
               </button>

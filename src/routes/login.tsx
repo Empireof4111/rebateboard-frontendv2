@@ -168,7 +168,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)] transition hover:opacity-95 disabled:opacity-60"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl rb-gradient-primary px-4 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(192,132,252,0.45)] transition hover:opacity-95 disabled:opacity-60"
               >
                 {submitting ? t("auth.loggingIn") : t("auth.loginButton")}
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />

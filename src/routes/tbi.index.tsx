@@ -84,10 +84,14 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-function BrandAvatar({ brand, rank }: { brand: TbiProfile; rank?: number }) {
+function BrandAvatar({ brand }: { brand: TbiProfile }) {
   const [failed, setFailed] = useState(false);
   const logo = tbiProfileLogo(brand);
-  const glow = rank && rank <= 5 ? rankTheme(rank).glow : "ring-white/10";
+  const glow = brand.state === "full"
+    ? "ring-emerald-300/35 shadow-[0_0_18px_rgba(52,211,153,0.16)]"
+    : brand.state === "partial"
+      ? "ring-cyan-300/32 shadow-[0_0_16px_rgba(34,211,238,0.13)]"
+      : "ring-violet-300/24 shadow-[0_0_14px_rgba(167,139,250,0.12)]";
   useEffect(() => setFailed(false), [logo]);
   if (logo && !failed) {
     return (
@@ -101,7 +105,7 @@ function BrandAvatar({ brand, rank }: { brand: TbiProfile; rank?: number }) {
     );
   }
   return (
-    <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-sm font-bold text-white ring-1 ${glow}`}>
+    <div className={`grid h-12 w-12 place-items-center rounded-2xl rb-gradient-primary text-sm font-bold text-white ring-1 ${glow}`}>
       {brand.name.slice(0, 2).toUpperCase()}
     </div>
   );
@@ -169,7 +173,7 @@ function TBIPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0b0418] text-foreground">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-foreground">
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         <section className="glass relative overflow-hidden rounded-3xl p-8 md:p-10">
@@ -284,7 +288,7 @@ function TBIPage() {
                     <RankBadge rank={index + 1} />
                   </div>
                   <div className="flex items-start gap-4">
-                    <BrandAvatar brand={brand} rank={index + 1} />
+                    <BrandAvatar brand={brand} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-xl font-semibold">{brand.name}</h3>
@@ -326,7 +330,7 @@ function TBIPage() {
                     <RankBadge rank={index + 1} />
                   </div>
                   <div className="flex items-start gap-3">
-                    <BrandAvatar brand={brand} rank={index + 1} />
+                    <BrandAvatar brand={brand} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate font-semibold">{brand.name}</h3>

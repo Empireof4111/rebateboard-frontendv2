@@ -51,7 +51,7 @@ export function AccountModal({ open, onClose }: { open: boolean; onClose: () => 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#150829]/95 shadow-2xl backdrop-blur-2xl"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl backdrop-blur-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
@@ -108,7 +108,7 @@ export function AccountModal({ open, onClose }: { open: boolean; onClose: () => 
                 onChange={(e) => setStatus(e.target.value as TrtAccountStatus)}
                 className="glass w-full rounded-xl bg-transparent px-3 py-2.5 text-sm text-white outline-none ring-1 ring-white/10"
               >
-                {STATUSES.map((s) => <option key={s} value={s} className="bg-[#150829] capitalize">{s}</option>)}
+                {STATUSES.map((s) => <option key={s} value={s} className="bg-[var(--rb-bg-elevated)] capitalize">{s}</option>)}
               </select>
             </div>
           </div>
@@ -129,7 +129,7 @@ export function AccountModal({ open, onClose }: { open: boolean; onClose: () => 
           <button
             onClick={save}
             disabled={!valid}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_18px_rgba(192,132,252,0.45)] disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_18px_rgba(192,132,252,0.45)] disabled:opacity-40"
           >
             <Save className="h-3.5 w-3.5" /> Save
           </button>

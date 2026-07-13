@@ -35,7 +35,7 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
 
   return (
     <div className="fixed inset-0 z-[80] flex justify-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-[#0b1426] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-[var(--rb-bg-section)] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-start justify-between">
           <div>
             <div className="text-xs uppercase tracking-wide text-white/50">Claim {claim.id}</div>

@@ -48,7 +48,7 @@ function AcademyAdmin() {
   /* mutations — all changes go to the API first, then refreshCurriculum() re-fetches */
 
   const upsertFaculty = async (fac: Faculty) => {
-    const payload = { slug: fac.slug, title: fac.title, emoji: fac.emoji, tagline: fac.tagline, color: fac.color };
+    const payload = { slug: fac.slug, title: fac.title, emoji: fac.emoji, tagline: fac.tagline, color: "" };
     try {
       if ((fac as any)._dbId) {
         await apiUpdateFaculty((fac as any)._dbId, payload);
@@ -174,9 +174,9 @@ function AcademyAdmin() {
             <button
               onClick={() => setEditFaculty({
                 id: rid("fac"), slug: rid("fac"), title: "", emoji: "🎓", tagline: "",
-                color: "from-fuchsia-500 to-violet-600", programs: [],
+                color: "", programs: [],
               })}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white"
             >
               <Plus className="h-3.5 w-3.5" /> New faculty
             </button>
@@ -293,10 +293,10 @@ function FacultyRow({
 
   return (
     <div className="overflow-hidden rounded-2xl bg-white/[0.03] ring-1 ring-white/10">
-      <div className={`flex items-center justify-between gap-3 bg-gradient-to-r ${faculty.color} bg-opacity-10 p-4`}>
+      <div className="flex items-center justify-between gap-3 bg-[rgba(126,77,255,0.10)] p-4">
         <button onClick={() => setOpen((s) => !s)} className="flex flex-1 items-center gap-3 text-left">
           {open ? <ChevronDown className="h-4 w-4 text-white/70" /> : <ChevronRight className="h-4 w-4 text-white/70" />}
-          <div className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${faculty.color} text-xl shadow-lg`}>
+          <div className="grid h-10 w-10 place-items-center rounded-xl rb-gradient-primary text-xl shadow-lg">
             {faculty.emoji}
           </div>
           <div>
@@ -407,7 +407,7 @@ function ProgramRow({
 function IconBtn({ icon: Icon, label, onClick, tone = "neutral" }: { icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void; tone?: "neutral" | "danger" | "primary" }) {
   const cls =
     tone === "danger" ? "bg-rose-500/15 text-rose-300 ring-rose-400/30 hover:bg-rose-500/25"
-    : tone === "primary" ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40 hover:opacity-90"
+    : tone === "primary" ? "rb-gradient-primary text-white ring-fuchsia-400/40 hover:opacity-90"
     : "bg-white/10 text-white ring-white/10 hover:bg-white/15";
   return (
     <button onClick={onClick} title={label} className={`grid h-7 w-7 place-items-center rounded-md ring-1 ${cls}`}>
@@ -417,15 +417,6 @@ function IconBtn({ icon: Icon, label, onClick, tone = "neutral" }: { icon: React
 }
 
 /* ─────────── faculty modal ─────────── */
-
-const COLOR_PRESETS = [
-  { label: "Fuchsia → Violet", value: "from-fuchsia-500 to-violet-600" },
-  { label: "Emerald → Cyan", value: "from-emerald-500 to-cyan-600" },
-  { label: "Amber → Orange", value: "from-amber-500 to-orange-600" },
-  { label: "Rose → Pink", value: "from-rose-500 to-pink-600" },
-  { label: "Sky → Indigo", value: "from-sky-500 to-indigo-600" },
-  { label: "Lime → Green", value: "from-lime-500 to-green-600" },
-];
 
 function FacultyModal({ faculty, onClose, onSave }: { faculty: Faculty; onClose: () => void; onSave: (f: Faculty) => void }) {
   const [form, setForm] = useState<Faculty>(faculty);
@@ -445,7 +436,7 @@ function FacultyModal({ faculty, onClose, onSave }: { faculty: Faculty; onClose:
               if (!form.slug.trim()) return toast.error("Slug required");
               onSave(form);
             }}
-            className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"
+            className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white"
           >Save faculty</button>
         </>
       }
@@ -462,21 +453,6 @@ function FacultyModal({ faculty, onClose, onSave }: { faculty: Faculty; onClose:
         </Field></div>
         <div className="md:col-span-3"><Field label="Tagline">
           <input className={fieldCls} value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} placeholder="From your first pip to professional execution models." />
-        </Field></div>
-        <div className="md:col-span-3"><Field label="Color theme">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-            {COLOR_PRESETS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => setForm({ ...form, color: c.value })}
-                className={`flex items-center gap-2 rounded-lg p-2 text-left text-[11px] ring-1 transition ${form.color === c.value ? "ring-fuchsia-400/60" : "ring-white/10 hover:ring-white/20"}`}
-              >
-                <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${c.value}`} />
-                <span className="text-white/80">{c.label}</span>
-              </button>
-            ))}
-          </div>
         </Field></div>
       </div>
     </Modal>
@@ -502,7 +478,7 @@ function ProgramModal({ program, onClose, onSave }: { program: Program; onClose:
               if (!form.title.trim()) return toast.error("Title required");
               onSave(form);
             }}
-            className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"
+            className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white"
           >Save program</button>
         </>
       }
@@ -626,7 +602,7 @@ function CourseModal({ course, onClose, onSave }: { course: Course; onClose: () 
                 return toast.error("Paid course needs a price (USD or RR)");
               onSave(form);
             }}
-            className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"
+            className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white"
           >Save course</button>
         </>
       }
@@ -644,7 +620,7 @@ function CourseModal({ course, onClose, onSave }: { course: Course; onClose: () 
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${tab === t.id ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white" : "text-white/60 hover:text-white"}`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${tab === t.id ? "rb-gradient-primary text-white" : "text-white/60 hover:text-white"}`}
             >
               <Icon className="h-3 w-3" /> {t.label}
             </button>
@@ -845,7 +821,7 @@ function ModulesTab({
         <p className="text-[11px] text-muted-foreground">
           Each module contains lessons and a short quiz. Users must pass each module quiz before unlocking the next.
         </p>
-        <button onClick={addModule} className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white">
+        <button onClick={addModule} className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1 text-[10px] font-bold text-white">
           <Plus className="h-3 w-3" /> Add module
         </button>
       </div>
@@ -1043,7 +1019,7 @@ function ExamTab({
         <p className="text-[11px] text-muted-foreground">
           Final exam unlocks the certificate and the RR completion reward. Aim for 5–10 questions.
         </p>
-        <button onClick={add} className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1 text-[10px] font-bold text-white">
+        <button onClick={add} className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1 text-[10px] font-bold text-white">
           <Plus className="h-3 w-3" /> Add question
         </button>
       </div>
@@ -1144,7 +1120,7 @@ function PreviewTab({ course }: { course: Course }) {
     <div className="space-y-4">
       <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 p-5 ring-1 ring-white/10">
         <div className="flex items-start gap-4">
-          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500/30 to-violet-600/30 text-3xl">{course.cover}</div>
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[rgba(126,77,255,0.18)] text-3xl">{course.cover}</div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/70">{course.level}</span>

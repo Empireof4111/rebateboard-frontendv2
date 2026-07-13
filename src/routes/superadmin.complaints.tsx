@@ -299,7 +299,7 @@ function ComplaintsPage() {
                 <ol className="relative space-y-3 border-l border-white/10 pl-4">
                   {active.timeline.map((t, i) => (
                     <li key={i} className="relative">
-                      <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[#150829]" />
+                      <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[var(--rb-bg-elevated)]" />
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-white">{t.stage}</span>
                         <span className="text-muted-foreground">{t.time}</span>
@@ -337,7 +337,7 @@ function ComplaintsPage() {
             />
             <div className="mt-2 flex justify-end gap-2">
               <button onClick={() => void requestBrandResponse()} className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white">Request response</button>
-              <button onClick={() => void postBrandResponse()} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-bold text-white">
+              <button onClick={() => void postBrandResponse()} className="inline-flex items-center gap-1.5 rounded-xl rb-gradient-primary px-3 py-1.5 text-xs font-bold text-white">
                 <Send className="h-3 w-3" /> Post response
               </button>
             </div>
@@ -347,7 +347,7 @@ function ComplaintsPage() {
 
       {preview && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setPreview(null)}>
-          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-[#10071c] ring-1 ring-white/10" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-[var(--rb-bg-card)] ring-1 ring-white/10" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-2 border-b border-white/10 p-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-white">{preview.name}</div>

@@ -39,12 +39,12 @@ function BrandTeam() {
         <div>
           <label className="text-[10px] uppercase text-muted-foreground">Role</label>
           <select value={draft.role} onChange={(e) => setDraft((p) => ({ ...p, role: e.target.value as Member["role"] }))} className="mt-1 rounded-xl bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10">
-            <option className="bg-[#160a25]" value="manager">Manager</option>
-            <option className="bg-[#160a25]" value="support">Support</option>
-            <option className="bg-[#160a25]" value="owner">Owner</option>
+            <option className="bg-[var(--rb-bg-input)]" value="manager">Manager</option>
+            <option className="bg-[var(--rb-bg-input)]" value="support">Support</option>
+            <option className="bg-[var(--rb-bg-input)]" value="owner">Owner</option>
           </select>
         </div>
-        <button onClick={invite} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-bold text-white"><Plus className="h-3.5 w-3.5" /> Invite</button>
+        <button onClick={invite} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white"><Plus className="h-3.5 w-3.5" /> Invite</button>
       </div>
 
       <div className="glass rounded-2xl ring-1 ring-white/10 overflow-hidden">

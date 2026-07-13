@@ -93,7 +93,7 @@ export function DataTable({ head, children }: { head: ReactNode; children: React
     <div className="-mx-4 overflow-x-auto sm:mx-0">
       <div className="min-w-full px-4 sm:px-0">
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-[#150829]/60 text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-md">
+          <thead className="sticky top-0 z-10 bg-[rgba(18,18,25,0.60)] text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-md">
             <tr className="[&>th]:whitespace-nowrap [&>th]:py-2.5 [&>th]:pr-3 [&>th]:font-semibold">{head}</tr>
           </thead>
           <tbody className="text-white [&>tr]:border-t [&>tr]:border-white/5 [&>tr:hover]:bg-white/[0.02] [&>tr]:transition-colors [&>tr>td]:py-3 [&>tr>td]:pr-3 [&>tr>td]:align-middle">

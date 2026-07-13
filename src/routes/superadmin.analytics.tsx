@@ -633,7 +633,7 @@ function AnalyticsPage() {
           {data.recentSubmissions.length ? (
             <div className="max-h-64 overflow-y-auto">
               <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 bg-[#150829] text-[10px] uppercase tracking-wider text-muted-foreground">
+                <thead className="sticky top-0 bg-[var(--rb-bg-elevated)] text-[10px] uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="py-2">User</th>
                     <th>Goal</th>

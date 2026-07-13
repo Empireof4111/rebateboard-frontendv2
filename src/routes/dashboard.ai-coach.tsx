@@ -25,6 +25,7 @@ import {
   type RebetaChatResponse,
   type RebetaUsageStatus,
 } from "@/lib/rebeta-api";
+import { formatUploadLimit, MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 export const Route = createFileRoute("/dashboard/ai-coach")({
   component: RebataPage,
@@ -55,7 +56,7 @@ const CHAT_HISTORY_VERSION = "v2";
 const MAX_STORED_MESSAGES = 80;
 const MAX_ATTACHMENTS_PER_MESSAGE = 2;
 const MAX_TEXT_ATTACHMENT_CHARS = 30_000;
-const MAX_IMAGE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_ATTACHMENT_BYTES = MAX_UPLOAD_BYTES;
 const MIN_IMAGE_DIMENSION = 320;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
@@ -455,7 +456,7 @@ function RebataPage() {
                   </p>
                   <a
                     href="/pricing"
-                    className="mt-3 inline-flex rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:opacity-95"
+                    className="mt-3 inline-flex rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white transition hover:opacity-95"
                   >
                     View Premium
                   </a>
@@ -464,7 +465,7 @@ function RebataPage() {
 
               <form
                 onSubmit={onSubmit}
-                className="sticky bottom-2 z-10 mt-3 flex items-end gap-2 rounded-[1.35rem] bg-[#1a0b2e]/82 p-1 backdrop-blur-xl md:static md:bg-transparent md:p-0 md:backdrop-blur-0"
+                className="sticky bottom-2 z-10 mt-3 flex items-end gap-2 rounded-[1.35rem] bg-[var(--rb-bg-elevated)]/82 p-1 backdrop-blur-xl md:static md:bg-transparent md:p-0 md:backdrop-blur-0"
               >
                 <input
                   ref={fileInputRef}
@@ -506,7 +507,7 @@ function RebataPage() {
                         <option
                           key={language.value}
                           value={language.value}
-                          className="bg-[#13071f] text-white"
+                          className="bg-[var(--rb-bg-input)] text-white"
                         >
                           {language.label}
                         </option>
@@ -538,7 +539,7 @@ function RebataPage() {
                     usageStatus?.premiumRequired
                   }
                   aria-label="Send message"
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-[0_0_24px_rgba(192,132,252,0.38)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl rb-gradient-primary text-white shadow-[0_0_24px_rgba(192,132,252,0.38)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -548,7 +549,7 @@ function RebataPage() {
                 </button>
               </form>
               <p className="mt-2 px-1 text-[11px] leading-relaxed text-muted-foreground">
-                PNG, JPG, or WebP screenshots up to 5 MB each. Rebeta optimizes images before analysis. Remove passwords, account numbers, seed phrases, and other sensitive information before uploading.
+                PNG, JPG, or WebP screenshots up to {formatUploadLimit(MAX_IMAGE_ATTACHMENT_BYTES)} each. Rebeta optimizes images before analysis. Remove passwords, account numbers, seed phrases, and other sensitive information before uploading.
               </p>
             </div>
           </Panel>
@@ -953,7 +954,7 @@ async function readRebetaAttachment(file: File): Promise<RebetaChatAttachment> {
       throw new Error("Only PNG, JPG, or WebP screenshots can be analyzed by Rebeta.");
     }
     if (file.size > MAX_IMAGE_ATTACHMENT_BYTES) {
-      throw new Error("Image is larger than 5 MB. Please upload a smaller screenshot.");
+      throw new Error(`Image is larger than ${formatUploadLimit(MAX_IMAGE_ATTACHMENT_BYTES)}. Please upload a smaller screenshot.`);
     }
     const dimensions = await readImageDimensions(file);
     if (dimensions.width < MIN_IMAGE_DIMENSION || dimensions.height < MIN_IMAGE_DIMENSION) {

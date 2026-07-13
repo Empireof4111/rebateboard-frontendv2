@@ -97,7 +97,7 @@ function BlogIndex() {
   }, [published]);
 
   return (
-    <div className="min-h-screen bg-[#0d0420] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
 
       {/* Hero */}
@@ -158,7 +158,7 @@ function BlogIndex() {
                   onClick={() => setTag(t)}
                   className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${
                     active
-                      ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white ring-fuchsia-400/40"
+                      ? "rb-gradient-primary text-white ring-fuchsia-400/40"
                       : "bg-white/[0.04] text-white/70 ring-white/10 hover:bg-white/10 hover:text-white"
                   }`}
                 >

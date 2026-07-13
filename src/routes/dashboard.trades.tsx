@@ -3,7 +3,7 @@ import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primit
 import { Plus, Upload, Filter, Flag, Camera, AlertTriangle, ShieldCheck, Trash2, Eye, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AddTradeModal } from "@/components/dashboard/AddTradeModal";
-import { deleteTrade, summarizeTrades, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { deleteTrade, formatTradePnl, resolveTradeNetPnl, resolveTradeOutcome, summarizeTrades, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
 
 export const Route = createFileRoute("/dashboard/trades")({
   component: TradesPage,
@@ -18,8 +18,8 @@ function TradesPage() {
 
   const filtered = useMemo(() => {
     return trades.filter((t) => {
-      if (filter === "wins") return t.pnl > 0;
-      if (filter === "losses") return t.pnl < 0;
+      if (filter === "wins") return resolveTradeOutcome(t) === "profit";
+      if (filter === "losses") return resolveTradeOutcome(t) === "loss";
       if (filter === "flagged") return t.violations.length > 0 || t.ruleFollowed === false;
       return true;
     });
@@ -40,7 +40,7 @@ function TradesPage() {
             <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Upload className="h-3.5 w-3.5" /> Import CSV
             </button>
-            <button onClick={() => setOpen(true)} className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
+            <button onClick={() => setOpen(true)} className="rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]">
               <Plus className="mr-1 inline h-3.5 w-3.5" /> Add Trade
             </button>
           </>
@@ -83,7 +83,7 @@ function TradesPage() {
         {filtered.length === 0 ? (
           <div className="grid place-items-center py-10 text-center">
             <p className="text-sm text-muted-foreground">No trades yet.</p>
-            <button onClick={() => setOpen(true)} className="mt-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button onClick={() => setOpen(true)} className="mt-3 inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
               <Plus className="h-3.5 w-3.5" /> Log your first trade
             </button>
           </div>
@@ -110,22 +110,24 @@ function TradesPage() {
 }
 
 function TradeCard({ trade, onOpen, onDelete }: { trade: Trade; onOpen: () => void; onDelete: () => void }) {
-  const profitable = trade.pnl >= 0;
+  const netPnl = resolveTradeNetPnl(trade);
+  const outcome = resolveTradeOutcome(trade);
+  const tone = outcome === "profit" ? "success" : outcome === "loss" ? "destructive" : "primary";
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-violet-300/30 hover:bg-white/[0.055]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-sm font-bold text-white">{trade.asset}</h3>
-            <Pill tone={profitable ? "success" : "destructive"}>{trade.winLossStatus ?? (profitable ? "win" : "loss")}</Pill>
+            <Pill tone={tone}>{outcome === "pending" ? "Result Pending" : outcome}</Pill>
             <Pill>{trade.market}</Pill>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {new Date(trade.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} · {trade.session} session
           </p>
         </div>
-        <div className={`text-right text-base font-bold tabular-nums ${profitable ? "text-success" : "text-destructive"}`}>
-          {profitable ? "+" : "−"}${Math.abs(trade.pnl).toFixed(2)}
+        <div className={`text-right text-base font-bold tabular-nums ${netPnl == null ? "text-muted-foreground" : netPnl >= 0 ? "text-success" : "text-destructive"}`}>
+          {formatTradePnl(trade)}
         </div>
       </div>
 
@@ -152,10 +154,11 @@ function TradeCard({ trade, onOpen, onDelete }: { trade: Trade; onOpen: () => vo
 }
 
 function TradeDetailModal({ trade, onClose }: { trade: Trade; onClose: () => void }) {
+  const netPnl = resolveTradeNetPnl(trade);
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/70 p-3 backdrop-blur-sm">
       <div className="glass max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl ring-1 ring-white/10">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#170826]/90 px-5 py-4 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[rgba(18,18,25,0.90)] px-5 py-4 backdrop-blur">
           <div>
             <h2 className="text-lg font-bold text-white">{trade.asset} Trading Diary</h2>
             <p className="text-xs text-muted-foreground">{new Date(trade.createdAt).toLocaleString()} · {trade.direction} · {trade.market}</p>
@@ -166,7 +169,7 @@ function TradeDetailModal({ trade, onClose }: { trade: Trade; onClose: () => voi
         </div>
         <div className="space-y-5 p-5">
           <div className="grid gap-3 sm:grid-cols-4">
-            <MiniMetric label="PnL" value={`${trade.pnl >= 0 ? "+" : "−"}$${Math.abs(trade.pnl).toFixed(2)}`} />
+            <MiniMetric label="Net P&L" value={formatTradePnl(trade)} />
             <MiniMetric label="R Multiple" value={`${(trade.rMultiple ?? trade.rr).toFixed(2)}R`} />
             <MiniMetric label="Gain" value={`${(trade.percentageGain ?? 0).toFixed(2)}%`} />
             <MiniMetric label="Adherence" value={`${trade.adherence}%`} />
@@ -181,6 +184,14 @@ function TradeDetailModal({ trade, onClose }: { trade: Trade; onClose: () => voi
               ["Risk", `${trade.riskPct}%`],
               ["Strategy", trade.strategyId || "Not linked"],
               ["Setup", trade.setupType || "—"],
+            ]} />
+            <DetailBlock title="Trade Result" items={[
+              ["Outcome", resolveTradeOutcome(trade)],
+              ["Gross P&L", trade.grossPnl == null ? "—" : `${trade.pnlCurrency ?? "USD"} ${Number(trade.grossPnl).toFixed(2)}`],
+              ["Fees", `${trade.pnlCurrency ?? "USD"} ${Number(trade.fees ?? 0).toFixed(2)}`],
+              ["Net P&L", netPnl == null ? "Result Pending" : formatTradePnl(trade)],
+              ["Currency", trade.pnlCurrency || "USD"],
+              ["Source", trade.resultSource === "manual" ? "Entered manually by trader" : trade.resultSource || "Legacy / unverified"],
             ]} />
             <DetailBlock title="Execution Notes" items={[
               ["Bias", trade.htfBias || "—"],

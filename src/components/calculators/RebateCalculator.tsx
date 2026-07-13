@@ -220,7 +220,7 @@ export function RebateCalculator({
           <Field label="Asset type">
             <select value={type} onChange={(event) => setType(event.target.value)} className={inputClass}>
               {assetOptions.map((option) => (
-                <option key={option} value={option} className="bg-[#150829]">
+                <option key={option} value={option} className="bg-[var(--rb-bg-elevated)]">
                   {option}
                 </option>
               ))}
@@ -229,7 +229,7 @@ export function RebateCalculator({
           <Field label="Account type">
             <select value={accountType} onChange={(event) => setAccountType(event.target.value)} className={inputClass}>
               {accountOptions.map((option) => (
-                <option key={option} value={option} className="bg-[#150829]">
+                <option key={option} value={option} className="bg-[var(--rb-bg-elevated)]">
                   {option}
                 </option>
               ))}
@@ -244,12 +244,12 @@ export function RebateCalculator({
             className={inputClass}
           >
             {brands.length === 0 ? (
-              <option value="" className="bg-[#150829]">
+              <option value="" className="bg-[var(--rb-bg-elevated)]">
                 Published brands load automatically
               </option>
             ) : (
               brands.map((brand) => (
-                <option key={brand.id} value={brand.id} className="bg-[#150829]">
+                <option key={brand.id} value={brand.id} className="bg-[var(--rb-bg-elevated)]">
                   {brand.name}
                 </option>
               ))

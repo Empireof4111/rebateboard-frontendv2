@@ -74,7 +74,7 @@ function HelpCenterPage() {
   const popular = faqs.slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#3d1364_0%,#140821_55%,#0a0613_100%)] text-white">
+    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-7 py-8 sm:py-12">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 text-center shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:p-10">
@@ -178,7 +178,7 @@ function HelpCenterPage() {
                   <HelpCircle className="mx-auto h-8 w-8 text-violet-200" />
                   <h3 className="mt-4 text-xl font-black">No help articles matched your search.</h3>
                   <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-white/58">Try another keyword or contact support so the team can help directly.</p>
-                  <Link to="/contact" className="mt-5 inline-flex rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white">
+                  <Link to="/contact" className="mt-5 inline-flex rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white">
                     Contact Support
                   </Link>
                 </div>
@@ -192,7 +192,7 @@ function HelpCenterPage() {
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-white/62">
             Our support team is ready to assist with account, cashback, review, brand, or technical issues.
           </p>
-          <Link to="/contact" className="mt-5 inline-flex rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black text-white">
+          <Link to="/contact" className="mt-5 inline-flex rounded-full rb-gradient-primary px-5 py-3 text-sm font-black text-white">
             Contact Support
           </Link>
         </section>
