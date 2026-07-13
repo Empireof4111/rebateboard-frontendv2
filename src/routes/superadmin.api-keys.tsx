@@ -17,7 +17,7 @@ function ApiKeysAdmin() {
         <DataTable head={<><th>Name</th><th>Key</th><th>Created</th><th>Calls</th><th></th></>}>
           {apiKeys.map((k) => (
             <tr key={k.name}>
-              <td className="font-semibold"><span className="inline-flex items-center gap-2"><KeyRound className="h-3.5 w-3.5 text-fuchsia-400" />{k.name}</span></td>
+              <td className="font-semibold"><span className="inline-flex items-center gap-2"><KeyRound className="h-3.5 w-3.5 text-violet-400" />{k.name}</span></td>
               <td className="font-mono text-xs text-muted-foreground">{k.key}</td>
               <td className="text-xs text-muted-foreground">{k.created}</td>
               <td className="font-mono">{k.calls}</td>

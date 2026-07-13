@@ -52,13 +52,13 @@ export function FirmAnnouncements({ firmName }: { firmName: string }) {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="glass relative overflow-hidden rounded-3xl p-5 ring-1 ring-fuchsia-300/20 sm:p-6">
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-fuchsia-500/20 blur-3xl" />
+      <div className="glass relative overflow-hidden rounded-3xl p-5 ring-1 ring-violet-300/20 sm:p-6">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="relative flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500/40 to-violet-600/40 ring-1 ring-fuchsia-300/40">
-              <Bell className="h-5 w-5 text-fuchsia-100" />
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/40 to-violet-600/40 ring-1 ring-violet-300/40">
+              <Bell className="h-5 w-5 text-violet-100" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white sm:text-xl">
@@ -94,8 +94,8 @@ export function FirmAnnouncements({ firmName }: { firmName: string }) {
       )}
       {!loading && sorted.length === 0 && (
         <div className="glass rounded-3xl p-12 text-center ring-1 ring-white/10">
-          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-violet-600/20 ring-1 ring-fuchsia-300/20">
-            <Megaphone className="h-7 w-7 text-fuchsia-300" />
+          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/20 to-violet-600/20 ring-1 ring-violet-300/20">
+            <Megaphone className="h-7 w-7 text-violet-300" />
           </div>
           <div className="text-base font-bold text-white">No announcements yet</div>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
@@ -133,13 +133,13 @@ export function FirmAnnouncements({ firmName }: { firmName: string }) {
 
 function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
   return (
-    <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-500/15 via-violet-600/10 to-sky-500/10 p-5 ring-1 ring-fuchsia-300/30 transition hover:ring-fuchsia-300/50 sm:p-6">
-      <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-fuchsia-500/25 blur-3xl transition group-hover:bg-fuchsia-500/35" />
+    <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500/15 via-violet-600/10 to-sky-500/10 p-5 ring-1 ring-violet-300/30 transition hover:ring-violet-300/50 sm:p-6">
+      <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/25 blur-3xl transition group-hover:bg-violet-500/35" />
       <div className="absolute -bottom-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-violet-600/20 blur-3xl" />
 
       <div className="relative">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-fuchsia-500/30">
+          <span className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-violet-500/30">
             <Sparkles className="h-3 w-3" /> Featured
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-200 ring-1 ring-emerald-300/30">
@@ -149,7 +149,7 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
             </span>
             Live now
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-200">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-violet-200">
             {firmName}
           </span>
         </div>
@@ -168,7 +168,7 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
         {a.cta && a.link && (
           <a
             href={a.link}
-            className="mt-5 inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/30 transition hover:brightness-110 hover:shadow-fuchsia-500/50"
+            className="mt-5 inline-flex items-center gap-2 rounded-full rb-gradient-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-110 hover:shadow-violet-500/50"
           >
             {a.cta}
             <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -182,10 +182,10 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
 function AnnouncementCard({ a, firmName }: { a: Announcement; firmName: string }) {
   const isLive = a.status === "active";
   return (
-    <article className="group glass flex flex-col rounded-2xl p-4 ring-1 ring-white/10 transition hover:ring-fuchsia-300/30">
+    <article className="group glass flex flex-col rounded-2xl p-4 ring-1 ring-white/10 transition hover:ring-violet-300/30">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] ring-1 ring-fuchsia-300/30">
-          <Megaphone className="h-4 w-4 text-fuchsia-200" />
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] ring-1 ring-violet-300/30">
+          <Megaphone className="h-4 w-4 text-violet-200" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -198,7 +198,7 @@ function AnnouncementCard({ a, firmName }: { a: Announcement; firmName: string }
                 <Clock className="h-2.5 w-2.5" /> Upcoming
               </span>
             )}
-            <span className="text-[9px] font-bold uppercase tracking-wider text-fuchsia-300/80">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-violet-300/80">
               {firmName}
             </span>
           </div>
@@ -213,7 +213,7 @@ function AnnouncementCard({ a, firmName }: { a: Announcement; firmName: string }
         {a.cta && a.link && (
           <a
             href={a.link}
-            className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/10 transition hover:bg-fuchsia-500/20 hover:ring-fuchsia-300/40"
+            className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/10 transition hover:bg-violet-500/20 hover:ring-violet-300/40"
           >
             {a.cta}
             <ArrowUpRight className="h-3 w-3" />

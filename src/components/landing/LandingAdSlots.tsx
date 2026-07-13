@@ -230,7 +230,7 @@ export function LandingSponsorsStrip() {
         {sponsors.map((b) => {
           const inner = (
             <div
-              className={`relative grid h-11 w-11 place-items-center overflow-hidden rounded-md ${b.logo ? "bg-white/[0.06]" : `bg-gradient-to-br ${b.color ?? "from-violet-500 to-fuchsia-600"}`} text-[10px] font-semibold text-white/90 shadow-lg ring-1 ring-white/20`}
+              className={`relative grid h-11 w-11 place-items-center overflow-hidden rounded-md ${b.logo ? "bg-white/[0.06]" : `bg-gradient-to-br ${b.color ?? "from-violet-500 to-violet-600"}`} text-[10px] font-semibold text-white/90 shadow-lg ring-1 ring-white/20`}
               title={b.name}
             >
               {b.logo ? (

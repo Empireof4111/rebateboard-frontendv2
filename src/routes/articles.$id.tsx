@@ -119,7 +119,7 @@ function parseInline(text: string) {
       out.push(
         <code
           key={key++}
-          className="rounded bg-white/10 px-1.5 py-0.5 text-[0.85em] font-mono text-fuchsia-200"
+          className="rounded bg-white/10 px-1.5 py-0.5 text-[0.85em] font-mono text-violet-200"
         >
           {tok.slice(1, -1)}
         </code>,
@@ -133,7 +133,7 @@ function parseInline(text: string) {
             href={mm[2]}
             target="_blank"
             rel="noreferrer"
-            className="text-fuchsia-300 underline decoration-fuchsia-400/40 underline-offset-2 hover:text-fuchsia-200"
+            className="text-violet-300 underline decoration-violet-400/40 underline-offset-2 hover:text-violet-200"
           >
             {mm[1]}
           </a>,
@@ -373,7 +373,7 @@ function ArticlePage() {
 
       {/* Hero / cover */}
       <header className="relative border-b border-white/5">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(217,70,239,0.15),transparent_60%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(126,77,255,0.15),transparent_60%)]" />
         <div className="mx-auto max-w-4xl px-4 pb-10 pt-8 sm:pt-12">
           <nav className="flex items-center gap-1 text-[11px] text-white/50">
             <Link to="/" className="hover:text-white">
@@ -388,7 +388,7 @@ function ArticlePage() {
           </nav>
 
           {post.tag && (
-            <span className="mt-6 inline-block rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+            <span className="mt-6 inline-block rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-violet-300 ring-1 ring-violet-400/30">
               {post.tag}
             </span>
           )}
@@ -444,7 +444,7 @@ function ArticlePage() {
                 <div>
                   <div className="text-xs text-white/50">Written by</div>
                   <div className="text-base font-bold">{post.author}</div>
-                  <div className="text-xs font-semibold text-fuchsia-200/80">
+                  <div className="text-xs font-semibold text-violet-200/80">
                     {post.authorTitle || "Editorial Team"}
                   </div>
                   <p className="mt-1 text-xs text-white/60">
@@ -467,7 +467,7 @@ function ArticlePage() {
             <div className="sticky top-6 space-y-6">
               {toc.length > 0 && (
                 <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-fuchsia-300">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-violet-300">
                     On this page
                   </div>
                   <ul className="mt-3 space-y-2 text-xs">
@@ -475,7 +475,7 @@ function ArticlePage() {
                       <li key={h.id} className={h.kind === "h3" ? "pl-3" : ""}>
                         <a
                           href={`#${h.id}`}
-                          className={`block border-l-2 py-1 pl-3 transition ${activeId === h.id ? "border-fuchsia-400 text-white" : "border-white/10 text-white/55 hover:text-white"}`}
+                          className={`block border-l-2 py-1 pl-3 transition ${activeId === h.id ? "border-violet-400 text-white" : "border-white/10 text-white/55 hover:text-white"}`}
                         >
                           {h.text}
                         </a>
@@ -486,7 +486,7 @@ function ArticlePage() {
               )}
 
               <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-fuchsia-300">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-violet-300">
                   Share
                 </div>
                 <div className="mt-3">
@@ -509,20 +509,20 @@ function ArticlePage() {
                   key={r.id}
                   to="/articles/$id"
                   params={{ id: articleRouteId(r) }}
-                  className="group overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-fuchsia-400/30"
+                  className="group overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-violet-400/30"
                 >
                   {r.cover ? (
                     <img src={r.cover} alt="" className="aspect-video w-full object-cover" />
                   ) : (
-                    <div className="aspect-video w-full bg-gradient-to-br from-fuchsia-600/30 to-violet-700/30" />
+                    <div className="aspect-video w-full bg-gradient-to-br from-violet-600/30 to-violet-700/30" />
                   )}
                   <div className="p-4">
                     {r.tag && (
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-fuchsia-300">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-violet-300">
                         {r.tag}
                       </span>
                     )}
-                    <h3 className="mt-1 text-sm font-semibold leading-snug group-hover:text-fuchsia-200">
+                    <h3 className="mt-1 text-sm font-semibold leading-snug group-hover:text-violet-200">
                       {r.title}
                     </h3>
                     <p className="mt-2 text-[11px] text-white/50">
@@ -607,7 +607,7 @@ function Renderer({ block }: { block: Block }) {
         <ul className="my-5 space-y-2 text-[15px] leading-relaxed text-white/80">
           {block.items.map((it, i) => (
             <li key={i} className="flex gap-3">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-fuchsia-400" />
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
               {parseInline(it)}
             </li>
           ))}
@@ -618,7 +618,7 @@ function Renderer({ block }: { block: Block }) {
         <ol className="my-5 space-y-2 text-[15px] leading-relaxed text-white/80">
           {block.items.map((it, i) => (
             <li key={i} className="flex gap-3">
-              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-fuchsia-500/20 text-[10px] font-bold text-fuchsia-200">
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-violet-500/20 text-[10px] font-bold text-violet-200">
                 {i + 1}
               </span>
               {parseInline(it)}
@@ -628,7 +628,7 @@ function Renderer({ block }: { block: Block }) {
       );
     case "quote":
       return (
-        <blockquote className="my-6 rounded-r-xl border-l-4 border-fuchsia-400 bg-white/[0.04] p-5 text-[15px] italic text-white/85">
+        <blockquote className="my-6 rounded-r-xl border-l-4 border-violet-400 bg-white/[0.04] p-5 text-[15px] italic text-white/85">
           {parseInline(block.text)}
         </blockquote>
       );
@@ -638,7 +638,7 @@ function Renderer({ block }: { block: Block }) {
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-2 text-[10px] font-mono uppercase tracking-widest text-white/50">
             <span>{block.lang || "code"}</span>
           </div>
-          <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed text-fuchsia-100">
+          <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed text-violet-100">
             <code>{block.code}</code>
           </pre>
         </div>

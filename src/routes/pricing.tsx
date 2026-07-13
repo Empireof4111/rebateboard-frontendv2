@@ -431,7 +431,7 @@ function EarlyAccessPage() {
           </div>
         </section>
 
-        <section className="mt-18 overflow-hidden rounded-[2rem] border border-white/12 bg-gradient-to-br from-fuchsia-500/18 via-violet-500/12 to-cyan-400/10 p-6 text-center shadow-[0_24px_90px_rgba(8,2,18,0.36)] sm:mt-20 sm:p-10">
+        <section className="mt-18 overflow-hidden rounded-[2rem] border border-white/12 bg-gradient-to-br from-violet-500/18 via-violet-500/12 to-cyan-400/10 p-6 text-center shadow-[0_24px_90px_rgba(8,2,18,0.36)] sm:mt-20 sm:p-10">
           <h2 className="mx-auto max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
             Ready to Build the Future of Trading With Us?
           </h2>

@@ -184,13 +184,13 @@ export function DashboardChecklist({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
               <ClipboardCheck className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold text-white">Launch Checklist</h2>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-100 ring-1 ring-white/10">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">
                   {checklist.completed} / {checklist.total} Completed
                 </span>
               </div>
@@ -200,11 +200,11 @@ export function DashboardChecklist({
               <div className="mt-3 flex items-center gap-2">
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500"
                     style={{ width: `${checklist.percent}%` }}
                   />
                 </div>
-                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-fuchsia-200">{checklist.percent}%</span>
+                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-violet-200">{checklist.percent}%</span>
               </div>
             </div>
           </div>
@@ -221,7 +221,7 @@ export function DashboardChecklist({
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ring-1 ${
                     task.done
                       ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
-                      : "bg-primary/12 text-fuchsia-200 ring-primary/20"
+                      : "bg-primary/12 text-violet-200 ring-primary/20"
                   }`}>
                     {task.done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                   </span>
@@ -229,7 +229,7 @@ export function DashboardChecklist({
                     <span className="block truncate text-xs font-semibold text-white">{task.label}</span>
                     <span className="mt-0.5 line-clamp-1 block text-[11px] text-muted-foreground">{task.description}</span>
                   </span>
-                  {!task.done && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-fuchsia-200" />}
+                  {!task.done && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-violet-200" />}
                 </Link>
               );
             })}

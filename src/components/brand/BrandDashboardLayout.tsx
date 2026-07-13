@@ -87,14 +87,14 @@ export function BrandDashboardLayout() {
         </div>
 
         {/* Brand identity card */}
-        <div className="mx-3 mt-3 rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 p-3 ring-1 ring-white/10">
+        <div className="mx-3 mt-3 rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-600/10 p-3 ring-1 ring-white/10">
           <div className="flex items-center gap-3">
             <div className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${brand.logoColor} text-xs font-bold text-white`}>
               {brand.name.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
               <div className="truncate text-sm font-bold text-white">{brand.name}</div>
-              <div className="text-[10px] uppercase tracking-wider text-fuchsia-300/80">TBI {brand.score.toFixed(1)} · {brand.status}</div>
+              <div className="text-[10px] uppercase tracking-wider text-violet-300/80">TBI {brand.score.toFixed(1)} · {brand.status}</div>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ export function BrandDashboardLayout() {
                       const Icon = item.icon;
                       return (
                         <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium transition-all ${active ? "bg-white/10 text-white" : "text-muted-foreground hover:bg-white/5 hover:text-white"}`}>
-                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" />}
+                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-violet-400 to-violet-500" />}
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1 truncate">{item.label}</span>
                           {item.badge && <span className="rounded-full rb-gradient-primary px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">{item.badge}</span>}
@@ -155,7 +155,7 @@ export function BrandDashboardLayout() {
                   <div className="fixed inset-0 z-30" onClick={() => setSwitcherOpen(false)} />
                   <div className="absolute left-0 top-full z-40 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-white/15 bg-[rgba(18,18,25,0.95)] p-1 backdrop-blur">
                     {TBI_BRANDS.map((b) => (
-                      <button key={b.slug} onClick={() => { signIn(b.slug); setSwitcherOpen(false); }} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition ${b.slug === brand.slug ? "bg-fuchsia-500/30 text-white" : "text-muted-foreground hover:bg-white/10 hover:text-white"}`}>
+                      <button key={b.slug} onClick={() => { signIn(b.slug); setSwitcherOpen(false); }} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition ${b.slug === brand.slug ? "bg-violet-500/30 text-white" : "text-muted-foreground hover:bg-white/10 hover:text-white"}`}>
                         <span className={`grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br ${b.logoColor} text-[9px] font-bold text-white`}>{b.name.slice(0, 2).toUpperCase()}</span>
                         <span className="flex-1 truncate">{b.name}</span>
                         <span className="text-[9px] text-muted-foreground">{b.score.toFixed(1)}</span>
@@ -173,7 +173,7 @@ export function BrandDashboardLayout() {
               <button className="glass-pill grid h-9 w-9 place-items-center rounded-full text-white" aria-label="Notifications">
                 <Bell className="h-4 w-4" />
               </button>
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600 text-xs font-bold text-white">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-violet-400 to-violet-600 text-xs font-bold text-white">
                 {session.contactEmail.slice(0, 2).toUpperCase()}
               </div>
             </div>

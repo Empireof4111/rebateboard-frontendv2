@@ -156,15 +156,15 @@ function RewardsPage() {
 
       {/* RR hero */}
       <div className="glass relative overflow-hidden rounded-3xl p-5 ring-1 ring-primary/25 sm:p-6">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-violet-500/25 to-fuchsia-500/20 blur-3xl" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-violet-500/25 to-violet-500/20 blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              <Gift className="h-3.5 w-3.5 text-fuchsia-300" /> RR Balance
+              <Gift className="h-3.5 w-3.5 text-violet-300" /> RR Balance
             </div>
             <div className="mt-2 flex items-end gap-3">
               <div className="text-5xl font-bold text-white">{rrBalance.toLocaleString()}</div>
-              <div className="pb-2 text-sm font-semibold text-fuchsia-200">RR</div>
+              <div className="pb-2 text-sm font-semibold text-violet-200">RR</div>
             </div>
             <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -179,7 +179,7 @@ function RewardsPage() {
                 <Pill tone="primary">{levelProgress.rr.toLocaleString()} / {levelProgress.next ? levelProgress.next.minRr.toLocaleString() : levelProgress.rr.toLocaleString()} RR</Pill>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${levelProgress.progress}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500" style={{ width: `${levelProgress.progress}%` }} />
               </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -211,10 +211,10 @@ function RewardsPage() {
             <div className="text-xl font-bold text-white">{nextUnlock.title}</div>
             <p className="mt-1 text-sm text-muted-foreground">
               {nextUnlock.subtitle}
-              <span className="mt-1 block text-fuchsia-200">Redeem with any eligible participating partner.</span>
+              <span className="mt-1 block text-violet-200">Redeem with any eligible participating partner.</span>
             </p>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.07]">
-              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
             </div>
             <div className="mt-2 text-[11px] text-muted-foreground">
               {rrBalance.toLocaleString()} / {nextUnlock.targetRr.toLocaleString()} RR
@@ -224,7 +224,7 @@ function RewardsPage() {
             {PROGRESSION_TASKS.map((task) => (
               <Link key={task.label} to={task.href as string} className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-xs text-white/85 transition hover:bg-white/[0.07] hover:text-white">
                 <div className="font-semibold text-white">{task.label}</div>
-                <div className="mt-0.5 text-fuchsia-200">+{task.reward} RR</div>
+                <div className="mt-0.5 text-violet-200">+{task.reward} RR</div>
               </Link>
             ))}
           </div>
@@ -260,7 +260,7 @@ function RewardsPage() {
             <p className="text-[12px] text-muted-foreground">
               Complete at least one eligible activity each day, such as adding a journal entry, submitting a review, linking an account, claiming cashback, using Rebeta AI, or completing a lesson.
               {nextMilestone && (
-                <> Next milestone reward: <b className="text-fuchsia-200">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({Math.max(0, nextMilestone.days - streak.current)} day{nextMilestone.days - streak.current === 1 ? "" : "s"} remaining).</>
+                <> Next milestone reward: <b className="text-violet-200">{nextMilestone.reward} RR</b> at <b className="text-white">{nextMilestone.days} days</b> ({Math.max(0, nextMilestone.days - streak.current)} day{nextMilestone.days - streak.current === 1 ? "" : "s"} remaining).</>
               )}
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-4">
@@ -281,7 +281,7 @@ function RewardsPage() {
                     </div>
                     <div className="mt-1 text-[11px] text-muted-foreground">+{m.reward} RR on day {m.days}</div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
-                      <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : "bg-gradient-to-r from-violet-500 to-fuchsia-400"}`} style={{ width: `${pct}%` }} />
+                      <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : "bg-gradient-to-r from-violet-500 to-violet-400"}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -301,11 +301,11 @@ function RewardsPage() {
               <button key={opt.id} onClick={() => setRedeemOpen(opt.id)}
                 className={`group rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.07] ${ring} hover:ring-1`}
               >
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Icon className="h-5 w-5 text-fuchsia-300" /></div>
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5"><Icon className="h-5 w-5 text-violet-300" /></div>
                 <div className="mt-3 text-sm font-semibold text-white">{opt.title}</div>
                 <p className="mt-1 text-[11px] text-muted-foreground">{opt.tagline}</p>
                 <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[10px] font-medium text-white">{opt.rate}</div>
-                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 transition group-hover:gap-2">{opt.cta} <ArrowRight className="h-3 w-3" /></div>
+                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition group-hover:gap-2">{opt.cta} <ArrowRight className="h-3 w-3" /></div>
               </button>
             );
           })}
@@ -352,7 +352,7 @@ function RewardsPage() {
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                     <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total RR</div>
-                      <div className="mt-1 font-semibold text-fuchsia-200">{Number(pkg.totalRr ?? pkg.amountRr).toLocaleString()}</div>
+                      <div className="mt-1 font-semibold text-violet-200">{Number(pkg.totalRr ?? pkg.amountRr).toLocaleString()}</div>
                     </div>
                     <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Cost</div>
@@ -386,7 +386,7 @@ function RewardsPage() {
                     max={pricing?.maxPurchaseRr ?? 0}
                     value={customAmount}
                     onChange={(event) => setCustomAmount(event.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-fuchsia-400/60 focus:ring-2 focus:ring-fuchsia-400/15"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/15"
                     placeholder="Enter RR amount"
                   />
                 </Field>
@@ -434,7 +434,7 @@ function RewardsPage() {
       </Panel>
 
       {/* Earn opportunities */}
-      <Panel title="Earn RR" action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}>
+      <Panel title="Earn RR" action={<Sparkles className="h-4 w-4 text-violet-300" />}>
         {earnRules.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {earnRules.map((rule) => (
@@ -543,7 +543,7 @@ function FollowAndEarnPanel({
                 <div className="mt-3 text-sm font-semibold text-white">{r.label}</div>
                 <p className="mt-1 flex-1 text-[11px] text-muted-foreground">{r.description}</p>
                 <div className="mt-3 flex items-center justify-between gap-2">
-                  <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 hover:underline">
+                  <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300 hover:underline">
                     {r.handle} <ExternalLink className="h-3 w-3" />
                   </a>
                   {claimed ? (
@@ -551,7 +551,7 @@ function FollowAndEarnPanel({
                       <Check className="h-3 w-3" /> Claimed
                     </span>
                   ) : pending ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-3 py-1 text-[11px] font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/25">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-3 py-1 text-[11px] font-bold text-violet-200 ring-1 ring-violet-400/25">
                       <Clock className="h-3 w-3" /> Verifying
                     </span>
                   ) : (
@@ -614,7 +614,7 @@ function ClaimSocialModal({ socialId, socialRules, onClose, onSubmitted }: {
           <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
             <div className="text-[11px] uppercase text-muted-foreground">Step 1 — Follow our channel</div>
             <a href={rule.url} target="_blank" rel="noreferrer"
-              className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-fuchsia-300 hover:underline">
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-violet-300 hover:underline">
               {rule.handle} <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>

@@ -72,7 +72,7 @@ const groups: NavGroup[] = [
       { to: "/dashboard/trading-plan", labelKey: "dashboard.nav.tradingPlan", icon: ClipboardCheck, badge: "NEW" },
       { to: "/dashboard/academy", labelKey: "dashboard.nav.academy", icon: GraduationCap },
       { to: "/dashboard/economic-calendar", labelKey: "dashboard.nav.economicCalendar", icon: Globe2, badge: "NEW" },
-      { to: "/dashboard/community", labelKey: "dashboard.nav.blogNews", icon: Newspaper },
+      { to: "/dashboard/blog-news", labelKey: "dashboard.nav.blogNews", icon: Newspaper },
     ],
   },
   {
@@ -106,7 +106,7 @@ function DashboardLanguageSelector() {
         aria-label={t("common.language")}
         className="glass-pill inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-semibold text-white outline-none transition hover:bg-white/10 sm:px-3 sm:text-xs"
       >
-        <Globe2 className="h-3.5 w-3.5 text-fuchsia-200" />
+        <Globe2 className="h-3.5 w-3.5 text-violet-200" />
         <span>{languageMeta.code.toUpperCase()}</span>
         <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -128,7 +128,7 @@ function DashboardLanguageSelector() {
               <span className="font-semibold">{item.nativeLabel}</span>
               <span className="ml-1 text-muted-foreground">({item.code.toUpperCase()})</span>
             </span>
-            {language === item.code && <Check className="h-3.5 w-3.5 text-fuchsia-200" />}
+            {language === item.code && <Check className="h-3.5 w-3.5 text-violet-200" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -279,7 +279,7 @@ export function DashboardLayout() {
         </div>
         <button
           onClick={() => setSidebarCollapsed((value) => !value)}
-          className="absolute -right-4 top-5 hidden h-8 w-8 place-items-center rounded-full border border-white/10 bg-[rgba(18,18,25,0.95)] text-fuchsia-100 shadow-xl shadow-black/30 backdrop-blur-xl transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
+          className="absolute -right-4 top-5 hidden h-8 w-8 place-items-center rounded-full border border-white/10 bg-[rgba(18,18,25,0.95)] text-violet-100 shadow-xl shadow-black/30 backdrop-blur-xl transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!sidebarCollapsed}
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -326,8 +326,8 @@ export function DashboardLayout() {
                               : "text-muted-foreground hover:bg-white/5 hover:text-white"
                           } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
                         >
-                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" aria-hidden />}
-                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-fuchsia-300" : "group-hover:text-white/90"}`} />
+                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-violet-400 to-violet-500" aria-hidden />}
+                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-violet-300" : "group-hover:text-white/90"}`} />
                           <span className={`flex-1 truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>{t(item.labelKey)}</span>
                           {item.badge && (
                             <span className={`rounded-full rb-gradient-primary px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
@@ -399,7 +399,7 @@ export function DashboardLayout() {
                 <Plus className="h-4 w-4" />
               </button>
               <Link to={"/dashboard/ai-coach" as string} className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
-                <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" /> {t("dashboard.askRebeta")}
+                <Sparkles className="h-3.5 w-3.5 text-violet-300" /> {t("dashboard.askRebeta")}
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -408,7 +408,7 @@ export function DashboardLayout() {
                 >
                   <Bell className="h-4 w-4" />
                   {notifications.unread > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-fuchsia-500 px-1 text-[9px] font-bold text-white ring-2 ring-[var(--rb-bg-elevated)]">
+                    <span className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-violet-500 px-1 text-[9px] font-bold text-white ring-2 ring-[var(--rb-bg-elevated)]">
                       {notifications.unread > 9 ? "9+" : notifications.unread}
                     </span>
                   )}
@@ -475,7 +475,7 @@ export function DashboardLayout() {
                           onClick={() => void notifications.markRead(item.id)}
                           className="group mb-1 flex gap-3 rounded-xl border border-white/0 p-2.5 outline-none transition hover:border-white/10 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring/60"
                         >
-                          <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${item.read ? "bg-white/[0.08] text-white/60" : "bg-fuchsia-500/20 text-fuchsia-100 ring-1 ring-fuchsia-400/25"}`}>
+                          <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${item.read ? "bg-white/[0.08] text-white/60" : "bg-violet-500/20 text-violet-100 ring-1 ring-violet-400/25"}`}>
                             <Icon className="h-4 w-4" />
                           </span>
                           <span className="min-w-0 flex-1">
@@ -498,14 +498,14 @@ export function DashboardLayout() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Link to={"/dashboard/rewards" as string} className="glass-pill inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-semibold text-white sm:gap-1.5 sm:px-3 sm:text-xs">
-                <Gift className="h-3.5 w-3.5 text-fuchsia-300" />
+                <Gift className="h-3.5 w-3.5 text-violet-300" />
                 <span className="tabular-nums">{user.rrBalance.toFixed(0)}</span>
                 <span className="hidden sm:inline">RR</span>
               </Link>
               <Link to={"/dashboard/profile" as string} className="rounded-full outline-none transition-transform hover:scale-[1.04] focus-visible:ring-2 focus-visible:ring-ring/60" aria-label={t("dashboard.profile")}>
                 <Avatar className="h-9 w-9 ring-1 ring-white/15 shadow-[0_0_14px_rgba(192,132,252,0.3)]">
                   <AvatarImage src={user.dp || undefined} alt={`${user.name} profile`} className="object-cover" />
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-600 text-xs font-bold text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-violet-600 text-xs font-bold text-white">
                     {user.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

@@ -156,7 +156,7 @@ export function FirmComplaints({ firmName, firmSlug }: { firmName: string; firmS
           </div>
           <button
             onClick={handleOpenForm}
-            className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] transition hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(126,77,255,0.6)] transition hover:opacity-95"
           >
             <Plus className="h-3.5 w-3.5" /> Drop Complaint
           </button>
@@ -178,14 +178,14 @@ export function FirmComplaints({ firmName, firmSlug }: { firmName: string; firmS
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search complaints..."
-              className="w-full rounded-full bg-white/5 py-2 pl-8 pr-3 text-xs text-white placeholder:text-muted-foreground ring-1 ring-white/10 focus:outline-none focus:ring-fuchsia-300/40"
+              className="w-full rounded-full bg-white/5 py-2 pl-8 pr-3 text-xs text-white placeholder:text-muted-foreground ring-1 ring-white/10 focus:outline-none focus:ring-violet-300/40"
             />
           </div>
           <Select label="Issue" value={filterIssue} onChange={setFilterIssue} options={["All", ...ISSUE_TYPES]} />
           <Select label="Status" value={filterStatus} onChange={(v) => setFilterStatus(v as StatusFilter)} options={["All", "pending", "posted", "reviewing", "responded", "resolved"]} />
           <Select label="Severity" value={filterSeverity} onChange={(v) => setFilterSeverity(v as SeverityFilter)} options={["All", "low", "medium", "high"]} />
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white/5 px-3 py-2 text-[11px] text-white ring-1 ring-white/10">
-            <input type="checkbox" checked={withEvidenceOnly} onChange={(e) => setWithEvidenceOnly(e.target.checked)} className="accent-fuchsia-400" />
+            <input type="checkbox" checked={withEvidenceOnly} onChange={(e) => setWithEvidenceOnly(e.target.checked)} className="accent-violet-400" />
             With evidence
           </label>
           <Select label="Sort" value={sortBy} onChange={(v) => setSortBy(v as "latest" | "upvoted" | "severe")} options={[
@@ -271,11 +271,11 @@ function Select({
 
 function ComplaintCard({ c, onOpen, onUpvote }: { c: ComplaintRecord; onOpen: () => void; onUpvote: () => void }) {
   return (
-    <article className="group glass rounded-2xl p-4 ring-1 ring-white/10 transition hover:ring-fuchsia-300/30">
+    <article className="group glass rounded-2xl p-4 ring-1 ring-white/10 transition hover:ring-violet-300/30">
       <div className="flex items-start gap-3">
         <button
           onClick={onUpvote}
-          className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/[0.04] text-white ring-1 ring-white/10 transition hover:bg-fuchsia-300/10 hover:ring-fuchsia-300/40"
+          className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/[0.04] text-white ring-1 ring-white/10 transition hover:bg-violet-300/10 hover:ring-violet-300/40"
           title="Same issue"
         >
           <ArrowUp className="h-3.5 w-3.5" />
@@ -284,7 +284,7 @@ function ComplaintCard({ c, onOpen, onUpvote }: { c: ComplaintRecord; onOpen: ()
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-medium text-fuchsia-200 ring-1 ring-fuchsia-300/30">
+            <span className="rounded-full bg-violet-300/15 px-2 py-0.5 text-[10px] font-medium text-violet-200 ring-1 ring-violet-300/30">
               {c.category}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${STATUS_STYLES[c.status]}`}>{formatStatus(c.status)}</span>
@@ -310,7 +310,7 @@ function ComplaintCard({ c, onOpen, onUpvote }: { c: ComplaintRecord; onOpen: ()
               <span className="rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/10">{c.accountType} · {c.accountSize}</span>
               <span className="rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/10">{c.platform}</span>
               <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 ring-1 ring-white/10">
-                <Sparkles className="h-3 w-3 text-fuchsia-300" /> Credibility {c.credibility}
+                <Sparkles className="h-3 w-3 text-violet-300" /> Credibility {c.credibility}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -319,7 +319,7 @@ function ComplaintCard({ c, onOpen, onUpvote }: { c: ComplaintRecord; onOpen: ()
               </span>
               <button
                 onClick={onOpen}
-                className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/10 transition hover:bg-fuchsia-300/15 hover:ring-fuchsia-300/40"
+                className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/10 transition hover:bg-violet-300/15 hover:ring-violet-300/40"
               >
                 Read complaint →
               </button>
@@ -343,7 +343,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
         </button>
 
         <div className="flex flex-wrap items-center gap-2 pr-10">
-          <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-medium text-fuchsia-200 ring-1 ring-fuchsia-300/30">{c.category}</span>
+          <span className="rounded-full bg-violet-300/15 px-2 py-0.5 text-[10px] font-medium text-violet-200 ring-1 ring-violet-300/30">{c.category}</span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${STATUS_STYLES[c.status]}`}>{formatStatus(c.status)}</span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] ring-1 ${SEVERITY_STYLES[c.severity]}`}>{formatSeverity(c.severity)}</span>
           <span className="ml-auto text-[10px] text-muted-foreground">{c.time} · ID {c.id}</span>
@@ -356,7 +356,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
             const done = i <= currentIdx;
             return (
               <div key={s} className="flex flex-col items-center gap-1">
-                <div className={`h-1.5 w-full rounded-full ${done ? "bg-gradient-to-r from-fuchsia-400 to-violet-400" : "bg-white/10"}`} />
+                <div className={`h-1.5 w-full rounded-full ${done ? "bg-gradient-to-r from-violet-400 to-violet-400" : "bg-white/10"}`} />
                 <span className={`text-[10px] ${done ? "text-white" : "text-muted-foreground"}`}>{formatStatus(s)}</span>
               </div>
             );
@@ -380,7 +380,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
                   {c.evidenceFiles.map((file) => (
                     <a key={`${file.name}-${file.url}`} href={file.url} target="_blank" rel="noreferrer" className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10 hover:bg-white/[0.07]">
                       <div className="flex items-center gap-2">
-                        {file.type === "image" ? <ImageIcon className="h-4 w-4 text-fuchsia-300" /> : <FileText className="h-4 w-4 text-fuchsia-300" />}
+                        {file.type === "image" ? <ImageIcon className="h-4 w-4 text-violet-300" /> : <FileText className="h-4 w-4 text-violet-300" />}
                         <span className="truncate text-[11px] font-semibold text-white">{file.name}</span>
                       </div>
                       <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
@@ -396,7 +396,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
             </section>
 
             {c.firmReply && (
-              <section className="rounded-2xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 p-4 ring-1 ring-violet-300/30">
+              <section className="rounded-2xl bg-gradient-to-br from-violet-500/10 to-violet-500/10 p-4 ring-1 ring-violet-300/30">
                 <div className="flex items-center gap-2">
                   <BadgeCheck className="h-4 w-4 text-violet-200" />
                   <h4 className="text-sm font-semibold text-white">Official response from {firmName}</h4>
@@ -415,7 +415,7 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
                       <span className="font-semibold text-white">{t.stage}</span>
                       <span className="text-muted-foreground">{t.time}</span>
                     </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground"><span className="text-fuchsia-300">{t.actor}</span> · {t.note}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground"><span className="text-violet-300">{t.actor}</span> · {t.note}</p>
                   </div>
                 ))}
               </div>
@@ -434,9 +434,9 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
               </dl>
             </div>
 
-            <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-violet-500/15 p-4 ring-1 ring-fuchsia-300/30">
+            <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-4 ring-1 ring-violet-300/30">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-fuchsia-200" />
+                <Sparkles className="h-4 w-4 text-violet-200" />
                 <h4 className="text-sm font-semibold text-white">Credibility score</h4>
               </div>
               <div className="mt-2 flex items-end gap-1">
@@ -444,12 +444,12 @@ function ComplaintDetail({ c, onClose, onUpvote, firmName }: { c: ComplaintRecor
                 <div className="pb-1 text-xs text-muted-foreground">/ 100</div>
               </div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full bg-gradient-to-r from-fuchsia-400 to-violet-400" style={{ width: `${c.credibility}%` }} />
+                <div className="h-full bg-gradient-to-r from-violet-400 to-violet-400" style={{ width: `${c.credibility}%` }} />
               </div>
               <p className="mt-2 text-[10px] text-muted-foreground">Based on evidence, detail, and community signal.</p>
             </div>
 
-            <button onClick={onUpvote} className="w-full rounded-full bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/10 hover:bg-fuchsia-300/15 hover:ring-fuchsia-300/40">
+            <button onClick={onUpvote} className="w-full rounded-full bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/10 hover:bg-violet-300/15 hover:ring-violet-300/40">
               Same issue ({c.upvotes})
             </button>
           </aside>
@@ -587,7 +587,7 @@ function ComplaintForm({
 
         <div className="mt-3 grid grid-cols-6 gap-1">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className={`h-1.5 rounded-full ${i < step ? "bg-gradient-to-r from-fuchsia-400 to-violet-400" : "bg-white/10"}`} />
+            <div key={i} className={`h-1.5 rounded-full ${i < step ? "bg-gradient-to-r from-violet-400 to-violet-400" : "bg-white/10"}`} />
           ))}
         </div>
 
@@ -602,7 +602,7 @@ function ComplaintForm({
                     className={
                       "rounded-xl px-3 py-2 text-xs ring-1 transition " +
                       (issueType === t
-                        ? "bg-fuchsia-300/20 text-white ring-fuchsia-300/50"
+                        ? "bg-violet-300/20 text-white ring-violet-300/50"
                         : "bg-white/[0.03] text-white/80 ring-white/10 hover:bg-white/[0.06]")
                     }
                   >
@@ -619,7 +619,7 @@ function ComplaintForm({
                 <input
                   value={title} onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Account banned for reverse trading without proof"
-                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
+                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-300/40"
                 />
               </Field>
               <Field label="Description">
@@ -627,7 +627,7 @@ function ComplaintForm({
                   value={description} onChange={(e) => setDescription(e.target.value)}
                   rows={6}
                   placeholder={"What happened?\nWhen did it happen?\nWhat did the firm say?\nWhat evidence do you have?"}
-                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
+                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-300/40"
                 />
                 <p className="mt-1 text-[10px] text-muted-foreground">{description.length} chars · aim for 200+ for higher credibility.</p>
               </Field>
@@ -650,7 +650,7 @@ function ComplaintForm({
                   <BasicSelect value={tradingStyle} onChange={setTradingStyle} options={["Manual", "EA", "Copy Trading", "VPS"]} />
                 </Field>
                 <Field label="Country">
-                  <input value={country} onChange={(e) => setCountry(e.target.value)} className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40" />
+                  <input value={country} onChange={(e) => setCountry(e.target.value)} className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-300/40" />
                 </Field>
               </div>
             </Section>
@@ -660,7 +660,7 @@ function ComplaintForm({
             <Section title="Evidence" hint="Trust driver. Up to 10 files.">
               <button
                 onClick={() => fileRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-3 py-6 text-xs text-muted-foreground hover:border-fuchsia-300/40 hover:text-white"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-3 py-6 text-xs text-muted-foreground hover:border-violet-300/40 hover:text-white"
               >
                 <Upload className="h-4 w-4" /> Drag & drop or click to upload (PNG, PDF, CSV, EML · max {formatUploadLimit()} each)
               </button>
@@ -705,28 +705,28 @@ function ComplaintForm({
           {step === 6 && (
             <Section title="Privacy & submit" hint="Choose how you appear publicly.">
               <label className="flex items-start gap-2 rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
-                <input type="checkbox" checked={!anonymous} onChange={(e) => setAnonymous(!e.target.checked)} className="mt-0.5 accent-fuchsia-400" />
+                <input type="checkbox" checked={!anonymous} onChange={(e) => setAnonymous(!e.target.checked)} className="mt-0.5 accent-violet-400" />
                 <div>
                   <div className="text-xs font-semibold text-white">Show my name publicly</div>
                   <div className="text-[10px] text-muted-foreground">Your profile name will appear on the complaint.</div>
                 </div>
               </label>
               <label className="flex items-start gap-2 rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
-                <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="mt-0.5 accent-fuchsia-400" />
+                <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="mt-0.5 accent-violet-400" />
                 <div>
                   <div className="text-xs font-semibold text-white">Post anonymously</div>
                   <div className="text-[10px] text-muted-foreground">Your identity stays hidden from the public.</div>
                 </div>
               </label>
 
-              <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-violet-500/15 p-4 ring-1 ring-fuchsia-300/30">
+              <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-4 ring-1 ring-violet-300/30">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-fuchsia-200" />
+                  <Sparkles className="h-4 w-4 text-violet-200" />
                   <span className="text-sm font-semibold text-white">Estimated credibility score</span>
                   <span className="ml-auto text-lg font-bold text-white">{credibility}</span>
                 </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full bg-gradient-to-r from-fuchsia-400 to-violet-400" style={{ width: `${credibility}%` }} />
+                  <div className="h-full bg-gradient-to-r from-violet-400 to-violet-400" style={{ width: `${credibility}%` }} />
                 </div>
                 <p className="mt-2 text-[10px] text-muted-foreground">You will earn RR points when your complaint is verified.</p>
               </div>
@@ -746,7 +746,7 @@ function ComplaintForm({
             <button
               onClick={() => canNext && setStep((s) => s + 1)}
               disabled={!canNext || saving}
-              className="rounded-full rb-gradient-primary px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)] disabled:opacity-50"
+              className="rounded-full rb-gradient-primary px-5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(126,77,255,0.6)] disabled:opacity-50"
             >
               Continue
             </button>
@@ -793,7 +793,7 @@ function BasicSelect({ value, onChange, options }: { value: string; onChange: (v
   return (
     <select
       value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
+      className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-300/40"
     >
       {options.map((o) => <option key={o} value={o} className="bg-[var(--rb-bg-input)]">{o}</option>)}
     </select>

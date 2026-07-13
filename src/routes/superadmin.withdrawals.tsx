@@ -123,7 +123,7 @@ function WithdrawalsPage() {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search user, ID, destination…" className="w-full bg-transparent text-white outline-none placeholder:text-muted-foreground" />
           </div>
           {(["all", "PENDING", "ACTIVE", "APPROVED", "DECLINED"] as StatusFilter[]).map((f) => (
-            <button key={f} onClick={() => changeFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>
+            <button key={f} onClick={() => changeFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-violet-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>
               {f === "ACTIVE" ? "Approved" : f.charAt(0) + f.slice(1).toLowerCase()}
             </button>
           ))}
@@ -154,7 +154,7 @@ function WithdrawalsPage() {
                       </>
                     )}
                     {w.status === "ACTIVE" && (
-                      <button onClick={() => setConfirm({ w, action: "pay" })} title="Mark paid" className="grid h-7 w-7 place-items-center rounded-md bg-fuchsia-500/15 text-fuchsia-300 ring-1 ring-fuchsia-400/30"><Check className="h-3 w-3" /></button>
+                      <button onClick={() => setConfirm({ w, action: "pay" })} title="Mark paid" className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/30"><Check className="h-3 w-3" /></button>
                     )}
                   </div>
                 </td>

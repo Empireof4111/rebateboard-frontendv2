@@ -19,7 +19,7 @@ export const Route = createFileRoute("/superadmin/homepage-videos")({
 });
 
 const inputCls =
-  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:outline-none";
+  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-violet-400/40 focus:outline-none";
 
 function emptyVideo(priority = 0): DashboardAd {
   return {
@@ -235,7 +235,7 @@ function HomepageVideosPage() {
                 onDragEnd={() => setDraggingId(null)}
                 className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
                   selectedId === video.id
-                    ? "border-fuchsia-400/40 bg-white/[0.07]"
+                    ? "border-violet-400/40 bg-white/[0.07]"
                     : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
                 }`}
               >

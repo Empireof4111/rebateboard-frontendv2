@@ -484,7 +484,7 @@ function BrandsPage() {
                     <div>
                       <div className="font-semibold">{b.name}</div>
                       {b.website && (
-                        <a href={b.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-fuchsia-300">
+                        <a href={b.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-violet-300">
                           {b.website.replace(/^https?:\/\//, "")} <ExternalLink className="h-2.5 w-2.5" />
                         </a>
                       )}
@@ -757,7 +757,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
                     }
                   }}
                 />
-                <div className="flex h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/10 bg-white/5 text-xs text-muted-foreground hover:border-fuchsia-400/30">
+                <div className="flex h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/10 bg-white/5 text-xs text-muted-foreground hover:border-violet-400/30">
                   <Plus className="mr-2 h-4 w-4" /> {assetUploading === "screenshots" ? "Uploading screenshots..." : "Add screenshots"}
                 </div>
               </label>
@@ -853,7 +853,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
               <div key={challenge.id} className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-bold text-fuchsia-300 ring-1 ring-fuchsia-400/30">#{index + 1}</span>
+                    <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-bold text-violet-300 ring-1 ring-violet-400/30">#{index + 1}</span>
                     <span className="text-xs font-bold text-white">{challenge.program} · {challenge.size} · {challenge.asset}</span>
                     <label className="ml-2 flex items-center gap-1 text-[10px] text-muted-foreground">
                       <input type="checkbox" checked={challenge.active} onChange={(e) => patchChallenge(challenge.id, { active: e.target.checked })} /> Active
@@ -956,7 +956,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
                     }
                   }}
                 />
-                <div className="flex h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/10 bg-white/5 text-xs text-muted-foreground hover:border-fuchsia-400/30">
+                <div className="flex h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/10 bg-white/5 text-xs text-muted-foreground hover:border-violet-400/30">
                   {String(trust.kybDoc ?? "")
                     ? "Document attached - click to replace"
                     : assetUploading === "kyb"
@@ -965,7 +965,7 @@ function BrandEditModal({ brand, onClose, onSave }: { brand: AdminBrand; onClose
                 </div>
               </label>
               {String(trust.kybDoc ?? "") && (
-                <a href={String(trust.kybDoc)} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[10px] text-fuchsia-300 hover:underline">
+                <a href={String(trust.kybDoc)} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[10px] text-violet-300 hover:underline">
                   View current document
                 </a>
               )}

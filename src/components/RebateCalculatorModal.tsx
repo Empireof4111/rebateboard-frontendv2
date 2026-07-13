@@ -46,7 +46,7 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-fuchsia-500/20 via-violet-500/15 to-transparent p-5">
+        <div className="relative bg-gradient-to-br from-violet-500/20 via-violet-500/15 to-transparent p-5">
           <button
             onClick={onClose}
             className="absolute right-4 top-4 rounded-full bg-white/10 p-1.5 text-white ring-1 ring-white/10 hover:bg-white/20"
@@ -79,7 +79,7 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
                   className={
                     "rounded-full px-3 py-1.5 text-[11px] ring-1 transition " +
                     (brokerIdx === i
-                      ? "bg-fuchsia-300/20 text-white ring-fuchsia-300/50"
+                      ? "bg-violet-300/20 text-white ring-violet-300/50"
                       : "bg-white/[0.04] text-white/80 ring-white/10 hover:bg-white/[0.08]")
                   }
                 >
@@ -103,7 +103,7 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
               max={500}
               value={lots}
               onChange={(e) => setLots(Number(e.target.value))}
-              className="w-full accent-fuchsia-400"
+              className="w-full accent-violet-400"
             />
             <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
               <span>1</span><span>100</span><span>250</span><span>500</span>
@@ -125,7 +125,7 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
                   setCommission(Number(e.target.value));
                   setBrokerIdx(BROKERS.length - 1);
                 }}
-                className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
+                className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-300/40"
               />
             </div>
             <div>
@@ -142,15 +142,15 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
                   setCashback(Number(e.target.value));
                   setBrokerIdx(BROKERS.length - 1);
                 }}
-                className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-300/40"
+                className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-300/40"
               />
             </div>
           </div>
 
           {/* Result */}
-          <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-violet-500/15 p-4 ring-1 ring-fuchsia-300/30">
+          <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-4 ring-1 ring-violet-300/30">
             <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/80">
-              <Sparkles className="h-3 w-3 text-fuchsia-200" /> Estimated cashback
+              <Sparkles className="h-3 w-3 text-violet-200" /> Estimated cashback
             </div>
             <div className="mt-2 grid grid-cols-2 gap-3">
               <div>
@@ -178,7 +178,7 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
             </button>
             <a
               href="/signup"
-              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)]"
+              className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(126,77,255,0.6)]"
             >
               <Wallet className="h-3 w-3" /> Start earning cashback
               <TrendingUp className="h-3 w-3" />

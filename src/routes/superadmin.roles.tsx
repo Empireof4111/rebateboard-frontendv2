@@ -87,7 +87,7 @@ function RolesPage() {
                 <div className="flex flex-wrap gap-1">
                   {r.permissions.length === 0 && <span className="text-muted-foreground italic">No permissions</span>}
                   {r.permissions.map((p) => (
-                    <span key={p} className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[9px] font-bold text-fuchsia-300 ring-1 ring-fuchsia-400/30">{p}</span>
+                    <span key={p} className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[9px] font-bold text-violet-300 ring-1 ring-violet-400/30">{p}</span>
                   ))}
                 </div>
               </div>
@@ -149,7 +149,7 @@ function RolesPage() {
                   return (
                     <div key={g.id} className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
                       <div className="mb-1.5 flex items-center justify-between px-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-300">{g.label} <span className="text-muted-foreground">· {checkedCount}/{groupIds.length}</span></span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-violet-300">{g.label} <span className="text-muted-foreground">· {checkedCount}/{groupIds.length}</span></span>
                         <button
                           type="button"
                           onClick={() => {

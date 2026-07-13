@@ -193,7 +193,7 @@ export function SiteFooter() {
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="glass-pill grid h-8 w-8 place-items-center rounded-full transition hover:border-fuchsia-300/35 hover:bg-white/[0.08]"
+                className="glass-pill grid h-8 w-8 place-items-center rounded-full transition hover:border-violet-300/35 hover:bg-white/[0.08]"
                 aria-label={`RebateBoard on ${label}`}
                 title={label}
               >

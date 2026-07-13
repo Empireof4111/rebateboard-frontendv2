@@ -33,7 +33,7 @@ const STATUS_OPTIONS: DemoAccountStatus[] = ["draft", "published", "archived"];
 
 const platformPillClass: Record<DemoAccountPlatform, string> = {
   MT4: "bg-sky-500/15 text-sky-300 ring-sky-400/30",
-  MT5: "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30",
+  MT5: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
   cTrader: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30",
   DXtrade: "bg-amber-500/15 text-amber-300 ring-amber-400/30",
   TradingView: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
@@ -316,14 +316,14 @@ export function DemoAccountsAdminPage() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search brand or plan..."
-              className="w-full rounded-full border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:bg-white/[0.07]"
+              className="w-full rounded-full border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-violet-400/40 focus:bg-white/[0.07]"
             />
           </div>
 
           <select
             value={platformFilter}
             onChange={(event) => setPlatformFilter(event.target.value as DemoAccountPlatform | "all")}
-            className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
+            className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-violet-400/40"
           >
             {PLATFORM_OPTIONS.map((platform) => (
               <option key={platform} value={platform} className="bg-[var(--rb-bg-elevated)] text-white">
@@ -436,7 +436,7 @@ export function DemoAccountsAdminPage() {
       </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <Panel title="Publishing notes" action={<Monitor className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Publishing notes" action={<Monitor className="h-3.5 w-3.5 text-violet-300" />}>
           <div className="grid gap-3 md:grid-cols-3">
             <InfoCard
               title="Credential hygiene"

@@ -301,7 +301,7 @@ export type AdminOffer = {
   views?: number;
   mode: OfferMode;
   flyerUrl?: string;        // when mode === "flyer"
-  accentFrom?: string;      // tailwind hex (e.g. "#a855f7")
+  accentFrom?: string;      // brand hex (e.g. "#5A22F1")
   accentTo?: string;
   tags?: OfferTag[];
   terms?: string;
@@ -310,13 +310,13 @@ export type AdminOffer = {
 };
 
 export const offers: AdminOffer[] = [
-  { id: "of_1", brand: "FundingPips", brandId: "b_01", category: "Prop Firms", title: "20% OFF all accounts", description: "20% off all accounts — first order only.", discount: "20% OFF", code: "MATCH", uses: 1240, status: "active", expires: "May 30", mode: "form", accentFrom: "#a855f7", accentTo: "#ec4899", tags: ["exclusive", "trending"], pinned: true, createdAt: "2026-04-22" },
+  { id: "of_1", brand: "FundingPips", brandId: "b_01", category: "Prop Firms", title: "20% OFF all accounts", description: "20% off all accounts — first order only.", discount: "20% OFF", code: "MATCH", uses: 1240, status: "active", expires: "May 30", mode: "form", accentFrom: "#5A22F1", accentTo: "#7E4DFF", tags: ["exclusive", "trending"], pinned: true, createdAt: "2026-04-22" },
   { id: "of_2", brand: "FTMO", brandId: "b_02", category: "Prop Firms", title: "Free retry on Phase 1", description: "Get a free Phase 1 retry on any FTMO challenge.", discount: "FREE RETRY", code: "FTMO-RETRY", uses: 820, status: "active", expires: "Jun 15", mode: "form", accentFrom: "#22d3ee", accentTo: "#3b82f6", tags: ["new"], createdAt: "2026-04-25" },
   { id: "of_3", brand: "The5ers", brandId: "b_04", category: "Prop Firms", title: "10% OFF + Free account", description: "10% off + credits equivalent to a free account of the same size if reaching payout (first order only).", discount: "10% OFF", code: "MATCH", uses: 410, status: "active", expires: "May 14", mode: "form", accentFrom: "#f59e0b", accentTo: "#ef4444", tags: ["limited", "free-account"], createdAt: "2026-04-28" },
   { id: "of_4", brand: "Goat Funded Trader", category: "Prop Firms", title: "40% OFF + Free account", description: "40% off all accounts + free account upon payout (issued by the firm) — limited time only.", discount: "40% OFF", code: "MATCH40", uses: 612, status: "active", expires: "May 14", mode: "form", accentFrom: "#10b981", accentTo: "#06b6d4", tags: ["exclusive", "limited", "free-account"], pinned: true, createdAt: "2026-04-29" },
   { id: "of_5", brand: "Bybit", brandId: "b_07", category: "Exchanges", title: "30% fee rebate for 30 days", description: "New users get a 30% fee rebate for the first 30 days after signing up via RebateBoard.", discount: "30% REBATE", code: "RBYBIT", uses: 287, status: "active", expires: "Jun 30", mode: "form", accentFrom: "#fbbf24", accentTo: "#f97316", tags: ["new"], createdAt: "2026-04-30" },
   { id: "of_6", brand: "Exness", brandId: "b_09", category: "Brokers", title: "Up to $1,000 deposit bonus", description: "Get up to $1,000 deposit bonus when funding a verified Exness account.", discount: "BONUS", code: "EXN1000", uses: 145, status: "active", expires: "Jul 01", mode: "form", accentFrom: "#0ea5e9", accentTo: "#6366f1", tags: ["trending"], createdAt: "2026-05-01" },
-  { id: "of_7", brand: "TradingView", brandId: "b_13", category: "Tools", title: "1 month FREE Premium", description: "Activate one month of TradingView Premium, free for new users.", discount: "1 MONTH FREE", code: "TV-FREE", uses: 902, status: "active", expires: "Jun 10", mode: "form", accentFrom: "#3b82f6", accentTo: "#8b5cf6", tags: ["exclusive"], createdAt: "2026-05-02" },
+  { id: "of_7", brand: "TradingView", brandId: "b_13", category: "Tools", title: "1 month FREE Premium", description: "Activate one month of TradingView Premium, free for new users.", discount: "1 MONTH FREE", code: "TV-FREE", uses: 902, status: "active", expires: "Jun 10", mode: "form", accentFrom: "#3b82f6", accentTo: "#7e4dff", tags: ["exclusive"], createdAt: "2026-05-02" },
 ];
 
 // RR ledger (legacy)

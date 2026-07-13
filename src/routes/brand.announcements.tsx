@@ -49,9 +49,9 @@ function BrandAnnouncements() {
       </div>
 
       <div className="glass rounded-2xl p-5 ring-1 ring-white/10">
-        <div className="flex items-center gap-2 text-fuchsia-300"><Megaphone className="h-4 w-4" /><div className="text-sm font-bold text-white">New announcement</div></div>
+        <div className="flex items-center gap-2 text-violet-300"><Megaphone className="h-4 w-4" /><div className="text-sm font-bold text-white">New announcement</div></div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <textarea value={draft.message} onChange={(e) => setDraft((p) => ({ ...p, message: e.target.value }))} placeholder="Announcement message" className="md:col-span-2 min-h-[80px] rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-fuchsia-300/40 placeholder:text-muted-foreground" />
+          <textarea value={draft.message} onChange={(e) => setDraft((p) => ({ ...p, message: e.target.value }))} placeholder="Announcement message" className="md:col-span-2 min-h-[80px] rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-violet-300/40 placeholder:text-muted-foreground" />
           <input value={draft.cta} onChange={(e) => setDraft((p) => ({ ...p, cta: e.target.value }))} placeholder="CTA label" className="rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-muted-foreground" />
           <input value={draft.link} onChange={(e) => setDraft((p) => ({ ...p, link: e.target.value }))} placeholder="CTA link" className="rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-muted-foreground" />
           <input type="date" value={draft.start} onChange={(e) => setDraft((p) => ({ ...p, start: e.target.value }))} className="rounded-xl bg-white/5 p-3 text-sm text-white outline-none ring-1 ring-white/10" />
@@ -65,7 +65,7 @@ function BrandAnnouncements() {
       <div className="grid gap-3">
         {mine.map((a) => (
           <div key={a.id} className="glass flex items-start gap-3 rounded-2xl p-4 ring-1 ring-white/10">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] ring-1 ring-fuchsia-300/30"><Megaphone className="h-4 w-4 text-fuchsia-200" /></div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] ring-1 ring-violet-300/30"><Megaphone className="h-4 w-4 text-violet-200" /></div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${a.status === "active" ? "bg-emerald-500/15 text-emerald-300" : a.status === "scheduled" ? "bg-sky-500/15 text-sky-300" : "bg-white/5 text-muted-foreground"}`}>{a.status}</span>

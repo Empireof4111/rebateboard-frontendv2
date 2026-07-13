@@ -369,7 +369,7 @@ function RebataPage() {
             title="Rebeta Chat"
             action={
               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5 text-fuchsia-300" />
+                <ShieldCheck className="h-3.5 w-3.5 text-violet-300" />
                 Educational
               </span>
             }
@@ -414,7 +414,7 @@ function RebataPage() {
                   <div className="flex gap-2">
                     <CoachAvatar />
                     <div className="inline-flex max-w-[75%] items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-xs text-white/75">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-fuchsia-300" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" />
                       Reviewing your trading context...
                     </div>
                   </div>
@@ -488,13 +488,13 @@ function RebataPage() {
                       usageStatus?.premiumRequired
                     }
                     aria-label="Add file or screenshot"
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white/85 transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white/85 transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
 
                   <label className="mb-0.5 inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-white/10 bg-white/[0.05] px-2 text-[11px] text-white/80">
-                    <Languages className="h-3.5 w-3.5 text-fuchsia-300" />
+                    <Languages className="h-3.5 w-3.5 text-violet-300" />
                     <select
                       value={selectedLanguage}
                       onChange={(event) =>
@@ -556,7 +556,7 @@ function RebataPage() {
 
           <Panel
             title="Quick Prompts"
-            action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}
+            action={<Sparkles className="h-4 w-4 text-violet-300" />}
           >
             <div className="space-y-2">
               {suggestions.map((prompt) => (
@@ -565,17 +565,17 @@ function RebataPage() {
                   type="button"
                   onClick={() => sendSuggestion(prompt)}
                   disabled={sending || Boolean(usageStatus?.premiumRequired)}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-xs text-white/85 transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:opacity-50"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-xs text-white/85 transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:opacity-50"
                 >
                   <span>{prompt}</span>
-                  <Send className="h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+                  <Send className="h-3.5 w-3.5 shrink-0 text-violet-300" />
                 </button>
               ))}
             </div>
 
             <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-white">
-                <Brain className="h-4 w-4 text-fuchsia-300" />
+                <Brain className="h-4 w-4 text-violet-300" />
                 Rebeta Scope
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -613,16 +613,16 @@ function RebataPage() {
               <Panel
                 key={item.title}
                 title={item.title}
-                action={<Target className="h-4 w-4 text-fuchsia-300" />}
+                action={<Target className="h-4 w-4 text-violet-300" />}
               >
                 <p className="min-h-10 text-xs text-white/85">{item.detail}</p>
                 <button
                   type="button"
                   onClick={() => sendSuggestion(item.prompt)}
                   disabled={sending}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:opacity-50"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:opacity-50"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />
+                  <Sparkles className="h-3.5 w-3.5 text-violet-300" />
                   Ask Rebeta
                 </button>
               </Panel>
@@ -633,7 +633,7 @@ function RebataPage() {
 
       <Panel
         title={`Rebeta Action Plan${user?.name ? ` for ${user.name}` : ""}`}
-        action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}
+        action={<Sparkles className="h-4 w-4 text-violet-300" />}
       >
         <div className="grid gap-3 md:grid-cols-3">
           {[
@@ -648,10 +648,10 @@ function RebataPage() {
                 sendSuggestion(`Create an action plan for: ${plan.t}.`)
               }
               disabled={sending}
-              className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-fuchsia-300/40 hover:bg-white/[0.08] disabled:opacity-50"
+              className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-violet-300/40 hover:bg-white/[0.08] disabled:opacity-50"
             >
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Target className="h-4 w-4 text-fuchsia-300" /> {plan.t}
+                <Target className="h-4 w-4 text-violet-300" /> {plan.t}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{plan.d}</p>
             </button>
@@ -805,7 +805,7 @@ function StructuredCard({
         tone === "warning" ? (
           <CircleAlert className="h-4 w-4 text-orange-200" />
         ) : (
-          <Sparkles className="h-4 w-4 text-fuchsia-300" />
+          <Sparkles className="h-4 w-4 text-violet-300" />
         )
       }
     >
@@ -835,7 +835,7 @@ function CoachAvatar({ error = false }: { error?: boolean }) {
       className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
         error
           ? "bg-red-500/20 text-red-100 ring-1 ring-red-500/30"
-          : "bg-gradient-to-br from-violet-400 to-fuchsia-600 text-white"
+          : "bg-gradient-to-br from-violet-400 to-violet-600 text-white"
       }`}
     >
       {error ? (
@@ -861,9 +861,9 @@ function AttachmentChip({
       className={`inline-flex max-w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] text-white/80 ${compact ? "max-w-[220px]" : ""}`}
     >
       {attachment.kind === "image" ? (
-        <Paperclip className="h-3.5 w-3.5 text-fuchsia-300" />
+        <Paperclip className="h-3.5 w-3.5 text-violet-300" />
       ) : (
-        <FileText className="h-3.5 w-3.5 text-fuchsia-300" />
+        <FileText className="h-3.5 w-3.5 text-violet-300" />
       )}
       <span className="truncate">{attachment.name}</span>
       <span className="shrink-0 text-white/40">

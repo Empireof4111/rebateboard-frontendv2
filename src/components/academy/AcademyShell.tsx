@@ -141,14 +141,14 @@ function Home({ setView, preview }: { setView: (v: View) => void; preview: boole
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 p-6 md:p-10">
-        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-cyan-500/10 p-6 md:p-10">
+        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
         <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-fuchsia-300/90">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-violet-300/90">
             <Sparkles className="h-3 w-3" /> Trader University
           </div>
-          <h1 className="mt-4 max-w-3xl bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-3xl font-bold leading-tight text-transparent md:text-5xl">
+          <h1 className="mt-4 max-w-3xl bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-3xl font-bold leading-tight text-transparent md:text-5xl">
             The Academy that turns reading into <span className="text-emerald-300">RR rewards</span>.
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-white/70 md:text-base">
@@ -191,7 +191,7 @@ function Home({ setView, preview }: { setView: (v: View) => void; preview: boole
                   </div>
                 </div>
                 <p className="mt-3 text-sm text-white/70">{f.tagline}</p>
-                <div className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-fuchsia-300">
+                <div className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-violet-300">
                   Enter faculty <ChevronRight className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -211,8 +211,8 @@ function Home({ setView, preview }: { setView: (v: View) => void; preview: boole
       </div>
 
       {preview && (
-        <div className="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/10 p-4 text-sm text-white/85">
-          You're viewing a public preview. <Link to="/login" className="font-bold text-fuchsia-300 underline">Sign in</Link> to start lessons, take quizzes, earn RR, and download certificates.
+        <div className="rounded-2xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-white/85">
+          You're viewing a public preview. <Link to="/login" className="font-bold text-violet-300 underline">Sign in</Link> to start lessons, take quizzes, earn RR, and download certificates.
         </div>
       )}
     </div>
@@ -293,7 +293,7 @@ function CourseCard({ course, onOpen }: { course: Course; onOpen: () => void }) 
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/70">{course.level}</span>
         </div>
         {course.access === "paid" ? (
-          <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-300">PAID</span>
+          <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">PAID</span>
         ) : (
           <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">FREE</span>
         )}
@@ -305,7 +305,7 @@ function CourseCard({ course, onOpen }: { course: Course; onOpen: () => void }) 
         <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-white/50">
           <span className="inline-flex items-center gap-1"><BookOpen className="h-3 w-3" /> {totals.lessons} lessons</span>
           <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {course.estHours}h</span>
-          <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-fuchsia-300" /> {course.rating.toFixed(1)}</span>
+          <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-violet-300" /> {course.rating.toFixed(1)}</span>
         </div>
 
         <div className="mt-auto pt-4">
@@ -367,7 +367,7 @@ function CourseDetail({
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/70">{course.level}</span>
               {course.access === "paid"
-                ? <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-300">PAID</span>
+                ? <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">PAID</span>
                 : <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">FREE</span>}
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                 <Trophy className="h-3 w-3" /> +{course.rrReward} RR on completion
@@ -379,8 +379,8 @@ function CourseDetail({
             <div className="mt-4 flex flex-wrap gap-3 text-[11px] text-white/60">
               <span className="inline-flex items-center gap-1"><BookOpen className="h-3 w-3" /> {totals.modules} modules · {totals.lessons} lessons</span>
               <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> ~{course.estHours}h</span>
-              <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-fuchsia-300" /> {course.rating.toFixed(1)} · {course.enrolled.toLocaleString()} enrolled</span>
-              <span className="inline-flex items-center gap-1"><Award className="h-3 w-3 text-fuchsia-300" /> Certificate on final exam</span>
+              <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-violet-300" /> {course.rating.toFixed(1)} · {course.enrolled.toLocaleString()} enrolled</span>
+              <span className="inline-flex items-center gap-1"><Award className="h-3 w-3 text-violet-300" /> Certificate on final exam</span>
             </div>
 
             {p && (
@@ -476,7 +476,7 @@ function CourseDetail({
                         {!preview && unlocked ? (
                           <button
                             onClick={() => setView({ kind: "lesson", courseId, lessonId: l.id })}
-                            className="text-[11px] font-semibold text-fuchsia-300 hover:underline"
+                            className="text-[11px] font-semibold text-violet-300 hover:underline"
                           >
                             {done ? "Review" : "Start"}
                           </button>
@@ -488,14 +488,14 @@ function CourseDetail({
                   })}
                   <li className="flex items-center justify-between bg-white/[0.02] px-4 py-2">
                     <div className="flex items-center gap-2 text-sm">
-                      <Brain className="h-4 w-4 text-fuchsia-300" />
+                      <Brain className="h-4 w-4 text-violet-300" />
                       <span className="text-white">Module Quiz</span>
                       <span className="text-[10px] text-white/40">{m.quiz.length} questions</span>
                     </div>
                     {!preview && unlocked ? (
                       <button
                         onClick={() => setView({ kind: "module-quiz", courseId, moduleId: m.id })}
-                        className="text-[11px] font-semibold text-fuchsia-300 hover:underline"
+                        className="text-[11px] font-semibold text-violet-300 hover:underline"
                       >
                         {quizPassed ? "Retake" : "Take quiz"}
                       </button>
@@ -507,10 +507,10 @@ function CourseDetail({
           })}
 
           {/* Final exam */}
-          <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-violet-500/10 p-4">
+          <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-violet-500/10 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-fuchsia-300/80">Final exam</div>
+                <div className="text-[11px] uppercase tracking-wider text-violet-300/80">Final exam</div>
                 <div className="text-sm font-semibold text-white">Unlock your certificate</div>
                 <div className="text-[11px] text-white/60">Pass with 80%+ to earn +{course.access === "free" ? course.rrReward : Math.round(course.rrReward * 0.6)} RR and a verified certificate.</div>
               </div>
@@ -574,7 +574,7 @@ function LessonPlayer({ courseId, lessonId, setView }: { courseId: string; lesso
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-fuchsia-300/80">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-violet-300/80">
           <BookOpen className="h-3 w-3" /> {cur.module.title}
         </div>
         <h1 className="mt-1 text-xl font-bold text-white md:text-2xl">{cur.lesson.title}</h1>
@@ -610,13 +610,13 @@ function LessonPlayer({ courseId, lessonId, setView }: { courseId: string; lesso
               />
             </div>
             <div className="border-t border-white/5 bg-white/[0.02] px-3 py-2 text-[11px] text-white/60">
-              Prefer reading? <button onClick={() => setTab("read")} className="font-semibold text-fuchsia-300 hover:underline">Switch to the written lesson →</button>
+              Prefer reading? <button onClick={() => setTab("read")} className="font-semibold text-violet-300 hover:underline">Switch to the written lesson →</button>
             </div>
           </div>
         ) : (
           <article className="mt-4 space-y-4 text-sm leading-relaxed text-white/85">
             <p className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-white/80">
-              <span className="mr-1 text-[10px] uppercase tracking-wider text-fuchsia-300">Summary</span>
+              <span className="mr-1 text-[10px] uppercase tracking-wider text-violet-300">Summary</span>
               {cur.lesson.summary}
             </p>
             {cur.lesson.body.split(/\n\n+/).map((para, i) => (
@@ -624,7 +624,7 @@ function LessonPlayer({ courseId, lessonId, setView }: { courseId: string; lesso
             ))}
             <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-[12px] text-white/60">
               Want to see this explained on video instead?{" "}
-              <button onClick={() => setTab("video")} className="font-semibold text-fuchsia-300 hover:underline">Watch the video version →</button>
+              <button onClick={() => setTab("video")} className="font-semibold text-violet-300 hover:underline">Watch the video version →</button>
             </div>
           </article>
         )}
@@ -678,7 +678,7 @@ function QuizRunner({
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-fuchsia-300/80">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-violet-300/80">
         <Brain className="h-3 w-3" /> {title}
       </div>
       <h2 className="mt-1 text-xl font-bold text-white">Answer all {questions.length} questions</h2>
@@ -703,12 +703,12 @@ function QuizRunner({
                       className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition ${
                         correctChoice ? "border-emerald-400/60 bg-emerald-500/10 text-emerald-200"
                         : wrongChoice ? "border-rose-400/60 bg-rose-500/10 text-rose-200"
-                        : chosen ? "border-fuchsia-400/60 bg-fuchsia-500/10 text-white"
+                        : chosen ? "border-violet-400/60 bg-violet-500/10 text-white"
                         : "border-white/10 text-white/80 hover:border-white/20"
                       }`}
                     >
-                      <span className={`grid h-5 w-5 place-items-center rounded-full border ${chosen ? "border-fuchsia-400" : "border-white/30"}`}>
-                        {chosen && <span className="h-2 w-2 rounded-full bg-fuchsia-400" />}
+                      <span className={`grid h-5 w-5 place-items-center rounded-full border ${chosen ? "border-violet-400" : "border-white/30"}`}>
+                        {chosen && <span className="h-2 w-2 rounded-full bg-violet-400" />}
                       </span>
                       {opt}
                     </button>
@@ -716,8 +716,8 @@ function QuizRunner({
                 })}
               </div>
               {submitted && q.explain && (
-                <div className="mt-2 flex items-start gap-2 rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-2 text-[11px] text-white/80">
-                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fuchsia-300" /> {q.explain}
+                <div className="mt-2 flex items-start gap-2 rounded-lg border border-violet-500/20 bg-violet-500/5 p-2 text-[11px] text-white/80">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" /> {q.explain}
                 </div>
               )}
             </div>
@@ -814,7 +814,7 @@ function CertificateArtwork({ data, compact = false }: { data: CertData; compact
       <div className="pointer-events-none absolute inset-5 rounded-lg border" style={{ borderColor: "rgba(120,40,200,0.18)" }} />
       <div
         className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(217,70,239,0.18) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(126,77,255,0.18) 0%, transparent 70%)" }}
       />
       <div
         className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full"
@@ -824,7 +824,7 @@ function CertificateArtwork({ data, compact = false }: { data: CertData; compact
       <div className="relative flex h-full flex-col items-center justify-between text-center">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em]"
-               style={{ background: "linear-gradient(90deg,#a21caf,#7c3aed)", color: "white" }}>
+               style={{ background: "linear-gradient(90deg,#5a22f1,#5a22f1)", color: "white" }}>
             ★ RebateBoard Academy
           </div>
           <div className="mt-4 text-[11px] uppercase tracking-[0.35em]" style={{ color: "rgba(26,10,46,0.55)" }}>
@@ -841,7 +841,7 @@ function CertificateArtwork({ data, compact = false }: { data: CertData; compact
             has successfully completed all modules and passed the final examination of
           </div>
           <div className="mt-2 text-lg font-bold md:text-2xl"
-               style={{ background: "linear-gradient(90deg,#a21caf,#7c3aed,#0891b2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+               style={{ background: "linear-gradient(90deg,#5a22f1,#5a22f1,#0891b2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
             {data.courseTitle}
           </div>
           <div className="mt-1 text-[11px]" style={{ color: "rgba(26,10,46,0.55)" }}>
@@ -915,7 +915,7 @@ function CertificatePreviewModal({
       <DialogContent className="max-w-4xl border-white/10 bg-[var(--rb-bg-canvas)] text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Eye className="h-4 w-4 text-fuchsia-300" /> Certificate Preview
+            <Eye className="h-4 w-4 text-violet-300" /> Certificate Preview
           </DialogTitle>
           <p className="text-xs text-white/60">Review your certificate below, then download it as a PDF or image.</p>
         </DialogHeader>
@@ -974,15 +974,15 @@ function CertificateView({ courseId, setView }: { courseId: string; setView: (v:
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-3xl border border-fuchsia-400/40 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1f] to-[#0a1428] p-8 md:p-12">
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-fuchsia-500/30 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-violet-400/40 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1f] to-[#0a1428] p-8 md:p-12">
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-violet-500/30 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
         <div className="relative text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/30 bg-black/40 px-4 py-1.5 text-[11px] uppercase tracking-[0.3em] text-fuchsia-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-black/40 px-4 py-1.5 text-[11px] uppercase tracking-[0.3em] text-violet-300">
             <Award className="h-3.5 w-3.5" /> Certificate of Completion
           </div>
           <div className="mt-6 text-xs uppercase tracking-widest text-white/50">RebateBoard Academy</div>
-          <h1 className="mt-2 bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-3xl font-bold text-transparent md:text-5xl">
+          <h1 className="mt-2 bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-3xl font-bold text-transparent md:text-5xl">
             {found.course.title}
           </h1>
           <p className="mt-3 text-sm text-white/60">This certifies that the holder has completed all modules and passed the final examination.</p>
@@ -994,7 +994,7 @@ function CertificateView({ courseId, setView }: { courseId: string; setView: (v:
               value={store.holderName}
               onChange={(e) => store.setHolderName(e.target.value)}
               placeholder="Your full name"
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-fuchsia-400/60"
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-violet-400/60"
             />
           </div>
 
@@ -1071,7 +1071,7 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full rb-gradient-primary text-white shadow-lg shadow-fuchsia-500/30 transition hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full rb-gradient-primary text-white shadow-lg shadow-violet-500/30 transition hover:scale-105"
         aria-label="Open AI Tutor"
       >
         {open ? <X className="h-5 w-5" /> : <Bot className="h-6 w-6" />}
@@ -1079,7 +1079,7 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
 
       {open && (
         <div className="fixed bottom-24 right-6 z-40 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[rgba(9,9,13,0.95)] shadow-2xl backdrop-blur">
-          <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-violet-500/20 to-violet-500/20 px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="grid h-8 w-8 place-items-center rounded-full rb-gradient-primary">
                 <Bot className="h-4 w-4 text-white" />
@@ -1095,7 +1095,7 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
           <div className="flex-1 space-y-3 overflow-auto p-3">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${m.role === "user" ? "bg-fuchsia-500/20 text-white" : "bg-white/10 text-white/90"}`}>
+                <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${m.role === "user" ? "bg-violet-500/20 text-white" : "bg-white/10 text-white/90"}`}>
                   {m.text}
                 </div>
               </div>

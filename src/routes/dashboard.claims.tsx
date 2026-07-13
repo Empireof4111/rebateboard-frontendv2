@@ -137,7 +137,7 @@ function ClaimsPage() {
             ← Back to Wallet
           </button>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
-            <ClipboardCheck className="h-6 w-6 text-fuchsia-300" /> My cashback claims
+            <ClipboardCheck className="h-6 w-6 text-violet-300" /> My cashback claims
           </h1>
           <p className="mt-1 text-sm text-white/60">Every claim you submit lives here — with proof, timeline, and payout target.</p>
         </div>
@@ -171,13 +171,13 @@ function ClaimsPage() {
             <div key={row.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-semibold text-white">{row.firm}</div>
-                <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] text-fuchsia-200">
+                <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] text-violet-200">
                   {purchaseStatusLabel(row.step)}
                 </span>
               </div>
               <div className="mt-1 text-xs text-white/60">{row.program}</div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-fuchsia-200">${row.amountUsd.toFixed(2)}</span>
+                <span className="text-violet-200">${row.amountUsd.toFixed(2)}</span>
                 <span className="text-white/50">{new Date(row.when).toLocaleDateString()}</span>
               </div>
             </div>
@@ -252,7 +252,7 @@ function ClaimsPage() {
                   c.status === "paid" ? "bg-emerald-500/15 text-emerald-300"
                   : c.status === "approved" ? "bg-sky-500/15 text-sky-300"
                   : c.status === "rejected" ? "bg-rose-500/15 text-rose-300"
-                  : "bg-fuchsia-500/15 text-fuchsia-200"
+                  : "bg-violet-500/15 text-violet-200"
                 }`}>{c.status}</span>
               </div>
             </button>
@@ -294,7 +294,7 @@ function purchaseStatusLabel(step: string) {
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: "violet" | "emerald" | "rose" | "sky" }) {
-  const ring = tone === "emerald" ? "from-emerald-500/20" : tone === "violet" ? "from-fuchsia-500/20" : tone === "sky" ? "from-sky-500/20" : "from-rose-500/20";
+  const ring = tone === "emerald" ? "from-emerald-500/20" : tone === "violet" ? "from-violet-500/20" : tone === "sky" ? "from-sky-500/20" : "from-rose-500/20";
   return (
     <div className={`rounded-xl border border-white/10 bg-gradient-to-br ${ring} to-transparent p-4`}>
       <div className="text-[11px] uppercase tracking-wide text-white/60">{label}</div>

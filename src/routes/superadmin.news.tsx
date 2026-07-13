@@ -122,7 +122,7 @@ function NewsPage() {
                   {n.authorAvatar ? (
                     <img src={n.authorAvatar} alt="" className="h-7 w-7 rounded-full object-cover ring-1 ring-white/10" />
                   ) : (
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-fuchsia-500/20 text-[10px] font-bold text-fuchsia-200">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-violet-500/20 text-[10px] font-bold text-violet-200">
                       {n.author.slice(0, 2).toUpperCase()}
                     </span>
                   )}

@@ -278,7 +278,7 @@ function ProfilePage() {
           <div className="relative w-fit">
             <Avatar className="h-20 w-20 rounded-2xl ring-1 ring-white/15">
               <AvatarImage src={user.dp || undefined} alt={`${user.name} profile`} className="object-cover" />
-              <AvatarFallback className="rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 text-lg font-bold text-white">
+              <AvatarFallback className="rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 text-lg font-bold text-white">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -291,7 +291,7 @@ function ProfilePage() {
           <div className="min-w-0 flex-1">
             <div className="truncate text-xl font-bold text-white">{user.fullName || user.name}</div>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span className="font-semibold text-fuchsia-200">{username}</span>
+              <span className="font-semibold text-violet-200">{username}</span>
               <span>{user.email}</span>
             </div>
             <div className="mt-1 flex flex-wrap gap-2">
@@ -334,11 +334,11 @@ function ProfilePage() {
         <div className="mt-5">
           <div className="mb-1.5 flex items-center justify-between text-[11px]">
             <span className="font-medium text-white/80">Profile completion</span>
-            <span className="tabular-nums text-fuchsia-200">{completion}%</span>
+            <span className="tabular-nums text-violet-200">{completion}%</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500"
               style={{ width: `${completion}%` }}
             />
           </div>
@@ -487,7 +487,7 @@ function VerificationUpload({
 }) {
   return (
     <label className="flex min-h-24 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.025] p-3 transition hover:border-primary/35 hover:bg-primary/[0.06]">
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${ready ? "bg-emerald-500/15 text-emerald-300" : "bg-primary/15 text-fuchsia-200"}`}>
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${ready ? "bg-emerald-500/15 text-emerald-300" : "bg-primary/15 text-violet-200"}`}>
         {ready ? <CheckCircle2 className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
       </span>
       <span>

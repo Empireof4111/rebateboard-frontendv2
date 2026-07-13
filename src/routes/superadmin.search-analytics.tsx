@@ -29,7 +29,7 @@ export const Route = createFileRoute("/superadmin/search-analytics")({
   component: SearchAnalyticsPage,
 });
 
-const COLORS = ["#d946ef", "#a855f7", "#8b5cf6", "#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b"];
+const COLORS = ["#7e4dff", "#7e4dff", "#7e4dff", "#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b"];
 
 function SearchAnalyticsPage() {
   const [range, setRange] = useState<7 | 30 | 90>(30);
@@ -133,7 +133,7 @@ function SearchAnalyticsPage() {
               <button
                 key={days}
                 onClick={() => setRange(days)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${range === days ? "bg-fuchsia-500/20 text-fuchsia-200 ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${range === days ? "bg-violet-500/20 text-violet-200 ring-violet-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}
               >
                 {days}d
               </button>
@@ -163,14 +163,14 @@ function SearchAnalyticsPage() {
             <ResponsiveContainer>
               <AreaChart data={trend}>
                 <defs>
-                  <linearGradient id="gSearch" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#d946ef" stopOpacity={0.6} /><stop offset="100%" stopColor="#d946ef" stopOpacity={0} /></linearGradient>
+                  <linearGradient id="gSearch" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#7e4dff" stopOpacity={0.6} /><stop offset="100%" stopColor="#7e4dff" stopOpacity={0} /></linearGradient>
                   <linearGradient id="gClick" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.6} /><stop offset="100%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                 <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }} />
                 <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12 }} />
-                <Area type="monotone" dataKey="searches" stroke="#d946ef" fill="url(#gSearch)" strokeWidth={2} />
+                <Area type="monotone" dataKey="searches" stroke="#7e4dff" fill="url(#gSearch)" strokeWidth={2} />
                 <Area type="monotone" dataKey="clicks" stroke="#10b981" fill="url(#gClick)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -179,7 +179,7 @@ function SearchAnalyticsPage() {
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Top Search Terms" action={<Flame className="h-4 w-4 text-fuchsia-300" />}>
+        <Panel title="Top Search Terms" action={<Flame className="h-4 w-4 text-violet-300" />}>
           {loading ? (
             <div className="h-64 animate-pulse rounded-2xl bg-white/[0.03]" />
           ) : (
@@ -283,7 +283,7 @@ function SearchAnalyticsPage() {
               {!loading && recentEvents.slice(0, 25).map((event) => (
                 <tr key={event.id} className="border-t border-white/5 text-white">
                   <td className="px-2 py-2 text-muted-foreground">{new Date(event.createdAt).toLocaleString()}</td>
-                  <td className="px-2 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${event.type === "click" ? "bg-emerald-500/15 text-emerald-300" : event.type === "no_results" ? "bg-amber-500/15 text-amber-300" : "bg-fuchsia-500/15 text-fuchsia-300"}`}>{event.type}</span></td>
+                  <td className="px-2 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${event.type === "click" ? "bg-emerald-500/15 text-emerald-300" : event.type === "no_results" ? "bg-amber-500/15 text-amber-300" : "bg-violet-500/15 text-violet-300"}`}>{event.type}</span></td>
                   <td className="px-2 py-2">{event.term}</td>
                   <td className="px-2 py-2">{event.resultLabel || "-"}</td>
                   <td className="px-2 py-2 text-muted-foreground">{event.resultGroup || "-"}</td>
@@ -367,7 +367,7 @@ function TrendingEditor({
         <div className="flex items-center gap-2">
           {dirty && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300">Unsaved</span>}
           <button onClick={reset} className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 text-[11px] text-white ring-1 ring-white/10 hover:bg-white/10"><RotateCcw className="h-3 w-3" /> Reset</button>
-          <button onClick={() => { void save(); }} className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/20 px-3 py-1 text-[11px] font-semibold text-fuchsia-200 ring-1 ring-fuchsia-400/40 hover:bg-fuchsia-500/30"><Save className="h-3 w-3" /> Save</button>
+          <button onClick={() => { void save(); }} className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 px-3 py-1 text-[11px] font-semibold text-violet-200 ring-1 ring-violet-400/40 hover:bg-violet-500/30"><Save className="h-3 w-3" /> Save</button>
         </div>
       }
     >
@@ -381,7 +381,7 @@ function TrendingEditor({
 
           <div className="flex flex-wrap gap-2">
             {cfg.searches.items.map((term) => (
-              <span key={term} className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-500/15 px-3 py-1 text-xs text-fuchsia-200 ring-1 ring-fuchsia-400/30">
+              <span key={term} className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3 py-1 text-xs text-violet-200 ring-1 ring-violet-400/30">
                 {term}
                 <button onClick={() => removeTerm(term)} className="opacity-70 hover:opacity-100"><X className="h-3 w-3" /></button>
               </span>
@@ -390,7 +390,7 @@ function TrendingEditor({
           </div>
 
           <div className="flex items-center gap-2">
-            <input value={newTerm} onChange={(event) => setNewTerm(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addTerm()} placeholder="Add a term..." className="flex-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white outline-none ring-1 ring-white/10 placeholder:text-muted-foreground focus:ring-fuchsia-400/40" />
+            <input value={newTerm} onChange={(event) => setNewTerm(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addTerm()} placeholder="Add a term..." className="flex-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white outline-none ring-1 ring-white/10 placeholder:text-muted-foreground focus:ring-violet-400/40" />
             <button onClick={addTerm} className="inline-flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-white ring-1 ring-white/10 hover:bg-white/10"><Plus className="h-3 w-3" /> Add</button>
           </div>
 
@@ -399,7 +399,7 @@ function TrendingEditor({
               <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Suggestions from analytics</div>
               <div className="flex flex-wrap gap-1.5">
                 {topTermSuggestions.filter((suggestion) => !cfg.searches.items.some((item) => item.toLowerCase() === suggestion.toLowerCase())).slice(0, 8).map((suggestion) => (
-                  <button key={suggestion} onClick={() => update({ ...cfg, searches: { ...cfg.searches, items: [...cfg.searches.items, suggestion] } })} className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-white ring-1 ring-white/10 hover:bg-fuchsia-500/15">+ {suggestion}</button>
+                  <button key={suggestion} onClick={() => update({ ...cfg, searches: { ...cfg.searches, items: [...cfg.searches.items, suggestion] } })} className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-white ring-1 ring-white/10 hover:bg-violet-500/15">+ {suggestion}</button>
                 ))}
               </div>
             </div>
@@ -449,7 +449,7 @@ function ModeToggle({ mode, onChange }: { mode: "auto" | "manual"; onChange: (mo
   return (
     <div className="inline-flex rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
       {(["auto", "manual"] as const).map((value) => (
-        <button key={value} onClick={() => onChange(value)} className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${mode === value ? "bg-fuchsia-500/30 text-white" : "text-muted-foreground hover:text-white"}`}>{value}</button>
+        <button key={value} onClick={() => onChange(value)} className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${mode === value ? "bg-violet-500/30 text-white" : "text-muted-foreground hover:text-white"}`}>{value}</button>
       ))}
     </div>
   );

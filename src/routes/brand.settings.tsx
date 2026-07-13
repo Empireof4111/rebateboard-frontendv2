@@ -35,7 +35,7 @@ function BrandSettings() {
         <h2 className="text-sm font-bold text-white">Notifications</h2>
         <ul className="mt-3 space-y-2 text-sm text-white">
           {["New review submitted", "New complaint filed", "Weekly TBI digest", "Payout disputes"].map((n) => (
-            <li key={n} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2"><span>{n}</span><input type="checkbox" defaultChecked className="h-4 w-4 accent-fuchsia-500" /></li>
+            <li key={n} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2"><span>{n}</span><input type="checkbox" defaultChecked className="h-4 w-4 accent-violet-500" /></li>
           ))}
         </ul>
       </div>
@@ -49,7 +49,7 @@ function Field({ label, value, onChange, readOnly }: { label: string; value: str
   return (
     <div>
       <label className="text-[10px] uppercase text-muted-foreground">{label}</label>
-      <input value={value} readOnly={readOnly} onChange={onChange ? (e) => onChange(e.target.value) : undefined} className={`mt-1 w-full rounded-xl px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 ${readOnly ? "bg-white/[0.02] cursor-default" : "bg-white/5 focus:ring-fuchsia-300/40"}`} />
+      <input value={value} readOnly={readOnly} onChange={onChange ? (e) => onChange(e.target.value) : undefined} className={`mt-1 w-full rounded-xl px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 ${readOnly ? "bg-white/[0.02] cursor-default" : "bg-white/5 focus:ring-violet-300/40"}`} />
     </div>
   );
 }

@@ -46,13 +46,13 @@ const CATEGORIES: OfferCategory[] = ["Prop Firms", "Brokers", "Exchanges", "Tool
 const TAGS: OfferTag[] = ["exclusive", "new", "limited", "trending", "free-account"];
 
 const ACCENT_PRESETS: { name: string; from: string; to: string }[] = [
-  { name: "Fuchsia -> Pink", from: "#a855f7", to: "#ec4899" },
+  { name: "Violet", from: "#5A22F1", to: "#7E4DFF" },
   { name: "Cyan -> Blue", from: "#22d3ee", to: "#3b82f6" },
   { name: "Amber -> Red", from: "#f59e0b", to: "#ef4444" },
   { name: "Emerald -> Cyan", from: "#10b981", to: "#06b6d4" },
   { name: "Yellow -> Orange", from: "#fbbf24", to: "#f97316" },
   { name: "Sky -> Indigo", from: "#0ea5e9", to: "#6366f1" },
-  { name: "Blue -> Violet", from: "#3b82f6", to: "#8b5cf6" },
+  { name: "Blue -> Violet", from: "#3b82f6", to: "#7e4dff" },
 ];
 
 function makeDraftId() {
@@ -78,8 +78,8 @@ const empty = (): AdminOffer => ({
   status: "active",
   uses: 0,
   mode: "form",
-  accentFrom: "#a855f7",
-  accentTo: "#ec4899",
+  accentFrom: "#5A22F1",
+  accentTo: "#7E4DFF",
   tags: [],
 });
 
@@ -395,12 +395,12 @@ function OffersAdmin() {
                     <ImageIcon className="h-3 w-3" /> Flyer
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs text-fuchsia-300">
+                  <span className="inline-flex items-center gap-1 text-xs text-violet-300">
                     <FileText className="h-3 w-3" /> Card
                   </span>
                 )}
               </td>
-              <td className="font-mono text-xs text-fuchsia-300">{offer.code || "-"}</td>
+              <td className="font-mono text-xs text-violet-300">{offer.code || "-"}</td>
               <td className="font-mono">{offer.uses}</td>
               <td>
                 <button onClick={() => void toggleStatus(offer)}>
@@ -488,7 +488,7 @@ function OffersAdmin() {
                 <button
                   type="button"
                   onClick={() => setEditing({ ...editing, mode: "form" })}
-                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${editing.mode === "form" ? "border-fuchsia-400/60 bg-fuchsia-500/10 text-white" : "border-white/10 bg-white/0 text-white/60"}`}
+                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${editing.mode === "form" ? "border-violet-400/60 bg-violet-500/10 text-white" : "border-white/10 bg-white/0 text-white/60"}`}
                 >
                   <FileText className="h-4 w-4" />
                   <div>
@@ -723,7 +723,7 @@ function OffersAdmin() {
                         key={tag}
                         type="button"
                         onClick={() => toggleTag(tag)}
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${active ? "bg-fuchsia-500/30 text-fuchsia-100 ring-1 ring-fuchsia-400/50" : "bg-white/5 text-white/60"}`}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${active ? "bg-violet-500/30 text-violet-100 ring-1 ring-violet-400/50" : "bg-white/5 text-white/60"}`}
                       >
                         {tag}
                       </button>
@@ -745,7 +745,7 @@ function OffersAdmin() {
 
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
               <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/50">
-                <Sparkles className="h-3 w-3 text-fuchsia-400" /> Live preview
+                <Sparkles className="h-3 w-3 text-violet-400" /> Live preview
               </div>
               {previewOffer && <OfferCard offer={previewOffer} />}
             </div>

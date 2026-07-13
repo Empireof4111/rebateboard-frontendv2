@@ -24,7 +24,7 @@ function StatCard({ icon: Icon, label, value, hint }: any) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="flex items-center gap-2 text-muted-foreground text-xs">
-        <Icon className="h-4 w-4 text-fuchsia-400" /> {label}
+        <Icon className="h-4 w-4 text-violet-400" /> {label}
       </div>
       <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
       {hint && <div className="mt-1 text-[11px] text-muted-foreground">{hint}</div>}
@@ -35,7 +35,7 @@ function StatCard({ icon: Icon, label, value, hint }: any) {
 function VerifBadge({ status }: { status: string }) {
   const map: Record<string, { cls: string; icon: any; label: string }> = {
     verified: { cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", icon: CheckCircle2, label: "Verified" },
-    pending: { cls: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30", icon: Hourglass, label: "Pending" },
+    pending: { cls: "bg-violet-500/15 text-violet-300 border-violet-500/30", icon: Hourglass, label: "Pending" },
     flagged: { cls: "bg-red-500/15 text-red-300 border-red-500/30", icon: AlertTriangle, label: "Flagged" },
   };
   const v = map[status] ?? map.verified;
@@ -94,7 +94,7 @@ function PayoutsPage() {
                 <span key={b} className="glass-pill rounded-full px-3 py-1 text-[11px] text-muted-foreground">{b}</span>
               ))}
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-transparent">
               Prop Firm Payout Tracker
             </h1>
             <p className="mt-4 text-muted-foreground max-w-xl">
@@ -144,7 +144,7 @@ function PayoutsPage() {
             </div>
             <div className="flex gap-1">
               {["24H", "7D", "30D", "90D", "All"].map((t) => (
-                <button key={t} onClick={() => setTf(t)} className={`rounded-full px-3 py-1.5 text-xs ${tf === t ? "bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-500/40" : "glass-pill text-muted-foreground"}`}>{t}</button>
+                <button key={t} onClick={() => setTf(t)} className={`rounded-full px-3 py-1.5 text-xs ${tf === t ? "bg-violet-500/20 text-violet-200 border border-violet-500/40" : "glass-pill text-muted-foreground"}`}>{t}</button>
               ))}
             </div>
             <select value={chain} onChange={(e) => setChain(e.target.value)} className="glass-pill rounded-full px-3 py-1.5 text-xs bg-transparent">
@@ -207,7 +207,7 @@ function PayoutsPage() {
                       <td className="px-4 py-3"><span className="text-emerald-300">{b.payoutReliabilityScore}%</span></td>
                       <td className="px-4 py-3">{Math.round(Number(b.tbiScore) > 10 ? Number(b.tbiScore) : Number(b.tbiScore) * 10)}/100</td>
                       <td className="px-4 py-3">
-                        <Link to="/payouts/$brandSlug" params={{ brandSlug: b.slug }} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-200 px-3 py-1 text-xs font-medium">
+                        <Link to="/payouts/$brandSlug" params={{ brandSlug: b.slug }} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-200 px-3 py-1 text-xs font-medium">
                           View Details <ChevronRight className="h-3 w-3" />
                         </Link>
                       </td>
@@ -231,7 +231,7 @@ function PayoutsPage() {
                       <div className="text-[10px] text-muted-foreground">TBI {b.tbiScore} · {b.payoutReliabilityScore}% reliable</div>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-fuchsia-300" />
+                  <ChevronRight className="h-4 w-4 text-violet-300" />
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
                   <div><div className="text-muted-foreground text-[10px]">Total Paid</div><div className="font-semibold">{fmtUsd(b.totalPaidUsd)}</div></div>
@@ -265,7 +265,7 @@ function PayoutsPage() {
                   <div className="text-[11px] text-muted-foreground mt-1">Paid {fmtMins(t.minutesAgo)} ago · in {fmtMins(t.payoutTimeMinutes)}</div>
                   <div className="mt-3 flex items-center justify-between text-xs">
                     <span className="font-mono text-muted-foreground">TX: {t.txHash.slice(0, 6)}...{t.txHash.slice(-4)}</span>
-                    <Link to="/payouts/$brandSlug/transaction/$txId" params={{ brandSlug: t.brandSlug, txId: t.id }} className="text-fuchsia-300">View TX</Link>
+                    <Link to="/payouts/$brandSlug/transaction/$txId" params={{ brandSlug: t.brandSlug, txId: t.id }} className="text-violet-300">View TX</Link>
                   </div>
                 </div>
               );
@@ -278,7 +278,7 @@ function PayoutsPage() {
           <h2 className="text-2xl font-semibold mb-4">Payout Intelligence</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="glass rounded-2xl p-5">
-              <div className="text-xs text-muted-foreground flex items-center gap-2"><Zap className="h-4 w-4 text-fuchsia-300" /> Fastest Paying Firm</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2"><Zap className="h-4 w-4 text-violet-300" /> Fastest Paying Firm</div>
               <div className="mt-2 text-xl font-semibold">{fastest.name}</div>
               <div className="text-sm text-emerald-300">Avg {fmtMins(fastest.averagePayoutTimeMinutes)}</div>
             </div>
@@ -288,7 +288,7 @@ function PayoutsPage() {
               <div className="text-sm text-emerald-300">{reliable.payoutReliabilityScore}% reliability</div>
             </div>
             <div className="glass rounded-2xl p-5">
-              <div className="text-xs text-muted-foreground flex items-center gap-2"><Trophy className="h-4 w-4 text-fuchsia-300" /> Biggest Payout</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2"><Trophy className="h-4 w-4 text-violet-300" /> Biggest Payout</div>
               <div className="mt-2 text-xl font-semibold">{fmtUsd(biggest.amountUsd)}</div>
               <div className="text-sm text-muted-foreground">{biggest.brandName}</div>
             </div>
@@ -305,7 +305,7 @@ function PayoutsPage() {
 
         {/* CHARTS */}
         <section>
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-fuchsia-300" /> Payout Analytics</h2>
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-violet-300" /> Payout Analytics</h2>
           <div className="grid gap-4 lg:grid-cols-3">
             {[
               { title: "Payout Volume Over Time", bars: [40, 55, 48, 70, 62, 88, 95] },
@@ -317,12 +317,12 @@ function PayoutsPage() {
             ].map((c) => (
               <div key={c.title} className="glass rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm font-medium flex items-center gap-2"><Globe className="h-3 w-3 text-fuchsia-300" />{c.title}</div>
+                  <div className="text-sm font-medium flex items-center gap-2"><Globe className="h-3 w-3 text-violet-300" />{c.title}</div>
                   <div className="text-[10px] text-muted-foreground">7D</div>
                 </div>
                 <div className="flex items-end gap-1 h-24">
                   {c.bars.map((v, i) => (
-                    <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-fuchsia-600/40 to-violet-400/80" style={{ height: `${v}%` }} />
+                    <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-violet-600/40 to-violet-400/80" style={{ height: `${v}%` }} />
                   ))}
                 </div>
               </div>
@@ -343,7 +343,7 @@ function PayoutsPage() {
               "Suspicious or incomplete submissions are flagged",
             ].map((step, i) => (
               <li key={step} className="rounded-xl border border-white/5 p-4">
-                <div className="text-fuchsia-300 text-xs font-semibold">Step {i + 1}</div>
+                <div className="text-violet-300 text-xs font-semibold">Step {i + 1}</div>
                 <div className="text-sm mt-1">{step}</div>
               </li>
             ))}

@@ -105,10 +105,10 @@ function CommunityPage() {
     <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app space-y-7 py-8 sm:py-12">
-        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(217,70,239,0.2),transparent_35%),linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_24px_110px_rgba(88,28,135,0.24)] sm:p-8 lg:p-10">
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(126,77,255,0.2),transparent_35%),linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_24px_110px_rgba(88,28,135,0.24)] sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-end">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-fuchsia-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-100">
+              <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-violet-100">
                 <Users className="h-3.5 w-3.5" />
                 Community
               </div>
@@ -132,7 +132,7 @@ function CommunityPage() {
                   href={communityConfig.telegram}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-5 py-3 text-sm font-bold text-white/85 transition hover:border-fuchsia-300/35 hover:bg-white/[0.08]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-5 py-3 text-sm font-bold text-white/85 transition hover:border-violet-300/35 hover:bg-white/[0.08]"
                 >
                   Join Telegram
                   <Send className="h-4 w-4" />

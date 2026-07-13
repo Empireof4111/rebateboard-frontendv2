@@ -28,6 +28,7 @@ import {
   Megaphone,
   Handshake,
   Globe2,
+  MessageCircle,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
@@ -67,7 +68,9 @@ import {
   fetchHomepageCashbackActivityStats,
   type HomepageCashbackActivityStats,
 } from "@/lib/cashback-activity-api";
+import { fetchPublicTestimonials, type FeaturedTestimonial } from "@/lib/testimonials-api";
 import { resolvePublicFaqContent } from "@/lib/public-faq-content";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -166,11 +169,8 @@ const steps: {
   },
 ];
 
-const testimonials = Array.from({ length: 3 }).map((_, i) => ({
-  name: ["Basiru Y. Danzomo", "Amelia Carter", "Jonas Vega"][i],
-  date: "12 Jan, 2025 · 2:00pm",
-  text: "RebateBoard completely changed the way I trade. The cashback adds up faster than I expected and the platform comparisons saved me hours.",
-}));
+const FACEBOOK_REVIEWS_URL =
+  "https://www.facebook.com/profile.php?id=61577216030797&mibextid=wwXIfr&mibextid=wwXIfr";
 
 const offersData = {
   reviews: [
@@ -419,6 +419,213 @@ function LandingRankingSkeleton() {
   );
 }
 
+function TestimonialSkeletonGrid() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Loading testimonials">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="skeleton-card rounded-[20px] p-5">
+          <div className="flex gap-1">
+            {Array.from({ length: 5 }).map((__, starIndex) => (
+              <div key={starIndex} className="skeleton h-4 w-4 rounded-full" />
+            ))}
+          </div>
+          <div className="mt-4 space-y-2">
+            <div className="skeleton h-3 w-full rounded-full" />
+            <div className="skeleton h-3 w-11/12 rounded-full" />
+            <div className="skeleton h-3 w-4/5 rounded-full" />
+          </div>
+          <div className="mt-5 flex items-center gap-3">
+            <div className="skeleton h-11 w-11 rounded-full" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="skeleton h-3.5 w-36 rounded-full" />
+              <div className="skeleton h-3 w-44 rounded-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TestimonialCarousel({ items }: { items: FeaturedTestimonial[] }) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const scrollByCard = (direction: "previous" | "next") => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const card = scroller.querySelector<HTMLElement>("[data-testimonial-card]");
+    const distance = card ? card.offsetWidth + 16 : scroller.clientWidth;
+    scroller.scrollBy({ left: direction === "next" ? distance : -distance, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      <div
+        ref={scrollerRef}
+        onScroll={(event) => {
+          const target = event.currentTarget;
+          const card = target.querySelector<HTMLElement>("[data-testimonial-card]");
+          if (!card) return;
+          const next = Math.round(target.scrollLeft / Math.max(1, card.offsetWidth + 16));
+          setActiveIndex(Math.max(0, Math.min(items.length - 1, next)));
+        }}
+        className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2"
+        aria-label="Featured trader testimonials"
+      >
+        {items.map((item) => (
+          <div
+            key={item.id}
+            data-testimonial-card
+            className="w-[86%] shrink-0 snap-center sm:w-[calc((100%_-_1rem)/2)] lg:w-[calc((100%_-_2rem)/3)]"
+          >
+            <TestimonialCard item={item} />
+          </div>
+        ))}
+      </div>
+
+      {items.length > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => scrollByCard("previous")}
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white transition hover:border-violet-300/40 hover:bg-violet-500/10"
+            aria-label="Previous testimonial"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-1.5" aria-label={`${activeIndex + 1} of ${items.length}`}>
+            {items.map((item, index) => (
+              <span
+                key={item.id}
+                className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  index === activeIndex ? "w-5 bg-violet-400" : "w-1.5 bg-white/20",
+                )}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => scrollByCard("next")}
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white transition hover:border-violet-300/40 hover:bg-violet-500/10"
+            aria-label="Next testimonial"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestimonialCard({ item }: { item: FeaturedTestimonial }) {
+  const displayText = item.shortExcerpt || item.reviewText;
+  const date = formatReviewDate(item.reviewedAt);
+  const sourceIcon = sourceBadgeIcon(item.source);
+
+  return (
+    <article className="flex h-full min-h-[260px] flex-col rounded-[20px] border border-white/[0.08] bg-[rgba(22,22,31,0.94)] p-5 shadow-[0_12px_32px_rgba(0,0,0,0.22)] transition hover:-translate-y-0.5 hover:border-violet-300/35 hover:shadow-[0_18px_42px_rgba(45,18,105,0.20)]">
+      <div className="flex items-center justify-between gap-3">
+        <RatingStars rating={item.rating} />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.045] px-2.5 py-1 text-[10px] font-bold text-violet-100">
+          {sourceIcon}
+          {item.sourceLabel}
+        </span>
+      </div>
+
+      <p className="mt-4 line-clamp-4 text-sm leading-6 text-[var(--rb-text-secondary)]">
+        “{displayText}”
+      </p>
+
+      <div className="mt-auto pt-5">
+        <div className="flex items-center gap-3">
+          <TestimonialAvatar item={item} />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-bold text-white">{item.reviewerName}</div>
+            <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              {[item.reviewerRole, item.reviewerCountry].filter(Boolean).join(" · ") || "Trader"}
+            </div>
+            {date && <div className="mt-0.5 text-[10px] text-muted-foreground">{date}</div>}
+          </div>
+        </div>
+
+        {item.originalReviewUrl && (
+          <a
+            href={item.originalReviewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-violet-200 transition hover:text-white"
+            data-analytics="testimonial-original-review"
+          >
+            View original review
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  const safeRating = Math.max(1, Math.min(5, Number(rating) || 5));
+  return (
+    <div className="inline-flex items-center gap-1" aria-label={`${safeRating} out of 5 stars`}>
+      {Array.from({ length: 5 }).map((_, index) => {
+        const filled = index < Math.round(safeRating);
+        return (
+          <Star
+            key={index}
+            className={cn("h-4 w-4", filled ? "fill-amber-300 text-amber-300" : "text-white/20")}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function TestimonialAvatar({ item }: { item: FeaturedTestimonial }) {
+  const initials = item.reviewerName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  if (item.reviewerAvatarUrl) {
+    return (
+      <img
+        src={item.reviewerAvatarUrl}
+        alt=""
+        className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-white/12"
+        loading="lazy"
+      />
+    );
+  }
+
+  return (
+    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-violet-300/20 bg-violet-500/12 text-xs font-black text-violet-100">
+      {initials || "RB"}
+    </div>
+  );
+}
+
+function sourceBadgeIcon(source: FeaturedTestimonial["source"]) {
+  if (source === "facebook") {
+    return <span className="grid h-4 w-4 place-items-center rounded-full bg-[#1877F2] text-[11px] font-black text-white">f</span>;
+  }
+  if (source === "rebateboard") return <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />;
+  if (source === "discord" || source === "telegram") return <MessageCircle className="h-3.5 w-3.5 text-violet-300" />;
+  return <Globe2 className="h-3.5 w-3.5 text-violet-300" />;
+}
+
+function formatReviewDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
 function BrandRankRow({
   brand,
   rank,
@@ -436,7 +643,7 @@ function BrandRankRow({
     <Link
       to="/firm/$firmId"
       params={{ firmId: brand.slug }}
-      className={`ranking-card-enter group grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-2xl border bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25 ${rankTheme.card}`}
+      className={`ranking-card-enter group grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-2xl border bg-white/[0.035] p-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-violet-300/25 ${rankTheme.card}`}
       style={{ animationDelay: `${Math.min(rank - 1, 9) * 40}ms` }}
     >
       <LandingRankBadge rank={rank} />
@@ -1084,7 +1291,7 @@ function ExclusiveOffersPanel({
             onClick={() => onChange(tab.key)}
             className={`rounded-full px-3 py-1 text-[11px] font-semibold ring-1 transition ${
               active === tab.key
-                ? "bg-fuchsia-400/20 text-fuchsia-100 ring-fuchsia-300/35"
+                ? "bg-violet-400/20 text-violet-100 ring-violet-300/35"
                 : "bg-white/[0.045] text-muted-foreground ring-white/10 hover:bg-white/[0.075] hover:text-white"
             }`}
           >
@@ -1101,7 +1308,7 @@ function ExclusiveOffersPanel({
               key={offer.id}
               type="button"
               onClick={() => onSelect(offer)}
-              className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl bg-white/[0.035] p-2.5 text-left ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-fuchsia-300/25"
+              className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl bg-white/[0.035] p-2.5 text-left ring-1 ring-white/10 transition hover:bg-white/[0.075] hover:ring-violet-300/25"
             >
               <span
                 className={`grid h-11 w-11 place-items-center overflow-hidden rounded-[14px] text-[10px] font-black ${
@@ -1125,7 +1332,7 @@ function ExclusiveOffersPanel({
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="truncate text-sm font-semibold text-white">{offer.brand}</span>
                   {offer.pinned && (
-                    <Star className="h-3.5 w-3.5 shrink-0 fill-fuchsia-300 text-fuchsia-300" />
+                    <Star className="h-3.5 w-3.5 shrink-0 fill-violet-300 text-violet-300" />
                   )}
                 </span>
                 <span className="mt-1 flex min-w-0 items-center gap-1.5">
@@ -1138,7 +1345,7 @@ function ExclusiveOffersPanel({
                 </span>
               </span>
               <span className="text-right">
-                <span className="block rounded-full bg-fuchsia-400/15 px-2 py-1 text-xs font-black text-fuchsia-100 ring-1 ring-fuchsia-300/25">
+                <span className="block rounded-full bg-violet-400/15 px-2 py-1 text-xs font-black text-violet-100 ring-1 ring-violet-300/25">
                   {offer.discount ?? "Deal"}
                 </span>
                 <span className="mt-1 block text-[9px] uppercase tracking-wide text-muted-foreground">
@@ -1179,7 +1386,7 @@ function StepCard({
       {step.cta && (
         <div className="mb-2 flex items-center justify-between rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">
           <span className="text-[11px]">{step.cta.label}</span>
-          <button className="rounded-full bg-fuchsia-400/40 px-3 py-0.5 text-[10px] font-semibold ring-1 ring-fuchsia-300/40">
+          <button className="rounded-full bg-violet-400/40 px-3 py-0.5 text-[10px] font-semibold ring-1 ring-violet-300/40">
             {step.cta.action}
           </button>
         </div>
@@ -1202,7 +1409,7 @@ function StepCard({
 function Index() {
   const { t, language } = useI18n();
   const compactHeroCopy = language !== "en";
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [offerTab, setOfferTab] = useState<OfferTab>("reviews");
   const [compareOpen, setCompareOpen] = useState<null | { a: string; b: string }>(null);
   const [activeOffer, setActiveOffer] = useState<AdminOffer | null>(null);
@@ -1213,6 +1420,8 @@ function Index() {
   const [tbiProfiles, setTbiProfiles] = useState<TbiProfile[]>([]);
   const [homeFaqs, setHomeFaqs] = useState<Faq[]>([]);
   const [homeFaqsLoading, setHomeFaqsLoading] = useState(true);
+  const [testimonials, setTestimonials] = useState<FeaturedTestimonial[]>([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [cashbackActivityStats, setCashbackActivityStats] =
     useState<HomepageCashbackActivityStats | null>(null);
   const [calculatorBrand, setCalculatorBrand] = useState<AdminBrandRecord | null>(null);
@@ -1236,6 +1445,27 @@ function Index() {
     }
 
     void loadOffers();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTestimonials() {
+      setTestimonialsLoading(true);
+      try {
+        const rows = await fetchPublicTestimonials(12);
+        if (!cancelled) setTestimonials(rows);
+      } catch {
+        if (!cancelled) setTestimonials([]);
+      } finally {
+        if (!cancelled) setTestimonialsLoading(false);
+      }
+    }
+
+    void loadTestimonials();
     return () => {
       cancelled = true;
     };
@@ -1368,7 +1598,7 @@ function Index() {
       },
       {
         label: "Cashback Paid",
-        value: Math.max(2000, cashbackActivityStats?.lifetime_cashback_paid ?? 2000),
+        value: 2000,
         prefix: "$",
         suffix: "+",
         icon: <BadgePercent className="h-4 w-4" />,
@@ -1499,30 +1729,49 @@ function Index() {
         </section>
 
         {/* TESTIMONIALS */}
-        <section className="mt-10 sm:mt-12">
-          <h2 className="mb-6 text-center text-2xl font-bold sm:text-3xl">
-            What people are saying about us
-          </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {testimonials.map((t, i) => (
-              <div key={i} className="glass rounded-2xl p-5">
-                <div className="flex">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} className="h-3 w-3 fill-accent text-accent" />
-                  ))}
+        {(testimonialsLoading || testimonials.length > 0) && (
+          <section className="mt-10 sm:mt-12" aria-labelledby="landing-testimonials-heading">
+            <div className="mb-6 text-center">
+              <h2 id="landing-testimonials-heading" className="text-2xl font-bold sm:text-3xl">
+                What Traders Are Saying
+              </h2>
+              <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
+                Real experiences from traders across the RebateBoard community.
+              </p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-200/80">
+                Every featured testimonial includes its original source.
+              </p>
+            </div>
+
+            {testimonialsLoading ? (
+              <TestimonialSkeletonGrid />
+            ) : (
+              <>
+                <TestimonialCarousel items={testimonials} />
+                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <a
+                    href={FACEBOOK_REVIEWS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(90,34,241,0.28)] transition hover:-translate-y-0.5 sm:w-auto"
+                    data-analytics="testimonial-facebook-reviews"
+                  >
+                    <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[13px] font-black text-[#1877F2]">f</span>
+                    Read More Reviews on Facebook
+                  </a>
+                  <Link
+                    to="/review"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-violet-300/30 bg-white/[0.035] px-5 py-3 text-sm font-bold text-white transition hover:border-violet-300/55 hover:bg-violet-500/10 sm:w-auto"
+                    data-analytics="testimonial-share-experience"
+                  >
+                    <MessageCircle className="h-4 w-4 text-violet-300" />
+                    Share Your Experience
+                  </Link>
                 </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600" />
-                  <div>
-                    <div className="text-xs font-semibold">{t.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{t.date}</div>
-                  </div>
-                </div>
-                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+              </>
+            )}
+          </section>
+        )}
 
         {/* Legacy marketplace preview retained in source for migration reference only. */}
         {false && <section className="mt-10 sm:mt-12">
@@ -1540,7 +1789,7 @@ function Index() {
           </div>
 
           {/* Pill tab switcher */}
-          <div className="mx-auto mb-6 flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-violet-900/60 to-fuchsia-900/40 p-1.5 ring-1 ring-violet-400/20 backdrop-blur">
+          <div className="mx-auto mb-6 flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-violet-900/60 to-violet-900/40 p-1.5 ring-1 ring-violet-400/20 backdrop-blur">
             {offerTabs.map((t) => {
               const active = offerTab === t.key;
               return (
@@ -1561,7 +1810,7 @@ function Index() {
           </div>
 
           {/* Big content card */}
-          <div className="glass-strong relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-900/40 via-fuchsia-900/20 to-transparent p-6 ring-1 ring-violet-400/20 sm:p-8">
+          <div className="glass-strong relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-900/40 via-violet-900/20 to-transparent p-6 ring-1 ring-violet-400/20 sm:p-8">
             {offerTab === "reviews" && (
               <div>
                 <div className="flex items-start justify-between gap-4">
@@ -1593,7 +1842,7 @@ function Index() {
                             key={n}
                             className={
                               "h-4 w-4 " +
-                              (n <= 4 ? "fill-fuchsia-300 text-fuchsia-300" : "text-fuchsia-300/35")
+                              (n <= 4 ? "fill-violet-300 text-violet-300" : "text-violet-300/35")
                             }
                           />
                         ))}
@@ -1607,10 +1856,10 @@ function Index() {
                     {reviewBars.map((b) => (
                       <div key={b.stars} className="flex items-center gap-2 text-[11px]">
                         <span className="w-3 text-muted-foreground">{b.stars}</span>
-                        <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
+                        <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-orange-400"
+                            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-orange-400"
                             style={{ width: `${b.value}%` }}
                           />
                         </div>
@@ -1736,7 +1985,7 @@ function Index() {
                               b: b?.trim() || "Brand B",
                             });
                           }}
-                          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 transition group-hover:text-fuchsia-200"
+                          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition group-hover:text-violet-200"
                         >
                           View details <ArrowUpRight className="h-3 w-3" />
                         </button>
@@ -1744,7 +1993,7 @@ function Index() {
                         <Link
                           to="/firm/$firmId"
                           params={{ firmId: encodeURIComponent(o.broker.replace(/\s+/g, "-")) }}
-                          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300 transition group-hover:text-fuchsia-200"
+                          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition group-hover:text-violet-200"
                         >
                           View details <ArrowUpRight className="h-3 w-3" />
                         </Link>
@@ -1761,7 +2010,7 @@ function Index() {
         {false && <section className="mt-10 sm:mt-12">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-500/15 px-3 py-1 text-[11px] font-semibold text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3 py-1 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
                 <Flame className="h-3 w-3" /> Hot promos
               </div>
               <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Top offers right now</h2>
@@ -1799,7 +2048,8 @@ function Index() {
               {homeFaqs.map((faq, i) => (
                 <button
                   key={faq.id}
-                  onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
                   className="glass rounded-2xl p-4 text-left transition hover:bg-white/[0.06]"
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -1810,11 +2060,18 @@ function Index() {
                       <Plus className="h-4 w-4 shrink-0" />
                     )}
                   </div>
-                  {openFaq === i && (
-                    <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground animate-fade-in">
-                      {faq.answer}
-                    </p>
-                  )}
+                  <div
+                    className={cn(
+                      "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+                      openFaq === i ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -1830,15 +2087,15 @@ function Index() {
         </section>
 
         {/* AI BACKTEST LAB */}
-        <section className="relative mt-10 overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a0b2e] via-[#150829] to-[#0a0418] p-6 ring-1 ring-fuchsia-500/20 md:p-8">
+        <section className="relative mt-10 overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a0b2e] via-[#150829] to-[#0a0418] p-6 ring-1 ring-violet-500/20 md:p-8">
           <div className="glow-orb left-[-10%] top-[-20%] h-[400px] w-[400px]" />
           <div className="relative">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-500/15 px-3 py-1 text-[11px] font-semibold text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3 py-1 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
               ✨ NEW • AI Backtest Lab
             </span>
             <h2 className="mt-4 max-w-3xl text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl">
               Backtest Smarter. Trade Better.{" "}
-              <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-400 to-violet-400 bg-clip-text text-transparent">
                 Earn More Back.
               </span>
             </h2>
@@ -1846,7 +2103,7 @@ function Index() {
               Describe your strategy or upload your real trades. RebateBoard AI analyzes your
               performance, fees, risk, and cashback impact in minutes.
             </p>
-            <p className="mt-2 max-w-2xl text-xs italic text-fuchsia-300/80">
+            <p className="mt-2 max-w-2xl text-xs italic text-violet-300/80">
               "Most traders do not need another signal. They need to understand their own data."
             </p>
 
@@ -2029,7 +2286,7 @@ function CompareDialog({
           <div className="mt-2 space-y-1.5 text-[11px] text-muted-foreground">
             {options.map((option) => (
               <label key={option} className="flex items-center gap-2">
-                <input type="checkbox" className="accent-fuchsia-400" /> {option}
+                <input type="checkbox" className="accent-violet-400" /> {option}
               </label>
             ))}
           </div>
@@ -2083,12 +2340,12 @@ function CompareDialog({
               />
             </div>
             <div className="flex items-center gap-2">
-              <button className="rounded-full bg-fuchsia-300/30 px-4 py-1.5 text-xs font-semibold ring-1 ring-fuchsia-300/40">
+              <button className="rounded-full bg-violet-300/30 px-4 py-1.5 text-xs font-semibold ring-1 ring-violet-300/40">
                 How it works
               </button>
               <button
                 onClick={() => setView(view === "addFirm" ? "compare" : "addFirm")}
-                className="inline-flex items-center gap-1 rounded-full bg-fuchsia-300/30 px-4 py-1.5 text-xs font-semibold ring-1 ring-fuchsia-300/40"
+                className="inline-flex items-center gap-1 rounded-full bg-violet-300/30 px-4 py-1.5 text-xs font-semibold ring-1 ring-violet-300/40"
               >
                 <Plus className="h-3 w-3" /> {view === "addFirm" ? "Back to Compare" : "Add Firm"}
               </button>
@@ -2130,12 +2387,12 @@ function CompareDialog({
                             <div>
                               <div className="text-xs font-semibold">{name}</div>
                               <div className="mt-0.5 inline-flex items-center gap-1 text-[10px]">
-                                <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" /> 4.7{" "}
+                                <Star className="h-3 w-3 fill-violet-300 text-violet-300" /> 4.7{" "}
                                 <span className="text-muted-foreground">(2,001)</span>
                               </div>
                             </div>
                           </div>
-                          <button className="mt-3 w-full rounded-full bg-fuchsia-300/30 py-1.5 text-[11px] font-semibold ring-1 ring-fuchsia-300/40">
+                          <button className="mt-3 w-full rounded-full bg-violet-300/30 py-1.5 text-[11px] font-semibold ring-1 ring-violet-300/40">
                             Visit Website
                           </button>
                         </div>
@@ -2184,7 +2441,7 @@ function CompareDialog({
                     </div>
                     <div className="grid grid-cols-[1.2fr_1fr_1fr] items-center gap-3 text-xs">
                       <div className="inline-flex items-center gap-2 text-muted-foreground">
-                        <span className="grid h-7 w-7 place-items-center rounded-full bg-fuchsia-500/30">
+                        <span className="grid h-7 w-7 place-items-center rounded-full bg-violet-500/30">
                           $
                         </span>
                         $100,000 Account
@@ -2192,7 +2449,7 @@ function CompareDialog({
                       {brands.map((_, i) => (
                         <div key={i} className="text-center">
                           <div className="text-base font-bold">$520</div>
-                          <button className="mt-2 w-full rounded-full bg-fuchsia-300/30 py-1.5 text-[11px] font-semibold ring-1 ring-fuchsia-300/40">
+                          <button className="mt-2 w-full rounded-full bg-violet-300/30 py-1.5 text-[11px] font-semibold ring-1 ring-violet-300/40">
                             See all pricing
                           </button>
                         </div>
@@ -2217,18 +2474,18 @@ function CompareDialog({
                         <div className="grid h-12 w-12 place-items-center rounded-lg bg-white text-[10px] font-bold text-violet-700">
                           ACY
                         </div>
-                        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-fuchsia-500 text-[8px]">
+                        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-violet-500 text-[8px]">
                           <Check className="h-2.5 w-2.5" />
                         </span>
                       </div>
                       <div>
                         <div className="text-sm font-semibold">{name}</div>
                         <div className="mt-0.5 flex items-center gap-1 text-[10px]">
-                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
-                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
-                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
-                          <Star className="h-3 w-3 fill-fuchsia-300 text-fuchsia-300" />
-                          <Star className="h-3 w-3 text-fuchsia-300/35" />
+                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
+                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
+                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
+                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
+                          <Star className="h-3 w-3 text-violet-300/35" />
                           <span className="ml-1 font-semibold">4.0</span>
                         </div>
                         <div className="text-[10px] text-muted-foreground">Total Review : 4</div>
@@ -2236,7 +2493,7 @@ function CompareDialog({
                     </div>
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center gap-1.5">
-                        <button className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-full bg-fuchsia-300/30 px-2 py-1.5 text-[10px] font-semibold ring-1 ring-fuchsia-300/40">
+                        <button className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-full bg-violet-300/30 px-2 py-1.5 text-[10px] font-semibold ring-1 ring-violet-300/40">
                           <ShoppingCart className="h-3 w-3 shrink-0" />{" "}
                           <span className="truncate">Sign up</span>
                         </button>
@@ -2244,14 +2501,14 @@ function CompareDialog({
                           to="/firm/$firmId"
                           params={{ firmId: encodeURIComponent(name.replace(/\s+/g, "-")) }}
                           onClick={() => onClose()}
-                          className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-full bg-fuchsia-300/30 px-2 py-1.5 text-[10px] font-semibold ring-1 ring-fuchsia-300/40"
+                          className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-full bg-violet-300/30 px-2 py-1.5 text-[10px] font-semibold ring-1 ring-violet-300/40"
                         >
                           <Eye className="h-3 w-3 shrink-0" />{" "}
                           <span className="truncate">View Details</span>
                         </Link>
                       </div>
                       <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <input type="checkbox" className="accent-fuchsia-400" /> Add to compare
+                        <input type="checkbox" className="accent-violet-400" /> Add to compare
                       </label>
                     </div>
                   </div>

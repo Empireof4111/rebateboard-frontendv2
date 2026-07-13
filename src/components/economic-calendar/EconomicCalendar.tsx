@@ -149,10 +149,10 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-fuchsia-400" />
-              <span className="text-[11px] uppercase tracking-[0.25em] text-fuchsia-300/80">RebateBoard Intelligence</span>
+              <Sparkles className="h-5 w-5 text-violet-400" />
+              <span className="text-[11px] uppercase tracking-[0.25em] text-violet-300/80">RebateBoard Intelligence</span>
             </div>
-            <h1 className="mt-1 bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-2xl font-bold text-transparent md:text-4xl">
+            <h1 className="mt-1 bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-2xl font-bold text-transparent md:text-4xl">
               Economic Calendar
             </h1>
             <p className="mt-1 text-sm text-white/60">
@@ -170,7 +170,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
               </button>
               <button
                 onClick={() => setMode("pro")}
-                className={`rounded-full px-3 py-1.5 ${mode === "pro" ? "bg-fuchsia-500/20 text-fuchsia-300" : "text-white/50 hover:text-white"}`}
+                className={`rounded-full px-3 py-1.5 ${mode === "pro" ? "bg-violet-500/20 text-violet-300" : "text-white/50 hover:text-white"}`}
               >
                 🔴 Pro
               </button>
@@ -188,7 +188,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
         {/* DATE RANGE */}
         <div className="glass flex flex-wrap items-center gap-2 rounded-2xl p-3">
           <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/50">
-            <CalendarIcon className="h-3.5 w-3.5 text-fuchsia-300" /> Date range
+            <CalendarIcon className="h-3.5 w-3.5 text-violet-300" /> Date range
           </div>
           <div className="flex flex-wrap gap-1">
             {(["today", "weekdays", "week", "month"] as const).map((p) => (
@@ -198,7 +198,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
                 className={cn(
                   "rounded-full px-3 py-1 text-[11px] transition",
                   preset === p
-                    ? "bg-fuchsia-500/20 text-fuchsia-200 ring-1 ring-fuchsia-400/40"
+                    ? "bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/40"
                     : "bg-white/5 text-white/60 hover:text-white",
                 )}
               >
@@ -211,7 +211,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
                   className={cn(
                     "flex items-center gap-1 rounded-full px-3 py-1 text-[11px] transition",
                     preset === "custom"
-                      ? "bg-fuchsia-500/20 text-fuchsia-200 ring-1 ring-fuchsia-400/40"
+                      ? "bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/40"
                       : "bg-white/5 text-white/60 hover:text-white",
                   )}
                 >
@@ -258,7 +258,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
                 <button
                   key={t.id}
                   onClick={() => setAsset(t.id)}
-                  className={`rounded-full px-3 py-1 text-[11px] transition ${asset === t.id ? "bg-fuchsia-500/20 text-fuchsia-200 ring-1 ring-fuchsia-400/40" : "bg-white/5 text-white/60 hover:text-white"}`}
+                  className={`rounded-full px-3 py-1 text-[11px] transition ${asset === t.id ? "bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/40" : "bg-white/5 text-white/60 hover:text-white"}`}
                 >
                   {t.label}
                 </button>
@@ -341,15 +341,15 @@ function WhatMattersNow({
   upcoming, marketBias, now,
 }: { upcoming: EconEvent[]; marketBias: string; now: Date }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-gradient-to-r from-fuchsia-500/10 via-violet-500/5 to-transparent p-4">
-      <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-fuchsia-500/20 blur-3xl" />
+    <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-violet-500/5 to-transparent p-4">
+      <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-fuchsia-500" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-500" />
           </span>
-          <span className="text-[11px] uppercase tracking-wider text-fuchsia-300">What matters now</span>
+          <span className="text-[11px] uppercase tracking-wider text-violet-300">What matters now</span>
         </div>
 
         {upcoming[0] ? (
@@ -481,8 +481,8 @@ function EventCard({
             </div>
 
             {/* AI insight (always visible, one line) */}
-            <div className="mt-2 flex items-start gap-2 rounded-lg border border-fuchsia-500/15 bg-fuchsia-500/5 p-2 text-[11px]">
-              <Brain className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-violet-500/15 bg-violet-500/5 p-2 text-[11px]">
+              <Brain className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />
               <span className="text-white/80">{insight}</span>
             </div>
           </div>
@@ -596,7 +596,7 @@ function SessionHeatmap({ now, events }: { now: Date; events: EconEvent[] }) {
     <div className="glass rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
-          <Activity className="h-4 w-4 text-fuchsia-300" /> Volatility Heatmap (UTC)
+          <Activity className="h-4 w-4 text-violet-300" /> Volatility Heatmap (UTC)
         </div>
         <span className="text-[10px] text-white/40">24h</span>
       </div>
@@ -608,10 +608,10 @@ function SessionHeatmap({ now, events }: { now: Date; events: EconEvent[] }) {
             <div
               key={c.h}
               title={`${c.h}:00 UTC · ${c.count} event(s)`}
-              className={`relative aspect-square rounded ${isNow ? "ring-1 ring-fuchsia-400" : ""}`}
-              style={{ background: `rgba(217,70,239,${opacity})` }}
+              className={`relative aspect-square rounded ${isNow ? "ring-1 ring-violet-400" : ""}`}
+              style={{ background: `rgba(126,77,255,${opacity})` }}
             >
-              {isNow && <span className="absolute -top-1 -right-1 h-1.5 w-1.5 animate-pulse rounded-full bg-fuchsia-400" />}
+              {isNow && <span className="absolute -top-1 -right-1 h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" />}
             </div>
           );
         })}
@@ -650,7 +650,7 @@ function WatchlistPanel({ events }: { events: EconEvent[] }) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white">
-        <Sparkles className="h-4 w-4 text-fuchsia-300" /> Your Watchlist
+        <Sparkles className="h-4 w-4 text-violet-300" /> Your Watchlist
       </div>
       <ul className="space-y-1.5 text-[12px]">
         {counts.map((c) => (

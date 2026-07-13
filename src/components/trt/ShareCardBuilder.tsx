@@ -77,9 +77,9 @@ const THEMES: Record<Theme, {
   royal: {
     label: "Royal Violet",
     shell: "from-[#0a0613] via-[#1a0d2f] to-[#231343]",
-    glow: "bg-fuchsia-500/16",
-    accent: "text-fuchsia-200",
-    line: "border-fuchsia-200/16",
+    glow: "bg-violet-500/16",
+    accent: "text-violet-200",
+    line: "border-violet-200/16",
     quietText: "text-violet-100/60",
   },
   platinum: {
@@ -561,7 +561,7 @@ export function ShareCardBuilder() {
         </div>
 
         {firstCardMessage && (
-          <div className="mx-auto max-w-xl rounded-3xl border border-primary/20 bg-primary/10 p-4 text-center shadow-[0_18px_42px_rgba(124,58,237,0.18)]">
+          <div className="mx-auto max-w-xl rounded-3xl border border-primary/20 bg-primary/10 p-4 text-center shadow-[0_18px_42px_rgba(90,34,241,0.18)]">
             <div className="text-base font-black text-white">Congratulations.</div>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               You created your first RebateBoard Performance Card. Your achievements deserve to be shared.

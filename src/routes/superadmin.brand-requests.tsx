@@ -107,7 +107,7 @@ function BrandRequestsPage() {
                   <span className={`font-mono font-bold ${
                     s.trustScoreMode === "full" ? "text-emerald-300" :
                     s.trustScoreMode === "partial" ? "text-amber-300" :
-                    s.trustScoreMode === "preliminary" ? "text-fuchsia-300" : "text-muted-foreground"
+                    s.trustScoreMode === "preliminary" ? "text-violet-300" : "text-muted-foreground"
                   }`}>
                     {s.trustScore == null ? "—" : s.trustScore.toFixed(1)}
                   </span>
@@ -202,7 +202,7 @@ function SubmissionDetailModal({ submission, onClose, onAction }: { submission: 
           <div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Trust Score</div>
             <div className="mt-1 text-2xl font-bold">{submission.trustScore?.toFixed(1) ?? "—"}<span className="text-xs text-muted-foreground"> / {submission.trustScoreMode === "preliminary" ? 6.5 : 10}</span></div>
-            <div className="text-[10px] uppercase text-fuchsia-300">{submission.trustScoreMode}</div>
+            <div className="text-[10px] uppercase text-violet-300">{submission.trustScoreMode}</div>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Reviews</div>
@@ -215,7 +215,7 @@ function SubmissionDetailModal({ submission, onClose, onAction }: { submission: 
           <div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Completion</div>
             <div className="mt-1 text-2xl font-bold">{submission.completionPercent}%</div>
-            <a href={buildMagicLink(submission)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] text-fuchsia-300 hover:text-fuchsia-200">Magic link <ExternalLink className="h-2.5 w-2.5" /></a>
+            <a href={buildMagicLink(submission)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] text-violet-300 hover:text-violet-200">Magic link <ExternalLink className="h-2.5 w-2.5" /></a>
           </div>
         </div>
 
@@ -224,7 +224,7 @@ function SubmissionDetailModal({ submission, onClose, onAction }: { submission: 
           if (!d || Object.keys(d).length === 0) return null;
           return (
             <div key={sec.key} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-fuchsia-300/80">{sec.title}</div>
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-violet-300/80">{sec.title}</div>
               <dl className="grid gap-2 text-xs sm:grid-cols-2">
                 {Object.entries(d).map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-3 border-b border-white/5 pb-1 last:border-0">
@@ -263,7 +263,7 @@ function ReviewActionModal({ submission, type, onClose, onConfirm }: { submissio
         onChange={(e) => setNote(e.target.value)}
         rows={4}
         placeholder={type === "approve" ? "Optional welcome note…" : "Reason / required changes…"}
-        className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-fuchsia-400/40"
+        className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-violet-400/40"
       />
     </Modal>
   );

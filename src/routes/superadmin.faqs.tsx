@@ -134,7 +134,7 @@ function FaqsPage() {
           {loading && <tr><td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">Loading…</td></tr>}
           {!loading && filtered.map((f) => (
             <tr key={f.id}>
-              <td><span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-bold text-fuchsia-300 ring-1 ring-fuchsia-400/30">{f.category}</span></td>
+              <td><span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-bold text-violet-300 ring-1 ring-violet-400/30">{f.category}</span></td>
               <td className="max-w-[420px] truncate font-semibold">{f.question || <span className="italic text-muted-foreground">untitled</span>}</td>
               <td><button onClick={() => toggleStatus(f)}><StatusPill status={f.status} /></button></td>
               <td className="font-mono">{f.views.toLocaleString()}</td>

@@ -15,11 +15,11 @@ export function StepProgressBar({ totalSteps, currentStep }: { totalSteps: numbe
     <div className="space-y-2">
       <div className="flex items-center justify-between text-[11px] uppercase tracking-widest text-muted-foreground">
         <span>Step {currentStep} of {totalSteps}</span>
-        <span className="text-fuchsia-300">{pct}% complete</span>
+        <span className="text-violet-300">{pct}% complete</span>
       </div>
       <div className="relative h-2 overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-fuchsia-500 via-violet-500 to-indigo-500 transition-[width] duration-500 ease-out"
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-violet-500 via-violet-500 to-indigo-500 transition-[width] duration-500 ease-out"
           style={{ width: `${pct}%`, boxShadow: "0 0 24px oklch(0.7 0.22 310 / 0.6)" }}
         />
       </div>
@@ -31,7 +31,7 @@ export function StepProgressBar({ totalSteps, currentStep }: { totalSteps: numbe
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition ${
-                done ? "bg-fuchsia-400/70" : active ? "bg-violet-300" : "bg-white/10"
+                done ? "bg-violet-400/70" : active ? "bg-violet-300" : "bg-white/10"
               }`}
             />
           );
@@ -45,7 +45,7 @@ export function StepProgressBar({ totalSteps, currentStep }: { totalSteps: numbe
 export function StepTitleBlock({ title, subtitle, description }: { title: string; subtitle?: string; description?: string }) {
   return (
     <div>
-      {subtitle && <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300/80">{subtitle}</div>}
+      {subtitle && <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-300/80">{subtitle}</div>}
       <h2 className="mt-1 text-2xl font-bold leading-tight md:text-3xl">{title}</h2>
       {description && <p className="mt-2 max-w-xl text-sm text-muted-foreground">{description}</p>}
     </div>
@@ -71,7 +71,7 @@ export function TrustScoreCard({
   const tone =
     status === "full" ? "from-emerald-400 to-teal-500" :
     status === "partial" ? "from-sky-300 to-violet-400" :
-    status === "preliminary" ? "from-fuchsia-400 to-violet-400" :
+    status === "preliminary" ? "from-violet-400 to-violet-400" :
     "from-zinc-500 to-zinc-700";
 
   const display = score == null ? "—" : score.toFixed(1);
@@ -176,7 +176,7 @@ export function ImprovementSuggestions({ items }: { items: { text: string; score
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-fuchsia-300" />
+        <Sparkles className="h-4 w-4 text-violet-300" />
         <div className="text-sm font-bold">Improve your score</div>
       </div>
       <ul className="mt-3 space-y-2">
@@ -232,7 +232,7 @@ export function FieldShell({ label, required, helper, error, children }: { label
   );
 }
 
-const fieldBase = "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground/70 outline-none transition focus:border-fuchsia-400/40 focus:ring-2 focus:ring-fuchsia-400/20 hover:border-white/20";
+const fieldBase = "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground/70 outline-none transition focus:border-violet-400/40 focus:ring-2 focus:ring-violet-400/20 hover:border-white/20";
 
 export function TextField({ value, onChange, placeholder, type = "text" }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={fieldBase} />;
@@ -300,7 +300,7 @@ export function CardChoiceGroup({ value, onChange, options }: { value: string | 
             onClick={() => onChange(o.value)}
             className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition ${
               active
-                ? "border-fuchsia-400/60 bg-gradient-to-br from-fuchsia-500/10 to-violet-500/10 shadow-[0_0_24px_rgba(192,132,252,0.25)]"
+                ? "border-violet-400/60 bg-gradient-to-br from-violet-500/10 to-violet-500/10 shadow-[0_0_24px_rgba(192,132,252,0.25)]"
                 : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
             }`}
           >
@@ -310,7 +310,7 @@ export function CardChoiceGroup({ value, onChange, options }: { value: string | 
                 <div className="text-sm font-bold">{o.label}</div>
                 {o.description && <div className="mt-1 text-xs text-muted-foreground">{o.description}</div>}
               </div>
-              <div className={`mt-0.5 grid h-5 w-5 place-items-center rounded-full ring-1 transition ${active ? "bg-fuchsia-500 ring-fuchsia-400" : "ring-white/20"}`}>
+              <div className={`mt-0.5 grid h-5 w-5 place-items-center rounded-full ring-1 transition ${active ? "bg-violet-500 ring-violet-400" : "ring-white/20"}`}>
                 {active && <Check className="h-3 w-3 text-white" />}
               </div>
             </div>
@@ -333,9 +333,9 @@ export function MultiTagInput({ value, onChange, suggestions = [], placeholder }
     <div>
       <div className={fieldBase + " flex flex-wrap items-center gap-1.5 px-2 py-2"}>
         {value.map((tag) => (
-          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-2 py-1 text-xs text-fuchsia-100 ring-1 ring-fuchsia-400/30">
+          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-1 text-xs text-violet-100 ring-1 ring-violet-400/30">
             {tag}
-            <button type="button" onClick={() => remove(tag)} className="text-fuchsia-200 hover:text-white"><X className="h-3 w-3" /></button>
+            <button type="button" onClick={() => remove(tag)} className="text-violet-200 hover:text-white"><X className="h-3 w-3" /></button>
           </span>
         ))}
         <input
@@ -360,7 +360,7 @@ export function MultiTagInput({ value, onChange, suggestions = [], placeholder }
               key={s}
               type="button"
               onClick={() => add(s)}
-              className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-muted-foreground hover:border-fuchsia-400/40 hover:text-fuchsia-200"
+              className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-muted-foreground hover:border-violet-400/40 hover:text-violet-200"
             >
               + {s}
             </button>
@@ -387,9 +387,9 @@ export function FileUploadBlock({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center transition hover:border-fuchsia-400/40 hover:bg-fuchsia-500/5"
+        className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center transition hover:border-violet-400/40 hover:bg-violet-500/5"
       >
-        <Upload className="h-5 w-5 text-fuchsia-300" />
+        <Upload className="h-5 w-5 text-violet-300" />
         <div className="text-sm font-semibold">Click or drag to upload</div>
         <div className="text-[11px] text-muted-foreground">{helper ?? "PDF, JPG, PNG · up to 10MB"}</div>
       </button>
@@ -428,7 +428,7 @@ export function FileUploadBlock({
 export function PublicTrustStateBanner({ state, reviewCount }: { state: TrustScoreMode; reviewCount: number }) {
   if (state === "none") return null;
   const meta =
-    state === "preliminary" ? { tone: "from-fuchsia-500/15 to-violet-500/10 border-fuchsia-400/30 text-fuchsia-100", label: "Preliminary Score", body: "Based on submitted brand data only · no trader reviews yet" } :
+    state === "preliminary" ? { tone: "from-violet-500/15 to-violet-500/10 border-violet-400/30 text-violet-100", label: "Preliminary Score", body: "Based on submitted brand data only · no trader reviews yet" } :
     state === "partial" ? { tone: "from-sky-500/15 to-violet-500/10 border-sky-400/30 text-sky-100", label: "Partially Unlocked", body: `Based on ${reviewCount} verified review${reviewCount === 1 ? "" : "s"}` } :
     { tone: "from-emerald-500/15 to-teal-500/10 border-emerald-400/30 text-emerald-100", label: "Fully Verified Trust Score", body: `Based on ${reviewCount} verified trader reviews` };
 

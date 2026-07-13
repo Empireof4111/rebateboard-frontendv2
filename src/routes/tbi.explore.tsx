@@ -170,7 +170,7 @@ function ExplorePage() {
                   onClick={() => setCategory(entry)}
                   className={`rounded-full px-3 py-1.5 text-xs transition ${
                     category === entry
-                      ? "bg-fuchsia-500/20 text-fuchsia-200 ring-1 ring-fuchsia-400/40"
+                      ? "bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/40"
                       : "bg-white/5 text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -244,7 +244,7 @@ function ExplorePage() {
                 step={1}
                 value={minScore}
                 onChange={(event) => setMinScore(Number(event.target.value))}
-                className="w-full accent-fuchsia-500"
+                className="w-full accent-violet-500"
               />
             </div>
           </div>
@@ -265,7 +265,7 @@ function ExplorePage() {
                 key={profile.id}
                 to="/tbi/brand/$slug"
                 params={{ slug: profile.slug }}
-                className="glass group rounded-3xl p-5 transition hover:border-fuchsia-400/40"
+                className="glass group rounded-3xl p-5 transition hover:border-violet-400/40"
               >
                 <div className="flex items-start gap-3">
                   <BrandAvatar profile={profile} />
@@ -290,7 +290,7 @@ function ExplorePage() {
                     </div>
                     <div className="text-[11px] text-muted-foreground">{profile.trustLabel}</div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-fuchsia-300" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-violet-300" />
                 </div>
 
                 <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">

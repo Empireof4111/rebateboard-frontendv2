@@ -30,7 +30,7 @@ function BrandAnalytics() {
           { label: "Avg sentiment", value: "4.4/5", delta: "+0.2", icon: TrendingUp },
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-4 ring-1 ring-white/10">
-            <div className="flex items-center gap-2 text-fuchsia-300"><s.icon className="h-4 w-4" /></div>
+            <div className="flex items-center gap-2 text-violet-300"><s.icon className="h-4 w-4" /></div>
             <div className="mt-2 text-2xl font-extrabold text-white">{s.value}</div>
             <div className="text-[11px] text-muted-foreground">{s.label}</div>
             <div className="mt-2 text-[10px] font-semibold text-emerald-300">{s.delta}</div>
@@ -43,7 +43,7 @@ function BrandAnalytics() {
         <div className="mt-4 flex h-40 items-end gap-2">
           {series.map((v, i) => (
             <div key={i} className="flex-1">
-              <div className="w-full rounded-t-md bg-gradient-to-t from-violet-600 to-fuchsia-400" style={{ height: `${(v / max) * 100}%` }} />
+              <div className="w-full rounded-t-md bg-gradient-to-t from-violet-600 to-violet-400" style={{ height: `${(v / max) * 100}%` }} />
               <div className="mt-1 text-center text-[9px] text-muted-foreground">{["J","F","M","A","M","J","J","A","S","O","N","D"][i]}</div>
             </div>
           ))}

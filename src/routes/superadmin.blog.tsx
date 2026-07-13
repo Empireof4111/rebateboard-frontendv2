@@ -309,12 +309,12 @@ function BlogAdmin() {
                 onClick={() => tagInputRef.current?.focus()}
               >
                 {(editing.tags ?? []).map((t) => (
-                  <span key={t} className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/20 px-2.5 py-0.5 text-xs font-medium text-fuchsia-300">
+                  <span key={t} className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 px-2.5 py-0.5 text-xs font-medium text-violet-300">
                     {t}
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setEditing({ ...editing, tags: editing.tags.filter((x) => x !== t) }); }}
-                      className="ml-0.5 rounded-full p-0.5 hover:bg-fuchsia-500/30"
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-violet-500/30"
                     >
                       <X className="h-2.5 w-2.5" />
                     </button>

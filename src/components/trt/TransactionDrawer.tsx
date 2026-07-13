@@ -1,4 +1,4 @@
-// Universal Add Transaction drawer — handles both income & expense via steps.
+// Universal Add Transaction modal — handles both income & expense via steps.
 import { useEffect, useMemo, useState } from "react";
 import { X, ArrowDown, ArrowUp, Check, Sparkles, Save, Plus } from "lucide-react";
 import { BrandPicker } from "./BrandPicker";
@@ -69,9 +69,9 @@ export function TransactionDrawer({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-stretch justify-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-3 backdrop-blur-sm sm:p-5" onClick={onClose}>
       <div
-        className="ml-auto flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl backdrop-blur-2xl"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[rgba(18,18,25,0.96)] shadow-2xl backdrop-blur-2xl sm:max-h-[calc(100dvh-2.5rem)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/5 bg-[rgba(18,18,25,0.95)] px-5 py-4 backdrop-blur-xl">
@@ -84,7 +84,7 @@ export function TransactionDrawer({
           </button>
         </div>
 
-        <div className="space-y-5 p-5">
+        <div className="mobile-scroll flex-1 space-y-5 overflow-y-auto p-5">
           {/* Step 1: Direction */}
           <div>
             <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Direction</div>

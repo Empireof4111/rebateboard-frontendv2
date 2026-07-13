@@ -20,7 +20,7 @@ export function ComingSoonPage({
       <main className="container-app py-10 sm:py-14 lg:py-16">
         <section className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-[0_20px_80px_rgba(91,33,182,0.22)] sm:p-8 lg:p-10">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-fuchsia-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-100">
+            <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-violet-100">
               <Clock3 className="h-3.5 w-3.5" />
               {eyebrow}
             </span>
@@ -49,7 +49,7 @@ export function ComingSoonPage({
             </a>
             <a
               href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-white/85 transition hover:border-fuchsia-300/35 hover:bg-white/[0.08]"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-white/85 transition hover:border-violet-300/35 hover:bg-white/[0.08]"
             >
               Go to dashboard
             </a>

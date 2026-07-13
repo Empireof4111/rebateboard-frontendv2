@@ -26,7 +26,7 @@ export const Route = createFileRoute("/legal/$slug")({
     <div className="glass rounded-3xl p-10 text-center ring-1 ring-white/10">
       <h1 className="text-xl font-bold text-white">Legal page not found</h1>
       <p className="mt-2 text-sm text-muted-foreground">The legal document you’re looking for does not exist.</p>
-      <Link to="/legal/$slug" params={{ slug: "terms" }} className="mt-4 inline-block text-fuchsia-300 hover:underline">
+      <Link to="/legal/$slug" params={{ slug: "terms" }} className="mt-4 inline-block text-violet-300 hover:underline">
         Go to Terms & Conditions →
       </Link>
     </div>
@@ -113,7 +113,7 @@ function LegalDocPage() {
         <p className="mt-2 text-sm text-muted-foreground">{doc.tagline}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 ring-1 ring-white/10">
-            <Calendar className="h-3 w-3 text-fuchsia-300" /> Last updated: {doc.lastUpdated}
+            <Calendar className="h-3 w-3 text-violet-300" /> Last updated: {doc.lastUpdated}
           </span>
           <button
             onClick={printPage}
@@ -203,7 +203,7 @@ function LegalDocPage() {
                         href={`#${s.id}`}
                         className={
                           "block rounded-md px-2 py-1 transition " +
-                          (active ? "bg-fuchsia-300/15 text-white ring-1 ring-fuchsia-300/30" : "text-muted-foreground hover:text-white")
+                          (active ? "bg-violet-300/15 text-white ring-1 ring-violet-300/30" : "text-muted-foreground hover:text-white")
                         }
                       >
                         {s.heading}
@@ -231,7 +231,7 @@ function LegalDocPage() {
 
 function FooterCTA() {
   return (
-    <div className="mt-10 rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-violet-500/15 p-6 ring-1 ring-fuchsia-300/30">
+    <div className="mt-10 rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-6 ring-1 ring-violet-300/30">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h3 className="text-base font-semibold text-white">Have questions?</h3>
@@ -241,7 +241,7 @@ function FooterCTA() {
         </div>
         <a
           href="mailto:support@rebateboard.com"
-          className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,70,239,0.6)]"
+          className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(126,77,255,0.6)]"
         >
           <MessageCircle className="h-3 w-3" /> Contact support
         </a>
@@ -266,7 +266,7 @@ function RelatedDocs({ current }: { current: LegalDoc }) {
               className="group flex items-center justify-between rounded-lg bg-white/[0.03] px-2 py-1.5 text-xs text-white/80 ring-1 ring-white/10 hover:bg-white/[0.06] hover:text-white"
             >
               {d.navLabel}
-              <ChevronRight className="h-3 w-3 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-fuchsia-300" />
+              <ChevronRight className="h-3 w-3 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-violet-300" />
             </Link>
           </li>
         ))}

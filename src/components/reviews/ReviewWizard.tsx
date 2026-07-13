@@ -69,7 +69,7 @@ type ReviewBrandOption = {
 };
 
 const CATEGORY_GRADIENTS: Record<ReviewProviderType, string> = {
-  "Prop Firm": "from-fuchsia-400 to-violet-600",
+  "Prop Firm": "from-violet-400 to-violet-600",
   Broker: "from-sky-400 to-indigo-600",
   Exchange: "from-amber-400 to-orange-600",
   Tool: "from-emerald-400 to-teal-600",
@@ -382,7 +382,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
         <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Thank you for helping improve transparency on RebateBoard. Your review is pending verification. Once approved, it can contribute to {selectedBrand.name}'s Trusted Brand Index.
         </p>
-        <div className="mx-auto mt-5 flex max-w-sm items-center justify-center gap-2 rounded-xl bg-fuchsia-500/10 p-3 text-sm text-fuchsia-100 ring-1 ring-fuchsia-300/25">
+        <div className="mx-auto mt-5 flex max-w-sm items-center justify-center gap-2 rounded-xl bg-violet-500/10 p-3 text-sm text-violet-100 ring-1 ring-violet-300/25">
           <Gift className="h-4 w-4" />
           <span><strong>Possible RR reward</strong> after verification</span>
         </div>
@@ -498,7 +498,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
                   </span>
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-fuchsia-200">
+              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-violet-200">
                 <BadgeCheck className="h-3.5 w-3.5" />
                 Approved reviews may contribute to TBI
               </div>
@@ -513,7 +513,7 @@ export function ReviewWizard({ initialProviderType, initialBrandSlug }: Props) {
       <div className="flex items-center justify-between gap-3 rounded-2xl glass p-4 ring-1 ring-white/10">
         <div className="text-[11px] text-muted-foreground">
           <Info className="mr-1 inline h-3.5 w-3.5" />
-          Need help? <a className="text-fuchsia-300 underline">Contact support</a>
+          Need help? <a className="text-violet-300 underline">Contact support</a>
         </div>
         <div className="flex gap-2">
           {step > 1 && (
@@ -569,9 +569,9 @@ function Stepper({ step }: { step: 1 | 2 | 3 | 4 }) {
                 className={
                   "grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold ring-2 transition " +
                   (done
-                    ? "rb-gradient-primary text-white ring-fuchsia-400/50"
+                    ? "rb-gradient-primary text-white ring-violet-400/50"
                     : active
-                      ? "rb-gradient-primary text-white ring-fuchsia-300/60 shadow-[0_0_18px_rgba(192,132,252,0.6)]"
+                      ? "rb-gradient-primary text-white ring-violet-300/60 shadow-[0_0_18px_rgba(192,132,252,0.6)]"
                       : "bg-white/10 text-muted-foreground ring-white/10")
                 }
               >
@@ -620,7 +620,7 @@ function Step1({
         <select
           value={providerType}
           onChange={(e) => setProviderType(e.target.value as ReviewProviderType | "")}
-          className="mt-3 w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-fuchsia-400/40"
+          className="mt-3 w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-violet-400/40"
         >
           <option value="" className="bg-[var(--rb-bg-elevated)]">
             Select a provider type
@@ -660,7 +660,7 @@ function Step1({
                 className={
                   "group flex items-center gap-2 rounded-xl p-2.5 text-left ring-1 transition " +
                   (brandSlug === b.slug
-                    ? "bg-fuchsia-500/15 ring-fuchsia-300/40 shadow-[0_0_18px_rgba(192,132,252,0.35)]"
+                    ? "bg-violet-500/15 ring-violet-300/40 shadow-[0_0_18px_rgba(192,132,252,0.35)]"
                     : "bg-white/[0.03] ring-white/10 hover:bg-white/[0.06]")
                 }
               >
@@ -726,7 +726,7 @@ function Step2({
         <input
           value={fullName}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
-          className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
+          className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40"
         />
       </Field>
       <Field label="Email">
@@ -734,7 +734,7 @@ function Step2({
           type="email"
           value={email}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-          className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
+          className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40"
         />
       </Field>
 
@@ -761,7 +761,7 @@ function Step2({
             placeholder="e.g. $7,500"
             value={customSize}
             onChange={(e) => setCustomSize(e.target.value)}
-            className="mt-2 w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
+            className="mt-2 w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40"
           />
         )}
       </Field>
@@ -834,7 +834,7 @@ function Step3({
           <div key={key} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
             <div className="flex items-center justify-between gap-2">
               <div className="text-xs font-semibold text-white">{label}</div>
-              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-semibold text-fuchsia-200 ring-1 ring-white/10">
+              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-semibold text-violet-200 ring-1 ring-white/10">
                 {pillar}
               </span>
             </div>
@@ -847,7 +847,7 @@ function Step3({
                   aria-label={`${n} stars`}
                 >
                   <Star
-                    className={`h-5 w-5 ${n <= Number(ratings[key] || 0) ? "fill-fuchsia-400 text-fuchsia-400" : "text-white/20"}`}
+                    className={`h-5 w-5 ${n <= Number(ratings[key] || 0) ? "fill-violet-400 text-violet-400" : "text-white/20"}`}
                   />
                 </button>
               ))}
@@ -871,7 +871,7 @@ function Step3({
           onChange={(e) => setBody(e.target.value)}
           rows={5}
           placeholder="Share your experience with trading conditions, customer service, payout process, etc."
-          className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
+          className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40"
         />
       </div>
     </div>
@@ -918,8 +918,8 @@ function Step4({
       </div>
 
       <Field label={`Supporting evidence (optional) — ${proofs.length}/5`}>
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 bg-white/[0.02] p-6 text-center transition hover:border-fuchsia-300/40 hover:bg-fuchsia-500/5">
-          <Upload className="h-6 w-6 text-fuchsia-300" />
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 bg-white/[0.02] p-6 text-center transition hover:border-violet-300/40 hover:bg-violet-500/5">
+          <Upload className="h-6 w-6 text-violet-300" />
           <div className="text-sm font-semibold text-white">
             Drag & drop files here or click to browse
           </div>
@@ -945,7 +945,7 @@ function Step4({
                 {p.type.startsWith("image/") ? (
                   <img src={p.dataUrl} alt={p.name} className="h-24 w-full object-cover" />
                 ) : (
-                  <div className="grid h-24 place-items-center bg-fuchsia-500/10 text-[11px] font-semibold text-fuchsia-200">
+                  <div className="grid h-24 place-items-center bg-violet-500/10 text-[11px] font-semibold text-violet-200">
                     PDF
                   </div>
                 )}
@@ -973,7 +973,7 @@ function Step4({
           onChange={(e) => setLikedMost(e.target.value)}
           rows={3}
           placeholder="Summary here…"
-          className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
+          className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40"
         />
       </Field>
       <Field label="4. What do/did you like the least about the item? (optional)">
@@ -982,7 +982,7 @@ function Step4({
           onChange={(e) => setLikedLeast(e.target.value)}
           rows={3}
           placeholder="Summary here…"
-          className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40"
+          className="w-full rounded-xl bg-white/5 p-3 text-sm text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40"
         />
       </Field>
     </div>
@@ -1015,7 +1015,7 @@ function ChipBtn({
       className={
         "rounded-xl px-3 py-2 text-xs font-medium ring-1 transition " +
         (active
-          ? "bg-fuchsia-500/15 text-white ring-fuchsia-300/40"
+          ? "bg-violet-500/15 text-white ring-violet-300/40"
           : "bg-white/[0.03] text-muted-foreground ring-white/10 hover:bg-white/[0.06] hover:text-white")
       }
     >
@@ -1054,9 +1054,9 @@ function SidebarNote({ step }: { step: 1 | 2 | 3 | 4 }) {
   if (step === 3) {
     return (
       <NoteCard
-        icon={<Layers className="h-4 w-4 text-fuchsia-300" />}
+        icon={<Layers className="h-4 w-4 text-violet-300" />}
         title="Rating Guidelines"
-        tone="fuchsia"
+        tone="violet"
       >
         <li>★ = Very poor experience</li>
         <li>★★ = Below average</li>
@@ -1090,12 +1090,12 @@ function NoteCard({
   icon: ReactNode;
   title: string;
   children: ReactNode;
-  tone: "amber" | "cyan" | "fuchsia" | "emerald";
+  tone: "amber" | "cyan" | "violet" | "emerald";
 }) {
   const toneRing = {
     amber: "ring-amber-300/30 bg-amber-500/5",
     cyan: "ring-cyan-300/30 bg-cyan-500/5",
-    fuchsia: "ring-fuchsia-300/30 bg-fuchsia-500/5",
+    violet: "ring-violet-300/30 bg-violet-500/5",
     emerald: "ring-emerald-300/30 bg-emerald-500/5",
   }[tone];
   return (
@@ -1103,7 +1103,7 @@ function NoteCard({
       <div className="mb-2 inline-flex items-center gap-2 text-sm font-bold text-white">
         {icon} {title}
       </div>
-      <ul className="space-y-1.5 text-[11px] leading-relaxed text-white/80 list-disc pl-4 marker:text-fuchsia-300/60">
+      <ul className="space-y-1.5 text-[11px] leading-relaxed text-white/80 list-disc pl-4 marker:text-violet-300/60">
         {children}
       </ul>
     </div>

@@ -7,7 +7,7 @@ import {
 /* =========================================================================
    FirmPayouts — Brand-scoped payout intelligence panel for the
    Firm Details "Payouts" tab. Branded to match the rest of RebateBoard
-   (glass surfaces, fuchsia/violet accents, semantic tokens).
+   (glass surfaces, violet/violet accents, semantic tokens).
    ========================================================================= */
 
 type RiskLevel = "low" | "medium" | "high";
@@ -317,7 +317,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
     <div className="space-y-5">
       {/* Header strip */}
       <div className="glass relative overflow-hidden rounded-2xl p-4 ring-1 ring-white/10">
-        <div className="pointer-events-none absolute -inset-x-10 -top-20 h-40 bg-fuchsia-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -inset-x-10 -top-20 h-40 bg-violet-500/10 blur-3xl" />
         <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[rgba(126,77,255,0.18)] text-sm font-bold text-white ring-1 ring-white/10">
@@ -326,7 +326,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
             <div>
               <div className="text-base font-bold text-white">{firm.name} · Payout Intelligence</div>
               <div className="text-[11px] text-muted-foreground">
-                On-chain verified · TBI <span className="text-fuchsia-300">{firm.tbi.toFixed(1)}</span> · Rank #{firm.rankInLeaderboard}
+                On-chain verified · TBI <span className="text-violet-300">{firm.tbi.toFixed(1)}</span> · Rank #{firm.rankInLeaderboard}
               </div>
             </div>
           </div>
@@ -344,7 +344,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {STATS.map((s, i) => (
           <div key={i} className="glass rounded-2xl p-4 ring-1 ring-white/10">
-            <div className="flex items-center gap-2 text-fuchsia-300">
+            <div className="flex items-center gap-2 text-violet-300">
               <s.Icon className="h-4 w-4" />
             </div>
             <div className="mt-2 text-2xl font-extrabold tracking-tight text-white">{s.value}</div>
@@ -367,7 +367,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
           <section className="glass rounded-2xl p-5 ring-1 ring-white/10">
             <header className="mb-4 flex items-baseline justify-between">
               <h3 className="inline-flex items-center gap-2 text-sm font-bold text-white">
-                <TrendingUp className="h-4 w-4 text-fuchsia-300" /> Payout Volume — Monthly
+                <TrendingUp className="h-4 w-4 text-violet-300" /> Payout Volume — Monthly
               </h3>
               <span className="text-[11px] text-muted-foreground">Last 12 months</span>
             </header>
@@ -390,7 +390,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
                 </thead>
                 <tbody>
                   {firm.payouts.map((p, i) => (
-                    <tr key={i} className={`transition-colors hover:bg-fuchsia-500/5 ${
+                    <tr key={i} className={`transition-colors hover:bg-violet-500/5 ${
                       i === firm.payouts.length - 1 ? "" : "border-b border-white/5"
                     }`}>
                       <td className="px-2.5 py-2.5 font-mono font-semibold text-emerald-300">
@@ -404,7 +404,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
                       <td className="px-2.5 py-2.5 text-[11px] text-muted-foreground">{p.time}</td>
                       <td className="px-2.5 py-2.5 font-mono text-[11px] text-muted-foreground">{p.speed}</td>
                       <td className="px-2.5 py-2.5"><StatusPill s={p.status} /></td>
-                      <td className="px-2.5 py-2.5 font-mono text-[10px] text-fuchsia-300">{p.tx}</td>
+                      <td className="px-2.5 py-2.5 font-mono text-[10px] text-violet-300">{p.tx}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -423,7 +423,7 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
                   <div className="w-36 text-xs text-muted-foreground">{s.label}</div>
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-violet-500 transition-all duration-700"
+                      className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-500 transition-all duration-700"
                       style={{ width: `${barWidths[i]}%` }}
                     />
                   </div>
@@ -506,16 +506,16 @@ export function FirmPayouts({ firmName }: { firmName: string }) {
                 const rankBg = ["bg-amber-500/15 text-amber-300", "bg-white/10 text-white/80", "bg-orange-500/15 text-orange-300"][i] || "bg-white/5 text-muted-foreground";
                 return (
                   <div key={f.id} className={`flex items-center gap-2.5 border-b border-white/5 py-2 last:border-0 ${
-                    isMe ? "rounded-lg bg-fuchsia-500/10 px-2 ring-1 ring-fuchsia-400/30" : ""
+                    isMe ? "rounded-lg bg-violet-500/10 px-2 ring-1 ring-violet-400/30" : ""
                   }`}>
                     <span className={`grid h-5 w-5 place-items-center rounded text-[10px] font-bold ${rankBg}`}>{i + 1}</span>
                     <span className="grid h-6 w-6 place-items-center rounded-md bg-[rgba(126,77,255,0.18)] text-[9px] font-bold text-white ring-1 ring-white/10">
                       {f.abbr}
                     </span>
                     <span className={`flex-1 text-xs ${isMe ? "font-semibold text-white" : "text-muted-foreground"}`}>
-                      {f.name}{isMe && <span className="ml-1.5 text-[10px] text-fuchsia-300">◀ you</span>}
+                      {f.name}{isMe && <span className="ml-1.5 text-[10px] text-violet-300">◀ you</span>}
                     </span>
-                    <span className="font-mono text-xs text-fuchsia-300">{f.tbi.toFixed(1)}</span>
+                    <span className="font-mono text-xs text-violet-300">{f.tbi.toFixed(1)}</span>
                   </div>
                 );
               })}

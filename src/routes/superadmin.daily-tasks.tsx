@@ -61,7 +61,7 @@ const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
   { value: "conversion", label: "conversion" },
 ];
 
-const CHART_COLORS = ["#d946ef", "#a855f7", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
+const CHART_COLORS = ["#7e4dff", "#7e4dff", "#7e4dff", "#06b6d4", "#10b981", "#f59e0b"];
 
 function DailyTasksPage() {
   const [board, setBoard] = useState<DailyTaskAdminBoard | null>(null);
@@ -199,7 +199,7 @@ function DailyTasksPage() {
             <button
               type="button"
               onClick={addTask}
-              className="inline-flex items-center gap-2 rounded-full bg-fuchsia-500/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-fuchsia-500/30"
+              className="inline-flex items-center gap-2 rounded-full bg-violet-500/20 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-500/30"
             >
               <Plus className="h-3.5 w-3.5" />
               Add task
@@ -231,8 +231,8 @@ function DailyTasksPage() {
                 <AreaChart data={analytics.dailyTrend} margin={{ top: 10, right: 16, left: -16, bottom: 0 }}>
                   <defs>
                     <linearGradient id="taskCompletions" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.55} />
-                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#7e4dff" stopOpacity={0.55} />
+                      <stop offset="95%" stopColor="#7e4dff" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="taskUsers" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.45} />
@@ -244,7 +244,7 @@ function DailyTasksPage() {
                   <YAxis yAxisId="left" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
                   <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
                   <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }} />
-                  <Area yAxisId="left" type="monotone" dataKey="completions" stroke="#d946ef" strokeWidth={2} fill="url(#taskCompletions)" name="Completions" />
+                  <Area yAxisId="left" type="monotone" dataKey="completions" stroke="#7e4dff" strokeWidth={2} fill="url(#taskCompletions)" name="Completions" />
                   <Area yAxisId="right" type="monotone" dataKey="users" stroke="#06b6d4" strokeWidth={2} fill="url(#taskUsers)" name="Users" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -462,4 +462,4 @@ function DailyTasksPage() {
 }
 
 const fieldClassName =
-  "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:bg-white/[0.07]";
+  "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-violet-400/40 focus:bg-white/[0.07]";

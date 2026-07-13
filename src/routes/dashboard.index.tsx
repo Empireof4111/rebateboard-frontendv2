@@ -157,7 +157,7 @@ function DashboardHome() {
         actions={
           <>
             <Link to={"/dashboard/trading-plan" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <ClipboardCheck className="h-3.5 w-3.5 text-fuchsia-300" /> {t("dashboard.nav.tradingPlan")}
+              <ClipboardCheck className="h-3.5 w-3.5 text-violet-300" /> {t("dashboard.nav.tradingPlan")}
             </Link>
             <button onClick={openAddTrade} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Plus className="h-3.5 w-3.5" /> {t("dashboard.addTrade")}
@@ -197,7 +197,7 @@ function DashboardHome() {
               <div className="mt-1 text-sm font-semibold text-white">{nextUnlock.title}</div>
               <p className="mt-1 text-xs text-muted-foreground">{nextUnlock.subtitle}</p>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">{Math.round(nextUnlock.progress)}% complete</div>
             </div>
@@ -209,12 +209,12 @@ function DashboardHome() {
             <div className="text-lg font-bold text-white">{nextUnlock.title}</div>
             <p className="mt-1 text-sm text-muted-foreground">{nextUnlock.subtitle}</p>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.07]">
-              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500" style={{ width: `${nextUnlock.progress}%` }} />
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
               {PROGRESSION_TASKS.slice(0, 4).map((task) => (
                 <Link key={task.label} to={task.href as string} className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-white/80 transition hover:bg-white/[0.07] hover:text-white">
-                  {task.label} <span className="text-fuchsia-200">+{task.reward} RR</span>
+                  {task.label} <span className="text-violet-200">+{task.reward} RR</span>
                 </Link>
               ))}
             </div>
@@ -234,7 +234,7 @@ function DashboardHome() {
 
       {/* Wallet Hero */}
       <div className="glass relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-500/30 to-fuchsia-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-500/30 to-violet-500/20 blur-3xl" />
         <div className="relative grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
           <div className="flex items-center gap-4">
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
@@ -278,13 +278,13 @@ function DashboardHome() {
             : <div className="h-[140px] flex items-center justify-center text-xs text-muted-foreground">{t("dashboard.noDataYet")}</div>}
           <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>{t("dashboard.last6Months")}</span>
-            <Link to={"/dashboard/wallet" as string} className="text-fuchsia-300 hover:underline">{t("dashboard.viewWallet")} →</Link>
+            <Link to={"/dashboard/wallet" as string} className="text-violet-300 hover:underline">{t("dashboard.viewWallet")} →</Link>
           </div>
         </Panel>
 
         <Panel title={t("dashboard.cashbackBySource")} action={<Building2 className="h-3.5 w-3.5 text-muted-foreground" />}>
           {earningsBySource.length > 0
-            ? <SourceBars data={earningsBySource.slice(0, 6)} color="from-emerald-400 to-fuchsia-500" />
+            ? <SourceBars data={earningsBySource.slice(0, 6)} color="from-emerald-400 to-violet-500" />
             : <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">{t("dashboard.noEarningsYet")}</div>}
         </Panel>
 
@@ -303,22 +303,22 @@ function DashboardHome() {
                 </li>
               )}
               {summary && Number(summary.pendingWithdrawals) > 0 ? (
-                <li className="flex gap-2 rounded-lg bg-fuchsia-500/10 p-2.5">
-                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-200" />
+                <li className="flex gap-2 rounded-lg bg-violet-500/10 p-2.5">
+                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-violet-200" />
                   <span className="text-white">You have <b>{fmtUSD(Number(summary.pendingWithdrawals))}</b> in pending withdrawals.</span>
                 </li>
               ) : (
-                <li className="flex gap-2 rounded-lg bg-fuchsia-500/10 p-2.5">
-                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-400" />
+                <li className="flex gap-2 rounded-lg bg-violet-500/10 p-2.5">
+                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-violet-400" />
                   <span className="text-white">Available wallet balance is <b>{summary && walletHasActivity ? fmtUSD(Number(summary.availableForWithdrawal)) : "No Data Yet"}</b>.</span>
                 </li>
               )}
               <li className="flex gap-2 rounded-lg bg-primary/10 p-2.5">
-                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-300" />
+                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
                 <span className="text-white">Current RR balance: <b>{Number(user?.rrBalance ?? 0) > 0 ? `${Math.round(user?.rrBalance ?? 0).toLocaleString()} RR` : "No Data Yet"}</b>.</span>
               </li>
               <li>
-                <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-fuchsia-300 hover:underline">
+                <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-violet-300 hover:underline">
                   {t("dashboard.compareBrokers")} <ArrowRight className="h-3 w-3" />
                 </Link>
               </li>
@@ -379,15 +379,15 @@ function DashboardHome() {
                 </div>
                 <div>
                   <div className="text-[10px] uppercase text-muted-foreground">{t("dashboard.risk")}</div>
-                  <div className={`mt-1 text-xl font-bold ${todayTradeStats.violations === 0 ? "text-success" : "text-fuchsia-300"}`}>
+                  <div className={`mt-1 text-xl font-bold ${todayTradeStats.violations === 0 ? "text-success" : "text-violet-300"}`}>
                     {todayTradeStats.violations === 0 ? t("dashboard.safe") : "Review"}
                   </div>
                   <div className="text-[10px] text-muted-foreground">{todayTradeStats.violations} {t("dashboard.violations")}</div>
                 </div>
               </div>
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
-                <Activity className={`h-4 w-4 ${todayTradeStats.violations === 0 ? "text-success" : "text-fuchsia-300"}`} />
-                {t("dashboard.guardrails")}: <span className={`font-semibold ${todayTradeStats.violations === 0 ? "text-success" : "text-fuchsia-300"}`}>{todayTradeStats.violations === 0 ? t("dashboard.allClear") : `${todayTradeStats.violations} item(s) to review`}</span>
+                <Activity className={`h-4 w-4 ${todayTradeStats.violations === 0 ? "text-success" : "text-violet-300"}`} />
+                {t("dashboard.guardrails")}: <span className={`font-semibold ${todayTradeStats.violations === 0 ? "text-success" : "text-violet-300"}`}>{todayTradeStats.violations === 0 ? t("dashboard.allClear") : `${todayTradeStats.violations} item(s) to review`}</span>
               </div>
             </>
           )}
@@ -397,7 +397,7 @@ function DashboardHome() {
         <Panel
           title="Rebeta Snapshot"
           action={
-            <Link to={"/dashboard/ai-coach" as string} className="text-[11px] text-fuchsia-300 hover:underline">
+            <Link to={"/dashboard/ai-coach" as string} className="text-[11px] text-violet-300 hover:underline">
               Open Rebeta →
             </Link>
           }
@@ -412,7 +412,7 @@ function DashboardHome() {
           ) : (
             <ul className="space-y-2.5 text-xs">
               <li className="flex gap-2">
-                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-300" />
+                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
                 <span className="text-white/90">Logged trades: <b>{trades.length}</b> · win rate <b>{journalSnapshot.winRate}%</b>.</span>
               </li>
               {journalSnapshot.strongestAsset && (
@@ -426,7 +426,7 @@ function DashboardHome() {
                 <span className="text-white/90">Average plan adherence is <b>{journalSnapshot.adherence}%</b>.</span>
               </li>
               <li className={`flex gap-2 rounded-lg p-2 ${journalSnapshot.violations === 0 ? "bg-emerald-500/10" : "bg-warning/10"}`}>
-                <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${journalSnapshot.violations === 0 ? "text-success" : "text-fuchsia-300"}`} />
+                <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${journalSnapshot.violations === 0 ? "text-success" : "text-violet-300"}`} />
                 <span className="text-white"><b>{journalSnapshot.violations === 0 ? "Guardrail:" : "Review:"}</b> {journalSnapshot.violations === 0 ? "No journal rule violations recorded." : `${journalSnapshot.violations} rule violation(s) recorded across your journal.`}</span>
               </li>
             </ul>
@@ -434,7 +434,7 @@ function DashboardHome() {
         </Panel>
 
         {/* Activity feed */}
-        <Panel title="Recent activity" action={<Link to={"/dashboard/wallet" as string} className="text-[11px] text-fuchsia-300 hover:underline">View all →</Link>}>
+        <Panel title="Recent activity" action={<Link to={"/dashboard/wallet" as string} className="text-[11px] text-violet-300 hover:underline">View all →</Link>}>
           {recentTx.length === 0 ? (
             <EmptyState
               icon={Wallet}
@@ -489,7 +489,7 @@ function DashboardHome() {
                         <span>·</span>
                         <span>{task.quantity}/day</span>
                         <span>·</span>
-                        <span className="text-fuchsia-200">+{task.rrReward} RR</span>
+                        <span className="text-violet-200">+{task.rrReward} RR</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -546,7 +546,7 @@ function DashboardHome() {
             </div>
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">RR Claimed</div>
-              <div className="mt-1 text-xl font-bold text-fuchsia-200">{dailyTaskBoard?.stats.rrClaimedToday ? dailyTaskBoard.stats.rrClaimedToday : "No Data Yet"}</div>
+              <div className="mt-1 text-xl font-bold text-violet-200">{dailyTaskBoard?.stats.rrClaimedToday ? dailyTaskBoard.stats.rrClaimedToday : "No Data Yet"}</div>
             </div>
           </div>
           <div className="mt-4 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
@@ -569,7 +569,7 @@ function DashboardHome() {
             const cls = "group flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-primary/40 hover:bg-white/[0.06]";
             const inner = (
               <>
-                <Icon className="h-5 w-5 text-fuchsia-300 transition group-hover:scale-110" />
+                <Icon className="h-5 w-5 text-violet-300 transition group-hover:scale-110" />
                 <span className="text-xs font-medium text-white">{q.label}</span>
               </>
             );

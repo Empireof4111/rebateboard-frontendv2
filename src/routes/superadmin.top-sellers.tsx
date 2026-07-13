@@ -133,7 +133,7 @@ function TopSellersPage() {
                 onClick={() => setCategory(tab)}
                 className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                   active
-                    ? "bg-fuchsia-500 text-white shadow-[0_8px_24px_rgba(217,70,239,0.25)]"
+                    ? "bg-violet-500 text-white shadow-[0_8px_24px_rgba(126,77,255,0.25)]"
                     : "bg-white/10 text-muted-foreground hover:bg-white/15 hover:text-white"
                 }`}
               >
@@ -220,7 +220,7 @@ function TopSellersPage() {
                     </td>
                     <td className="text-sm text-white/75">{sales.toLocaleString()}</td>
                     <td className="text-sm text-white/75">${Number(gmv || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="text-sm font-semibold text-fuchsia-300">{score}</td>
+                    <td className="text-sm font-semibold text-violet-300">{score}</td>
                     <td>
                       <StatusPill status={row.status} />
                     </td>
@@ -267,7 +267,7 @@ function TopSellersPage() {
 
         <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Trophy className="h-3.5 w-3.5 text-fuchsia-300" />
+            <Trophy className="h-3.5 w-3.5 text-violet-300" />
             <span>
               Ranking now pulls real tracked purchase volume from the cashback ledger for the selected category and date range. Pin, feature, hide, and boost still work as admin overrides on top of the live revenue order.
             </span>
@@ -298,7 +298,7 @@ function ActionChip({
       onClick={onClick}
       className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-60 ${
         active
-          ? "bg-fuchsia-500/20 text-white ring-1 ring-fuchsia-400/30"
+          ? "bg-violet-500/20 text-white ring-1 ring-violet-400/30"
           : "bg-white/10 text-white hover:bg-white/15"
       }`}
     >

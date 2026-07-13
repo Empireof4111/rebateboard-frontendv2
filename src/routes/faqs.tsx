@@ -121,7 +121,7 @@ function FaqsPage() {
         {/* Hero */}
         <section className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[11px] uppercase tracking-widest text-muted-foreground ring-1 ring-white/10">
-            <Sparkles className="h-3 w-3 text-fuchsia-300" /> Help Center
+            <Sparkles className="h-3 w-3 text-violet-300" /> Help Center
           </div>
           <h1 className="mt-4 text-3xl font-bold sm:text-5xl">Everything you need to know</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
@@ -145,7 +145,7 @@ function FaqsPage() {
               onClick={() => setActiveCat("all")}
               className={`rounded-full px-3 py-1 text-[11px] font-semibold ring-1 transition ${
                 activeCat === "all"
-                  ? "rb-gradient-primary text-white ring-fuchsia-300/40"
+                  ? "rb-gradient-primary text-white ring-violet-300/40"
                   : "bg-white/[0.04] text-white/80 ring-white/10 hover:bg-white/[0.08]"
               }`}
             >
@@ -157,7 +157,7 @@ function FaqsPage() {
                 onClick={() => setActiveCat(c.key)}
                 className={`rounded-full px-3 py-1 text-[11px] font-semibold ring-1 transition ${
                   activeCat === c.key
-                    ? "rb-gradient-primary text-white ring-fuchsia-300/40"
+                    ? "rb-gradient-primary text-white ring-violet-300/40"
                     : "bg-white/[0.04] text-white/80 ring-white/10 hover:bg-white/[0.08]"
                 }`}
               >
@@ -185,7 +185,7 @@ function FaqsPage() {
                   setQuery("");
                   setActiveCat("all");
                 }}
-                className="text-fuchsia-300 hover:underline"
+                className="text-violet-300 hover:underline"
               >
                 clear filters
               </button>
@@ -239,7 +239,7 @@ function FaqsPage() {
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-white/10">
-                  <BookOpen className="h-3 w-3 text-fuchsia-300" /> Articles & Insights
+                  <BookOpen className="h-3 w-3 text-violet-300" /> Articles & Insights
                 </div>
                 <h2 className="mt-3 text-xl font-bold sm:text-2xl">Beyond the FAQs</h2>
                 <p className="text-xs text-muted-foreground">
@@ -260,11 +260,11 @@ function FaqsPage() {
                   {a.cover ? (
                     <img src={a.cover} alt={a.title} className="aspect-video w-full object-cover" />
                   ) : (
-                    <div className="aspect-video w-full bg-gradient-to-br from-fuchsia-500/20 via-violet-600/15 to-transparent" />
+                    <div className="aspect-video w-full bg-gradient-to-br from-violet-500/20 via-violet-600/15 to-transparent" />
                   )}
                   <div className="p-5">
                     <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
-                      <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 font-bold text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+                      <span className="rounded-full bg-violet-500/15 px-2 py-0.5 font-bold text-violet-300 ring-1 ring-violet-400/30">
                         {a.tag ?? "Article"}
                       </span>
                       <span>{a.readTime ?? "5 min read"}</span>
@@ -275,7 +275,7 @@ function FaqsPage() {
                         {a.excerpt}
                       </p>
                     )}
-                    <div className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-fuchsia-300">
+                    <div className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300">
                       Read article{" "}
                       <ArrowUpRight className="h-3 w-3 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </div>
@@ -288,11 +288,11 @@ function FaqsPage() {
 
         {/* Still need help */}
         <section className="mt-16">
-          <div className="rounded-3xl bg-gradient-to-br from-fuchsia-500/15 via-violet-600/10 to-transparent p-8 ring-1 ring-white/10 sm:p-12">
+          <div className="rounded-3xl bg-gradient-to-br from-violet-500/15 via-violet-600/10 to-transparent p-8 ring-1 ring-white/10 sm:p-12">
             <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-white/10">
-                  <MessageCircle className="h-3 w-3 text-fuchsia-300" /> Still have a question?
+                  <MessageCircle className="h-3 w-3 text-violet-300" /> Still have a question?
                 </div>
                 <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Talk to a real human</h2>
                 <p className="mt-2 max-w-xl text-sm text-muted-foreground">

@@ -14,7 +14,7 @@ const CATEGORY_LABEL: Record<BrandCategory, TBICategory> = {
 };
 
 const COLORS = [
-  "from-fuchsia-500 to-violet-600",
+  "from-violet-500 to-violet-600",
 ];
 
 function slugify(s: string) {

@@ -5,8 +5,6 @@ import {
   Brain,
   CalendarDays,
   Clock3,
-  ExternalLink,
-  Filter,
   Globe2,
   Moon,
   Radio,
@@ -114,6 +112,10 @@ const SESSIONS: MarketSession[] = [
 ];
 
 function EconomicCalendarPage() {
+  return <EconomicCalendarExperience />;
+}
+
+export function EconomicCalendarExperience({ embedded = false }: { embedded?: boolean }) {
   const browserTz = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
   const [timezone, setTimezone] = useState("auto");
   const [now, setNow] = useState(() => new Date());
@@ -146,9 +148,9 @@ function EconomicCalendarPage() {
   const overlap = resolveOverlap(active, selectedTimezone);
 
   return (
-    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
-      <SiteHeader />
-      <main className="container-app space-y-6 py-8 sm:py-12">
+    <div className={embedded ? "text-white" : "min-h-screen bg-[var(--rb-bg-canvas)] text-white"}>
+      {!embedded && <SiteHeader />}
+      <main className={embedded ? "space-y-6" : "container-app space-y-6 py-8 sm:py-12"}>
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
@@ -165,14 +167,14 @@ function EconomicCalendarPage() {
               <a href="#calendar" className="rounded-full rb-gradient-primary px-5 py-3 text-center text-sm font-black text-white">
                 View Today’s Events
               </a>
-              <a href="#filters" className="rounded-full border border-white/12 px-5 py-3 text-center text-sm font-bold text-white/80">
-                High Impact Only
+              <a href="#sessions" className="rounded-full border border-white/12 px-5 py-3 text-center text-sm font-bold text-white/80">
+                Review Sessions
               </a>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <section id="sessions" className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -215,22 +217,6 @@ function EconomicCalendarPage() {
           <SessionTimeline sessions={sessionStates} timezone={selectedTimezone} now={now} />
         </section>
 
-        <section id="filters" className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex items-center gap-2 text-sm font-black">
-              <Filter className="h-4 w-4 text-violet-200" />
-              Calendar Filters
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {["Today", "Tomorrow", "This Week", "High", "Medium", "Low", "USD", "EUR", "GBP", "JPY", "Watched Only"].map((filter) => (
-                <button key={filter} className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs font-bold text-white/68 transition hover:border-primary/35 hover:text-white">
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section id="calendar" className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <TradingViewCalendar />
           <aside className="space-y-4">
@@ -271,7 +257,7 @@ function EconomicCalendarPage() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      {!embedded && <SiteFooter />}
     </div>
   );
 }
@@ -386,19 +372,13 @@ function TradingViewCalendar() {
 
   return (
     <article ref={loaderRef} className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045]">
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+      <div className="border-b border-white/10 p-4">
         <div>
           <h2 className="text-xl font-black">Economic Events</h2>
-          <p className="mt-1 text-xs text-white/50">Official TradingView iframe widget. RebateBoard does not read or modify its internal event data.</p>
+          <p className="mt-1 text-xs text-white/50">
+            Use the controls inside the TradingView calendar to filter by date, country, currency, and impact.
+          </p>
         </div>
-        <a
-          href="https://www.tradingview.com/economic-calendar/"
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-white/8 px-3 py-2 text-xs font-bold text-white/72 hover:text-white"
-        >
-          TradingView <ExternalLink className="h-3.5 w-3.5" />
-        </a>
       </div>
       <div className="relative min-h-[750px] bg-[var(--rb-bg-section)]">
         {(!shouldLoad || (!loaded && !failed)) && <TradingViewSkeleton />}
@@ -433,6 +413,11 @@ function TradingViewCalendar() {
           />
         )}
       </div>
+      {!failed && (
+        <p className="border-t border-white/10 px-4 py-3 text-xs leading-5 text-white/42">
+          Economic event data is provided by TradingView. RebateBoard does not modify or independently verify the displayed calendar data.
+        </p>
+      )}
     </article>
   );
 }

@@ -152,6 +152,7 @@ import { Route as DashboardCommunityRouteImport } from './routes/dashboard.commu
 import { Route as DashboardClaimsRouteImport } from './routes/dashboard.claims'
 import { Route as DashboardCalendarRouteImport } from './routes/dashboard.calendar'
 import { Route as DashboardBrandsRouteImport } from './routes/dashboard.brands'
+import { Route as DashboardBlogNewsRouteImport } from './routes/dashboard.blog-news'
 import { Route as DashboardBacktestRouteImport } from './routes/dashboard.backtest'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as DashboardAiCoachRouteImport } from './routes/dashboard.ai-coach'
@@ -895,6 +896,11 @@ const DashboardBrandsRoute = DashboardBrandsRouteImport.update({
   path: '/brands',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardBlogNewsRoute = DashboardBlogNewsRouteImport.update({
+  id: '/blog-news',
+  path: '/blog-news',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardBacktestRoute = DashboardBacktestRouteImport.update({
   id: '/backtest',
   path: '/backtest',
@@ -1076,6 +1082,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/ai-coach': typeof DashboardAiCoachRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/backtest': typeof DashboardBacktestRoute
+  '/dashboard/blog-news': typeof DashboardBlogNewsRoute
   '/dashboard/brands': typeof DashboardBrandsRoute
   '/dashboard/calendar': typeof DashboardCalendarRoute
   '/dashboard/claims': typeof DashboardClaimsRoute
@@ -1237,6 +1244,7 @@ export interface FileRoutesByTo {
   '/dashboard/ai-coach': typeof DashboardAiCoachRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/backtest': typeof DashboardBacktestRoute
+  '/dashboard/blog-news': typeof DashboardBlogNewsRoute
   '/dashboard/brands': typeof DashboardBrandsRoute
   '/dashboard/calendar': typeof DashboardCalendarRoute
   '/dashboard/claims': typeof DashboardClaimsRoute
@@ -1403,6 +1411,7 @@ export interface FileRoutesById {
   '/dashboard/ai-coach': typeof DashboardAiCoachRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/backtest': typeof DashboardBacktestRoute
+  '/dashboard/blog-news': typeof DashboardBlogNewsRoute
   '/dashboard/brands': typeof DashboardBrandsRoute
   '/dashboard/calendar': typeof DashboardCalendarRoute
   '/dashboard/claims': typeof DashboardClaimsRoute
@@ -1570,6 +1579,7 @@ export interface FileRouteTypes {
     | '/dashboard/ai-coach'
     | '/dashboard/analytics'
     | '/dashboard/backtest'
+    | '/dashboard/blog-news'
     | '/dashboard/brands'
     | '/dashboard/calendar'
     | '/dashboard/claims'
@@ -1731,6 +1741,7 @@ export interface FileRouteTypes {
     | '/dashboard/ai-coach'
     | '/dashboard/analytics'
     | '/dashboard/backtest'
+    | '/dashboard/blog-news'
     | '/dashboard/brands'
     | '/dashboard/calendar'
     | '/dashboard/claims'
@@ -1896,6 +1907,7 @@ export interface FileRouteTypes {
     | '/dashboard/ai-coach'
     | '/dashboard/analytics'
     | '/dashboard/backtest'
+    | '/dashboard/blog-news'
     | '/dashboard/brands'
     | '/dashboard/calendar'
     | '/dashboard/claims'
@@ -3063,6 +3075,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardBrandsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/blog-news': {
+      id: '/dashboard/blog-news'
+      path: '/blog-news'
+      fullPath: '/dashboard/blog-news'
+      preLoaderRoute: typeof DashboardBlogNewsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/backtest': {
       id: '/dashboard/backtest'
       path: '/backtest'
@@ -3238,6 +3257,7 @@ interface DashboardRouteChildren {
   DashboardAiCoachRoute: typeof DashboardAiCoachRoute
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardBacktestRoute: typeof DashboardBacktestRoute
+  DashboardBlogNewsRoute: typeof DashboardBlogNewsRoute
   DashboardBrandsRoute: typeof DashboardBrandsRoute
   DashboardCalendarRoute: typeof DashboardCalendarRoute
   DashboardClaimsRoute: typeof DashboardClaimsRoute
@@ -3267,6 +3287,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAiCoachRoute: DashboardAiCoachRoute,
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardBacktestRoute: DashboardBacktestRoute,
+  DashboardBlogNewsRoute: DashboardBlogNewsRoute,
   DashboardBrandsRoute: DashboardBrandsRoute,
   DashboardCalendarRoute: DashboardCalendarRoute,
   DashboardClaimsRoute: DashboardClaimsRoute,

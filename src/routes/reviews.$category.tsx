@@ -78,7 +78,7 @@ function CategoryReviews() {
         <section className="glass mt-3 rounded-2xl p-6 ring-1 ring-white/10 sm:p-8">
           <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-fuchsia-300">Verified Reviews</div>
+              <div className="text-xs uppercase tracking-[0.16em] text-violet-300">Verified Reviews</div>
               <h1 className="text-gradient mt-2 text-3xl font-bold sm:text-4xl">{meta.label}</h1>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{meta.description}</p>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -109,7 +109,7 @@ function CategoryReviews() {
                 key={item}
                 type="button"
                 onClick={() => setSort(item)}
-                className={`rounded-full px-3 py-2 text-xs font-semibold transition ${sort === item ? "bg-fuchsia-500/15 text-white ring-1 ring-fuchsia-300/35" : "bg-white/5 text-muted-foreground ring-1 ring-white/10 hover:text-white"}`}
+                className={`rounded-full px-3 py-2 text-xs font-semibold transition ${sort === item ? "bg-violet-500/15 text-white ring-1 ring-violet-300/35" : "bg-white/5 text-muted-foreground ring-1 ring-white/10 hover:text-white"}`}
               >
                 {item === "score" ? "TBI score" : "Most reviewed"}
               </button>
@@ -144,7 +144,7 @@ function BrandReviewCard({ brand, reviews }: { brand: AdminBrandRecord; reviews:
     : 0;
 
   return (
-    <Link to="/firm/$firmId" params={{ firmId: brand.slug }} hash="reviews" className="glass group rounded-2xl p-4 ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-fuchsia-300/40">
+    <Link to="/firm/$firmId" params={{ firmId: brand.slug }} hash="reviews" className="glass group rounded-2xl p-4 ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-violet-300/40">
       <div className="flex items-center gap-3">
         <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/10">
           {brand.thumbnail ? <img src={brand.thumbnail} alt="" className="h-full w-full object-cover" loading="lazy" /> : <span className="font-bold text-white">{brand.name[0]}</span>}
@@ -164,7 +164,7 @@ function BrandReviewCard({ brand, reviews }: { brand: AdminBrandRecord; reviews:
         <MiniStat label="Rating" value={avgRating ? avgRating.toFixed(1) : "Pending"} />
       </div>
       <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-fuchsia-300" /> User Trust data</span>
+        <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-violet-300" /> User Trust data</span>
         <span className="inline-flex items-center gap-1 text-emerald-300"><ShieldCheck className="h-3 w-3" /> Read reviews</span>
       </div>
     </Link>
@@ -202,5 +202,5 @@ function BrandSkeleton() {
 }
 
 function State({ title, body }: { title: string; body: string }) {
-  return <div className="glass rounded-2xl p-10 text-center ring-1 ring-white/10"><ShieldCheck className="mx-auto h-7 w-7 text-fuchsia-300" /><h2 className="mt-3 font-semibold text-white">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{body}</p></div>;
+  return <div className="glass rounded-2xl p-10 text-center ring-1 ring-white/10"><ShieldCheck className="mx-auto h-7 w-7 text-violet-300" /><h2 className="mt-3 font-semibold text-white">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{body}</p></div>;
 }

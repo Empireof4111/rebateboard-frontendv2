@@ -21,7 +21,7 @@ export const Route = createFileRoute("/superadmin/cashback-calculator")({
 });
 
 const inputCls =
-  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:outline-none";
+  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-violet-400/40 focus:outline-none";
 
 const assetOptions = ["Forex", "Indices", "Metals", "Crypto", "Stocks", "Futures", "Commodities"];
 const categoryOptions = ["Forex Broker", "Prop Firm", "Futures Prop Firm", "Crypto Exchange", "Trading Tool"];

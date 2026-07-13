@@ -55,6 +55,19 @@
   --rb-purple-300: #b69aff;
   --rb-purple-200: #d2c3ff;
   --rb-purple-100: #ede9ff;
+  --rb-violet-950: var(--rb-purple-950);
+  --rb-violet-900: var(--rb-purple-900);
+  --rb-violet-800: var(--rb-purple-800);
+  --rb-violet-700: var(--rb-purple-700);
+  --rb-violet-600: var(--rb-purple-600);
+  --rb-violet-500: var(--rb-purple-500);
+  --rb-violet-400: var(--rb-purple-400);
+  --rb-violet-300: var(--rb-purple-300);
+  --rb-violet-200: var(--rb-purple-200);
+  --rb-violet-100: var(--rb-purple-100);
+  --rb-accent-primary: var(--rb-violet-600);
+  --rb-accent-hover: var(--rb-violet-500);
+  --rb-accent-soft: rgba(126, 77, 255, 0.14);
 
   --rb-bg-canvas: #09090d;
   --rb-bg-canvas-soft: #0b0b10;
@@ -66,10 +79,12 @@
   --rb-bg-overlay: rgba(8, 8, 12, 0.72);
 
   --rb-text-primary: #ffffff;
-  --rb-text-secondary: #d1d5db;
-  --rb-text-muted: #9292a0;
-  --rb-text-subtle: #70707c;
-  --rb-text-disabled: #555560;
+  --rb-white: #ffffff;
+  --rb-white-soft: #f5f3fa;
+  --rb-text-secondary: #d7d4e0;
+  --rb-text-muted: #9995a5;
+  --rb-text-subtle: #73707d;
+  --rb-text-disabled: #55525f;
   --rb-text-accent: #a98bff;
   --rb-link: #a98bff;
   --rb-link-hover: #c2adff;
@@ -102,6 +117,9 @@
   --rb-shadow-card-hover: 0 18px 42px rgba(45, 18, 105, 0.2);
   --rb-shadow-glass: 0 20px 60px rgba(0, 0, 0, 0.38);
   --rb-shadow-primary: 0 12px 32px rgba(90, 34, 241, 0.28);
+  --rb-border-default: rgba(255, 255, 255, 0.07);
+  --rb-border-hover: rgba(126, 77, 255, 0.34);
+  --rb-border-active: rgba(126, 77, 255, 0.56);
 
   --rb-motion-fast: 160ms;
   --rb-motion-standard: 240ms;
@@ -184,6 +202,13 @@
   canvas {
     max-width: 100%;
     height: auto;
+  }
+  input[type="range"] {
+    accent-color: var(--rb-violet-500);
+  }
+  input[type="range"]:focus-visible {
+    outline: none;
+    filter: drop-shadow(0 0 0.55rem rgba(90, 34, 241, 0.22));
   }
   h1,
   h2,
@@ -303,18 +328,47 @@
     -webkit-backdrop-filter: blur(26px) saturate(150%);
   }
   .site-header-glass {
+    position: relative;
+    isolation: isolate;
     background:
-      radial-gradient(circle at 16% -20%, rgba(255, 255, 255, 0.16), transparent 26%),
-      radial-gradient(circle at 82% 8%, rgba(126, 77, 255, 0.13), transparent 34%),
-      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.018)),
-      rgba(18, 15, 28, 0.42);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+      radial-gradient(circle at 14% -34%, rgba(255, 255, 255, 0.2), transparent 28%),
+      radial-gradient(circle at 88% 0%, rgba(126, 77, 255, 0.18), transparent 34%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.032)),
+      rgba(15, 12, 24, 0.74);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow:
-      0 18px 54px rgba(0, 0, 0, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.055);
-    backdrop-filter: blur(20px) saturate(165%) contrast(1.04);
-    -webkit-backdrop-filter: blur(20px) saturate(165%) contrast(1.04);
+      0 22px 70px rgba(0, 0, 0, 0.46),
+      0 8px 24px rgba(45, 18, 105, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(28px) saturate(170%) contrast(1.08) brightness(0.96);
+    -webkit-backdrop-filter: blur(28px) saturate(170%) contrast(1.08) brightness(0.96);
+  }
+  .site-header-glass::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+      linear-gradient(105deg, rgba(255, 255, 255, 0.1), transparent 18% 72%, rgba(182, 154, 255, 0.08)),
+      radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 54%);
+    opacity: 0.9;
+    mix-blend-mode: screen;
+  }
+  .site-header-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: rgba(8, 7, 12, 0.28);
+  }
+  .site-header-glass > * {
+    position: relative;
+    z-index: 1;
   }
   .rb-icon-tile {
     display: grid;

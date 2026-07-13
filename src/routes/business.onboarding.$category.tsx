@@ -56,7 +56,7 @@ export const Route = createFileRoute("/business/onboarding/$category")({
     <div className="grid min-h-screen place-items-center bg-[var(--rb-bg-canvas)] text-foreground">
       <div className="text-center">
         <h1 className="text-2xl font-bold">Unknown category</h1>
-        <Link to="/business/join" className="mt-4 inline-block text-fuchsia-300">← Back to categories</Link>
+        <Link to="/business/join" className="mt-4 inline-block text-violet-300">← Back to categories</Link>
       </div>
     </div>
   ),
@@ -165,7 +165,7 @@ function OnboardingFlow() {
         <SiteHeader />
         <main className="container-app max-w-3xl py-12 sm:py-16">
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-xl md:p-12">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-fuchsia-200">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-violet-200">
               <Shield className="h-6 w-6" />
             </div>
             <h1 className="mt-5 text-3xl font-bold">Brand Applications Are Temporarily Closed</h1>
@@ -244,9 +244,9 @@ function OnboardingFlow() {
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                className="hidden items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:border-fuchsia-300/30 sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:border-violet-300/30 sm:inline-flex"
               >
-                <Save className="h-3.5 w-3.5 text-fuchsia-200" /> Save Progress
+                <Save className="h-3.5 w-3.5 text-violet-200" /> Save Progress
               </button>
               <div className="hidden text-[11px] text-muted-foreground sm:block">
                 {draftSavedAt ? `Draft saved ${draftSavedAt}` : `${completion}% complete`}
@@ -329,7 +329,7 @@ function UnlockJourney({ currentStep }: { currentStep: number }) {
               done
                 ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
                 : active
-                ? "border-fuchsia-300/35 bg-fuchsia-500/10 text-fuchsia-100"
+                ? "border-violet-300/35 bg-violet-500/10 text-violet-100"
                 : "border-white/10 bg-white/[0.03] text-muted-foreground"
             }`}
           >
@@ -699,7 +699,7 @@ function ReviewStep({ contact, setContact, data, score, cap, mode, breakdown, on
       </div>
 
       <label className="flex items-start gap-3 rounded-xl bg-white/5 p-4 text-xs">
-        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 accent-fuchsia-500" />
+        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 accent-violet-500" />
         <span>
           I confirm the information provided is accurate and I am authorised to represent this brand. I agree to RebateBoard's brand listing terms.
         </span>

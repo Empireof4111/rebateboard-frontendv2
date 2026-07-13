@@ -202,14 +202,14 @@ export function LinkAccountModal({
                   <button
                     key={c}
                     onClick={() => { setCategory(c); setStep("brand"); }}
-                    className={`rounded-xl px-3 py-4 text-left ring-1 transition ${category === c ? "bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 ring-fuchsia-400/40" : "bg-white/5 ring-white/10 hover:ring-white/20"}`}
+                    className={`rounded-xl px-3 py-4 text-left ring-1 transition ${category === c ? "bg-gradient-to-br from-violet-500/15 to-violet-600/10 ring-violet-400/40" : "bg-white/5 ring-white/10 hover:ring-white/20"}`}
                   >
                     <div className="text-sm font-bold text-white">{c}</div>
                     <div className="mt-0.5 text-[11px] text-muted-foreground">{c === "Forex Broker" ? "MT4 / MT5 / cTrader brokers" : "Spot & perpetual crypto exchanges"}</div>
                   </button>
                 ))}
               </div>
-              <p className="mt-3 rounded-lg bg-fuchsia-500/10 px-3 py-2 text-[11px] text-fuchsia-100 ring-1 ring-fuchsia-400/20">
+              <p className="mt-3 rounded-lg bg-violet-500/10 px-3 py-2 text-[11px] text-violet-100 ring-1 ring-violet-400/20">
                 Prop firms, tools and education don't need linking — just use our official link, then claim cashback after purchase.
               </p>
             </div>
@@ -242,7 +242,7 @@ export function LinkAccountModal({
                   <button
                     key={b.name}
                     onClick={() => { setBrandName(b.name); setStep("mode"); }}
-                    className={`rounded-lg px-3 py-2 text-left text-xs ring-1 transition ${brandName === b.name ? "bg-fuchsia-500/15 ring-fuchsia-400/40" : "bg-white/5 ring-white/10 hover:ring-white/20"}`}
+                    className={`rounded-lg px-3 py-2 text-left text-xs ring-1 transition ${brandName === b.name ? "bg-violet-500/15 ring-violet-400/40" : "bg-white/5 ring-white/10 hover:ring-white/20"}`}
                   >
                     <div className="font-semibold text-white">{b.name}</div>
                     <div className="text-[10px] text-muted-foreground">{b.category}</div>
@@ -290,7 +290,7 @@ export function LinkAccountModal({
           {step === "details" && brand && (
             <div className="space-y-3">
               {mode === "new" && (
-                <div className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-3">
+                <div className="rounded-xl border border-violet-400/30 bg-violet-500/10 p-3">
                   <div className="text-xs font-semibold text-white">Step 1 — Sign up at {brand.name}</div>
                   <p className="mt-1 text-[11px] text-white/80">Use the official partner link if available, then return with your account ID for verification.</p>
                   {affiliateLink ? (
@@ -330,13 +330,13 @@ export function LinkAccountModal({
               <PrefRow
                 active={pref === "broker-wallet"} onClick={() => setPref("broker-wallet")}
                 disabled={!supportsApiAuto}
-                icon={<Building2 className="h-4 w-4 text-fuchsia-300" />}
+                icon={<Building2 className="h-4 w-4 text-violet-300" />}
                 title="Back to my broker trading account"
                 desc={supportsApiAuto ? "Auto-credited into your trading balance when supported." : "Direct partner credit is not available for this partner."}
               />
               <PrefRow
                 active={pref === "rr-wallet"} onClick={() => setPref("rr-wallet")}
-                icon={<Coins className="h-4 w-4 text-fuchsia-300" />}
+                icon={<Coins className="h-4 w-4 text-violet-300" />}
                 title="RR (Reward) points"
                 desc="Earn RR toward Trader Levels, unlocks, and platform rewards."
               />
@@ -395,7 +395,7 @@ export function LinkAccountModal({
 }
 
 /* ---------- Small UI helpers ---------- */
-const inputCls = "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50";
+const inputCls = "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50";
 function Label({ children }: { children: React.ReactNode }) {
   return <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{children}</div>;
 }
@@ -415,7 +415,7 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 }
 function ChoiceCard({ active, onClick, title, desc }: { active: boolean; onClick: () => void; title: string; desc: string }) {
   return (
-    <button onClick={onClick} className={`text-left rounded-xl p-3 ring-1 transition ${active ? "bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 ring-fuchsia-400/40" : "bg-white/[0.03] ring-white/10 hover:ring-white/20"}`}>
+    <button onClick={onClick} className={`text-left rounded-xl p-3 ring-1 transition ${active ? "bg-gradient-to-br from-violet-500/15 to-violet-600/10 ring-violet-400/40" : "bg-white/[0.03] ring-white/10 hover:ring-white/20"}`}>
       <div className="text-sm font-bold text-white">{title}</div>
       <div className="mt-0.5 text-[11px] text-muted-foreground">{desc}</div>
     </button>
@@ -423,12 +423,12 @@ function ChoiceCard({ active, onClick, title, desc }: { active: boolean; onClick
 }
 function PrefRow({ active, onClick, disabled, icon, title, desc }: { active: boolean; onClick: () => void; disabled?: boolean; icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <button disabled={disabled} onClick={onClick} className={`w-full text-left rounded-xl p-3 ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 ring-fuchsia-400/40" : "bg-white/[0.03] ring-white/10 hover:ring-white/20"}`}>
+    <button disabled={disabled} onClick={onClick} className={`w-full text-left rounded-xl p-3 ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-gradient-to-br from-violet-500/15 to-violet-600/10 ring-violet-400/40" : "bg-white/[0.03] ring-white/10 hover:ring-white/20"}`}>
       <div className="flex items-center gap-2">
         {icon}
         <span className="text-sm font-semibold text-white">{title}</span>
         {active && <CheckCircle2 className="ml-auto h-4 w-4 text-emerald-300" />}
-        {disabled && <AlertTriangle className="ml-auto h-3.5 w-3.5 text-fuchsia-300" />}
+        {disabled && <AlertTriangle className="ml-auto h-3.5 w-3.5 text-violet-300" />}
       </div>
       <div className="mt-1 text-[11px] text-muted-foreground">{desc}</div>
     </button>

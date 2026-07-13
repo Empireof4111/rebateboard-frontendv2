@@ -212,7 +212,7 @@ function BrandPage() {
               <div className="space-y-6">
                 <section className="glass rounded-3xl p-6">
                   <div className="flex items-center gap-2 text-lg font-bold">
-                    <Shield className="h-4 w-4 text-fuchsia-300" /> Trust Breakdown
+                    <Shield className="h-4 w-4 text-violet-300" /> Trust Breakdown
                   </div>
                   <div className="mt-4 space-y-3">
                     {ratingBars.map((entry) => {
@@ -273,7 +273,7 @@ function BrandPage() {
                 <section className="glass rounded-3xl p-6">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-lg font-bold">
-                      <Star className="h-4 w-4 text-fuchsia-300" /> Review System
+                      <Star className="h-4 w-4 text-violet-300" /> Review System
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {profile.reviewCount} reviews · {profile.verifiedReviewCount} verified · weight {profile.weightedReviewMass.toFixed(1)}
@@ -284,7 +284,7 @@ function BrandPage() {
                       <div key={entry.stars} className="rounded-2xl bg-white/5 p-3 text-center">
                         <div className="text-lg font-bold text-white">{entry.stars}</div>
                         <div className="text-[11px] text-muted-foreground">stars</div>
-                        <div className="mt-2 text-sm font-semibold text-fuchsia-200">{entry.count}</div>
+                        <div className="mt-2 text-sm font-semibold text-violet-200">{entry.count}</div>
                       </div>
                     ))}
                   </div>

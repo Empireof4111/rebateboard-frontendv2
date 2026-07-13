@@ -110,7 +110,7 @@ function AboutPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-fuchsia-500/15 to-violet-600/15 p-6 text-center md:p-10">
+        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-violet-500/15 to-violet-600/15 p-6 text-center md:p-10">
           <h2 className="text-3xl font-black md:text-4xl">See What We’re Building</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-white/65">
             Explore the marketplace, meet Rebeta, compare trusted brands, or create your free trader account.

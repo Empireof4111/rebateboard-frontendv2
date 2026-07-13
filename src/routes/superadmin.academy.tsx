@@ -351,7 +351,7 @@ function ProgramRow({
       <div className="flex items-center justify-between gap-2 px-3 py-2.5">
         <button onClick={() => setOpen((s) => !s)} className="flex flex-1 items-center gap-2 text-left">
           {open ? <ChevronDown className="h-3.5 w-3.5 text-white/60" /> : <ChevronRight className="h-3.5 w-3.5 text-white/60" />}
-          <Layers className="h-3.5 w-3.5 text-fuchsia-300" />
+          <Layers className="h-3.5 w-3.5 text-violet-300" />
           <div className="text-xs font-bold text-white">{program.title || <em className="text-white/40">Untitled program</em>}</div>
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] uppercase tracking-wider text-white/60">{program.level}</span>
           <span className="text-[10px] text-white/40">· {program.courses.length} courses</span>
@@ -407,7 +407,7 @@ function ProgramRow({
 function IconBtn({ icon: Icon, label, onClick, tone = "neutral" }: { icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void; tone?: "neutral" | "danger" | "primary" }) {
   const cls =
     tone === "danger" ? "bg-rose-500/15 text-rose-300 ring-rose-400/30 hover:bg-rose-500/25"
-    : tone === "primary" ? "rb-gradient-primary text-white ring-fuchsia-400/40 hover:opacity-90"
+    : tone === "primary" ? "rb-gradient-primary text-white ring-violet-400/40 hover:opacity-90"
     : "bg-white/10 text-white ring-white/10 hover:bg-white/15";
   return (
     <button onClick={onClick} title={label} className={`grid h-7 w-7 place-items-center rounded-md ring-1 ${cls}`}>
@@ -1118,7 +1118,7 @@ function PreviewTab({ course }: { course: Course }) {
   const totals = courseTotals(course);
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 p-5 ring-1 ring-white/10">
+      <div className="rounded-2xl bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-cyan-500/10 p-5 ring-1 ring-white/10">
         <div className="flex items-start gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[rgba(126,77,255,0.18)] text-3xl">{course.cover}</div>
           <div className="flex-1">
@@ -1144,7 +1144,7 @@ function PreviewTab({ course }: { course: Course }) {
 
       {(course.outcomes ?? []).length > 0 && (
         <div className="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
-          <div className="mb-2 text-xs font-bold text-white inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-fuchsia-300" /> What you'll learn</div>
+          <div className="mb-2 text-xs font-bold text-white inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-violet-300" /> What you'll learn</div>
           <ul className="space-y-1 text-xs text-white/70">
             {course.outcomes.map((o, i) => <li key={i}>• {o}</li>)}
           </ul>

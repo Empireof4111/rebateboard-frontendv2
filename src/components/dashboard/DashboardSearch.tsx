@@ -275,11 +275,11 @@ export function DashboardSearch({
       aria-label="Dashboard search"
     >
       <div
-        className="mt-3 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl ring-1 ring-fuchsia-400/10 sm:mt-14"
+        className="mt-3 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl ring-1 ring-violet-400/10 sm:mt-14"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
-          <Search className="h-4 w-4 shrink-0 text-fuchsia-300" />
+          <Search className="h-4 w-4 shrink-0 text-violet-300" />
           <input
             ref={inputRef}
             value={q}
@@ -310,7 +310,7 @@ export function DashboardSearch({
                     setHistory([]);
                     writeHistory([]);
                   }}
-                  className="text-fuchsia-200 transition hover:text-white"
+                  className="text-violet-200 transition hover:text-white"
                 >
                   Clear
                 </button>
@@ -323,7 +323,7 @@ export function DashboardSearch({
                     onClick={() => setQ(item)}
                     className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 hover:text-white"
                   >
-                    <Clock className="h-3 w-3 text-fuchsia-200" />
+                    <Clock className="h-3 w-3 text-violet-200" />
                     {item}
                   </button>
                 ))}
@@ -368,7 +368,7 @@ export function DashboardSearch({
                         active ? "bg-white/[0.08]" : "hover:bg-white/[0.05]"
                       }`}
                     >
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-fuchsia-100 ring-1 ring-white/10">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-violet-100 ring-1 ring-white/10">
                         <Icon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">

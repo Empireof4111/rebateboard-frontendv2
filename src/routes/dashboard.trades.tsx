@@ -35,7 +35,7 @@ function TradesPage() {
         actions={
           <>
             <Link to={"/dashboard/trading-plan" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <ShieldCheck className="h-3.5 w-3.5 text-fuchsia-300" /> Trading Plan
+              <ShieldCheck className="h-3.5 w-3.5 text-violet-300" /> Trading Plan
             </Link>
             <button className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
               <Upload className="h-3.5 w-3.5" /> Import CSV
@@ -56,10 +56,10 @@ function TradesPage() {
 
       {plan.strategies.length === 0 && (
         <div className="glass flex items-start gap-3 rounded-2xl p-4 ring-1 ring-accent/30">
-          <AlertTriangle className="mt-0.5 h-4 w-4 text-fuchsia-300" />
+          <AlertTriangle className="mt-0.5 h-4 w-4 text-violet-300" />
           <div className="flex-1 text-xs text-white">
             You haven't defined a strategy yet. Adherence and AI insights work best when you do.{" "}
-            <Link to={"/dashboard/trading-plan" as string} className="text-fuchsia-300 underline">Open Trading Plan →</Link>
+            <Link to={"/dashboard/trading-plan" as string} className="text-violet-300 underline">Open Trading Plan →</Link>
           </div>
         </div>
       )}

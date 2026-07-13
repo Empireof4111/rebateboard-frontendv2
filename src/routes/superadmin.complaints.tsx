@@ -158,7 +158,7 @@ function ComplaintsPage() {
         <Panel title="All complaints">
           <DataTable head={<><th>ID</th><th>Brand</th><th>User</th><th>Category</th><th>Severity</th><th>Status</th><th>Evidence</th><th>Time</th></>}>
             {items.map((c) => (
-              <tr key={c.id} onClick={() => setActiveId(c.id)} className={`cursor-pointer ${activeId === c.id ? "bg-fuchsia-500/5" : "hover:bg-white/5"}`}>
+              <tr key={c.id} onClick={() => setActiveId(c.id)} className={`cursor-pointer ${activeId === c.id ? "bg-violet-500/5" : "hover:bg-white/5"}`}>
                 <td className="font-mono text-xs text-muted-foreground">{c.id}</td>
                 <td className="font-semibold">{c.brand}</td>
                 <td className="text-muted-foreground">{c.anonymous ? "Anonymous" : c.user}</td>
@@ -195,7 +195,7 @@ function ComplaintsPage() {
                   const done = targetIdx <= currentIdx;
                   return (
                     <div key={s} className="flex flex-col items-center gap-1">
-                      <div className={`h-1.5 w-full rounded-full ${done ? "bg-gradient-to-r from-fuchsia-400 to-violet-400" : "bg-white/10"}`} />
+                      <div className={`h-1.5 w-full rounded-full ${done ? "bg-gradient-to-r from-violet-400 to-violet-400" : "bg-white/10"}`} />
                       <span className={`text-[10px] capitalize ${done ? "text-white" : "text-muted-foreground"}`}>{s}</span>
                     </div>
                   );
@@ -238,13 +238,13 @@ function ComplaintsPage() {
                         <button
                           key={i}
                           onClick={() => setPreview({ name: f.name, url: f.url, type: f.type })}
-                          className="group flex items-center gap-2 rounded-lg bg-white/5 p-2 text-left ring-1 ring-white/10 transition hover:bg-fuchsia-300/10 hover:ring-fuchsia-300/40"
+                          className="group flex items-center gap-2 rounded-lg bg-white/5 p-2 text-left ring-1 ring-white/10 transition hover:bg-violet-300/10 hover:ring-violet-300/40"
                         >
                           {f.type === "image" && f.url !== "#" ? (
                             <img src={f.url} alt="" className="h-10 w-10 rounded object-cover" />
                           ) : (
                             <div className="grid h-10 w-10 place-items-center rounded bg-white/5 ring-1 ring-white/10">
-                              <Icon className="h-4 w-4 text-fuchsia-300" />
+                              <Icon className="h-4 w-4 text-violet-300" />
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
@@ -260,7 +260,7 @@ function ComplaintsPage() {
               </section>
 
               {active.firmReply && (
-                <section className="rounded-xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 p-3 ring-1 ring-violet-300/30">
+                <section className="rounded-xl bg-gradient-to-br from-violet-500/10 to-violet-500/10 p-3 ring-1 ring-violet-300/30">
                   <div className="flex items-center gap-2">
                     <BadgeCheck className="h-3.5 w-3.5 text-violet-200" />
                     <h4 className="text-xs font-semibold text-white">Official response from {active.brand}</h4>
@@ -271,14 +271,14 @@ function ComplaintsPage() {
               )}
 
               <section className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl bg-gradient-to-br from-fuchsia-500/15 to-violet-500/15 p-3 ring-1 ring-fuchsia-300/30">
+                <div className="rounded-xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-3 ring-1 ring-violet-300/30">
                   <div className="flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-fuchsia-200" />
+                    <Sparkles className="h-3 w-3 text-violet-200" />
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80">Credibility</span>
                   </div>
                   <div className="mt-1 text-xl font-bold text-white">{active.credibility}<span className="text-[10px] text-muted-foreground"> / 100</span></div>
                   <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full bg-gradient-to-r from-fuchsia-400 to-violet-400" style={{ width: `${active.credibility}%` }} />
+                    <div className="h-full bg-gradient-to-r from-violet-400 to-violet-400" style={{ width: `${active.credibility}%` }} />
                   </div>
                 </div>
                 <div className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
@@ -287,8 +287,8 @@ function ComplaintsPage() {
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80">Community</span>
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-xs text-white">
-                    <span className="inline-flex items-center gap-1"><ArrowUp className="h-3 w-3 text-fuchsia-300" />{active.upvotes}</span>
-                    <span className="inline-flex items-center gap-1"><MessageSquare className="h-3 w-3 text-fuchsia-300" />{active.comments}</span>
+                    <span className="inline-flex items-center gap-1"><ArrowUp className="h-3 w-3 text-violet-300" />{active.upvotes}</span>
+                    <span className="inline-flex items-center gap-1"><MessageSquare className="h-3 w-3 text-violet-300" />{active.comments}</span>
                   </div>
                   <div className="mt-1 text-[10px] text-muted-foreground">Same-issue upvotes & replies</div>
                 </div>
@@ -299,12 +299,12 @@ function ComplaintsPage() {
                 <ol className="relative space-y-3 border-l border-white/10 pl-4">
                   {active.timeline.map((t, i) => (
                     <li key={i} className="relative">
-                      <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[var(--rb-bg-elevated)]" />
+                      <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-violet-400 to-violet-500 ring-2 ring-[var(--rb-bg-elevated)]" />
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-white">{t.stage}</span>
                         <span className="text-muted-foreground">{t.time}</span>
                       </div>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground"><span className="text-fuchsia-300">{t.actor}</span> · {t.note}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground"><span className="text-violet-300">{t.actor}</span> · {t.note}</p>
                     </li>
                   ))}
                 </ol>
@@ -374,7 +374,7 @@ function ComplaintsPage() {
                 <img src={preview.url} alt={preview.name} className="mx-auto max-h-[70vh] rounded-lg" />
               ) : (
                 <div className="grid place-items-center rounded-xl bg-white/[0.03] p-10 text-center ring-1 ring-white/10">
-                  <Paperclip className="mb-2 h-8 w-8 text-fuchsia-300" />
+                  <Paperclip className="mb-2 h-8 w-8 text-violet-300" />
                   <div className="text-sm font-semibold text-white">{preview.name}</div>
                   <div className="mt-1 text-[11px] text-muted-foreground">
                     Preview not available for this file type. Use Download or Open to view.

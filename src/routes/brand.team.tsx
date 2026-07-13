@@ -34,7 +34,7 @@ function BrandTeam() {
       <div className="glass flex flex-wrap items-end gap-2 rounded-2xl p-4 ring-1 ring-white/10">
         <div className="flex-1 min-w-[200px]">
           <label className="text-[10px] uppercase text-muted-foreground">Email</label>
-          <input value={draft.email} onChange={(e) => setDraft((p) => ({ ...p, email: e.target.value }))} type="email" placeholder="teammate@brand.com" className="mt-1 w-full rounded-xl bg-white/5 px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-fuchsia-300/40" />
+          <input value={draft.email} onChange={(e) => setDraft((p) => ({ ...p, email: e.target.value }))} type="email" placeholder="teammate@brand.com" className="mt-1 w-full rounded-xl bg-white/5 px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-violet-300/40" />
         </div>
         <div>
           <label className="text-[10px] uppercase text-muted-foreground">Role</label>

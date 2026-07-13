@@ -12,6 +12,11 @@ import {
   trackPublicAdvertImpression,
 } from "@/lib/public-adverts-api";
 
+type DisplayAdSlide = AdSlide & {
+  tags?: string[];
+  meta?: string;
+};
+
 /**
  * Top-of-dashboard ad banner. Renders the highest-priority active ad picked
  * from the superadmin "Dashboard Ads" manager. Re-resolves whenever the route
@@ -69,7 +74,7 @@ export function DashboardAdBanner({ pathname }: { pathname: string }) {
   };
 
   return (
-    <div className="mb-4 animate-fade-in">
+    <div className="mb-6 pt-2 animate-fade-in">
       <AdRenderer ad={ad} onClick={onClick} />
     </div>
   );
@@ -104,7 +109,7 @@ function Shell({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${accent ?? "from-fuchsia-500/20 to-violet-600/20"} backdrop-blur-xl`}
+      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${accent ?? "from-violet-500/20 to-violet-600/20"} backdrop-blur-xl`}
     >
       <div className="absolute inset-0 bg-[rgba(18,18,25,0.40)]" />
       <div className="relative">{children}</div>
@@ -120,7 +125,7 @@ function Marquee({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
         onClick={onClick}
         className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-white"
       >
-        <Megaphone className="h-3.5 w-3.5 shrink-0 text-fuchsia-200" />
+        <Megaphone className="h-3.5 w-3.5 shrink-0 text-violet-200" />
         <div className="relative flex-1 overflow-hidden">
           <div className="flex animate-[marquee_28s_linear_infinite] whitespace-nowrap">
             <span className="pr-12">{ad.headline}</span>
@@ -159,7 +164,7 @@ function Single({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
     <Shell accent={ad.accent}>
       <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/15">
-          <Sparkles className="h-5 w-5 text-fuchsia-100" />
+          <Sparkles className="h-5 w-5 text-violet-100" />
         </div>
         <div className="flex-1">
           <div className="text-sm font-semibold text-white">{ad.headline}</div>
@@ -182,13 +187,12 @@ function Carousel({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   if (slides.length === 0) return null;
 
   return (
-    <div className="group overflow-hidden py-1">
-      <div className="flex w-max items-center gap-2 overflow-x-auto scrollbar-none motion-safe:animate-[dashboard-brand-drift_18s_ease-in-out_infinite_alternate] group-hover:[animation-play-state:paused]">
+    <div className="overflow-hidden py-1">
+      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none">
       {slides.map((s, i) => (
         <SlideChip key={i} slide={s} badge="Featured" onClick={onClick} />
       ))}
       </div>
-      <style>{`@keyframes dashboard-brand-drift { from { transform: translateX(0); } to { transform: translateX(-18px); } }`}</style>
     </div>
   );
 }
@@ -208,8 +212,8 @@ function Trending({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
   }, [ad.trendingLimit]);
 
   return (
-    <div className="group overflow-hidden py-1">
-      <div className="flex w-max items-center gap-2 overflow-x-auto scrollbar-none motion-safe:animate-[dashboard-brand-drift_18s_ease-in-out_infinite_alternate] group-hover:[animation-play-state:paused]">
+    <div className="overflow-hidden py-1">
+      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none">
       {liveSlides.length > 0 ? (
         liveSlides.map((s, i) => (
           <SlideChip key={i} slide={s} badge="Recommended" onClick={onClick} />
@@ -220,37 +224,41 @@ function Trending({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
         </span>
       )}
       </div>
-      <style>{`@keyframes dashboard-brand-drift { from { transform: translateX(0); } to { transform: translateX(-18px); } }`}</style>
     </div>
   );
 }
 
-function trendingSlidesFromBrands(brands: AdminBrandRecord[], limit: number): AdSlide[] {
+function trendingSlidesFromBrands(brands: AdminBrandRecord[], limit: number): DisplayAdSlide[] {
   return [...brands]
     .filter((brand) => brand.visibility === "published")
     .sort((a, b) => Number(b.tbi || 0) - Number(a.tbi || 0))
     .slice(0, limit)
     .map((brand) => {
       const tbi = Number(brand.tbi || 0);
+      const tags = [brand.category].filter(Boolean).slice(0, 2);
       return {
         brandSlug: brand.slug,
         label: brand.name,
-        sub: tbi > 0 ? `TBI ${tbi.toFixed(1)}/100` : "Preliminary",
+        sub: tbi > 0 ? `TBI ${tbi.toFixed(1)}/100` : "Preliminary TBI",
+        tags,
+        meta: brand.payouts ? `${brand.payouts} payouts` : undefined,
         href: `/firm/${brand.slug || brand.id}`,
         image: brand.thumbnail || brand.cover,
       };
     });
 }
 
-function SlideChip({ slide, badge, onClick }: { slide: AdSlide; badge: string; onClick: () => void }) {
+function SlideChip({ slide, badge, onClick }: { slide: DisplayAdSlide; badge: string; onClick: () => void }) {
+  const tags = slide.tags?.filter(Boolean).slice(0, 2) ?? [];
+
   return (
     <Link
       to={slide.href}
       onClick={onClick}
-      className="group/slide relative inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition hover:bg-white/20"
+      className="group/slide relative flex min-w-[260px] max-w-[330px] shrink-0 items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.075] px-4 py-3 text-xs font-medium text-white shadow-[0_18px_42px_rgba(0,0,0,0.18)] transition hover:border-primary/35 hover:bg-white/[0.105] sm:min-w-[300px]"
     >
       <span
-        className={`relative grid h-7 w-7 place-items-center overflow-hidden rounded-full text-[9px] font-bold text-white ring-1 ring-white/10 ${slide.image ? "bg-white/[0.04]" : "rb-gradient-primary"}`}
+        className={`relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl text-sm font-black text-white ring-1 ring-white/12 ${slide.image ? "bg-white/[0.04]" : "rb-gradient-primary"}`}
       >
         {slide.image ? (
           <img src={slide.image} alt="" className="h-full w-full object-contain" loading="lazy" />
@@ -258,12 +266,32 @@ function SlideChip({ slide, badge, onClick }: { slide: AdSlide; badge: string; o
           slide.label.slice(0, 1)
         )}
       </span>
-      <span className="font-semibold">{slide.label}</span>
-      {slide.sub && <span className="text-[10px] text-white/70">· {slide.sub}</span>}
-      <span className="pointer-events-none absolute -top-1 right-2 rounded-full bg-primary/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-[0_4px_14px_rgba(168,85,247,0.3)]">
-        {badge}
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start justify-between gap-2">
+          <span className="truncate text-sm font-black leading-5">{slide.label}</span>
+          <span className="shrink-0 rounded-full bg-primary/80 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-[0_4px_14px_rgba(90,34,241,0.26)]">
+            {badge}
+          </span>
+        </span>
+        <span className="mt-1 flex flex-wrap gap-1.5">
+          {tags.length > 0 ? (
+            tags.map((tag) => (
+              <span key={tag} className="rounded-full border border-white/10 bg-white/[0.07] px-2 py-0.5 text-[10px] font-bold text-white/70">
+                {tag}
+              </span>
+            ))
+          ) : slide.sub ? (
+            <span className="rounded-full border border-white/10 bg-white/[0.07] px-2 py-0.5 text-[10px] font-bold text-white/70">
+              {slide.sub}
+            </span>
+          ) : null}
+        </span>
+        {tags.length > 0 && slide.sub && (
+          <span className="mt-1 block truncate text-[10px] font-semibold text-white/48">{slide.sub}</span>
+        )}
+        {slide.meta && <span className="mt-0.5 block truncate text-[10px] text-white/42">{slide.meta}</span>}
       </span>
-      <ArrowRight className="h-3 w-3 text-white/60 transition group-hover:translate-x-0.5" />
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/55 transition group-hover/slide:translate-x-0.5" />
     </Link>
   );
 }

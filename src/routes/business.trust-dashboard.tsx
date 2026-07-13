@@ -41,7 +41,7 @@ function TrustDashboardPage() {
         <SiteHeader />
         <main className="container-app max-w-2xl py-16 text-center sm:py-20">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white/5">
-            <Mail className="h-7 w-7 text-fuchsia-300" />
+            <Mail className="h-7 w-7 text-violet-300" />
           </div>
           <h1 className="mt-6 text-3xl font-bold">Open your dashboard from your magic link</h1>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -68,14 +68,14 @@ function TrustDashboardPage() {
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         {/* Header */}
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-fuchsia-900/10 to-[#0b0418] p-6 md:p-8">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-900/30 via-violet-900/10 to-[#0b0418] p-6 md:p-8">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div className="flex items-center gap-4">
               <div className="grid h-14 w-14 place-items-center rounded-2xl rb-gradient-primary text-2xl shadow-[0_0_24px_rgba(192,132,252,0.4)]">
                 {meta.emoji}
               </div>
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-widest text-fuchsia-300/80">{meta.label}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-widest text-violet-300/80">{meta.label}</div>
                 <h1 className="mt-1 text-2xl font-bold md:text-3xl">{submission.brandName}</h1>
                 <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ring-1 ${statusColor}`}>
                   {submission.status === "pending" && <Clock className="h-3 w-3" />}
@@ -119,9 +119,9 @@ function TrustDashboardPage() {
             <ImprovementSuggestions items={improvementSuggestions(submission)} />
 
             {/* Demo helpers */}
-            <div className="rounded-2xl border border-dashed border-fuchsia-400/30 bg-fuchsia-500/5 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-widest text-fuchsia-200">Demo controls</div>
-              <p className="mt-1 text-xs text-fuchsia-100/80">Simulate trader reviews coming in to see your unlock journey.</p>
+            <div className="rounded-2xl border border-dashed border-violet-400/30 bg-violet-500/5 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-violet-200">Demo controls</div>
+              <p className="mt-1 text-xs text-violet-100/80">Simulate trader reviews coming in to see your unlock journey.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button onClick={() => bumpReviewCount(submission.id, 1)} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/15">+ 1 review</button>
                 <button onClick={() => bumpReviewCount(submission.id, 5)} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/15">+ 5 reviews</button>
@@ -135,7 +135,7 @@ function TrustDashboardPage() {
             {/* Review invite */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <div className="flex items-center gap-2">
-                <Share2 className="h-4 w-4 text-fuchsia-300" />
+                <Share2 className="h-4 w-4 text-violet-300" />
                 <div className="text-sm font-bold">Invite traders to review</div>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Share your public profile link to start unlocking your TBI.</p>
@@ -156,7 +156,7 @@ function TrustDashboardPage() {
             {/* Submitted data summary */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-fuchsia-300" />
+                <FileText className="h-4 w-4 text-violet-300" />
                 <div className="text-sm font-bold">Submitted data</div>
               </div>
               <ul className="mt-3 space-y-1 text-[11px] text-muted-foreground">

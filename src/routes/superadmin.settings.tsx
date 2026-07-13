@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageHeader, Panel } from "@/components/superadmin/AdminUI";
 import { setBrandApplicationSettings, useBrandApplicationSettings } from "@/lib/tbi-onboarding";
 import { fetchBrandApplicationSettings, saveBrandApplicationSettingsRemote } from "@/lib/brand-application-settings-api";
+import type { BrandApplicationRemoteSettings } from "@/lib/brand-application-settings-api";
 import { toast } from "@/components/superadmin/AdminActions";
 import { ToggleLeft, ToggleRight } from "lucide-react";
 
@@ -11,6 +12,23 @@ export const Route = createFileRoute("/superadmin/settings")({
 });
 
 const AUTH_STORAGE_KEY = "rb_auth_session";
+const DEFAULT_BRAND_APPLICATIONS: BrandApplicationRemoteSettings = { enabled: true };
+
+function normalizeBrandApplications(value: unknown): BrandApplicationRemoteSettings {
+  if (!value || typeof value !== "object") return DEFAULT_BRAND_APPLICATIONS;
+  const candidate = value as Partial<BrandApplicationRemoteSettings>;
+  return {
+    enabled: candidate.enabled !== false,
+    updatedAt: typeof candidate.updatedAt === "string" ? candidate.updatedAt : undefined,
+  };
+}
+
+function formatChangedAt(value?: string) {
+  if (!value) return "Not changed yet";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not changed yet";
+  return date.toLocaleString();
+}
 
 function readAdminToken() {
   if (typeof window === "undefined") return null;
@@ -26,21 +44,22 @@ function readAdminToken() {
 
 function SettingsAdmin() {
   const localBrandApplications = useBrandApplicationSettings();
-  const [brandApplications, setBrandApplicationsState] = useState(localBrandApplications);
+  const [brandApplications, setBrandApplicationsState] = useState(() => normalizeBrandApplications(localBrandApplications));
   const [savingBrandApplications, setSavingBrandApplications] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
-    setBrandApplicationsState(localBrandApplications);
-  }, [localBrandApplications.enabled, localBrandApplications.updatedAt]);
+    setBrandApplicationsState(normalizeBrandApplications(localBrandApplications));
+  }, [localBrandApplications]);
 
   useEffect(() => {
     let active = true;
     fetchBrandApplicationSettings()
       .then((settings) => {
         if (!active) return;
-        setBrandApplicationsState(settings);
-        setBrandApplicationSettings(settings);
+        const normalized = normalizeBrandApplications(settings);
+        setBrandApplicationsState(normalized);
+        setBrandApplicationSettings(normalized);
         setSettingsError(null);
       })
       .catch(() => {
@@ -64,8 +83,9 @@ function SettingsAdmin() {
     setBrandApplicationSettings(optimistic);
     try {
       const saved = await saveBrandApplicationSettingsRemote(token, nextEnabled);
-      setBrandApplicationsState(saved);
-      setBrandApplicationSettings(saved);
+      const normalized = normalizeBrandApplications(saved);
+      setBrandApplicationsState(normalized);
+      setBrandApplicationSettings(normalized);
       setSettingsError(null);
       toast.success(nextEnabled ? "Brand applications are open" : "Brand applications are closed");
     } catch (error) {
@@ -128,7 +148,7 @@ function SettingsAdmin() {
               </div>
             </div>
             <Row label="Public state" value={brandApplications.enabled ? "Applications open" : "Applications closed"} />
-            <Row label="Last changed" value={brandApplications.updatedAt ? new Date(brandApplications.updatedAt).toLocaleString() : "Not changed yet"} />
+            <Row label="Last changed" value={formatChangedAt(brandApplications.updatedAt)} />
           </div>
         </Panel>
         <Panel title="Economy">

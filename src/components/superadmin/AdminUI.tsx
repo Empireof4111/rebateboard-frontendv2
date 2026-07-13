@@ -128,7 +128,7 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon?: 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
       {Icon && (
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-fuchsia-300 ring-1 ring-white/10">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-violet-300 ring-1 ring-white/10">
           <Icon className="h-5 w-5" />
         </div>
       )}

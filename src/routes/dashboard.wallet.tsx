@@ -231,7 +231,7 @@ function WalletPage() {
 
       {/* Wallet hero */}
       <div className="glass relative overflow-hidden rounded-3xl p-6 ring-1 ring-emerald-400/20">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-400/30 to-fuchsia-500/20 blur-3xl" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-400/30 to-violet-500/20 blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -253,7 +253,7 @@ function WalletPage() {
                 <Building2 className="h-3.5 w-3.5" /> Link account · earn
               </button>
               <button onClick={() => setClaimOpen(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-                <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" /> Claim cashback
+                <Sparkles className="h-3.5 w-3.5 text-violet-300" /> Claim cashback
               </button>
               <Link to="/dashboard/claims" className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white/80 hover:text-white">
                 View all claims →
@@ -266,7 +266,7 @@ function WalletPage() {
             <MiniStat label="Available" value={fmtUSD(walletSummary.availableForWithdrawal)} icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} />
           </div>
           <div className="space-y-2">
-            <MiniStat label="Pending Withdrawal" value={fmtUSD(walletSummary.pendingWithdrawals)} icon={<Clock className="h-3.5 w-3.5 text-fuchsia-300" />} />
+            <MiniStat label="Pending Withdrawal" value={fmtUSD(walletSummary.pendingWithdrawals)} icon={<Clock className="h-3.5 w-3.5 text-violet-300" />} />
             <MiniStat label="Total Withdrawn" value={fmtUSD(walletSummary.totalWithdrawn)} icon={<ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />} />
           </div>
         </div>
@@ -293,7 +293,7 @@ function WalletPage() {
                       <span className="font-semibold text-white">{fmtUSD(s.amount)}</span>
                     </div>
                     <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-fuchsia-500" style={{ width: `${pct}%` }} />
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-violet-500" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -425,7 +425,7 @@ function WalletPage() {
           {internalTransfers.map((tr) => (
             <div key={tr.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
-                <div className={`grid h-9 w-9 place-items-center rounded-full ${tr.direction === "in" ? "bg-emerald-500/15 text-emerald-400" : "bg-fuchsia-500/15 text-fuchsia-400"}`}>
+                <div className={`grid h-9 w-9 place-items-center rounded-full ${tr.direction === "in" ? "bg-emerald-500/15 text-emerald-400" : "bg-violet-500/15 text-violet-400"}`}>
                   {tr.direction === "in" ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                 </div>
                 <div>
@@ -452,7 +452,7 @@ function WalletPage() {
         <div className="grid gap-2 md:grid-cols-3">
           <PrefOption
             active={pref.default === "rr-wallet"} onClick={() => updatePref({ default: "rr-wallet" })}
-            icon={<Sparkles className="h-4 w-4 text-fuchsia-300" />}
+            icon={<Sparkles className="h-4 w-4 text-violet-300" />}
             title="RR (Reward) wallet"
             desc="System auto-credits — no proof required when you used our affiliate link."
           />
@@ -464,7 +464,7 @@ function WalletPage() {
           />
           <PrefOption
             active={pref.default === "broker-wallet"} onClick={() => updatePref({ default: "broker-wallet" })}
-            icon={<Building2 className="h-4 w-4 text-fuchsia-300" />}
+            icon={<Building2 className="h-4 w-4 text-violet-300" />}
             title="Back to broker wallet"
             desc="Available only on supported brokers / exchanges."
           />
@@ -489,7 +489,7 @@ function WalletPage() {
               return (
                 <div key={la.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-fuchsia-500/15 text-fuchsia-300"><Building2 className="h-4 w-4" /></div>
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-violet-500/15 text-violet-300"><Building2 className="h-4 w-4" /></div>
                     <div>
                       <div className="text-sm font-semibold text-white">{la.brand} · <span className="font-mono text-[11px] text-muted-foreground">{la.accountId}</span></div>
                       <div className="text-[10px] text-muted-foreground">
@@ -546,7 +546,7 @@ function PrefOption({ active, onClick, icon, title, desc }: { active: boolean; o
     <button
       type="button"
       onClick={onClick}
-      className={`text-left rounded-xl p-3 ring-1 transition ${active ? "bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 ring-fuchsia-400/40" : "bg-white/[0.03] ring-white/10 hover:ring-white/20"}`}
+      className={`text-left rounded-xl p-3 ring-1 transition ${active ? "bg-gradient-to-br from-violet-500/15 to-violet-600/10 ring-violet-400/40" : "bg-white/[0.03] ring-white/10 hover:ring-white/20"}`}
     >
       <div className="flex items-center gap-2">
         {icon}
@@ -568,7 +568,7 @@ function MiniStat({ label, value, icon }: { label: string; value: string; icon: 
 }
 
 function Insight({ tone, text }: { tone: "success" | "warning" | "primary"; text: React.ReactNode }) {
-  const ring = tone === "success" ? "ring-emerald-400/30" : tone === "warning" ? "ring-fuchsia-400/25" : "ring-primary/30";
+  const ring = tone === "success" ? "ring-emerald-400/30" : tone === "warning" ? "ring-violet-400/25" : "ring-primary/30";
   return (
     <div className={`rounded-xl bg-white/[0.04] p-3 text-white/85 ring-1 ${ring}`}>{text}</div>
   );
@@ -696,7 +696,7 @@ function WithdrawModal({
     return (
       <ModalShell title="Verification required" onClose={onClose}>
         <div className="text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
             <IdCard className="h-6 w-6" />
           </div>
           <h3 className="mt-4 text-base font-semibold text-white">Verify your identity to withdraw</h3>
@@ -776,15 +776,15 @@ function TransferModal({ token, onClose, onSuccess }: { token: string; onClose: 
       <div className="space-y-3">
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Recipient account number</label>
-          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Account number…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Account number…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
         </div>
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Amount (USD)</label>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
         </div>
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Note (optional)</label>
-          <input value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="What's it for?" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <input value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="What's it for?" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
         </div>
         {error && <p className="text-[11px] text-rose-400">{error}</p>}
         <button onClick={submit} disabled={loading} className="mt-2 w-full rounded-xl rb-gradient-primary py-2.5 text-sm font-semibold text-white disabled:opacity-50">
@@ -957,7 +957,7 @@ function ClaimCashbackModal({
         {/* Partner */}
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Partner</label>
-          <select value={partner} onChange={(e) => setPartner(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50">
+          <select value={partner} onChange={(e) => setPartner(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50">
             {brandsLoading && <option value="">Preparing partners...</option>}
             {!brandsLoading && allBrands.length === 0 && <option value="">No cashback partners available</option>}
             {allBrands.map((b) => <option key={b.name} value={b.name}>{b.name} — {b.category}</option>)}
@@ -987,7 +987,7 @@ function ClaimCashbackModal({
         {/* Amount */}
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Amount (USD)</label>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
         </div>
 
         {/* Proof fields (only when needed) */}
@@ -1033,7 +1033,7 @@ function ClaimCashbackModal({
         {/* Note */}
         <div>
           <label className="text-[11px] uppercase text-muted-foreground">Note (optional)</label>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Anything we should know…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/50" />
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Anything we should know…" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
         </div>
 
         {error && <p className="text-[11px] text-rose-400">{error}</p>}
@@ -1061,7 +1061,7 @@ function ChoiceChip({ active, onClick, icon, label, disabled }: { active: boolea
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-white ring-white/10 hover:ring-white/20"}`}
+      className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "rb-gradient-primary text-white ring-violet-400/40" : "bg-white/5 text-white ring-white/10 hover:ring-white/20"}`}
     >
       {icon}{label}
     </button>

@@ -62,15 +62,15 @@ function VerifyAssetPage() {
       <SiteHeader />
       <main className="container-app py-8 sm:py-12">
         <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-violet-950/60 via-[#16072d] to-[#08030f] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)] md:p-10">
-          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-fuchsia-500/20 blur-3xl" />
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" />
           <div className="absolute -bottom-20 left-10 h-52 w-52 rounded-full bg-violet-500/15 blur-3xl" />
 
           <div className="relative mx-auto max-w-3xl text-center">
             <Logo heightClass="h-9" className="mx-auto justify-center" />
             {loading ? (
               <div className="mt-12">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl border border-fuchsia-300/20 bg-fuchsia-400/10">
-                  <ShieldCheck className="h-7 w-7 animate-pulse text-fuchsia-200" />
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl border border-violet-300/20 bg-violet-400/10">
+                  <ShieldCheck className="h-7 w-7 animate-pulse text-violet-200" />
                 </div>
                 <h1 className="mt-5 text-3xl font-black text-white">Verifying RebateBoard record...</h1>
                 <p className="mt-3 text-sm text-muted-foreground">Checking the public asset ID and integrity signature.</p>

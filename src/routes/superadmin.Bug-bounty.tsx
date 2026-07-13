@@ -236,7 +236,7 @@ function BugBountyPage() {
           </div>
         </Panel>
 
-        <Panel title="Next integrations" action={<Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Next integrations" action={<Sparkles className="h-3.5 w-3.5 text-violet-300" />}>
           <ul className="space-y-2 text-xs text-white/85">
             <li className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
               Connect in-app notifications so critical reports page superadmin immediately.
@@ -272,7 +272,7 @@ function BugBountyPage() {
           </div>
         </Panel>
 
-        <Panel title="Researcher workflow" action={<Bug className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Researcher workflow" action={<Bug className="h-3.5 w-3.5 text-violet-300" />}>
           <ol className="space-y-2 text-xs text-white/85">
             <li className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">1. Researcher submits a report with reproducible steps.</li>
             <li className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">2. Superadmin triages, changes status, adjusts severity, and requests more info when needed.</li>
@@ -336,7 +336,7 @@ function BugBountyPage() {
                     onClick={() => setActiveId(report.id)}
                     className={`w-full rounded-2xl p-3 text-left ring-1 transition ${
                       report.id === active?.id
-                        ? "bg-fuchsia-500/10 ring-fuchsia-400/40"
+                        ? "bg-violet-500/10 ring-violet-400/40"
                         : "bg-white/[0.03] ring-white/10 hover:bg-white/[0.05]"
                     }`}
                   >
@@ -419,7 +419,7 @@ function BugBountyPage() {
                         className="flex items-center gap-3 rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10 hover:bg-white/[0.05]"
                       >
                         <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 ring-1 ring-white/10">
-                          <ExternalLink className="h-4 w-4 text-fuchsia-300" />
+                          <ExternalLink className="h-4 w-4 text-violet-300" />
                         </div>
                         <div className="min-w-0">
                           <div className="truncate text-sm font-medium text-white">Attachment {index + 1}</div>
@@ -530,13 +530,13 @@ function BugBountyPage() {
                   <ol className="space-y-3 border-l border-white/10 pl-4">
                     {active.timeline.map((entry, index) => (
                       <li key={`${entry.stage}-${index}`} className="relative">
-                        <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 ring-2 ring-[var(--rb-bg-elevated)]" />
+                        <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-violet-400 to-violet-500 ring-2 ring-[var(--rb-bg-elevated)]" />
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm font-semibold text-white">{entry.stage}</div>
                           <div className="text-[11px] text-muted-foreground">{entry.time}</div>
                         </div>
                         <div className="mt-1 text-[11px] text-muted-foreground">
-                          <span className="text-fuchsia-300">{entry.actor}</span> · {entry.note}
+                          <span className="text-violet-300">{entry.actor}</span> · {entry.note}
                         </div>
                       </li>
                     ))}
@@ -574,7 +574,7 @@ function MetricCard({ icon: Icon, label, value }: { icon: typeof Clock3; label: 
   return (
     <div className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-        <Icon className="h-3.5 w-3.5 text-fuchsia-300" /> {label}
+        <Icon className="h-3.5 w-3.5 text-violet-300" /> {label}
       </div>
       <div className="mt-2 text-lg font-semibold text-white">{value}</div>
     </div>
@@ -586,7 +586,7 @@ function InfoItem({ label, value, link }: { label: string; value: string; link?:
     <div>
       <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
       {link ? (
-        <a href={link} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm text-fuchsia-300 hover:underline">
+        <a href={link} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm text-violet-300 hover:underline">
           {value}
         </a>
       ) : (

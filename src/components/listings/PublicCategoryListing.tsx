@@ -760,14 +760,14 @@ function BrandLogo({
   return (
     <div
       className={`grid ${sizeClass} shrink-0 place-items-center overflow-hidden ${
-        src && !failed ? "bg-white/[0.04] ring-1 ring-white/10" : "bg-primary/20"
+        src && !failed ? "bg-white/[0.035]" : "bg-primary/20"
       }`}
     >
       {src && !failed ? (
         <img
           src={src}
           alt={`${brand.name} logo`}
-          className="h-full w-full object-contain p-1"
+          className="h-full w-full object-cover"
           loading="lazy"
           onError={() => setFailed(true)}
         />
@@ -898,7 +898,7 @@ function BrandCard({
                 metric.tone === "success"
                   ? "text-emerald-300"
                   : metric.tone === "primary"
-                    ? "text-fuchsia-300"
+                    ? "text-violet-300"
                     : "text-white"
               }`}
             >

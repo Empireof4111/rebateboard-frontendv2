@@ -194,7 +194,7 @@ function NotificationsAdmin() {
           )}
         </Panel>
 
-        <Panel title="Bug bounty notification rules" action={<Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Bug bounty notification rules" action={<Sparkles className="h-3.5 w-3.5 text-violet-300" />}>
           <div className="space-y-3 text-sm text-white/85">
             <div className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
               <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white">Acceptance notice</div>
@@ -262,7 +262,7 @@ function NotificationsAdmin() {
               <input
                 value={broadcastSubject}
                 onChange={(event) => setBroadcastSubject(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-fuchsia-300/60"
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-violet-300/60"
                 placeholder="Platform update, cashback notice, maintenance reminder..."
               />
             </label>
@@ -272,7 +272,7 @@ function NotificationsAdmin() {
                 value={broadcastBody}
                 onChange={(event) => setBroadcastBody(event.target.value)}
                 rows={5}
-                className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-fuchsia-300/60"
+                className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-violet-300/60"
                 placeholder="Write a clear user-facing message. Avoid internal terms."
               />
             </label>

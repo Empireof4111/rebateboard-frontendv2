@@ -92,7 +92,7 @@ function BacktestLab() {
         title="AI Backtest Lab"
         subtitle="Trade Intelligence • Stop guessing. Backtest your strategy and your real trades in minutes."
        actions={
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500/20 to-violet-600/20 px-3 py-1.5 text-[11px] font-semibold text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500/20 to-violet-600/20 px-3 py-1.5 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
             <Sparkles className="h-3.5 w-3.5" /> NEW
           </span>
         }
@@ -103,7 +103,7 @@ function BacktestLab() {
           className={`rounded-xl border px-3 py-2 text-xs ${
             syncState === "loading"
               ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-200"
-              : "border-fuchsia-400/20 bg-fuchsia-500/10 text-fuchsia-100"
+              : "border-violet-400/20 bg-violet-500/10 text-violet-100"
           }`}
         >
           {syncState === "loading" ? "Syncing Backtest Lab with your dashboard data..." : syncMessage}
@@ -174,10 +174,10 @@ function Overview({ onNav }: { onNav: (t: Tab) => void }) {
         <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
           {[
             { label: "Run New Backtest", icon: Play, t: "new" as Tab, color: "from-emerald-500 to-teal-600" },
-            { label: "Upload Trade History", icon: Upload, t: "real" as Tab, color: "from-fuchsia-500 to-violet-600" },
-            { label: "Connect Wallet", icon: Wallet, t: "real" as Tab, color: "from-violet-500 to-fuchsia-600" },
+            { label: "Upload Trade History", icon: Upload, t: "real" as Tab, color: "from-violet-500 to-violet-600" },
+            { label: "Connect Wallet", icon: Wallet, t: "real" as Tab, color: "from-violet-500 to-violet-600" },
             { label: "Compare Strategy vs Real", icon: GitCompare, t: "compare" as Tab, color: "from-cyan-500 to-blue-600" },
-            { label: "View AI Insights", icon: Brain, t: "insights" as Tab, color: "from-pink-500 to-rose-600" },
+            { label: "View AI Insights", icon: Brain, t: "insights" as Tab, color: "from-violet-500 to-rose-600" },
           ].map((a) => {
             const Icon = a.icon;
             return (
@@ -352,7 +352,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
             value={form.description}
             onChange={upd("description")}
             placeholder="I trade EURUSD during London on the 15m timeframe. I enter on Asian range break, SL below range, TP at 2R, risk 1% per trade, avoid news, only Tue–Thu…"
-            className="min-h-[120px] w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none placeholder:text-muted-foreground focus:border-fuchsia-400/40"
+            className="min-h-[120px] w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none placeholder:text-muted-foreground focus:border-violet-400/40"
           />
           <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {fields.map((f) => (
@@ -369,7 +369,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
           <div className="mt-4 flex flex-wrap gap-3">
             {["News filter", "Cashback impact", "Trailing stop", "Break-even rule"].map((t) => (
               <label key={t} className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-white">
-                <input type="checkbox" defaultChecked className="accent-fuchsia-500" /> {t}
+                <input type="checkbox" defaultChecked className="accent-violet-500" /> {t}
               </label>
             ))}
           </div>
@@ -411,7 +411,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
               { t: "Fees & cashback", v: rules.fees },
             ].map((c) => (
               <div key={c.t} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <div className="text-[11px] uppercase tracking-wider text-fuchsia-300">{c.t}</div>
+                <div className="text-[11px] uppercase tracking-wider text-violet-300">{c.t}</div>
                 <div className="mt-1 text-sm text-white/90">{c.v}</div>
               </div>
             ))}
@@ -447,7 +447,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
       {step === 3 && (
         <Panel title="Running backtest…">
           <div className="grid place-items-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" />
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
             <p className="mt-3 text-sm text-muted-foreground">Crunching 6 months of EURUSD 15m data…</p>
           </div>
         </Panel>
@@ -535,10 +535,10 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
               className={`group rounded-2xl border border-dashed p-5 text-left transition ${
-                dragOver ? "border-fuchsia-400 bg-fuchsia-500/10" : "border-white/15 bg-white/5 hover:border-fuchsia-400/40 hover:bg-fuchsia-500/5"
+                dragOver ? "border-violet-400 bg-violet-500/10" : "border-white/15 bg-white/5 hover:border-violet-400/40 hover:bg-violet-500/5"
               }`}
             >
-              <Upload className="mb-2 h-5 w-5 text-fuchsia-300" />
+              <Upload className="mb-2 h-5 w-5 text-violet-300" />
               <div className="text-sm font-semibold text-white">Upload CSV / Statement</div>
               <div className="mt-1 text-[11px] text-muted-foreground">Drag, drop or click. Max {formatUploadLimit()}.</div>
             </button>
@@ -550,7 +550,7 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
               const Icon = c.icon;
               return (
                 <div key={c.l} className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-5 opacity-60">
-                  <Icon className="mb-2 h-5 w-5 text-fuchsia-300" />
+                  <Icon className="mb-2 h-5 w-5 text-violet-300" />
                   <div className="text-sm font-semibold text-white">{c.l}</div>
                   <div className="mt-1 text-[11px] text-muted-foreground">{c.hint}</div>
                 </div>
@@ -811,7 +811,7 @@ function CalendarView() {
   const tone = (t: typeof cells[number]["tone"]) =>
     t === "up" ? "bg-emerald-500/30 ring-emerald-400/40"
     : t === "down" ? "bg-rose-500/30 ring-rose-400/40"
-    : t === "warn" ? "bg-fuchsia-500/25 ring-fuchsia-400/35"
+    : t === "warn" ? "bg-violet-500/25 ring-violet-400/35"
     : "bg-white/5 ring-white/10";
 
   return (
@@ -826,7 +826,7 @@ function CalendarView() {
       <div className="mb-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
         <Legend color="bg-emerald-500/40" label="Profitable" />
         <Legend color="bg-rose-500/40" label="Losing" />
-        <Legend color="bg-fuchsia-500/35" label="Big loss" />
+        <Legend color="bg-violet-500/35" label="Big loss" />
         <Legend color="bg-white/10" label="No trades" />
       </div>
       <div className="grid grid-cols-7 gap-2">
@@ -891,7 +891,7 @@ function Insights() {
 
   const map = {
     success: { ring: "ring-emerald-400/40", icon: CheckCircle2, color: "text-emerald-300" },
-    warn: { ring: "ring-fuchsia-400/35", icon: AlertTriangle, color: "text-fuchsia-200" },
+    warn: { ring: "ring-violet-400/35", icon: AlertTriangle, color: "text-violet-200" },
     info: { ring: "ring-cyan-400/40", icon: Info, color: "text-cyan-300" },
     danger: { ring: "ring-rose-400/40", icon: ShieldAlert, color: "text-rose-300" },
   } as const;
@@ -1005,7 +1005,7 @@ function Compare() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-fuchsia-300">Real Trading (B)</label>
+            <label className="text-[10px] uppercase tracking-wider text-violet-300">Real Trading (B)</label>
             <select value={b.id} onChange={(e) => setBId(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-background px-3 py-2 text-sm text-white">
               {liveTrades.map((r) => <option key={r.id} value={r.id}>{r.name} • {r.symbol}</option>)}
             </select>
@@ -1020,7 +1020,7 @@ function Compare() {
               <tr>
                 <th className="py-2">Metric</th>
                 <th className="py-2 text-emerald-300">Backtest</th>
-                <th className="py-2 text-fuchsia-300">Real Trading</th>
+                <th className="py-2 text-violet-300">Real Trading</th>
                 <th className="py-2">Gap</th>
               </tr>
             </thead>

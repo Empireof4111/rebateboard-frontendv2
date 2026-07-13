@@ -108,7 +108,7 @@ function DashboardOffers() {
       {exclusive.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2">
-            <Flame className="h-4 w-4 text-fuchsia-400" />
+            <Flame className="h-4 w-4 text-violet-400" />
             <h2 className="text-base font-bold">Exclusive</h2>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
@@ -134,7 +134,7 @@ function DashboardOffers() {
       {endingSoon.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-fuchsia-300" />
+            <Clock className="h-4 w-4 text-violet-300" />
             <h2 className="text-base font-bold">Ending soon</h2>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">

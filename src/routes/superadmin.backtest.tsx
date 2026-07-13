@@ -145,7 +145,7 @@ function AdminBacktest() {
             { t: "User-facing AI tone", v: "Direct, supportive, data-driven." },
           ].map((c) => (
             <div key={c.t} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-[11px] uppercase tracking-wider text-fuchsia-300">{c.t}</div>
+              <div className="text-[11px] uppercase tracking-wider text-violet-300">{c.t}</div>
               <textarea defaultValue={c.v} className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 p-2 text-xs text-white" />
             </div>
           ))}
@@ -181,7 +181,7 @@ function AdminBacktest() {
             "No financial advice disclaimer",
           ].map((d) => (
             <div key={d} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-[11px] uppercase tracking-wider text-fuchsia-300">{d}</div>
+              <div className="text-[11px] uppercase tracking-wider text-violet-300">{d}</div>
               <textarea
                 defaultValue="Backtesting results are based on historical data and do not guarantee future performance. AI insights are educational and should not be treated as financial advice."
                 className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 p-2 text-xs text-white min-h-[80px]"

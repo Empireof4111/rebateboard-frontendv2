@@ -24,7 +24,7 @@ function LegalLayout() {
       {/* Soft gradient background */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(217,70,239,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(124,58,237,0.18),_transparent_50%)]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(126,77,255,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(90,34,241,0.18),_transparent_50%)]"
       />
       <SiteHeader />
 
@@ -54,11 +54,11 @@ function LegalLayout() {
                         className={
                           "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition " +
                           (active
-                            ? "bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 text-white ring-1 ring-fuchsia-300/30"
+                            ? "bg-gradient-to-r from-violet-500/20 to-violet-500/20 text-white ring-1 ring-violet-300/30"
                             : "text-white/70 hover:bg-white/5 hover:text-white")
                         }
                       >
-                        <Icon className={"h-3.5 w-3.5 " + (active ? "text-fuchsia-300" : "text-muted-foreground")} />
+                        <Icon className={"h-3.5 w-3.5 " + (active ? "text-violet-300" : "text-muted-foreground")} />
                         {doc.navLabel}
                       </Link>
                     </li>
@@ -68,7 +68,7 @@ function LegalLayout() {
               <div className="mt-3 rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/10">
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Have a compliance concern? Email{" "}
-                  <a className="text-fuchsia-300 hover:underline" href="mailto:compliance@rebateboard.com">
+                  <a className="text-violet-300 hover:underline" href="mailto:compliance@rebateboard.com">
                     compliance@rebateboard.com
                   </a>
                 </p>

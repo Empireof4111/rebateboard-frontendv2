@@ -29,7 +29,7 @@ const PLATFORM_OPTIONS: Array<DemoAccountPlatform | "all"> = ["all", "MT4", "MT5
 
 const platformPillClass: Record<DemoAccountPlatform, string> = {
   MT4: "bg-sky-500/15 text-sky-300 ring-sky-400/30",
-  MT5: "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30",
+  MT5: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
   cTrader: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30",
   DXtrade: "bg-cyan-500/15 text-cyan-300 ring-cyan-400/30",
   TradingView: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
@@ -93,7 +93,7 @@ function PublicDemoAccountsPage() {
       <main className="container-app space-y-6 py-8 sm:py-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-fuchsia-200 ring-1 ring-white/10">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200 ring-1 ring-white/10">
               <Monitor className="h-3.5 w-3.5" />
               Live Demo Access
             </div>
@@ -122,7 +122,7 @@ function PublicDemoAccountsPage() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search brand, plan, or server..."
-                className="w-full rounded-full border border-white/10 bg-white/[0.04] py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-fuchsia-400/40 focus:bg-white/[0.08]"
+                className="w-full rounded-full border border-white/10 bg-white/[0.04] py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-violet-400/40 focus:bg-white/[0.08]"
               />
             </div>
             <select
@@ -174,7 +174,7 @@ function PublicDemoAccountsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-white/10 bg-white/[0.04] px-6 py-16 text-center backdrop-blur-xl">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-fuchsia-300 ring-1 ring-white/10">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-violet-300 ring-1 ring-white/10">
               <Globe className="h-6 w-6" />
             </div>
             <h2 className="mt-4 text-lg font-semibold text-white">No demo accounts match your filters</h2>
@@ -215,7 +215,7 @@ function PublicDemoAccountsPage() {
                         </span>
                       ) : null}
                       {row.hot ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-400/30">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-bold text-violet-100 ring-1 ring-violet-400/30">
                           <Flame className="h-3 w-3" />
                           Hot
                         </span>
@@ -311,7 +311,7 @@ function CredentialCard({
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-          <Icon className="h-3.5 w-3.5 text-fuchsia-300" />
+          <Icon className="h-3.5 w-3.5 text-violet-300" />
           {label}
         </div>
         {onCopy ? (

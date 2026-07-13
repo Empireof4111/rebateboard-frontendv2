@@ -34,7 +34,7 @@ export function Modal({
     <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`mt-12 w-full ${sizeCls} rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl ring-1 ring-fuchsia-400/10`}
+        className={`mt-12 w-full ${sizeCls} rounded-2xl border border-white/10 bg-[rgba(18,18,25,0.95)] shadow-2xl ring-1 ring-violet-400/10`}
       >
         <div className="flex items-start justify-between gap-3 border-b border-white/5 p-5">
           <div>
@@ -96,10 +96,10 @@ export function ConfirmDialog({
 
 /* ============ FORM PRIMITIVES ============ */
 export const fieldCls =
-  "w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-fuchsia-400/40 focus:outline-none placeholder:text-muted-foreground";
+  "w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-violet-400/40 focus:outline-none placeholder:text-muted-foreground";
 
 export const selectCls =
-  "w-full rounded-lg bg-[var(--rb-bg-input)] px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-fuchsia-400/40 focus:outline-none [color-scheme:dark] [&>option]:bg-[var(--rb-bg-input)] [&>option]:text-white";
+  "w-full rounded-lg bg-[var(--rb-bg-input)] px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:ring-violet-400/40 focus:outline-none [color-scheme:dark] [&>option]:bg-[var(--rb-bg-input)] [&>option]:text-white";
 
 export function Field({
   label, children, span = 1, hint,
@@ -156,7 +156,7 @@ export function ThumbnailUploader({
         onClick={() => ref.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); onPick(e.dataTransfer.files?.[0]); }}
-        className={`relative flex ${height} cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-white/10 bg-white/5 text-xs text-muted-foreground hover:border-fuchsia-400/30`}
+        className={`relative flex ${height} cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-white/10 bg-white/5 text-xs text-muted-foreground hover:border-violet-400/30`}
       >
         {value ? (
           <img src={value} alt="" className="h-full w-full object-cover" />

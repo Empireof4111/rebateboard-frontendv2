@@ -427,7 +427,7 @@ function StepAccount({
             }`}
           />
           {usernameStatus === "checking" && (
-            <RefreshCcw className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-fuchsia-200/70" />
+            <RefreshCcw className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-violet-200/70" />
           )}
           {usernameStatus === "available" && (
             <CheckCircle2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300" />
@@ -457,11 +457,11 @@ function StepAccount({
 
         <div className="md:col-span-2 space-y-2 pt-1">
           <label className="flex items-start gap-2 text-xs text-white/80">
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 accent-fuchsia-500" />
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 accent-violet-500" />
             <span>I agree to the <a href="#" className="underline">Terms</a> & <a href="#" className="underline">Privacy Policy</a>.</span>
           </label>
           <label className="flex items-start gap-2 text-xs text-white/60">
-            <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="mt-0.5 h-4 w-4 accent-fuchsia-500" />
+            <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="mt-0.5 h-4 w-4 accent-violet-500" />
             <span>Send me product updates, offers, and rebate news.</span>
           </label>
         </div>
@@ -602,7 +602,7 @@ function Field({
   return (
     <div>
       <label className="mb-1.5 block text-xs text-muted-foreground">
-        {label} {required && <span className="text-fuchsia-400">*</span>}
+        {label} {required && <span className="text-violet-400">*</span>}
       </label>
       <div className="relative">
         {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</div>}
@@ -620,7 +620,7 @@ function PasswordField({
   return (
     <div>
       <label className="mb-1.5 block text-xs text-muted-foreground">
-        {label} {required && <span className="text-fuchsia-400">*</span>}
+        {label} {required && <span className="text-violet-400">*</span>}
       </label>
       <div className="relative">
         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -708,7 +708,7 @@ function StepVerifyEmail({
   return (
     <div>
       <div className="mb-5 flex items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[rgba(126,77,255,0.18)] text-fuchsia-200">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[rgba(126,77,255,0.18)] text-violet-200">
           <MailCheck className="h-5 w-5" />
         </div>
         <div>
@@ -889,7 +889,7 @@ function StepQuestionnaire({
                   key={m.id}
                   type="button"
                   onClick={() => toggleMarket(m.id)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-fuchsia-400/60 bg-fuchsia-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/70 hover:text-white"}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-violet-400/60 bg-violet-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/70 hover:text-white"}`}
                 >
                   <Icon className={`mr-1.5 inline h-3.5 w-3.5 ${on ? "text-violet-100" : "text-violet-300"}`} />
                   {m.label}
@@ -938,7 +938,7 @@ function StepQuestionnaire({
                       setPlatform(brand.name);
                       setOtherBrandName("");
                     }}
-                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition duration-200 ${on ? "scale-[1.01] border-fuchsia-400/60 bg-fuchsia-500/15 text-white shadow-[0_0_22px_rgba(192,132,252,0.18)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/20 hover:bg-white/[0.07]"}`}
+                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition duration-200 ${on ? "scale-[1.01] border-violet-400/60 bg-violet-500/15 text-white shadow-[0_0_22px_rgba(192,132,252,0.18)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/20 hover:bg-white/[0.07]"}`}
                   >
                     <BrandLogo brand={brand} />
                     <span className="min-w-0">
@@ -955,7 +955,7 @@ function StepQuestionnaire({
                   setSelectedBrandId("other");
                   setPlatform("");
                 }}
-                className={`rounded-xl border p-3 text-left transition duration-200 ${selectedBrandId === "other" ? "scale-[1.01] border-fuchsia-400/60 bg-fuchsia-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.07]"}`}
+                className={`rounded-xl border p-3 text-left transition duration-200 ${selectedBrandId === "other" ? "scale-[1.01] border-violet-400/60 bg-violet-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.07]"}`}
               >
                 <span className="block text-sm font-semibold">Other</span>
                 <span className="block text-[11px] text-white/45">Add a brand not listed yet.</span>
@@ -1010,7 +1010,7 @@ function StepQuestionnaire({
                   key={g.id}
                   type="button"
                   onClick={() => setGoal(g.id)}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition duration-200 ${on ? "scale-[1.02] border-fuchsia-400/60 bg-fuchsia-500/15 text-white shadow-[0_0_18px_rgba(192,132,252,0.16)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:text-white"}`}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition duration-200 ${on ? "scale-[1.02] border-violet-400/60 bg-violet-500/15 text-white shadow-[0_0_18px_rgba(192,132,252,0.16)]" : "border-white/10 bg-white/[0.04] text-white/80 hover:text-white"}`}
                 >
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${on ? "bg-violet-500/25 text-violet-100" : "bg-violet-500/10 text-violet-300"}`}>
                     <Icon className="h-4 w-4" />
@@ -1100,9 +1100,9 @@ function Question({
   return (
     <div>
       <div className="mb-2 flex items-baseline gap-2">
-        <span className="text-[10px] font-semibold text-fuchsia-300/80">Q{n}</span>
+        <span className="text-[10px] font-semibold text-violet-300/80">Q{n}</span>
         <h3 className="text-sm font-semibold text-white">
-          {title} {required && <span className="text-fuchsia-400">*</span>}
+          {title} {required && <span className="text-violet-400">*</span>}
         </h3>
       </div>
       {children}
@@ -1123,7 +1123,7 @@ function ChipRow({
             key={o.id}
             type="button"
             onClick={() => onChange(o.id)}
-            className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-fuchsia-400/60 bg-fuchsia-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/70 hover:text-white"}`}
+            className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-violet-400/60 bg-violet-500/15 text-white" : "border-white/10 bg-white/[0.04] text-white/70 hover:text-white"}`}
           >
             {o.label}{o.hint && <span className="ml-1.5 text-white/40"> - {o.hint}</span>}
           </button>
@@ -1155,7 +1155,7 @@ function StepSuccess({
 
       <div className="mt-7 grid gap-3 sm:grid-cols-3">
         <ActionCard
-          icon={<Compass className="h-5 w-5 text-fuchsia-300" />}
+          icon={<Compass className="h-5 w-5 text-violet-300" />}
           title="Go to Dashboard"
           desc="Your RebateBoard overview."
           primary
@@ -1188,7 +1188,7 @@ function ActionCard({
   return (
     <button
       onClick={onClick}
-      className={`group rounded-2xl border p-4 text-left transition ${primary ? "border-fuchsia-400/40 bg-gradient-to-br from-fuchsia-500/15 to-violet-600/10 hover:from-fuchsia-500/25" : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"}`}
+      className={`group rounded-2xl border p-4 text-left transition ${primary ? "border-violet-400/40 bg-gradient-to-br from-violet-500/15 to-violet-600/10 hover:from-violet-500/25" : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"}`}
     >
       <div className="flex items-center justify-between">
         {icon}

@@ -54,7 +54,8 @@ export type ReviewRecord = {
   /** reviewer */
   userId?: string;
   userName: string;
-  userEmail: string;
+  userAvatarUrl?: string;
+  userEmail?: string;
   country?: string;
   /** account context */
   accountSize: string;       // "$10k", "$25k", "Custom: $7k"

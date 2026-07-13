@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EconomicCalendar } from "@/components/economic-calendar/EconomicCalendar";
+import { EconomicCalendarExperience } from "@/routes/economic-calendar";
 
 export const Route = createFileRoute("/dashboard/economic-calendar")({
   head: () => ({
@@ -8,5 +8,5 @@ export const Route = createFileRoute("/dashboard/economic-calendar")({
       { name: "description", content: "Macro events, AI insights and session intelligence inside your trading dashboard." },
     ],
   }),
-  component: () => <EconomicCalendar embedded />,
+  component: () => <EconomicCalendarExperience embedded />,
 });

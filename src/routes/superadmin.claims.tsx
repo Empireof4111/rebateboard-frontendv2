@@ -108,7 +108,7 @@ function ClaimsPage() {
 
   const targetLabel = (t?: string) => {
     if (t === "rr-wallet") return { label: "RR Wallet", icon: <Coins className="h-3 w-3" />, cls: "bg-amber-500/15 text-amber-300 ring-amber-400/30", note: "Auto-credit on approve" };
-    if (t === "broker-wallet") return { label: "Broker / Cash", icon: <Building2 className="h-3 w-3" />, cls: "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30", note: "Manual payout — mark paid after" };
+    if (t === "broker-wallet") return { label: "Broker / Cash", icon: <Building2 className="h-3 w-3" />, cls: "bg-violet-500/15 text-violet-300 ring-violet-400/30", note: "Manual payout — mark paid after" };
     return { label: "RebateBoard $", icon: <Banknote className="h-3 w-3" />, cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30", note: "Auto-credit on approve" };
   };
 
@@ -131,7 +131,7 @@ function ClaimsPage() {
 
       <Toolbar>
         {(["all", "pending", "approved", "paid", "rejected"] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>{f}</button>
+          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${filter === f ? "rb-gradient-primary text-white ring-violet-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"}`}>{f}</button>
         ))}
         <button onClick={load} className="ml-auto grid h-7 w-7 place-items-center rounded-md bg-white/5 text-white ring-1 ring-white/10" title="Refresh">
           <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />

@@ -447,13 +447,13 @@ export function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: (
       className="mobile-scroll fixed inset-0 z-[2147483000] flex items-start justify-center overflow-y-auto bg-[rgba(9,9,13,0.82)] p-2 backdrop-blur-md sm:p-4"
       onClick={onClose}
     >
-      <div className="pointer-events-none absolute left-1/2 top-10 h-[300px] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-fuchsia-500/18 blur-3xl sm:top-20 sm:h-[460px]" />
+      <div className="pointer-events-none absolute left-1/2 top-10 h-[300px] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-violet-500/18 blur-3xl sm:top-20 sm:h-[460px]" />
       <div
         onClick={(event) => event.stopPropagation()}
-        className="relative mt-3 max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-hidden rounded-[1.4rem] bg-[var(--rb-bg-canvas)]/96 ring-1 ring-fuchsia-300/20 sm:mt-20 sm:rounded-[2rem]"
+        className="relative mt-3 max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-hidden rounded-[1.4rem] bg-[var(--rb-bg-canvas)]/96 ring-1 ring-violet-300/20 sm:mt-20 sm:rounded-[2rem]"
       >
         <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4">
-          <Search className="h-4 w-4 text-fuchsia-200" />
+          <Search className="h-4 w-4 text-violet-200" />
           <input
             ref={inputRef}
             value={q}
@@ -597,7 +597,7 @@ function SectionHeader({
         compact ? "" : "mb-2"
       } text-[10px] font-bold uppercase tracking-[0.18em] text-white/48`}
     >
-      <Icon className="h-3.5 w-3.5 text-fuchsia-300" />
+      <Icon className="h-3.5 w-3.5 text-violet-300" />
       {label}
     </div>
   );
@@ -612,7 +612,7 @@ function BrandAvatar({ hit, className = "h-10 w-10" }: { hit: Hit; className?: s
       {hit.logo ? (
         <img src={hit.logo} alt="" className="h-full w-full object-cover" loading="lazy" />
       ) : Icon ? (
-        <Icon className="h-4 w-4 text-fuchsia-200" />
+        <Icon className="h-4 w-4 text-violet-200" />
       ) : (
         initials(hit.label)
       )}
@@ -623,7 +623,7 @@ function BrandAvatar({ hit, className = "h-10 w-10" }: { hit: Hit; className?: s
 function TbiBadge({ value }: { value?: number }) {
   if (!value) return null;
   return (
-    <span className="rounded-full bg-fuchsia-400/12 px-2 py-0.5 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-300/18">
+    <span className="rounded-full bg-violet-400/12 px-2 py-0.5 text-[10px] font-bold text-violet-100 ring-1 ring-violet-300/18">
       TBI {formatTbi(value)}
     </span>
   );
@@ -675,7 +675,7 @@ function QuickLinkButton({ hit, onClick }: { hit: Hit; onClick: () => void }) {
       onClick={onClick}
       className="flex items-center gap-2 rounded-2xl bg-white/[0.035] px-3 py-2.5 text-left text-xs text-white/82 transition hover:bg-white/[0.075] hover:text-white"
     >
-      <Icon className="h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+      <Icon className="h-3.5 w-3.5 shrink-0 text-violet-300" />
       <span className="truncate">{hit.label}</span>
     </button>
   );

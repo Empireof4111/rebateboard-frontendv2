@@ -49,7 +49,7 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
           claim.status === "paid" ? "bg-emerald-500/15 text-emerald-300"
           : claim.status === "approved" ? "bg-sky-500/15 text-sky-300"
           : claim.status === "rejected" ? "bg-rose-500/15 text-rose-300"
-          : "bg-fuchsia-500/15 text-fuchsia-200"
+          : "bg-violet-500/15 text-violet-200"
         }`}>
           {claim.status.toUpperCase()}
         </div>

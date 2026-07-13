@@ -24,7 +24,7 @@ export const Route = createFileRoute("/superadmin/journal-analytics")({
 });
 
 const RANGE_OPTIONS = [7, 30, 90] as const;
-const CHART_COLORS = ["#d946ef", "#a855f7", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
+const CHART_COLORS = ["#7e4dff", "#7e4dff", "#7e4dff", "#06b6d4", "#10b981", "#f59e0b"];
 
 const emptyData: JournalAnalyticsResponse = {
   dataState: "limited-live",
@@ -211,7 +211,7 @@ function JournalAnalyticsPage() {
         </div>
       ) : null}
 
-      <Panel title="Filters" action={<Filter className="h-3.5 w-3.5 text-fuchsia-300" />} compact>
+      <Panel title="Filters" action={<Filter className="h-3.5 w-3.5 text-violet-300" />} compact>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
           <FilterSelect
             label="Market"
@@ -295,8 +295,8 @@ function JournalAnalyticsPage() {
                 <AreaChart data={data.dailyActivity} margin={{ top: 10, right: 18, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="journalRebate" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.5} />
-                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#7e4dff" stopOpacity={0.5} />
+                      <stop offset="95%" stopColor="#7e4dff" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="journalEntries" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.45} />
@@ -308,7 +308,7 @@ function JournalAnalyticsPage() {
                   <YAxis yAxisId="left" stroke="rgba(255,255,255,0.45)" fontSize={11} />
                   <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
                   <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }} />
-                  <Area yAxisId="left" type="monotone" dataKey="rebateEarned" stroke="#d946ef" strokeWidth={2} fill="url(#journalRebate)" name="Rebate earned" />
+                  <Area yAxisId="left" type="monotone" dataKey="rebateEarned" stroke="#7e4dff" strokeWidth={2} fill="url(#journalRebate)" name="Rebate earned" />
                   <Area yAxisId="right" type="monotone" dataKey="entries" stroke="#06b6d4" strokeWidth={2} fill="url(#journalEntries)" name="Tracked entries" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -373,7 +373,7 @@ function JournalAnalyticsPage() {
           )}
         </Panel>
 
-        <Panel title="Top active traders" action={<TrendingUp className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Top active traders" action={<TrendingUp className="h-3.5 w-3.5 text-violet-300" />}>
           {data.topTraders.length ? (
             <DataTable
               head={
@@ -430,7 +430,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
+        className="w-full rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-violet-400/40"
       >
         {options.map((option) => (
           <option key={option} value={option} className="bg-[var(--rb-bg-elevated)] text-white">

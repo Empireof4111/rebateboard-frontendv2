@@ -18,11 +18,11 @@ import type { OfferBrandFields } from "@/lib/offer-brand-assets";
 type DisplayOffer = AdminOffer & OfferBrandFields;
 
 const tagStyles: Record<string, string> = {
-  exclusive: "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/30",
+  exclusive: "bg-violet-500/15 text-violet-100 ring-violet-400/30",
   new: "bg-emerald-500/15 text-emerald-100 ring-emerald-400/30",
-  limited: "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/25",
+  limited: "bg-violet-500/15 text-violet-100 ring-violet-400/25",
   trending: "bg-sky-500/15 text-sky-100 ring-sky-400/30",
-  "free-account": "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/25",
+  "free-account": "bg-violet-500/15 text-violet-100 ring-violet-400/25",
 };
 
 const tagLabel: Record<string, string> = {
@@ -50,8 +50,8 @@ function BrandLogo({
   offer: DisplayOffer;
   className?: string;
 }) {
-  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#a855f7";
-  const to = offer.accentTo ?? "#ec4899";
+  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#5A22F1";
+  const to = offer.accentTo ?? "#7E4DFF";
 
   return (
     <div
@@ -105,8 +105,8 @@ export function OfferCard({
   onOpen?: (o: DisplayOffer) => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#a855f7";
-  const to = offer.accentTo ?? "#ec4899";
+  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#5A22F1";
+  const to = offer.accentTo ?? "#7E4DFF";
   const isFlyer = offer.mode === "flyer" && Boolean(offer.flyerUrl);
   const discount = offerDiscount(offer);
 
@@ -121,7 +121,7 @@ export function OfferCard({
   return (
     <article
       onClick={() => onOpen?.(offer)}
-      className="group relative flex h-full min-h-[360px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[rgba(18,18,25,0.85)] text-left shadow-[0_18px_50px_rgba(5,1,14,0.28)] transition hover:border-fuchsia-300/30 hover:bg-[rgba(27,25,38,0.90)] hover:shadow-[0_22px_70px_rgba(168,85,247,0.18)]"
+      className="group relative flex h-full min-h-[360px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-[rgba(18,18,25,0.85)] text-left shadow-[0_18px_50px_rgba(5,1,14,0.28)] transition hover:border-violet-300/30 hover:bg-[rgba(27,25,38,0.90)] hover:shadow-[0_22px_70px_rgba(168,85,247,0.18)]"
     >
       <div
         className="relative aspect-[16/9] overflow-hidden bg-white/[0.035]"
@@ -142,7 +142,7 @@ export function OfferCard({
           <div className="flex h-full items-center justify-between gap-4 p-4">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 text-[10px] font-semibold text-white/80 ring-1 ring-white/12">
-                <Flame className="h-3 w-3 text-fuchsia-200" />
+                <Flame className="h-3 w-3 text-violet-200" />
                 Featured promo
               </div>
               <div className="mt-3 max-w-[12rem] text-3xl font-black leading-none text-white sm:text-4xl">
@@ -206,12 +206,12 @@ export function OfferCard({
                 {copied ? (
                   <Check className="h-4 w-4 shrink-0 text-emerald-300" />
                 ) : (
-                  <Copy className="h-4 w-4 shrink-0 text-fuchsia-200" />
+                  <Copy className="h-4 w-4 shrink-0 text-violet-200" />
                 )}
               </button>
             ) : (
               <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.045] px-3 py-2 ring-1 ring-white/10">
-                <Tag className="h-4 w-4 shrink-0 text-fuchsia-200" />
+                <Tag className="h-4 w-4 shrink-0 text-violet-200" />
                 <span className="truncate text-sm font-semibold text-white">{discount}</span>
               </div>
             )}
@@ -236,7 +236,7 @@ export function OfferCard({
                 {hasExpiry(offer) ? `Ends ${offer.expires}` : "Open ended"}
               </span>
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1.5 text-fuchsia-200/80">
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-violet-200/80">
               <Sparkles className="h-3.5 w-3.5" />
               Verified
             </span>
@@ -257,8 +257,8 @@ export function OfferDetailModal({
   const [copied, setCopied] = useState(false);
   if (!offer) return null;
 
-  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#a855f7";
-  const to = offer.accentTo ?? "#ec4899";
+  const from = offer.brandPrimaryColor ?? offer.accentFrom ?? "#5A22F1";
+  const to = offer.accentTo ?? "#7E4DFF";
   const isFlyer = offer.mode === "flyer" && Boolean(offer.flyerUrl);
   const discount = offerDiscount(offer);
 
@@ -336,7 +336,7 @@ export function OfferDetailModal({
 
           <div className="mt-4">
             <h2 className="text-2xl font-black text-white sm:text-3xl">{offer.brand}</h2>
-            <p className="mt-1 text-sm font-semibold text-fuchsia-100">{offer.title}</p>
+            <p className="mt-1 text-sm font-semibold text-violet-100">{offer.title}</p>
           </div>
 
           {offer.description && (
@@ -392,10 +392,10 @@ export function OfferDetailModal({
               <button
                 type="button"
                 onClick={copy}
-                className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-dashed border-fuchsia-300/35 bg-fuchsia-500/10 px-4 py-3 text-left text-fuchsia-100"
+                className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-dashed border-violet-300/35 bg-violet-500/10 px-4 py-3 text-left text-violet-100"
               >
                 <span className="min-w-0">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-fuchsia-200/70">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-violet-200/70">
                     Promo code
                   </span>
                   <span className="block truncate font-mono text-lg font-black">{offer.code}</span>
@@ -430,7 +430,7 @@ export function OfferDetailModal({
           </div>
 
           <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white/[0.035] px-4 py-3 text-[11px] text-white/50 ring-1 ring-white/10">
-            <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />
+            <Sparkles className="h-3.5 w-3.5 text-violet-300" />
             Verified offer from RebateBoard
           </div>
         </div>

@@ -427,7 +427,7 @@ function EmptyMetricCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 ring-1 ring-white/5">
-      <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-fuchsia-300 ring-1 ring-white/10">
+      <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-violet-300 ring-1 ring-white/10">
         <Icon className="h-4 w-4" />
       </div>
       <div className="text-sm font-semibold text-white">{title}</div>
@@ -437,4 +437,4 @@ function EmptyMetricCard({
 }
 
 const fieldClassName =
-  "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:bg-white/[0.07]";
+  "w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-violet-400/40 focus:bg-white/[0.07]";

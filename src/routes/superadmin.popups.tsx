@@ -269,6 +269,8 @@ function formatDateInput(value: string) {
 }
 
 function dateOrEmpty(value: string) {
-  if (!value || value === "—") return "";
+  if (!value || value === "—") return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
   return value;
 }

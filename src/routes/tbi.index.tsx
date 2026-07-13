@@ -59,9 +59,9 @@ function rankTheme(rank: number) {
     return {
       Icon: Trophy,
       label: `#${rank}`,
-      badge: "border-fuchsia-300/25 bg-fuchsia-300/12 text-fuchsia-100 shadow-[0_0_18px_rgba(217,70,239,0.13)]",
-      card: "border-fuchsia-300/18 shadow-[0_0_26px_rgba(217,70,239,0.08)]",
-      glow: "shadow-[0_0_22px_rgba(217,70,239,0.18)] ring-fuchsia-300/24",
+      badge: "border-violet-300/25 bg-violet-300/12 text-violet-100 shadow-[0_0_18px_rgba(126,77,255,0.13)]",
+      card: "border-violet-300/18 shadow-[0_0_26px_rgba(126,77,255,0.08)]",
+      glow: "shadow-[0_0_22px_rgba(126,77,255,0.18)] ring-violet-300/24",
     };
   }
   return {
@@ -177,14 +177,14 @@ function TBIPage() {
       <SiteHeader />
       <main className="container-app py-6 sm:py-8">
         <section className="glass relative overflow-hidden rounded-3xl p-8 md:p-10">
-          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
+          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
           <div className="absolute -left-10 bottom-0 h-60 w-60 rounded-full bg-violet-500/20 blur-3xl" />
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-fuchsia-200">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-violet-200">
               <Shield className="h-3.5 w-3.5" /> Trust Engine v2.0
             </div>
             <h1 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">
-              Trusted Brand Index <span className="bg-gradient-to-r from-fuchsia-400 to-violet-300 bg-clip-text text-transparent">(TBI)</span>
+              Trusted Brand Index <span className="bg-gradient-to-r from-violet-400 to-violet-300 bg-clip-text text-transparent">(TBI)</span>
             </h1>
             <p className="mt-3 max-w-3xl text-sm text-muted-foreground md:text-base">
               TBI is RebateBoard&apos;s trust infrastructure layer. It combines weighted trader experience,
@@ -196,7 +196,7 @@ function TBIPage() {
                 <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 text-emerald-400" /> Only fully unlocked profiles are ranked here
               </div>
               <div className="glass-pill rounded-2xl px-4 py-3">
-                <Info className="mr-1 inline h-3.5 w-3.5 text-fuchsia-300" /> Confidence adjustment prevents low-data manipulation
+                <Info className="mr-1 inline h-3.5 w-3.5 text-violet-300" /> Confidence adjustment prevents low-data manipulation
               </div>
               <div className="glass-pill rounded-2xl px-4 py-3">
                 <AlertTriangle className="mr-1 inline h-3.5 w-3.5 text-rose-300" /> Risk penalties surface payout and complaint pressure
@@ -249,7 +249,7 @@ function TBIPage() {
                 Only full TBI profiles with enough verified data are eligible for this public ranking.
               </p>
             </div>
-            <Link to="/tbi/explore" className="hidden items-center gap-1 text-xs text-fuchsia-300 hover:text-fuchsia-200 sm:flex">
+            <Link to="/tbi/explore" className="hidden items-center gap-1 text-xs text-violet-300 hover:text-violet-200 sm:flex">
               Explore all trust profiles <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -281,7 +281,7 @@ function TBIPage() {
                   key={brand.id}
                   to="/tbi/brand/$slug"
                   params={{ slug: brand.slug }}
-                  className={`glass ranking-card-enter group relative overflow-hidden rounded-3xl p-6 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)] ${rankTheme(index + 1).card}`}
+                  className={`glass ranking-card-enter group relative overflow-hidden rounded-3xl p-6 transition hover:border-violet-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)] ${rankTheme(index + 1).card}`}
                   style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
                 >
                   <div className="absolute right-5 top-5">
@@ -323,7 +323,7 @@ function TBIPage() {
                   key={brand.id}
                   to="/tbi/brand/$slug"
                   params={{ slug: brand.slug }}
-                  className={`glass ranking-card-enter group relative overflow-hidden rounded-3xl p-5 transition hover:border-fuchsia-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)] ${rankTheme(index + 1).card}`}
+                  className={`glass ranking-card-enter group relative overflow-hidden rounded-3xl p-5 transition hover:border-violet-400/40 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)] ${rankTheme(index + 1).card}`}
                   style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
                 >
                   <div className="absolute right-4 top-4">
@@ -368,7 +368,7 @@ function TBIPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between text-xs text-fuchsia-300">
+                  <div className="mt-4 flex items-center justify-between text-xs text-violet-300">
                     <span>View Profile</span>
                     <span>View Breakdown</span>
                   </div>

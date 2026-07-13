@@ -406,8 +406,8 @@ function profileOfferInfo(brand: SavedBrand | null, offer: AdminOffer | null): P
     description,
     terms,
     ctaUrl,
-    accentFrom: offer?.accentFrom || (isBroker ? "#22c55e" : isExchange ? "#38bdf8" : "#d946ef"),
-    accentTo: offer?.accentTo || (isBroker ? "#8b5cf6" : isExchange ? "#8b5cf6" : "#7c3aed"),
+    accentFrom: offer?.accentFrom || (isBroker ? "#22c55e" : isExchange ? "#38bdf8" : "#7e4dff"),
+    accentTo: offer?.accentTo || (isBroker ? "#7e4dff" : isExchange ? "#7e4dff" : "#5a22f1"),
   };
 }
 
@@ -597,7 +597,7 @@ function tbiStageTheme(stage?: TbiProfile["state"]) {
       radarA: "#fde68a",
       radarB: "#f59e0b",
       radarFillA: "#fde68a",
-      radarFillB: "#a855f7",
+      radarFillB: "#7e4dff",
       bar: "from-amber-200 via-yellow-300 to-orange-400",
       chip: "bg-amber-200/20 text-amber-50 ring-amber-100/30",
     };
@@ -615,8 +615,8 @@ function tbiStageTheme(stage?: TbiProfile["state"]) {
       radarA: "#fdba74",
       radarB: "#f472b6",
       radarFillA: "#fdba74",
-      radarFillB: "#d946ef",
-      bar: "from-orange-200 via-amber-300 to-fuchsia-400",
+      radarFillB: "#7e4dff",
+      bar: "from-orange-200 via-amber-300 to-violet-400",
       chip: "bg-orange-200/20 text-orange-50 ring-orange-100/30",
     };
   }
@@ -885,10 +885,12 @@ function fallbackBrandFromStaticData(candidates: string[]): SavedBrand | null {
   };
 }
 
-function useSavedBrand(slugOrName: string, token?: string | null): SavedBrand | null {
+function useSavedBrand(slugOrName: string, token?: string | null) {
   const [brand, setBrand] = useState<SavedBrand | null>(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     let active = true;
+    setLoading(true);
     const candidates = brandLookupCandidates(slugOrName);
     const targets = new Set(candidates.map((candidate) => candidate.trim().toLowerCase()));
     const findCachedBrand = () => {
@@ -922,6 +924,7 @@ function useSavedBrand(slugOrName: string, token?: string | null): SavedBrand | 
           const payload = await fetchPublicAdminBrand(candidate, token);
           if (active && payload) {
             setBrand(payload as unknown as SavedBrand);
+            setLoading(false);
             return;
           }
         } catch {
@@ -929,18 +932,24 @@ function useSavedBrand(slugOrName: string, token?: string | null): SavedBrand | 
         }
       }
 
-      if (active) setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+      if (active) {
+        setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+        setLoading(false);
+      }
     }
 
     fetchBrand().catch(() => {
-      if (active) setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+      if (active) {
+        setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+        setLoading(false);
+      }
     });
 
     return () => {
       active = false;
     };
   }, [slugOrName, token]);
-  return brand;
+  return { brand, loading };
 }
 
 function offerMatchesBrand(offer: AdminOffer, brand: SavedBrand | null, slugOrName: string) {
@@ -1028,7 +1037,7 @@ function FormattedText({ value, className = "" }: { value: string; className?: s
 
         return (
           <div key={`${line}-${index}`} className="flex gap-2">
-            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-fuchsia-300" />
+            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-violet-300" />
             <span>{withoutBullet}</span>
           </div>
         );
@@ -1043,7 +1052,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="border-b border-white/10 py-8 first:pt-0 last:border-b-0 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500">
       <div className="mb-5 flex items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-fuchsia-500/12 text-fuchsia-200 ring-1 ring-fuchsia-300/25">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-500/12 text-violet-200 ring-1 ring-violet-300/25">
           <Icon className="h-4 w-4" />
         </span>
         <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{title}</h3>
@@ -1065,7 +1074,7 @@ function VideoReviewCard({ name, url }: { name: string; url: string }) {
   const thumbnail = youtubeThumbnailUrl(url);
   const hasVideo = Boolean(url);
   const inner = (
-    <div className="group relative aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-fuchsia-500/25 via-violet-600/20 to-sky-500/15 ring-1 ring-white/10">
+    <div className="group relative aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/25 via-violet-600/20 to-sky-500/15 ring-1 ring-white/10">
       {thumbnail ? (
         <img
           src={thumbnail}
@@ -1123,9 +1132,9 @@ function InfoRows({ rows }: { rows: ProfileRow[] }) {
 
 function DataCard({ card, index }: { card: ProfileCard; index: number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 transition duration-300 hover:border-fuchsia-300/30 hover:bg-white/[0.04]">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 transition duration-300 hover:border-violet-300/30 hover:bg-white/[0.04]">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-fuchsia-500/12 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+        <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-violet-500/12 text-[10px] font-bold text-violet-100 ring-1 ring-violet-300/20">
           {index + 1}
         </span>
         <div className="min-w-0">
@@ -1134,7 +1143,7 @@ function DataCard({ card, index }: { card: ProfileCard; index: number }) {
             <FormattedText value={card.body} />
           </div>
           {card.meta ? (
-            <div className="mt-3 inline-flex rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+            <div className="mt-3 inline-flex rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-100 ring-1 ring-violet-300/20">
               {card.meta}
             </div>
           ) : null}
@@ -1195,7 +1204,7 @@ function LogoChip({ item }: { item: ProfileLogoItem }) {
           />
         </span>
       ) : (
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-fuchsia-500/20 text-[10px] font-black text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-violet-500/20 text-[10px] font-black text-violet-100 ring-1 ring-violet-300/20">
           {initials || "RB"}
         </span>
       )}
@@ -1257,7 +1266,7 @@ function RuleList({ rules }: { rules: ProfileRule[] }) {
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/[0.04] text-white/70 ring-1 ring-white/10">
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-300 ${
-                  isOpen ? "rotate-180 text-fuchsia-200" : ""
+                  isOpen ? "rotate-180 text-violet-200" : ""
                 }`}
               />
             </span>
@@ -1467,13 +1476,13 @@ function TbiIndexContent({
                   The formula below is returned by the backend. Manual or preliminary final scores are clearly marked.
                 </div>
               </div>
-              <div className="rounded-full bg-fuchsia-500/12 px-3 py-1 text-[11px] font-semibold text-fuchsia-100 ring-1 ring-fuchsia-300/20">
+              <div className="rounded-full bg-violet-500/12 px-3 py-1 text-[11px] font-semibold text-violet-100 ring-1 ring-violet-300/20">
                 Verify this score
               </div>
             </div>
             <div className="mt-4 rounded-xl bg-black/20 p-3 font-mono text-[11px] leading-6 text-white/80 ring-1 ring-white/10">
               <div>{profile?.trustEngine?.formula ?? "TBI = (UT x 0.30) + (PR x 0.25) + (TS x 0.15) + (RC x 0.10) + (TC x 0.10) + (CX x 0.10)"}</div>
-              <div className="mt-2 text-fuchsia-100">{formulaParts.map((part) => part.display).join(" + ")}</div>
+              <div className="mt-2 text-violet-100">{formulaParts.map((part) => part.display).join(" + ")}</div>
               <div className="mt-2 grid gap-1 sm:grid-cols-2">
                 <span>Raw Score: {rawScore.toFixed(2)}</span>
                 <span>Confidence Factor: {confidenceFactor.toFixed(2)}</span>
@@ -1559,7 +1568,7 @@ function TbiIndexContent({
                     <div key={row.id} className="rounded-lg bg-black/15 p-3 ring-1 ring-white/10">
                       <div className="flex items-center justify-between gap-3">
                         <div className="font-semibold text-white">{row.reviewer}</div>
-                        <div className="text-xs font-bold text-fuchsia-100">{Number(row.score).toFixed(1)}/10</div>
+                        <div className="text-xs font-bold text-violet-100">{Number(row.score).toFixed(1)}/10</div>
                       </div>
                       <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                         <span>{row.verificationStatus}</span>
@@ -1586,7 +1595,7 @@ function TbiIndexContent({
                       <div className="font-semibold text-white">{item.rating}/10</div>
                       <div className="h-2 overflow-hidden rounded-full bg-white/10">
                         <span
-                          className="block h-full rounded-full bg-gradient-to-r from-fuchsia-300 to-violet-400"
+                          className="block h-full rounded-full bg-gradient-to-r from-violet-300 to-violet-400"
                           style={{ width: `${Math.min(100, item.percentage)}%` }}
                         />
                       </div>
@@ -1772,11 +1781,78 @@ function renderSection(
   }
 }
 
+function FirmDetailsSkeleton() {
+  return (
+    <div className="relative min-h-screen overflow-x-clip bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
+      <SiteHeader />
+      <div className="glow-orb h-[600px] w-[600px] -left-40 top-20" />
+      <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-60" />
+      <div className="container-app relative pb-10 pt-3 sm:pt-4">
+        <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
+          <div className="glass-strong overflow-hidden rounded-3xl bg-[rgba(18,18,25,0.90)] ring-1 ring-violet-400/20">
+            <div className="skeleton h-24 rounded-none sm:h-28 lg:h-32 xl:h-[136px]" />
+            <div className="px-5 pb-5 sm:px-6">
+              <div className="-mt-8 flex flex-col items-start gap-3 sm:-mt-11 sm:flex-row sm:items-end sm:justify-between">
+                <div className="skeleton h-20 w-20 rounded-[22px] sm:h-28 sm:w-28 sm:rounded-[26px]" />
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                  <div className="skeleton h-9 w-28 rounded-full" />
+                  <div className="skeleton h-9 w-28 rounded-full" />
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                <div className="min-w-0 space-y-3">
+                  <div className="skeleton h-8 w-2/3 rounded-xl" />
+                  <div className="skeleton h-4 w-full rounded-full" />
+                  <div className="skeleton h-4 w-4/5 rounded-full" />
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="skeleton h-7 w-24 rounded-full" />
+                    <div className="skeleton h-7 w-28 rounded-full" />
+                    <div className="skeleton h-7 w-20 rounded-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="skeleton h-16 rounded-2xl" />
+                  <div className="skeleton h-16 rounded-2xl" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="glass-strong rounded-3xl p-5 ring-1 ring-white/10">
+            <div className="skeleton h-5 w-40 rounded-full" />
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="skeleton h-20 rounded-2xl" />
+              ))}
+            </div>
+            <div className="mt-5 skeleton h-12 rounded-2xl" />
+            <div className="mt-3 skeleton h-12 rounded-2xl" />
+          </div>
+        </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <div className="glass rounded-2xl p-4 ring-1 ring-white/10">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="skeleton mb-2 h-8 rounded-full" />
+            ))}
+          </div>
+          <div className="glass rounded-2xl p-6 ring-1 ring-white/10">
+            <div className="skeleton h-7 w-52 rounded-xl" />
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="skeleton h-24 rounded-2xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FirmDetailsPage() {
   const { firmId } = Route.useParams();
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const brand = useSavedBrand(firmId, token);
+  const { brand, loading: brandLoading } = useSavedBrand(firmId, token);
   const publishedOffer = usePublicBrandOffer(brand, firmId);
   const name = brand?.name ?? decodeURIComponent(firmId).replace(/-/g, " ");
   const profileData = normalizePropFirmProfile(brand, name);
@@ -2042,6 +2118,10 @@ function FirmDetailsPage() {
     }
   }
 
+  if (brandLoading && !brand) {
+    return <FirmDetailsSkeleton />;
+  }
+
   return (
     <div className="relative min-h-screen overflow-x-clip bg-gradient-to-br from-[#1a0b2e] via-[#1f0d3d] to-[#150829] text-white">
       <SiteHeader />
@@ -2059,9 +2139,9 @@ function FirmDetailsPage() {
                   className="h-full w-full object-cover object-center"
                 />
               ) : (
-                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(217,70,239,0.34),transparent_30%),linear-gradient(135deg,#1a0b2e_0%,#39126b_48%,#130824_100%)]">
+                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(126,77,255,0.34),transparent_30%),linear-gradient(135deg,#1a0b2e_0%,#39126b_48%,#130824_100%)]">
                   <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#130824] to-transparent" />
-                  <div className="absolute left-8 top-12 h-px w-[70%] rotate-[-8deg] bg-fuchsia-300/40 shadow-[0_0_30px_rgba(217,70,239,0.8)]" />
+                  <div className="absolute left-8 top-12 h-px w-[70%] rotate-[-8deg] bg-violet-300/40 shadow-[0_0_30px_rgba(126,77,255,0.8)]" />
                   <div className="absolute bottom-10 right-10 h-px w-[45%] rotate-[-14deg] bg-violet-200/45 shadow-[0_0_24px_rgba(196,181,253,0.7)]" />
                 </div>
               )}
@@ -2099,15 +2179,15 @@ function FirmDetailsPage() {
             <div className="px-5 pb-5 sm:px-6">
               <div className="min-w-0">
                 <div className="-mt-8 flex flex-col items-start gap-3 sm:-mt-11 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="relative h-20 w-20 shrink-0 rounded-[22px] border-[3px] border-[var(--rb-bg-card)] bg-white shadow-2xl sm:h-28 sm:w-28 sm:rounded-[26px] sm:border-4">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[22px] bg-white/[0.04] shadow-2xl sm:h-28 sm:w-28 sm:rounded-[26px]">
                     {displayAvatar ? (
                       <img
                         src={displayAvatar}
                         alt={name}
-                        className="h-full w-full rounded-[16px] object-contain p-1.5 sm:rounded-[20px]"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="grid h-full w-full place-items-center rounded-[16px] bg-white text-lg font-bold text-violet-700 sm:rounded-[20px] sm:text-2xl">
+                      <div className="grid h-full w-full place-items-center bg-primary/20 text-lg font-bold text-white sm:text-2xl">
                         {logoInitials || "RB"}
                       </div>
                     )}
@@ -2170,7 +2250,7 @@ function FirmDetailsPage() {
                       aria-disabled={!signupUrl}
                       className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         signupUrl
-                          ? "rb-gradient-primary text-white ring-fuchsia-300/40 hover:brightness-110"
+                          ? "rb-gradient-primary text-white ring-violet-300/40 hover:brightness-110"
                           : "cursor-not-allowed bg-white/5 text-white/35 ring-white/10"
                       }`}
                     >
@@ -2183,7 +2263,7 @@ function FirmDetailsPage() {
                       className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         followState.isFollowing
                           ? "bg-white text-[#1a0b2e] ring-white/70 hover:bg-rose-50 hover:text-rose-700"
-                          : "rb-gradient-primary text-white ring-fuchsia-300/40 hover:brightness-110"
+                          : "rb-gradient-primary text-white ring-violet-300/40 hover:brightness-110"
                       } ${followBusy || !brand?.id ? "opacity-60" : ""}`}
                     >
                       {followState.isFollowing ? (
@@ -2369,7 +2449,7 @@ function FirmDetailsPage() {
                   "shrink-0 rounded-full px-4 py-1.5 text-[11px] font-semibold ring-1 transition duration-200 " +
                   (topTab === t
                     ? "bg-white text-[#1a0b2e] ring-white/60 shadow-[0_0_20px_rgba(255,255,255,0.16)]"
-                    : "bg-fuchsia-300/20 text-white ring-fuchsia-300/20 hover:bg-fuchsia-300/30")
+                    : "bg-violet-300/20 text-white ring-violet-300/20 hover:bg-violet-300/30")
                 }
               >
                 {t}
@@ -2413,7 +2493,7 @@ function FirmDetailsPage() {
             {profileOffer.hasOffer ? (
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-center">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-fuchsia-200/70">
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-violet-200/70">
                     {profileOffer.label}
                   </div>
                   <h2 className="mt-2 text-2xl font-black text-white">
@@ -2478,12 +2558,12 @@ function FirmDetailsPage() {
                       className={
                         "relative whitespace-nowrap rounded-full px-3 py-1.5 text-left text-[11px] font-semibold transition lg:w-full lg:rounded-none lg:py-2 lg:pl-4 " +
                         (i === activeIdx
-                          ? "bg-fuchsia-300/[0.18] text-white ring-1 ring-fuchsia-300/25 lg:bg-transparent lg:ring-0"
+                          ? "bg-violet-300/[0.18] text-white ring-1 ring-violet-300/25 lg:bg-transparent lg:ring-0"
                           : "text-white/45 hover:bg-white/[0.04] hover:text-white/85 lg:hover:bg-transparent")
                       }
                     >
                       {i === activeIdx ? (
-                        <span className="absolute left-0 top-1/2 hidden h-5 w-0.5 -translate-y-1/2 rounded-full bg-fuchsia-300 lg:block" />
+                        <span className="absolute left-0 top-1/2 hidden h-5 w-0.5 -translate-y-1/2 rounded-full bg-violet-300 lg:block" />
                       ) : null}
                       {section.label}
                     </button>

@@ -263,7 +263,7 @@ function BugBountyPage() {
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                      <ImagePlus className="h-4 w-4 text-fuchsia-300" /> Attach screenshots or proof
+                      <ImagePlus className="h-4 w-4 text-violet-300" /> Attach screenshots or proof
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Upload screenshots, recordings, or supporting proof up to {formatUploadLimit()} each. Clear visual evidence speeds up validation.
@@ -355,7 +355,7 @@ function BugBountyPage() {
                 </ul>
                 <a
                   href="mailto:security@rebateboardapp.com"
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm text-fuchsia-300 hover:underline"
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm text-violet-300 hover:underline"
                 >
                   <ExternalLink className="h-4 w-4" /> Contact security directly
                 </a>
@@ -384,7 +384,7 @@ function MiniBadge({ icon: Icon, label, value }: { icon: typeof Bug; label: stri
   return (
     <div className="rounded-2xl bg-white/[0.04] px-4 py-3 ring-1 ring-white/10">
       <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-        <Icon className="h-3.5 w-3.5 text-fuchsia-300" /> {label}
+        <Icon className="h-3.5 w-3.5 text-violet-300" /> {label}
       </div>
       <div className="mt-1 text-sm font-semibold text-white">{value}</div>
     </div>

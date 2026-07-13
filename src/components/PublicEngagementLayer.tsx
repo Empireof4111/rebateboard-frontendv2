@@ -26,18 +26,51 @@ export function PublicEngagementLayer() {
   useEffect(() => {
     if (sensitive) return;
     let active = true;
-    fetchPublicCampaigns(route, user ? "logged in" : "guests").then((campaigns) => {
+    let timeout: number | undefined;
+    let removeExitIntent: (() => void) | undefined;
+
+    const showCampaign = (item: PublicCampaign) => {
+      if (!active) return;
+      setCampaign(item);
+      void trackPublicCampaignView(item.id);
+    };
+
+    fetchPublicCampaigns(route, user ? "logged_in" : "guests").then((campaigns) => {
       if (!active) return;
       const eligible = campaigns
         .filter((item) => !isDismissed(item))
         .sort((a, b) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0];
-      if (eligible) {
-        setCampaign(eligible);
-        void trackPublicCampaignView(eligible.id);
+      if (!eligible) {
+        setCampaign(null);
+        return;
       }
+
+      const trigger = normalizeTrigger(eligible.trigger);
+      if (trigger === "after-delay") {
+        timeout = window.setTimeout(() => showCampaign(eligible), 10_000);
+        return;
+      }
+
+      if (trigger === "exit-intent") {
+        const onMouseOut = (event: MouseEvent) => {
+          if (event.clientY > 24 || event.relatedTarget) return;
+          showCampaign(eligible);
+          removeExitIntent?.();
+        };
+        document.addEventListener("mouseout", onMouseOut);
+        removeExitIntent = () => document.removeEventListener("mouseout", onMouseOut);
+
+        // Touch devices do not have a reliable exit-intent signal.
+        timeout = window.setTimeout(() => showCampaign(eligible), 12_000);
+        return;
+      }
+
+      showCampaign(eligible);
     });
     return () => {
       active = false;
+      if (timeout) window.clearTimeout(timeout);
+      removeExitIntent?.();
     };
   }, [route, sensitive, user]);
 
@@ -180,16 +213,39 @@ function isExternalHref(value: string) {
   return /^https?:\/\//i.test(value) || value.startsWith("mailto:");
 }
 
+function normalizeTrigger(value?: string) {
+  const trigger = String(value || "").trim().toLowerCase();
+  if (trigger.includes("10") || trigger.includes("delay") || trigger.includes("after")) return "after-delay";
+  if (trigger.includes("exit")) return "exit-intent";
+  return "on-load";
+}
+
+function getDismissalTtl(campaign: PublicCampaign) {
+  const frequency = String(campaign.frequency || "").trim().toLowerCase();
+  if (frequency.includes("session")) return "session";
+  if (frequency.includes("always") || frequency.includes("every")) return 0;
+  return 24 * 60 * 60 * 1000;
+}
+
 function isDismissed(campaign: PublicCampaign) {
   if (typeof window === "undefined") return false;
+  const ttl = getDismissalTtl(campaign);
+  if (ttl === 0) return false;
+  if (ttl === "session") return window.sessionStorage.getItem(`rb_campaign_${campaign.id}`) === "1";
+
   const key = `rb_campaign_${campaign.id}`;
   const last = Number(window.localStorage.getItem(key) || 0);
-  return Date.now() - last < 24 * 60 * 60 * 1000;
+  return Date.now() - last < ttl;
 }
 
 function dismissCampaign(campaign: PublicCampaign, setCampaign: (campaign: PublicCampaign | null) => void) {
   try {
-    window.localStorage.setItem(`rb_campaign_${campaign.id}`, String(Date.now()));
+    const ttl = getDismissalTtl(campaign);
+    if (ttl === "session") {
+      window.sessionStorage.setItem(`rb_campaign_${campaign.id}`, "1");
+    } else if (ttl !== 0) {
+      window.localStorage.setItem(`rb_campaign_${campaign.id}`, String(Date.now()));
+    }
   } catch {
     // ignore
   }

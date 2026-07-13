@@ -107,7 +107,7 @@ export function AccountStatusPill({ status }: { status: TrtAccountStatus }) {
 export function BrandBadge({ brand }: { brand: TrtBrand }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/10">
-      {brand.custom && <span className="grid h-3 w-3 place-items-center rounded-sm bg-fuchsia-500/30 text-[7px] text-fuchsia-200">C</span>}
+      {brand.custom && <span className="grid h-3 w-3 place-items-center rounded-sm bg-violet-500/30 text-[7px] text-violet-200">C</span>}
       {brand.name}
     </span>
   );

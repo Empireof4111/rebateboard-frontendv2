@@ -107,7 +107,7 @@ function ReviewsPage() {
                           key={i}
                           className={`h-3.5 w-3.5 ${
                             i < Math.round(review.ratings.overall)
-                              ? "fill-fuchsia-300 text-fuchsia-300"
+                              ? "fill-violet-300 text-violet-300"
                               : "text-white/15"
                           }`}
                         />
@@ -123,7 +123,7 @@ function ReviewsPage() {
                     </span>
                   )}
                   {review.rrAwarded ? (
-                    <span className="rounded-full bg-fuchsia-500/10 px-2 py-1 text-fuchsia-200 ring-1 ring-fuchsia-400/20">
+                    <span className="rounded-full bg-violet-500/10 px-2 py-1 text-violet-200 ring-1 ring-violet-400/20">
                       +{review.rrAwarded} RR
                     </span>
                   ) : null}
@@ -162,9 +162,9 @@ function ReviewsPage() {
 function ReviewStat({ label, value, tone }: { label: string; value: number; tone: "success" | "warning" | "destructive" | "primary" }) {
   const toneClass = {
     success: "ring-emerald-400/25 text-emerald-300",
-    warning: "ring-fuchsia-400/25 text-fuchsia-200",
+    warning: "ring-violet-400/25 text-violet-200",
     destructive: "ring-rose-400/25 text-rose-300",
-    primary: "ring-fuchsia-400/25 text-fuchsia-300",
+    primary: "ring-violet-400/25 text-violet-300",
   }[tone];
   return (
     <div className={`glass rounded-2xl p-4 ring-1 ${toneClass}`}>

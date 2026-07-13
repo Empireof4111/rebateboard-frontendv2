@@ -126,7 +126,7 @@ function ChallengePurchasesPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.9fr]">
-        <Panel title="Top Firms by GMV" action={<Trophy className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Top Firms by GMV" action={<Trophy className="h-3.5 w-3.5 text-violet-300" />}>
           {topFirms.length === 0 ? (
             <EmptyPanelText />
           ) : (
@@ -139,14 +139,14 @@ function ChallengePurchasesPage() {
                     </div>
                     <div className="text-sm font-semibold text-white">{firm}</div>
                   </div>
-                  <div className="text-sm font-bold text-fuchsia-300">${gmv.toFixed(2)}</div>
+                  <div className="text-sm font-bold text-violet-300">${gmv.toFixed(2)}</div>
                 </div>
               ))}
             </div>
           )}
         </Panel>
 
-        <Panel title="Reward Preference Mix" action={<Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Reward Preference Mix" action={<Sparkles className="h-3.5 w-3.5 text-violet-300" />}>
           {rows.length === 0 ? (
             <EmptyPanelText />
           ) : (
@@ -158,7 +158,7 @@ function ChallengePurchasesPage() {
           )}
         </Panel>
 
-        <Panel title="Funnel" action={<Funnel className="h-3.5 w-3.5 text-fuchsia-300" />}>
+        <Panel title="Funnel" action={<Funnel className="h-3.5 w-3.5 text-violet-300" />}>
           <div className="space-y-3">
             {funnelStats.map((item) => (
               <div key={item.step}>
@@ -188,7 +188,7 @@ function ChallengePurchasesPage() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search email, firm, program..."
-              className="w-full rounded-full border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:bg-white/[0.07]"
+              className="w-full rounded-full border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-violet-400/40 focus:bg-white/[0.07]"
             />
           </div>
 
@@ -196,7 +196,7 @@ function ChallengePurchasesPage() {
             <select
               value={firmFilter}
               onChange={(event) => setFirmFilter(event.target.value)}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
+              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-violet-400/40"
             >
               {firmOptions.map((firm) => (
                 <option key={firm} value={firm} className="bg-[var(--rb-bg-elevated)] text-white">
@@ -208,7 +208,7 @@ function ChallengePurchasesPage() {
             <select
               value={stepFilter}
               onChange={(event) => setStepFilter(event.target.value as ChallengePurchaseStep | "all")}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-fuchsia-400/40"
+              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-violet-400/40"
             >
               {STEP_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value} className="bg-[var(--rb-bg-elevated)] text-white">
@@ -283,7 +283,7 @@ function ChallengePurchasesPage() {
                   </div>
                 </td>
                 <td>
-                  <div className="max-w-[150px] truncate font-mono text-[10px] text-fuchsia-200" title={row.reference}>
+                  <div className="max-w-[150px] truncate font-mono text-[10px] text-violet-200" title={row.reference}>
                     {row.reference || "-"}
                   </div>
                   <div
@@ -325,7 +325,7 @@ function MixRow({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-3 ring-1 ring-white/10">
       <div className="text-sm font-semibold text-white">{label}</div>
-      <div className="inline-flex items-center gap-2 text-sm font-bold text-fuchsia-300">
+      <div className="inline-flex items-center gap-2 text-sm font-bold text-violet-300">
         <Coins className="h-4 w-4" />
         {value}
       </div>

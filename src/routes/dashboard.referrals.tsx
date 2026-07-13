@@ -159,14 +159,14 @@ function ReferralsPage() {
         }
       >
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/10 to-transparent p-4">
+          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-violet-500/10 to-transparent p-4">
             <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
               <Sparkles className="h-3 w-3" /> Code:
               <span className="rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs text-white">{profile.code}</span>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex flex-1 items-center gap-2 rounded-xl bg-black/30 px-3 py-2 ring-1 ring-white/10">
-                <Link2 className="h-4 w-4 text-fuchsia-300" />
+                <Link2 className="h-4 w-4 text-violet-300" />
                 <input readOnly value={link} className="flex-1 bg-transparent text-xs text-white outline-none sm:text-sm" />
               </div>
               <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ function ReferralsPage() {
                 <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">Vanity slug — rebateboard.com/r/<b className="text-white">your-name</b></label>
                 <div className="flex items-center gap-2">
                   <input autoFocus value={slugDraft} onChange={(e) => { setSlugDraft(e.target.value); setSlugError(null); }} placeholder="aidenpro"
-                    className="flex-1 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-fuchsia-400/40" />
+                    className="flex-1 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-violet-400/40" />
                   <button onClick={saveSlug} disabled={savingSlug} className="rounded-md bg-emerald-500/20 px-3 py-1.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/30 hover:bg-emerald-500/30 disabled:opacity-40">
                     {savingSlug ? "…" : "Save"}
                   </button>
@@ -206,8 +206,8 @@ function ReferralsPage() {
               <button onClick={() => share("twitter")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Twitter className="h-3.5 w-3.5 text-sky-400" /> Twitter / X</button>
               <button onClick={() => share("whatsapp")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><MessageCircle className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp</button>
               <button onClick={() => share("telegram")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Send className="h-3.5 w-3.5 text-cyan-300" /> Telegram</button>
-              <button onClick={() => share("email")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Mail className="h-3.5 w-3.5 text-fuchsia-300" /> Email</button>
-              <button onClick={() => setShowQr((v) => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><QrCode className="h-3.5 w-3.5 text-fuchsia-300" /> {showQr ? "Hide QR" : "Show QR"}</button>
+              <button onClick={() => share("email")} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><Mail className="h-3.5 w-3.5 text-violet-300" /> Email</button>
+              <button onClick={() => setShowQr((v) => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><QrCode className="h-3.5 w-3.5 text-violet-300" /> {showQr ? "Hide QR" : "Show QR"}</button>
               <a href={baseLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-white/10"><ExternalLink className="h-3.5 w-3.5" /> Preview</a>
             </div>
 
@@ -227,7 +227,7 @@ function ReferralsPage() {
             ].map((s) => (
               <div key={s.title} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[rgba(126,77,255,0.14)] text-fuchsia-300">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[rgba(126,77,255,0.14)] text-violet-300">
                     <s.icon className="h-3.5 w-3.5" />
                   </span>
                   <div className="text-xs font-semibold text-white">{s.title}</div>
@@ -244,9 +244,9 @@ function ReferralsPage() {
         <Panel title="Conversion funnel" compact>
           <div className="space-y-3">
             <FunnelBar label="Clicks" value={stats.clicks} max={Math.max(stats.clicks, 1)} tone="from-sky-400 to-cyan-500" />
-            <FunnelBar label="Signups" value={stats.signups} max={Math.max(stats.clicks, 1)} tone="from-fuchsia-400 to-violet-500" />
+            <FunnelBar label="Signups" value={stats.signups} max={Math.max(stats.clicks, 1)} tone="from-violet-400 to-violet-500" />
             <FunnelBar label="Qualified" value={stats.qualified} max={Math.max(stats.clicks, 1)} tone="from-emerald-400 to-teal-500" />
-            <FunnelBar label="Earning" value={earningReferees.length} max={Math.max(stats.clicks, 1)} tone="from-violet-400 to-fuchsia-500" />
+            <FunnelBar label="Earning" value={earningReferees.length} max={Math.max(stats.clicks, 1)} tone="from-violet-400 to-violet-500" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[11px]">
             <div className="rounded-lg bg-white/5 p-2">
@@ -356,7 +356,7 @@ function FunnelBar({ label, value, max, tone }: { label: string; value: number; 
 function EventIcon({ kind }: { kind: string }) {
   const map: Record<string, { i: React.ElementType; cls: string }> = {
     click:     { i: MousePointerClick, cls: "bg-sky-500/15 text-sky-300 ring-sky-400/30" },
-    signup:    { i: Users,             cls: "bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/30" },
+    signup:    { i: Users,             cls: "bg-violet-500/15 text-violet-300 ring-violet-400/30" },
     qualified: { i: ShieldCheck,       cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30" },
     revenue:   { i: DollarSign,        cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30" },
   };

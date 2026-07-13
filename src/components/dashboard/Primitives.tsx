@@ -37,13 +37,13 @@ export function StatCard({
   const accentRing = {
     primary: "ring-primary/25",
     success: "ring-success/25",
-    warning: "ring-fuchsia-400/25",
+    warning: "ring-violet-400/25",
     destructive: "ring-destructive/25",
   }[accent ?? "primary"];
   const accentBar = {
-    primary: "from-violet-500 to-fuchsia-400",
+    primary: "from-violet-500 to-violet-400",
     success: "from-emerald-500 to-cyan-400",
-    warning: "from-violet-500 to-fuchsia-300",
+    warning: "from-violet-500 to-violet-300",
     destructive: "from-rose-600 to-rose-400",
   }[accent ?? "primary"];
   return (
@@ -79,7 +79,7 @@ export function Pill({ children, tone = "default" }: { children: ReactNode; tone
   const map = {
     default: "bg-white/10 text-white/85 ring-white/10",
     success: "bg-success/15 text-success ring-success/20",
-    warning: "bg-fuchsia-500/15 text-fuchsia-200 ring-fuchsia-400/25",
+    warning: "bg-violet-500/15 text-violet-200 ring-violet-400/25",
     destructive: "bg-destructive/15 text-destructive ring-destructive/25",
     primary: "bg-primary/15 text-primary ring-primary/25",
   } as const;
@@ -90,7 +90,7 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon?: 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
       {Icon && (
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/15 text-fuchsia-200 ring-1 ring-primary/25">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
           <Icon className="h-5 w-5" />
         </div>
       )}

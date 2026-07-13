@@ -169,7 +169,7 @@ function AnnouncementsPage() {
               <td className="font-medium">
                 <div className="flex flex-col">
                   <span>{a.message || <span className="italic text-muted-foreground">empty</span>}</span>
-                  <span className="text-[10px] text-fuchsia-300">{a.cta} → {a.link}</span>
+                  <span className="text-[10px] text-violet-300">{a.cta} → {a.link}</span>
                 </div>
               </td>
               <td>

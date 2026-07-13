@@ -34,6 +34,10 @@ export const Route = createFileRoute("/blog")({
 });
 
 function BlogIndex() {
+  return <BlogExperience />;
+}
+
+export function BlogExperience({ embedded = false }: { embedded?: boolean }) {
   const [items, setItems] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -97,19 +101,19 @@ function BlogIndex() {
   }, [published]);
 
   return (
-    <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
-      <SiteHeader />
+    <div className={embedded ? "text-white" : "min-h-screen bg-[var(--rb-bg-canvas)] text-white"}>
+      {!embedded && <SiteHeader />}
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(217,70,239,0.15),transparent_60%)]" />
-        <div className="container-app py-10 sm:py-12">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-fuchsia-300">
+      <section className={embedded ? "relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035]" : "relative overflow-hidden border-b border-white/5"}>
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(126,77,255,0.15),transparent_60%)]" />
+        <div className={embedded ? "px-5 py-7 sm:px-7 sm:py-8" : "container-app py-10 sm:py-12"}>
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-violet-300">
             <BookOpen className="h-3.5 w-3.5" /> RebateBoard Editorial
           </div>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">
             Insights for traders who care about the{" "}
-            <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-400 to-violet-400 bg-clip-text text-transparent">
               truth behind the brand
             </span>
             .
@@ -121,7 +125,7 @@ function BlogIndex() {
 
           {/* Search + filters */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/[0.06] px-4 py-3 ring-1 ring-white/10 focus-within:ring-fuchsia-400/40">
+            <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/[0.06] px-4 py-3 ring-1 ring-white/10 focus-within:ring-violet-400/40">
               <Search className="h-4 w-4 text-white/50" />
               <input
                 value={q}
@@ -158,7 +162,7 @@ function BlogIndex() {
                   onClick={() => setTag(t)}
                   className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${
                     active
-                      ? "rb-gradient-primary text-white ring-fuchsia-400/40"
+                      ? "rb-gradient-primary text-white ring-violet-400/40"
                       : "bg-white/[0.04] text-white/70 ring-white/10 hover:bg-white/10 hover:text-white"
                   }`}
                 >
@@ -176,7 +180,7 @@ function BlogIndex() {
       </section>
 
       {/* Body */}
-      <section className="container-app py-10">
+      <section className={embedded ? "py-8" : "container-app py-10"}>
         {loading ? (
           <LoadingState />
         ) : filtered.length === 0 ? (
@@ -212,7 +216,7 @@ function BlogIndex() {
             {/* Sidebar */}
             <aside className="space-y-6">
               <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-fuchsia-300">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-violet-300">
                   <TrendingUp className="h-3.5 w-3.5" /> Trending
                 </div>
                 <ol className="mt-4 space-y-4">
@@ -224,7 +228,7 @@ function BlogIndex() {
                         params={{ id: articleRouteId(p) }}
                         className="group flex-1"
                       >
-                        <h3 className="text-sm font-semibold leading-snug text-white group-hover:text-fuchsia-300">
+                        <h3 className="text-sm font-semibold leading-snug text-white group-hover:text-violet-300">
                           {p.title}
                         </h3>
                         <p className="mt-1 text-[11px] text-white/50">
@@ -236,8 +240,8 @@ function BlogIndex() {
                 </ol>
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-fuchsia-600/30 to-violet-700/30 p-5 ring-1 ring-fuchsia-400/30">
-                <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-fuchsia-500/30 blur-2xl" />
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600/30 to-violet-700/30 p-5 ring-1 ring-violet-400/30">
+                <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-violet-500/30 blur-2xl" />
                 <h3 className="text-base font-bold">The Edge — weekly</h3>
                 <p className="mt-2 text-xs text-white/70">
                   The single email serious traders read. Payout shifts, firm changes, and one strong
@@ -276,7 +280,7 @@ function BlogIndex() {
           </div>
         )}
       </section>
-      <SiteFooter />
+      {!embedded && <SiteFooter />}
     </div>
   );
 }
@@ -286,7 +290,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
     <Link
       to="/articles/$id"
       params={{ id: articleRouteId(post) }}
-      className="group block overflow-hidden rounded-3xl bg-white/[0.04] ring-1 ring-white/10 transition hover:ring-fuchsia-400/40"
+      className="group block overflow-hidden rounded-3xl bg-white/[0.04] ring-1 ring-white/10 transition hover:ring-violet-400/40"
     >
       <div className="grid md:grid-cols-2">
         <div className="relative aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-[320px]">
@@ -297,7 +301,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
               className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
             />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/40 via-violet-700/30 to-indigo-900/40" />
+            <div className="h-full w-full bg-gradient-to-br from-violet-600/40 via-violet-700/30 to-indigo-900/40" />
           )}
           <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur">
             ★ Featured
@@ -305,11 +309,11 @@ function FeaturedCard({ post }: { post: BlogPost }) {
         </div>
         <div className="flex flex-col justify-center p-6 sm:p-8">
           {post.tag && (
-            <span className="inline-block w-fit rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-fuchsia-300 ring-1 ring-fuchsia-400/30">
+            <span className="inline-block w-fit rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-violet-300 ring-1 ring-violet-400/30">
               {post.tag}
             </span>
           )}
-          <h2 className="mt-3 text-2xl font-bold leading-tight group-hover:text-fuchsia-200 sm:text-3xl">
+          <h2 className="mt-3 text-2xl font-bold leading-tight group-hover:text-violet-200 sm:text-3xl">
             {post.title}
           </h2>
           {post.excerpt && <p className="mt-3 text-sm text-white/70">{post.excerpt}</p>}
@@ -328,7 +332,7 @@ function PostCard({ post }: { post: BlogPost }) {
     <Link
       to="/articles/$id"
       params={{ id: articleRouteId(post) }}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-white/[0.07] hover:ring-fuchsia-400/30"
+      className="group flex flex-col overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-white/[0.07] hover:ring-violet-400/30"
     >
       <div className="relative aspect-[16/9] overflow-hidden">
         {post.cover ? (
@@ -338,7 +342,7 @@ function PostCard({ post }: { post: BlogPost }) {
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-violet-600/30 via-fuchsia-600/20 to-indigo-900/30" />
+          <div className="h-full w-full bg-gradient-to-br from-violet-600/30 via-violet-600/20 to-indigo-900/30" />
         )}
         {post.tag && (
           <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur">
@@ -347,7 +351,7 @@ function PostCard({ post }: { post: BlogPost }) {
         )}
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="text-base font-bold leading-snug group-hover:text-fuchsia-200">
+        <h3 className="text-base font-bold leading-snug group-hover:text-violet-200">
           {post.title}
         </h3>
         {post.excerpt && <p className="mt-2 line-clamp-2 text-xs text-white/60">{post.excerpt}</p>}

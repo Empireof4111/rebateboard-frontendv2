@@ -182,7 +182,7 @@ function InboxPage() {
               <td className="text-muted-foreground text-xs">{message.received ? new Date(message.received).toLocaleString() : "-"}</td>
               <td className="text-right">
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setViewing(message)} title="Open"><Mail className="h-3.5 w-3.5 text-fuchsia-300" /></button>
+                  <button onClick={() => setViewing(message)} title="Open"><Mail className="h-3.5 w-3.5 text-violet-300" /></button>
                   <button onClick={() => openReply(message)} title="Reply"><Reply className="h-3.5 w-3.5 text-emerald-300" /></button>
                   <button onClick={() => void updateStatus(message, "ACTIVE", "Message marked as open")} title="Mark open"><Pill tone="warn">Open</Pill></button>
                   <button onClick={() => void updateStatus(message, "INACTIVE", "Message closed")} title="Close"><Archive className="h-3.5 w-3.5 text-muted-foreground" /></button>

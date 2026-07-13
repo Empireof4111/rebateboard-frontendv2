@@ -171,7 +171,7 @@ function TraderTBIPage() {
                 <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-4">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Personal score</div>
                   <div className="mt-3 text-3xl font-bold text-white">{formatScore(traderScore, activeSignals)}</div>
-                  <div className="mt-2 text-sm text-fuchsia-100">{scoreLabel(traderScore, activeSignals)}</div>
+                  <div className="mt-2 text-sm text-violet-100">{scoreLabel(traderScore, activeSignals)}</div>
                   <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                     Trader TBI grows from verified activity, journal consistency, account links, cashback participation, and RR progression.
                   </p>
@@ -220,9 +220,9 @@ function TraderTBIPage() {
                       <span className="font-semibold text-white">{signal.score == null ? "No Data Yet" : `${signal.score.toFixed(1)} / 10`}</span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-500" style={{ width: `${width}%` }} />
+                      <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500" style={{ width: `${width}%` }} />
                     </div>
-                    <Link to={signal.href as string} className="mt-3 inline-flex text-[11px] font-semibold text-fuchsia-200 hover:text-white">
+                    <Link to={signal.href as string} className="mt-3 inline-flex text-[11px] font-semibold text-violet-200 hover:text-white">
                       {signal.action}
                     </Link>
                   </div>
@@ -261,7 +261,7 @@ function TraderTBIPage() {
                 ].map((task) => (
                   <Link key={task.label} to={task.href as string} className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-xs text-white/85 transition hover:bg-white/[0.07] hover:text-white">
                     <div className="font-semibold text-white">{task.label}</div>
-                    <div className="mt-0.5 text-fuchsia-200">{task.reward ? `+${task.reward} RR` : "Improves trust depth"}</div>
+                    <div className="mt-0.5 text-violet-200">{task.reward ? `+${task.reward} RR` : "Improves trust depth"}</div>
                   </Link>
                 ))}
               </div>

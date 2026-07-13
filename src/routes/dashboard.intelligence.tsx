@@ -57,7 +57,7 @@ function IntelligencePage() {
         <Panel title="Your Weakest Area" action={<Pill tone={journal.violations > 0 ? "warning" : "primary"}>Journal</Pill>}>
           {trades.length ? (
             <div className="flex items-center gap-3">
-              <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${journal.violations > 0 ? "bg-warning/15 text-warning" : "bg-primary/15 text-fuchsia-200"}`}>
+              <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${journal.violations > 0 ? "bg-warning/15 text-warning" : "bg-primary/15 text-violet-200"}`}>
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
@@ -77,7 +77,7 @@ function IntelligencePage() {
         <Panel title="Focus Today" action={<Pill tone="primary">Journal</Pill>}>
           {trades.length ? (
             <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/15 text-fuchsia-200">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/15 text-violet-200">
                 <Target className="h-5 w-5" />
               </div>
               <div>
@@ -115,7 +115,7 @@ function IntelligencePage() {
         </div>
       </Panel>
 
-      <Panel title="Cashback summary" action={<Sparkles className="h-4 w-4 text-fuchsia-300" />}>
+      <Panel title="Cashback summary" action={<Sparkles className="h-4 w-4 text-violet-300" />}>
         <p className="text-xs text-muted-foreground">Lifetime cashback earnings overview.</p>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <StatCard label="Total claims" value={claimStats ? String(claimStats.total) : "—"} accent="primary" />

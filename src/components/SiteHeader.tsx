@@ -77,7 +77,7 @@ function UserPill() {
             alt={`${user.fullName || user.name} profile`}
             className="object-cover"
           />
-          <AvatarFallback className="bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-600 text-[10px] font-bold text-white">
+          <AvatarFallback className="bg-gradient-to-br from-violet-500 via-violet-500 to-indigo-600 text-[10px] font-bold text-white">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -137,7 +137,7 @@ function traderLevelBadgeClass(levelId: string) {
   if (levelId === "platinum") return "border-cyan-200/30 bg-cyan-300/12 text-cyan-100 shadow-[0_0_16px_rgba(103,232,249,0.14)]";
   if (levelId === "gold") return "border-violet-200/35 bg-violet-300/14 text-violet-50 shadow-[0_0_16px_rgba(167,139,250,0.16)]";
   if (levelId === "silver") return "border-indigo-200/25 bg-indigo-300/12 text-indigo-100";
-  if (levelId === "bronze") return "border-fuchsia-200/25 bg-fuchsia-300/12 text-fuchsia-100";
+  if (levelId === "bronze") return "border-violet-200/25 bg-violet-300/12 text-violet-100";
   return "border-white/12 bg-white/[0.055] text-white/72";
 }
 

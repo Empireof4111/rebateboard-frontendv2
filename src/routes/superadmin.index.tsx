@@ -362,7 +362,7 @@ function OverviewPage() {
                       className="flex flex-1 flex-col items-center gap-1"
                     >
                       <div
-                        className="w-full rounded-t-md bg-gradient-to-t from-fuchsia-600 to-violet-400"
+                        className="w-full rounded-t-md bg-gradient-to-t from-violet-600 to-violet-400"
                         style={{ height: `${height}%` }}
                       />
                       <span className="text-[10px] text-muted-foreground">
@@ -391,7 +391,7 @@ function OverviewPage() {
           action={
             <Link
               to="/superadmin/claims"
-              className="text-[11px] text-fuchsia-300 hover:underline"
+              className="text-[11px] text-violet-300 hover:underline"
             >
               Review claims
             </Link>
@@ -452,7 +452,7 @@ function OverviewPage() {
           action={
             <Link
               to="/superadmin/complaints"
-              className="text-[11px] text-fuchsia-300 hover:underline"
+              className="text-[11px] text-violet-300 hover:underline"
             >
               Inspect queue
             </Link>
@@ -543,7 +543,7 @@ function OverviewPage() {
           action={
             <Link
               to="/superadmin/payouts"
-              className="text-[11px] text-fuchsia-300 hover:underline"
+              className="text-[11px] text-violet-300 hover:underline"
             >
               View payouts
             </Link>
@@ -594,7 +594,7 @@ function OverviewPage() {
           action={
             <Link
               to="/superadmin/reviews"
-              className="text-[11px] text-fuchsia-300 hover:underline"
+              className="text-[11px] text-violet-300 hover:underline"
             >
               Moderate reviews
             </Link>

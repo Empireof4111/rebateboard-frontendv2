@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertCircle, BadgeCheck, MessageSquare, ShieldCheck, Star } from "lucide-react";
+import { AlertCircle, BadgeCheck, ExternalLink, FileText, MessageSquare, ShieldCheck, Star } from "lucide-react";
 import { fetchPublicReviews } from "@/lib/reviews-api";
 import type { ReviewRecord } from "@/lib/reviews-store";
 
@@ -105,7 +105,7 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
                 <span>{rating} stars</span>
                 <div className="h-2 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-violet-500"
+                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-500"
                     style={{ width: `${stats.total ? (count / stats.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -123,7 +123,7 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
               onClick={() => setFilter(rating)}
               className={`rounded-full px-3 py-1.5 text-[10px] font-semibold transition ${
                 filter === rating
-                  ? "bg-fuchsia-500/15 text-white ring-1 ring-fuchsia-300/35"
+                  ? "bg-violet-500/15 text-white ring-1 ring-violet-300/35"
                   : "bg-white/5 text-muted-foreground ring-1 ring-white/10 hover:text-white"
               }`}
             >
@@ -159,13 +159,17 @@ export function FirmReviews({ firmName, firmSlug }: { firmName: string; firmSlug
 
 function ReviewCard({ review, firmName }: { review: ReviewRecord; firmName: string }) {
   return (
-    <article className="glass relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-fuchsia-300/30">
-      <div className="pointer-events-none absolute -inset-x-10 -top-20 h-40 bg-fuchsia-500/10 blur-3xl" />
+    <article className="glass relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-violet-300/30">
+      <div className="pointer-events-none absolute -inset-x-10 -top-20 h-40 bg-violet-500/10 blur-3xl" />
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600 text-sm font-bold text-white">
-              {initials(review.userName)}
+            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-400 to-violet-600 text-sm font-bold text-white ring-1 ring-white/10">
+              {review.userAvatarUrl ? (
+                <img src={review.userAvatarUrl} alt={`${review.userName} profile`} className="h-full w-full object-cover" loading="lazy" />
+              ) : (
+                initials(review.userName)
+              )}
             </div>
             {review.verifiedTrader || review.proofs.length > 0 ? (
               <BadgeCheck className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[var(--rb-bg-elevated)] text-emerald-300" />
@@ -193,6 +197,7 @@ function ReviewCard({ review, firmName }: { review: ReviewRecord; firmName: stri
       <div className="relative my-4 h-px bg-white/10" />
       <h3 className="relative text-xl font-bold text-white">{firmName}</h3>
       <p className="relative mt-2 text-sm leading-relaxed text-muted-foreground">{review.body}</p>
+      {review.proofs.length > 0 && <ProofStrip proofs={review.proofs} />}
 
       <div className="relative mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {scoreEntries(review).map(([label, value]) => (
@@ -202,11 +207,48 @@ function ReviewCard({ review, firmName }: { review: ReviewRecord; firmName: stri
 
       <div className="relative mt-4 flex flex-wrap gap-2 text-[11px]">
         {review.verifiedTrader ? <TrustBadge label="Verified Trader" /> : null}
-        {review.proofs.length > 0 ? <TrustBadge label="Proof-backed" /> : null}
+        {review.proofs.length > 0 ? <TrustBadge label={`${review.proofs.length} Public Proof${review.proofs.length === 1 ? "" : "s"}`} /> : null}
         {review.verifiedPayout ? <TrustBadge label="Verified Payout" /> : null}
         {review.contributedToTbi ? <TrustBadge label="TBI Contribution" /> : null}
       </div>
     </article>
+  );
+}
+
+function ProofStrip({ proofs }: { proofs: ReviewRecord["proofs"] }) {
+  return (
+    <div className="relative mt-4 rounded-2xl border border-white/10 bg-black/15 p-3">
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200">
+        <ShieldCheck className="h-3 w-3" />
+        User-provided proof
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {proofs.slice(0, 5).map((proof) => (
+          <a
+            key={proof.id}
+            href={proof.dataUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group/proof relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]"
+            aria-label={`Open proof ${proof.name}`}
+          >
+            {proof.type?.startsWith("image/") ? (
+              <img src={proof.dataUrl} alt={proof.name} className="h-full w-full object-cover transition group-hover/proof:scale-105" loading="lazy" />
+            ) : (
+              <FileText className="h-6 w-6 text-violet-200" />
+            )}
+            <span className="absolute bottom-1 right-1 rounded-full bg-black/70 p-1 text-white">
+              <ExternalLink className="h-3 w-3" />
+            </span>
+          </a>
+        ))}
+        {proofs.length > 5 && (
+          <span className="grid h-20 w-20 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-xs font-bold text-white/75">
+            +{proofs.length - 5}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -233,7 +275,7 @@ function StarRow({ value, total = 5 }: { value: number; total?: number }) {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: total }).map((_, i) => (
-        <Star key={i} className={`h-3.5 w-3.5 ${i < Math.round(value) ? "fill-fuchsia-400 text-fuchsia-400" : "text-white/15"}`} />
+        <Star key={i} className={`h-3.5 w-3.5 ${i < Math.round(value) ? "fill-violet-400 text-violet-400" : "text-white/15"}`} />
       ))}
     </div>
   );
@@ -266,7 +308,7 @@ function ReviewState({
 }) {
   return (
     <div className="glass rounded-2xl p-8 text-center ring-1 ring-white/10">
-      <Icon className="mx-auto h-7 w-7 text-fuchsia-300" />
+      <Icon className="mx-auto h-7 w-7 text-violet-300" />
       <h3 className="mt-3 text-lg font-bold text-white">{title}</h3>
       <p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">{body}</p>
       {action ? <div className="mt-4">{action}</div> : null}

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/payouts/$brandSlug/transaction/$txId")({
     <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white"><SiteHeader />
       <div className="container-app max-w-2xl py-16 text-center sm:py-20">
         <h1 className="text-3xl font-bold">Transaction not found</h1>
-        <Link to="/payouts" className="mt-4 inline-block text-fuchsia-300">← Back to Payouts</Link>
+        <Link to="/payouts" className="mt-4 inline-block text-violet-300">← Back to Payouts</Link>
       </div>
       <SiteFooter />
     </div>
@@ -101,7 +101,7 @@ function TxPage() {
           </div>
         </section>
 
-        <Link to="/payouts/$brandSlug" params={{ brandSlug: brand.slug }} className="block text-center text-sm text-fuchsia-300">
+        <Link to="/payouts/$brandSlug" params={{ brandSlug: brand.slug }} className="block text-center text-sm text-violet-300">
           ← Back to {brand.name} payout profile
         </Link>
       </main>

@@ -185,7 +185,7 @@ function CashbackPage() {
                   <td>{r.partner}</td>
                   <td className="font-mono">{Number(r.volumeLots) > 0 ? `${Number(r.volumeLots)} lots` : "—"}</td>
                   <td className="font-mono">${Number(r.commissionGenerated).toFixed(2)}</td>
-                  <td className="font-mono text-fuchsia-300">{Number(r.rebatePercent)}%</td>
+                  <td className="font-mono text-violet-300">{Number(r.rebatePercent)}%</td>
                   <td className="font-mono">${Number(r.rebateEarned).toFixed(2)}</td>
                   <td className="font-mono text-emerald-300">${Number(r.rebatePaid).toFixed(2)}</td>
                   <td className="font-mono text-amber-300">${Number(r.pending).toFixed(2)}</td>

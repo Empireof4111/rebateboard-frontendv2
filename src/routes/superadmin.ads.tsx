@@ -198,7 +198,7 @@ function AdsPage() {
               const ctrAd = ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : "0.0";
               return (
                 <button key={ad.id} onClick={() => setEditingId(ad.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${editingId === ad.id ? "border-fuchsia-400/40 bg-white/[0.07]" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${editingId === ad.id ? "border-violet-400/40 bg-white/[0.07]" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
                 >
                   <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg rb-gradient-primary">
                     <FormatIcon format={ad.format} />
@@ -406,7 +406,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
             const active = (draft.placement ?? "dashboard") === p.value;
             return (
               <button key={p.value} onClick={() => { set("placement", p.value); if (p.value === "landing-sponsors") set("format", "carousel"); if (p.value === "landing-advertise") set("format", "single"); if (p.value === "landing-hero" && draft.format !== "carousel") set("format", "carousel"); }}
-                className={`rounded-xl border p-2.5 text-left transition ${active ? "border-fuchsia-400/40 bg-fuchsia-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
+                className={`rounded-xl border p-2.5 text-left transition ${active ? "border-violet-400/40 bg-violet-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
               >
                 <div className="text-xs font-semibold text-white">{p.label}</div>
                 <div className="mt-0.5 text-[10px] text-muted-foreground">{p.hint}</div>
@@ -423,7 +423,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
             const active = draft.format === f.value;
             return (
               <button key={f.value} onClick={() => set("format", f.value)}
-                className={`rounded-xl border p-2.5 text-left transition ${active ? "border-fuchsia-400/40 bg-fuchsia-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
+                className={`rounded-xl border p-2.5 text-left transition ${active ? "border-violet-400/40 bg-violet-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-white"><Icon className="h-3.5 w-3.5" /> {f.label}</div>
                 <div className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</div>
@@ -523,7 +523,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
                 <div className="mb-2 flex items-center gap-2 text-[10px]">
                   <span className="text-muted-foreground">Source:</span>
                   {(["template", "blog"] as const).map((src) => (
-                    <button key={src} onClick={() => updateSlide(i, { source: src })} className={`rounded-full px-2 py-0.5 ${(s.source ?? "template") === src ? "bg-fuchsia-500/30 text-white ring-1 ring-fuchsia-300/40" : "bg-white/5 text-muted-foreground"}`}>{src}</button>
+                    <button key={src} onClick={() => updateSlide(i, { source: src })} className={`rounded-full px-2 py-0.5 ${(s.source ?? "template") === src ? "bg-violet-500/30 text-white ring-1 ring-violet-300/40" : "bg-white/5 text-muted-foreground"}`}>{src}</button>
                   ))}
                 </div>
                 {(s.source ?? "template") === "blog" ? (
@@ -624,7 +624,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
   );
 }
 
-const inputCls = "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-fuchsia-400/40 focus:outline-none";
+const inputCls = "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-violet-400/40 focus:outline-none";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

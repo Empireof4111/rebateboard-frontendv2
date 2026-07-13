@@ -678,9 +678,9 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
     <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
       <main className="container-app py-8 sm:py-12 lg:py-16">
-        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(217,70,239,0.18),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-6 shadow-[0_24px_110px_rgba(88,28,135,0.24)] sm:p-8 lg:p-10">
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(126,77,255,0.18),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-6 shadow-[0_24px_110px_rgba(88,28,135,0.24)] sm:p-8 lg:p-10">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-fuchsia-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-100">
+            <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-violet-100">
               <MetaIcon className="h-3.5 w-3.5" />
               {page.eyebrow}
             </span>
@@ -711,7 +711,7 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
                   <Link
                     to={resolveCtaTo(page.secondaryCta.to) as any}
                     search={resolveCtaSearch(page.secondaryCta.to) as any}
-                    className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-5 py-3 text-sm font-semibold text-white/85 transition hover:border-fuchsia-300/35 hover:bg-white/[0.08]"
+                    className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.045] px-5 py-3 text-sm font-semibold text-white/85 transition hover:border-violet-300/35 hover:bg-white/[0.08]"
                   >
                     {page.secondaryCta.label}
                   </Link>
@@ -725,7 +725,7 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
                   const Icon = icons[index % icons.length];
                   return (
                   <div key={feature.title} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
-                    <Icon className="h-5 w-5 text-fuchsia-200" />
+                    <Icon className="h-5 w-5 text-violet-200" />
                     <div className="mt-5 text-sm font-bold leading-5">{feature.title}</div>
                     <div className="mt-2 line-clamp-2 text-xs leading-5 text-white/50">{feature.body}</div>
                   </div>
@@ -740,10 +740,10 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
           {page.features.map((feature) => (
             <article
               key={feature.title}
-              className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_70px_rgba(42,12,84,0.18)] transition hover:-translate-y-0.5 hover:border-fuchsia-300/25 hover:bg-white/[0.065]"
+              className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_70px_rgba(42,12,84,0.18)] transition hover:-translate-y-0.5 hover:border-violet-300/25 hover:bg-white/[0.065]"
             >
-              <div className="mb-4 grid h-10 w-10 place-items-center rounded-2xl border border-fuchsia-300/20 bg-fuchsia-300/10">
-                <Sparkles className="h-4 w-4 text-fuchsia-100" />
+              <div className="mb-4 grid h-10 w-10 place-items-center rounded-2xl border border-violet-300/20 bg-violet-300/10">
+                <Sparkles className="h-4 w-4 text-violet-100" />
               </div>
               <h2 className="text-base font-bold text-white">{feature.title}</h2>
               <p className="mt-2 text-sm leading-6 text-white/62">{feature.body}</p>
@@ -789,11 +789,11 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
                   key={item.title}
                   to={resolveCtaTo(item.to) as any}
                   search={resolveCtaSearch(item.to) as any}
-                  className="group rounded-2xl border border-white/10 bg-black/15 p-4 transition hover:-translate-y-0.5 hover:border-fuchsia-300/25 hover:bg-white/[0.06]"
+                  className="group rounded-2xl border border-white/10 bg-black/15 p-4 transition hover:-translate-y-0.5 hover:border-violet-300/25 hover:bg-white/[0.06]"
                 >
                   <div className="font-semibold">{item.title}</div>
                   <p className="mt-2 min-h-[3rem] text-sm leading-6 text-white/58">{item.body}</p>
-                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-fuchsia-200">
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-violet-200">
                     {item.label}
                     <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                   </span>
@@ -807,7 +807,7 @@ export function PublicInfoPage({ page }: { page: PublicInfoPageConfig }) {
           <section className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/[0.06]">
-                <HelpCircle className="h-4 w-4 text-fuchsia-100" />
+                <HelpCircle className="h-4 w-4 text-violet-100" />
               </div>
               <div>
                 <h2 className="text-xl font-bold">FAQ</h2>

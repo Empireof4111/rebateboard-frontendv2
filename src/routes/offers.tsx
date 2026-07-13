@@ -138,9 +138,9 @@ function PublicOffers() {
       <SiteHeader />
       <main className="container-app space-y-10 py-8 sm:py-9">
         {/* Hero */}
-        <header className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-fuchsia-500/20 via-violet-600/15 to-cyan-500/15 p-8 sm:p-12">
+        <header className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-500/20 via-violet-600/15 to-cyan-500/15 p-8 sm:p-12">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white">
-            <Sparkles className="h-3 w-3 text-fuchsia-300" /> Updated daily · Verified codes
+            <Sparkles className="h-3 w-3 text-violet-300" /> Updated daily · Verified codes
           </div>
           <h1 className="mt-4 text-3xl font-extrabold sm:text-5xl">Exclusive offers & promos</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70 sm:text-base">
@@ -196,7 +196,7 @@ function PublicOffers() {
               icon={Flame}
               title="Exclusive offers"
               subtitle="Negotiated by RebateBoard — only available here."
-              accent="bg-gradient-to-br from-fuchsia-500 to-pink-600"
+              accent="bg-gradient-to-br from-violet-500 to-violet-600"
             />
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {exclusive.map((o) => (
@@ -252,7 +252,7 @@ function PublicOffers() {
               <button
                 key={c}
                 onClick={() => setFilter(c)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === c ? "rb-gradient-primary text-white shadow-lg shadow-fuchsia-500/30" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === c ? "rb-gradient-primary text-white shadow-lg shadow-violet-500/30" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
               >
                 {c}{" "}
                 <span className="ml-1 text-[10px] text-white/40">

@@ -120,7 +120,7 @@ function RrControlCenter() {
         {(["overview", "earn", "tiers", "caps", "social", "streaks", "spend", "claims", "ledger"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 transition ${
-              tab === t ? "rb-gradient-primary text-white ring-fuchsia-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
+              tab === t ? "rb-gradient-primary text-white ring-violet-400/40" : "bg-white/5 text-muted-foreground ring-white/10 hover:text-white"
             }`}
           >
             {t === "claims" && (stats?.pendingClaims ?? 0) > 0 ? `Claims (${stats!.pendingClaims})` : t}
@@ -153,8 +153,8 @@ const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n
 
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4 flex items-start gap-2 rounded-xl bg-fuchsia-500/10 px-3 py-2 text-[11px] text-fuchsia-100 ring-1 ring-fuchsia-400/20">
-      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+    <div className="mb-4 flex items-start gap-2 rounded-xl bg-violet-500/10 px-3 py-2 text-[11px] text-violet-100 ring-1 ring-violet-400/20">
+      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />
       <span>{children}</span>
     </div>
   );
@@ -191,7 +191,7 @@ function NumField({ label, value, onChange, min = 0, max, step = 1, suffix }: { 
   return (
     <label className="flex flex-col items-center gap-1">
       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-      <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-fuchsia-400/30 text-fuchsia-200">
+      <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-violet-400/30 text-violet-200">
         <input type="number" min={min} max={max} step={step} value={value}
           onChange={(e) => onChange(Math.max(min, max !== undefined ? Math.min(max, Number(e.target.value) || 0) : Number(e.target.value) || 0))}
           className="w-20 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none" />
@@ -206,7 +206,7 @@ function LabeledInput({ label, value, onChange }: { label: string; value: string
     <label className="block">
       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <input value={value} onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 w-full rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40" />
+        className="mt-0.5 w-full rounded-md bg-black/30 px-2 py-1 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40" />
     </label>
   );
 }
@@ -247,11 +247,11 @@ function OverviewPanel({ stats, config }: { stats: RrStats | null; config: RrAll
 
       <Panel title="How it works">
         <ol className="space-y-2 text-sm text-white/85">
-          <li><b className="text-fuchsia-300">Earn</b> — recurring actions (trade log, review, course) auto-credit RR using rates you set.</li>
-          <li><b className="text-fuchsia-300">Social tasks</b> — one-time follow/subscribe rewards. Users submit handle/email; you approve in Claims.</li>
-          <li><b className="text-fuchsia-300">Spend</b> — what RR can be redeemed for and at what cost.</li>
-          <li><b className="text-fuchsia-300">Ledger</b> — every credit/debit traced back to a user.</li>
-          <li><b className="text-fuchsia-300">Analytics</b> — circulating supply, earned vs redeemed, conversion rates.</li>
+          <li><b className="text-violet-300">Earn</b> — recurring actions (trade log, review, course) auto-credit RR using rates you set.</li>
+          <li><b className="text-violet-300">Social tasks</b> — one-time follow/subscribe rewards. Users submit handle/email; you approve in Claims.</li>
+          <li><b className="text-violet-300">Spend</b> — what RR can be redeemed for and at what cost.</li>
+          <li><b className="text-violet-300">Ledger</b> — every credit/debit traced back to a user.</li>
+          <li><b className="text-violet-300">Analytics</b> — circulating supply, earned vs redeemed, conversion rates.</li>
         </ol>
       </Panel>
     </div>
@@ -374,7 +374,7 @@ function TiersPanel({ tiers, saving, onSave, onReset }: { tiers: RrTier[]; savin
             <div className="mt-3">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Perks (one per line)</div>
               <textarea value={t.perks.join("\n")} onChange={(e) => update(t.id, { perks: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })}
-                className="mt-1 w-full rounded-md bg-black/30 p-2 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-fuchsia-400/40" rows={3} />
+                className="mt-1 w-full rounded-md bg-black/30 p-2 text-xs text-white ring-1 ring-white/10 outline-none focus:ring-violet-400/40" rows={3} />
             </div>
           </div>
         ))}
@@ -426,7 +426,7 @@ function CapsPanel({ caps, saving, onSave, onReset }: { caps: RrCaps; saving: bo
               <td>
                 <input type="number" min={0} value={draft.dailyActionLimit[id] ?? 0}
                   onChange={(e) => setDraft((d) => ({ ...d, dailyActionLimit: { ...d.dailyActionLimit, [id]: Math.max(0, Number(e.target.value) || 0) } }))}
-                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none" />
+                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-violet-200 ring-1 ring-violet-400/30 outline-none" />
               </td>
             </tr>
           ))}
@@ -487,7 +487,7 @@ function SocialRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSocialR
 
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Reward (one-time)</span>
-                <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-fuchsia-400/30 text-fuchsia-200">
+                <div className="flex items-center rounded-lg bg-black/30 ring-1 ring-violet-400/30 text-violet-200">
                   <input type="number" min={0} value={r.reward} disabled={!r.enabled}
                     onChange={(e) => update(r.id, { reward: Math.max(0, Number(e.target.value) || 0) })}
                     className="w-16 bg-transparent px-2 py-1.5 text-center font-mono text-sm font-bold outline-none disabled:cursor-not-allowed" />
@@ -572,7 +572,7 @@ function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRul
             </td>
             <td>
               <input type="number" min={0} max={4} value={r.tierGate ?? 0} onChange={(e) => update(r.id, { tierGate: Number(e.target.value) || null })}
-                className="w-16 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-xs font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none" />
+                className="w-16 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-xs font-bold text-violet-200 ring-1 ring-violet-400/30 outline-none" />
             </td>
             <td>
               <input type="number" min={0} value={r.stock ?? 0} placeholder="∞" onChange={(e) => update(r.id, { stock: Number(e.target.value) > 0 ? Number(e.target.value) : null })}
@@ -699,7 +699,7 @@ function StreaksPanel({ cfg, stats, saving, onSave, onReset }: { cfg: RrStreakCo
               </td>
               <td>
                 <input type="number" min={0} value={m.reward} onChange={(e) => updateMilestone(m.id, { reward: Math.max(0, Number(e.target.value) || 0) })}
-                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/30 outline-none" />
+                  className="w-24 rounded-md bg-black/30 px-2 py-1 text-right font-mono text-sm font-bold text-violet-200 ring-1 ring-violet-400/30 outline-none" />
               </td>
               <td>{m.enabled ? <Pill tone="good">enabled</Pill> : <Pill tone="neutral">disabled</Pill>}</td>
               <td className="text-right">
@@ -840,7 +840,7 @@ function ClaimsPanel({ socialRules }: { socialRules: RrSocialRule[] }) {
               <tr key={c.id}>
                 <td>
                   <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-fuchsia-300" />
+                    <Icon className="h-4 w-4 text-violet-300" />
                     <span className="font-semibold text-white">{rule?.label ?? c.socialId}</span>
                   </div>
                 </td>
@@ -848,7 +848,7 @@ function ClaimsPanel({ socialRules }: { socialRules: RrSocialRule[] }) {
                 <td>
                   <span className="font-mono text-xs text-white/85">{c.proof}</span>
                   {rule?.url && (
-                    <a href={rule.url} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center text-[10px] text-fuchsia-300">
+                    <a href={rule.url} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center text-[10px] text-violet-300">
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -956,7 +956,7 @@ function LedgerPanel() {
               <tr key={u.id}>
                 <td className="font-mono text-xs">#{u.id}</td>
                 <td className="font-semibold">{u.name ?? u.emailAddress ?? "—"}</td>
-                <td className="font-mono font-bold text-fuchsia-300">{Number(u.rrBalance ?? 0).toLocaleString()} RR</td>
+                <td className="font-mono font-bold text-violet-300">{Number(u.rrBalance ?? 0).toLocaleString()} RR</td>
               </tr>
             ))}
             {(data?.topUsers ?? []).length === 0 && (

@@ -384,7 +384,7 @@ export function tbiStateTone(state: TbiState) {
 export function tbiConfidenceTone(confidence: TbiConfidence) {
   if (confidence === "High") return "text-emerald-300";
   if (confidence === "Medium") return "text-sky-300";
-  return "text-fuchsia-300";
+  return "text-violet-300";
 }
 
 export function tbiLabelTone(label: string) {

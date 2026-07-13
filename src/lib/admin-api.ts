@@ -760,7 +760,7 @@ function mapAdvert(raw: any): DashboardAd {
     cta,
     href,
     videoUrl: firstText(meta.videoUrl, raw.videoUrl, looksLikeAdHref(action) ? action : ""),
-    accent: meta.accent ?? "from-violet-500 to-fuchsia-600",
+    accent: meta.accent ?? "from-violet-500 to-violet-600",
     thumbnail,
     image: thumbnail,
     slides: Array.isArray(meta.slides) ? meta.slides.map(normalizeAdvertSlide) : [],

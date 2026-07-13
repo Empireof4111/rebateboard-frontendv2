@@ -41,9 +41,9 @@ export const Route = createFileRoute("/superadmin/analytics")({
 });
 
 const COLORS = [
-  "#d946ef",
-  "#a855f7",
-  "#8b5cf6",
+  "#7e4dff",
+  "#7e4dff",
+  "#7e4dff",
   "#6366f1",
   "#3b82f6",
   "#06b6d4",
@@ -213,8 +213,8 @@ function AnalyticsPage() {
               >
                 <defs>
                   <linearGradient id="gSignups" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#d946ef" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#7e4dff" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#7e4dff" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gCompleted" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.55} />
@@ -253,7 +253,7 @@ function AnalyticsPage() {
                 <Area
                   type="monotone"
                   dataKey="signups"
-                  stroke="#d946ef"
+                  stroke="#7e4dff"
                   strokeWidth={2}
                   fill="url(#gSignups)"
                   name="Signups"

@@ -55,7 +55,7 @@ export function BrandPicker({
         >
           {value ? (
             <span className="inline-flex items-center gap-2">
-              {value.custom && <span className="rounded bg-fuchsia-500/30 px-1.5 py-0.5 text-[9px] font-bold text-fuchsia-200">CUSTOM</span>}
+              {value.custom && <span className="rounded bg-violet-500/30 px-1.5 py-0.5 text-[9px] font-bold text-violet-200">CUSTOM</span>}
               {value.name}
               {value.category && <span className="text-[11px] text-muted-foreground">· {value.category}</span>}
             </span>
@@ -111,15 +111,15 @@ export function BrandPicker({
                   <button
                     type="button"
                     onClick={() => { onChange(makeCustomBrand(q)); setOpen(false); setQ(""); }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white transition hover:bg-fuchsia-500/10"
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white transition hover:bg-violet-500/10"
                   >
-                    <span className="grid h-6 w-6 place-items-center rounded-md bg-fuchsia-500/20 text-fuchsia-200">
+                    <span className="grid h-6 w-6 place-items-center rounded-md bg-violet-500/20 text-violet-200">
                       <Plus className="h-3.5 w-3.5" />
                     </span>
                     <span className="flex-1 text-left">
                       Create custom brand <span className="font-semibold">"{q.trim()}"</span>
                     </span>
-                    <Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />
+                    <Sparkles className="h-3.5 w-3.5 text-violet-300" />
                   </button>
                 </li>
               )}

@@ -290,13 +290,10 @@ export function SuperadminLayout() {
         <div className={`flex h-16 items-center justify-between border-b border-white/5 px-4 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
           <Link to="/" className={`flex min-w-0 items-center gap-2 ${sidebarCollapsed ? "lg:justify-center" : ""}`}>
             <Logo heightClass="h-9" iconOnly={sidebarCollapsed} />
-            <span className={`rounded-full rb-gradient-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-              ADMIN
-            </span>
           </Link>
           <button
             onClick={() => setSidebarCollapsed((value) => !value)}
-            className="hidden h-9 w-9 place-items-center rounded-xl text-fuchsia-100 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
+            className="hidden h-9 w-9 place-items-center rounded-xl text-violet-100 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:grid"
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!sidebarCollapsed}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -376,8 +373,8 @@ export function SuperadminLayout() {
                               : "text-muted-foreground hover:bg-white/5 hover:text-white"
                           } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
                         >
-                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" aria-hidden />}
-                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-fuchsia-400" : "group-hover:text-white/90"}`} />
+                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-violet-400 to-violet-500" aria-hidden />}
+                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-violet-400" : "group-hover:text-white/90"}`} />
                           <span className={`flex-1 truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>{item.label}</span>
                           {(item.to === "/superadmin/Bug-bounty" ? bugBountyOpenCount : item.badge) && (
                             <span className={`rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/10 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
@@ -437,14 +434,14 @@ export function SuperadminLayout() {
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               </span>
               <Link to="/" className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
-                <Sparkles className="h-3.5 w-3.5 text-fuchsia-400" /> Exit admin
+                <Sparkles className="h-3.5 w-3.5 text-violet-400" /> Exit admin
               </Link>
               <label className="hidden items-center gap-1.5 md:inline-flex" title="Preview the dashboard as this role">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Acting as</span>
                 <select
                   value={activeRoleId}
                   onChange={(e) => { setActiveRoleId(e.target.value); toast.success(`Now acting as ${roles.find((r) => r.id === e.target.value)?.name}`); }}
-                  className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-semibold text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
+                  className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-semibold text-white focus:outline-none focus:ring-2 focus:ring-violet-400/40"
                 >
                   {roles.filter((r) => r.status === "active").map((r) => (
                     <option key={r.id} value={r.id} className="bg-[var(--rb-bg-elevated)]">{r.name}</option>
