@@ -228,7 +228,7 @@ export function LandingHeroAdCard({
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+          <div className="absolute bottom-2 left-1/2 hidden -translate-x-1/2 gap-1.5 sm:flex">
             {slides.map((slide, j) => (
               <button
                 key={`${slide.ad.id}-${j}`}
@@ -261,7 +261,7 @@ function LandingHeroAdSkeleton({ className = "" }: { className?: string }) {
           <div className="mt-2 h-3 w-2/5 animate-pulse rounded-full bg-white/10" />
         </div>
       </div>
-      <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+      <div className="absolute bottom-2 left-1/2 hidden -translate-x-1/2 gap-1.5 sm:flex">
         <span className="h-1 w-6 rounded-full bg-white/30" />
         <span className="h-1 w-1.5 rounded-full bg-white/16" />
         <span className="h-1 w-1.5 rounded-full bg-white/16" />

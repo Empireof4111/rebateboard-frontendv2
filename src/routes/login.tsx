@@ -73,7 +73,19 @@ function LoginPage() {
       <div className="glow-orb right-[-10%] bottom-[5%] h-[500px] w-[500px]" />
 
       <div className="container-app relative z-10 flex min-h-screen max-w-6xl items-center justify-center py-10">
-        <div className="grid w-full gap-8 lg:grid-cols-2 lg:gap-16">
+        <div className="grid w-full gap-5 lg:grid-cols-2 lg:gap-16">
+          <div className="flex items-center justify-between gap-3 lg:hidden">
+            <Link to="/" className="inline-flex items-center" aria-label="RebateBoard home">
+              <Logo heightClass="h-10" />
+            </Link>
+            <Link
+              to="/"
+              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/72 transition hover:border-violet-300/30 hover:text-white"
+            >
+              &larr; {t("auth.home")}
+            </Link>
+          </div>
+
           <div className="hidden flex-col justify-center lg:flex">
             <Link to="/" className="mb-3 inline-flex items-center gap-3" aria-label="RebateBoard home">
               <Logo heightClass="h-11" />
