@@ -375,9 +375,8 @@
   }
   .mobile-navigation-drawer {
     background:
-      radial-gradient(circle at 94% 8%, rgba(90, 34, 241, 0.14), transparent 34%),
-      radial-gradient(circle at 22% 88%, rgba(43, 13, 107, 0.16), transparent 38%),
-      linear-gradient(180deg, rgba(14, 14, 20, 0.98), rgba(9, 9, 13, 0.98));
+      radial-gradient(circle at 96% 8%, rgba(90, 34, 241, 0.08), transparent 34%),
+      linear-gradient(180deg, rgba(12, 12, 18, 0.985), rgba(9, 9, 13, 0.99));
     border-left: 1px solid rgba(126, 77, 255, 0.2);
     box-shadow:
       inset 1px 0 0 rgba(255, 255, 255, 0.055),
@@ -385,9 +384,9 @@
   }
   .mobile-navigation-drawer::before {
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 22%),
-      radial-gradient(circle at 100% 0%, rgba(126, 77, 255, 0.08), transparent 42%);
-    opacity: 0.38;
+      linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 22%),
+      radial-gradient(circle at 100% 0%, rgba(126, 77, 255, 0.045), transparent 42%);
+    opacity: 0.24;
   }
   .site-header-glass {
     position: relative;

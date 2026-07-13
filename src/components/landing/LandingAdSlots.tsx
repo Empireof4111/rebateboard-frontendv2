@@ -177,30 +177,32 @@ export function LandingHeroAdCard({
 
   return (
     <div
-      className={`glass-strong relative min-h-[18rem] overflow-hidden rounded-[2rem] sm:min-h-[20rem] ${className}`}
+      className={`glass-strong relative overflow-hidden rounded-[2rem] sm:min-h-[20rem] ${className}`}
     >
-      {image ? (
-        <>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(90,34,241,0.16),transparent_44%),#09090d]" />
-          <img
-            key={image}
-            src={image}
-            alt={current?.label ?? "Featured"}
-            className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300 sm:object-cover"
-            width={1024}
-            height={640}
-          />
-        </>
-      ) : (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(126,77,255,0.26),transparent_34%),linear-gradient(135deg,rgba(22,18,34,0.92),rgba(9,9,13,0.96))]" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#10051f]/42 via-transparent to-black/5" />
+      <div className="relative h-[18rem] overflow-hidden sm:absolute sm:inset-0 sm:h-full">
+        {image ? (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(90,34,241,0.16),transparent_44%),#09090d]" />
+            <img
+              key={image}
+              src={image}
+              alt={current?.label ?? "Featured"}
+              className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300 sm:object-cover"
+              width={1024}
+              height={640}
+            />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(126,77,255,0.26),transparent_34%),linear-gradient(135deg,rgba(22,18,34,0.92),rgba(9,9,13,0.96))]" />
+        )}
+      </div>
+      <div className="absolute inset-0 hidden bg-gradient-to-t from-[#10051f]/42 via-transparent to-black/5 sm:block" />
       {hasCampaign && (
-        <div className="absolute inset-x-3 bottom-3 sm:inset-x-4 sm:bottom-4">
+        <div className="relative z-10 mx-3 mb-3 sm:absolute sm:inset-x-4 sm:bottom-4 sm:mx-0 sm:mb-0">
           <Link
             to={current.href}
             onClick={() => trackAdClick(current.ad)}
-            className="block rounded-2xl border border-white/14 bg-[rgba(9,9,13,0.24)] px-3.5 py-2.5 text-left shadow-[0_8px_24px_rgba(7,2,18,0.16)] backdrop-blur-md transition hover:bg-[rgba(9,9,13,0.32)] sm:px-4 sm:py-3"
+            className="block rounded-2xl border border-white/14 bg-[rgba(9,9,13,0.72)] px-3.5 py-2.5 text-left shadow-[0_8px_24px_rgba(7,2,18,0.16)] backdrop-blur-md transition hover:bg-[rgba(9,9,13,0.8)] sm:bg-[rgba(9,9,13,0.24)] sm:px-4 sm:py-3 sm:hover:bg-[rgba(9,9,13,0.32)]"
           >
             <p className="line-clamp-2 max-w-[92%] text-sm font-semibold leading-snug text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.85)] sm:text-base">
               {label}
@@ -209,8 +211,8 @@ export function LandingHeroAdCard({
         </div>
       )}
       {!hasCampaign && (
-        <div className="absolute inset-x-3 bottom-3 sm:inset-x-4 sm:bottom-4">
-          <div className="rounded-2xl border border-white/14 bg-[rgba(9,9,13,0.24)] px-3.5 py-2.5 shadow-[0_8px_24px_rgba(7,2,18,0.16)] backdrop-blur-md sm:px-4 sm:py-3">
+        <div className="relative z-10 mx-3 mb-3 sm:absolute sm:inset-x-4 sm:bottom-4 sm:mx-0 sm:mb-0">
+          <div className="rounded-2xl border border-white/14 bg-[rgba(9,9,13,0.72)] px-3.5 py-2.5 shadow-[0_8px_24px_rgba(7,2,18,0.16)] backdrop-blur-md sm:bg-[rgba(9,9,13,0.24)] sm:px-4 sm:py-3">
             <p className="text-sm font-semibold text-white">Featured placement ready</p>
           </div>
         </div>
@@ -220,14 +222,14 @@ export function LandingHeroAdCard({
           <button
             aria-label="Previous slide"
             onClick={() => setI((x) => (x - 1 + slides.length) % slides.length)}
-            className="absolute left-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60"
+            className="absolute left-2 top-[9rem] grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60 sm:top-1/2"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             aria-label="Next slide"
             onClick={() => setI((x) => (x + 1) % slides.length)}
-            className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60"
+            className="absolute right-2 top-[9rem] grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60 sm:top-1/2"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

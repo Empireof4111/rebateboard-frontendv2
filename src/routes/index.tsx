@@ -953,7 +953,7 @@ function HomepageVideoSlider() {
         </a>
       </div>
       {videos.length > 1 && (
-        <div className="flex justify-center gap-1.5 pb-3">
+        <div className="hidden justify-center gap-1.5 pb-3 sm:flex">
           {videos.map((video, index) => (
             <button
               type="button"

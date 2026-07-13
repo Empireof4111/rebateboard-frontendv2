@@ -636,7 +636,7 @@ function MobileNavigationDrawer({
         }`}
       />
       <aside
-        className={`navigation-glass-panel mobile-navigation-drawer absolute right-0 top-0 flex h-full w-[min(24rem,92vw)] max-w-[calc(100vw-0.75rem)] flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300 ${
+        className={`navigation-glass-panel mobile-navigation-drawer fixed inset-y-0 left-auto right-0 flex h-dvh w-full max-w-full flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300 sm:w-[min(24rem,92vw)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
