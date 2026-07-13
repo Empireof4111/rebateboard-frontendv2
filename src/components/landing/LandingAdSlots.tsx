@@ -180,14 +180,17 @@ export function LandingHeroAdCard({
       className={`glass-strong relative min-h-[18rem] overflow-hidden rounded-[2rem] sm:min-h-[20rem] ${className}`}
     >
       {image ? (
-        <img
-          key={image}
-          src={image}
-          alt={current?.label ?? "Featured"}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-          width={1024}
-          height={640}
-        />
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(90,34,241,0.16),transparent_44%),#09090d]" />
+          <img
+            key={image}
+            src={image}
+            alt={current?.label ?? "Featured"}
+            className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300 sm:object-cover"
+            width={1024}
+            height={640}
+          />
+        </>
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(126,77,255,0.26),transparent_34%),linear-gradient(135deg,rgba(22,18,34,0.92),rgba(9,9,13,0.96))]" />
       )}
