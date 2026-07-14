@@ -1011,6 +1011,13 @@ function ClaimCashbackModal({
   };
   const proof = cb.proofRequired;
   const proofNeeded = target !== "rr-wallet" || cb.requiresManualClaim;
+  const amountUnit = target === "rr-wallet" ? "RR" : "USD";
+  const targetHelp =
+    target === "rr-wallet"
+      ? "RR payout — points are reviewed and credited to your Rebate Rewards balance."
+      : target === "broker-wallet"
+      ? "Broker payout — availability depends on partner support and proof."
+      : "Cash payout — proof required.";
 
   const onFile = async (fl: FileList | null) => {
     if (!fl) return;
@@ -1054,9 +1061,10 @@ function ClaimCashbackModal({
         purchaseSessionReference: purchaseContext?.purchaseSessionReference || undefined,
         type: "Cashback",
         amount: amt,
+        amountCurrency: amountUnit,
         evidenceUrls: files,
         payoutTarget: target,
-        note: note.trim() || undefined,
+        note: [`Requested payout: ${formatPayoutTarget(target)} (${amountUnit})`, note.trim()].filter(Boolean).join(" · ") || undefined,
       });
       onSuccess();
       onClose();
@@ -1094,16 +1102,14 @@ function ClaimCashbackModal({
             <ChoiceChip active={target === "broker-wallet"} onClick={() => setTarget("broker-wallet")} icon={<Building2 className="h-3 w-3" />} label="Broker" disabled={!cb.supportsApiAuto} />
           </div>
           <div className="mt-1 text-[10px] text-muted-foreground">
-            {target === "rr-wallet" && !cb.requiresManualClaim
-              ? "Auto-credited if you used our affiliate link — no proof needed."
-              : "Cash payout — proof required."}
+            {targetHelp}
           </div>
         </div>
 
         {/* Amount */}
         <div>
-          <label className="text-[11px] uppercase text-muted-foreground">Amount (USD)</label>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
+          <label className="text-[11px] uppercase text-muted-foreground">Amount ({amountUnit})</label>
+          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={amountUnit === "RR" ? "0" : "0.00"} inputMode="decimal" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/50" />
         </div>
 
         {/* Proof fields (only when needed) */}

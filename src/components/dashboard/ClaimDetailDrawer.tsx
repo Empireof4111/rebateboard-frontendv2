@@ -8,6 +8,17 @@ const targetLabel: Record<string, string> = {
   "revete-wallet": "RebateBoard Wallet (USD)",
 };
 
+function claimUnit(claim: Claim) {
+  return claim.amountCurrency?.toUpperCase?.() || (claim.payoutTarget === "rr-wallet" ? "RR" : "USD");
+}
+
+function formatClaimAmount(claim: Claim) {
+  const amount = Number(claim.amount || 0);
+  return claimUnit(claim) === "RR"
+    ? `${amount.toLocaleString()} RR`
+    : `$${amount.toFixed(2)}`;
+}
+
 export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: () => void }) {
   const isPaid = claim.status === "paid";
   const isApproved = claim.status === "approved" || isPaid;
@@ -39,7 +50,7 @@ export function ClaimDetailDrawer({ claim, onClose }: { claim: Claim; onClose: (
         <div className="mb-5 flex items-start justify-between">
           <div>
             <div className="text-xs uppercase tracking-wide text-white/50">Claim {claim.id}</div>
-            <h2 className="mt-1 text-xl font-bold text-white">{claim.partner} · ${claim.amount.toFixed(2)}</h2>
+            <h2 className="mt-1 text-xl font-bold text-white">{claim.partner} · {formatClaimAmount(claim)}</h2>
             <div className="mt-1 text-xs text-white/60">{claim.type} · Account {claim.accountId}</div>
           </div>
           <button onClick={onClose} className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>

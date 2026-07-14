@@ -284,8 +284,8 @@ function RewardsPage() {
               )}
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-4">
-              <StatCard label="Current Streak" value={streak.current ? `${streak.current} days` : "No Data Yet"} accent="primary" />
-              <StatCard label="Longest Streak" value={streak.longest ? `${streak.longest} days` : "No Data Yet"} accent="success" />
+              <StatCard label="Current Streak" value={streak.current ? `${streak.current} days` : "0 days"} accent="primary" />
+              <StatCard label="Longest Streak" value={streak.longest ? `${streak.longest} days` : "0 days"} accent="success" />
               <StatCard label="Today's Reward" value={nextMilestone ? `+${nextMilestone.reward} RR` : "Coming Soon"} accent="primary" />
               <StatCard label="Next Milestone" value={nextMilestone ? `${nextMilestone.days} days` : "Completed"} accent="primary" />
             </div>

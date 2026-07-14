@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 import { Facebook, Instagram, Linkedin, MessageCircle, Send, Twitter, Youtube } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useI18n } from "@/lib/i18n";
+import { subscribeToNewsletter } from "@/lib/newsletter";
 
 const socialLinks = [
   { label: "Telegram", href: "https://t.me/rebateboard", icon: Send },
@@ -41,6 +43,29 @@ type FooterColumn = {
 
 export function SiteFooter() {
   const { t } = useI18n();
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [newsletterMessage, setNewsletterMessage] = useState("");
+
+  async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNewsletterStatus("loading");
+    setNewsletterMessage("");
+
+    try {
+      const result = await subscribeToNewsletter(newsletterEmail, "Footer");
+      setNewsletterStatus("success");
+      setNewsletterMessage(
+        result.alreadySubscribed
+          ? "You are already on the RebateBoard newsletter."
+          : "You are subscribed. Watch your inbox for the next RebateBoard update.",
+      );
+      setNewsletterEmail("");
+    } catch (error) {
+      setNewsletterStatus("error");
+      setNewsletterMessage(error instanceof Error ? error.message : "Could not subscribe right now.");
+    }
+  }
 
   const footerColumns: FooterColumn[] = [
     {
@@ -128,19 +153,36 @@ export function SiteFooter() {
           </p>
           <form
             className="mx-auto mt-5 flex max-w-md flex-col gap-2 sm:flex-row"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleNewsletterSubmit}
           >
             <div className="glass-pill flex flex-1 items-center rounded-full px-4">
               <input
                 type="email"
+                value={newsletterEmail}
+                onChange={(event) => setNewsletterEmail(event.target.value)}
                 placeholder="Email address"
                 className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+                disabled={newsletterStatus === "loading"}
+                required
               />
             </div>
-            <button className="rounded-full rb-gradient-primary px-6 py-2 text-sm font-semibold">
-              Subscribe
+            <button
+              className="rounded-full rb-gradient-primary px-6 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={newsletterStatus === "loading"}
+            >
+              {newsletterStatus === "loading" ? "Subscribing..." : "Subscribe"}
             </button>
           </form>
+          {newsletterMessage && (
+            <p
+              className={`mx-auto mt-3 max-w-md text-xs ${
+                newsletterStatus === "error" ? "text-red-300" : "text-emerald-300"
+              }`}
+              role="status"
+            >
+              {newsletterMessage}
+            </p>
+          )}
         </div>
       </section>
 

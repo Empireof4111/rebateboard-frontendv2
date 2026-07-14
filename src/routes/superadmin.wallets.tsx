@@ -26,6 +26,7 @@ export const Route = createFileRoute("/superadmin/wallets")({
 });
 
 type Action = "credit" | "debit" | null;
+type WalletCreditUnit = "USD" | "RR";
 
 function WalletsPage() {
   const { token } = useAuth();
@@ -121,19 +122,23 @@ function WalletsPage() {
     amount: number,
     type: string,
     narration: string,
+    unit: WalletCreditUnit,
   ) => {
     if (!token) return;
     try {
-      await financeApi.adjustWallet(token, {
+      const body = {
         userId: w.userId,
         amount,
         type: mode === "credit" ? "CREDIT" : "DEBIT",
         narration: narration || `${type} by admin`,
-      });
+      };
+      if (unit === "RR") await financeApi.adjustRrBalance(token, body);
+      else await financeApi.adjustWallet(token, body);
       toast.success(
-        `${mode === "credit" ? "Credited" : "Debited"} $${amount} ${mode === "credit" ? "to" : "from"} ${w.user?.name ?? "user"}`,
+        `${mode === "credit" ? "Credited" : "Debited"} ${unit === "RR" ? `${amount} RR` : `$${amount}`} ${mode === "credit" ? "to" : "from"} ${w.user?.name ?? "user"}`,
       );
       loadWallets(0);
+      loadStats();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Action failed");
     }
@@ -303,7 +308,7 @@ function WalletsPage() {
                 </td>
                 <td className="font-mono text-amber-300">${Number(w.pending ?? 0).toFixed(2)}</td>
                 <td className="font-mono text-sky-300">
-                  ${Number(w.rr ?? w.earned ?? 0).toFixed(2)}
+                  {Number(w.balanceRR ?? w.rr ?? 0).toLocaleString()} RR
                 </td>
                 <td className="font-mono text-cyan-300">${Number(w.earned ?? 0).toFixed(2)}</td>
                 <td className="font-mono text-rose-300">${Number(w.withdrawn ?? 0).toFixed(2)}</td>
@@ -370,9 +375,9 @@ function WalletsPage() {
           wallet={acting.w}
           mode={acting.type}
           onClose={() => setActing((prev) => ({ ...prev, type: null }))}
-          onSubmit={({ amount, narration, type }) => {
+          onSubmit={({ amount, narration, type, unit }) => {
             if (!acting.w || !acting.type) return;
-            handleAdjust(acting.w, acting.type, amount, type, narration);
+            handleAdjust(acting.w, acting.type, amount, type, narration, unit);
             setActing((prev) => ({ ...prev, type: null }));
           }}
         />
@@ -458,17 +463,19 @@ function CreditDebitModal({
   wallet: Wallet;
   mode: "credit" | "debit";
   onClose: () => void;
-  onSubmit: (v: { amount: number; narration: string; type: string }) => void;
+  onSubmit: (v: { amount: number; narration: string; type: string; unit: WalletCreditUnit }) => void;
 }) {
   const [amount, setAmount] = useState(0);
+  const [unit, setUnit] = useState<WalletCreditUnit>("USD");
   const [type, setType] = useState(mode === "credit" ? "Manual Credit" : "Manual Debit");
   const [narration, setNarration] = useState("");
+  const unitLabel = unit === "RR" ? "RR" : "USD";
   return (
     <Modal
       open
       onClose={onClose}
       title={`${mode === "credit" ? "Credit" : "Debit"} ${wallet.user?.name ?? `User #${wallet.userId}`}`}
-      subtitle={`Account ${wallet.accountNumber} · balance $${Number(wallet.balance ?? 0).toFixed(2)}`}
+      subtitle={`Account ${wallet.accountNumber} · USD $${Number(wallet.balance ?? 0).toFixed(2)} · RR ${Number(wallet.balanceRR ?? wallet.rr ?? 0).toLocaleString()}`}
       size="md"
       footer={
         <>
@@ -484,23 +491,29 @@ function CreditDebitModal({
                 toast.error("Amount required");
                 return;
               }
-              onSubmit({ amount, narration: narration || `${type} by admin`, type });
+              onSubmit({ amount, narration: narration || `${type} by admin`, type, unit });
             }}
             className={`rounded-xl px-4 py-2 text-xs font-bold text-white ${mode === "credit" ? "bg-gradient-to-r from-emerald-500 to-emerald-600" : "bg-gradient-to-r from-rose-500 to-rose-600"}`}
           >
-            {mode === "credit" ? "Credit wallet" : "Debit wallet"}
+            {mode === "credit" ? `Credit ${unitLabel}` : `Debit ${unitLabel}`}
           </button>
         </>
       }
     >
       <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Amount (USD)">
+        <Field label="Balance type">
+          <select className={selectCls} value={unit} onChange={(e) => setUnit(e.target.value as WalletCreditUnit)}>
+            <option value="USD">USD wallet</option>
+            <option value="RR">RR balance</option>
+          </select>
+        </Field>
+        <Field label={`Amount (${unitLabel})`}>
           <input
             type="number"
             className={fieldCls}
             value={amount || ""}
             onChange={(e) => setAmount(Number(e.target.value))}
-            placeholder="0.00"
+            placeholder={unit === "RR" ? "0" : "0.00"}
           />
         </Field>
         <Field label="Type">

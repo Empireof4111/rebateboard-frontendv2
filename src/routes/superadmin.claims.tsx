@@ -64,6 +64,16 @@ function ClaimsPage() {
 
   const isAutoTarget = (t?: string) => t === "rr-wallet" || t === "rebate-wallet" || t === "revete-wallet";
 
+  const claimUnit = (claim: CashbackClaim) =>
+    claim.amountCurrency?.toUpperCase?.() || (claim.payoutTarget === "rr-wallet" ? "RR" : "USD");
+
+  const formatClaimAmount = (claim: CashbackClaim) => {
+    const amount = Number(claim.amount || 0);
+    return claimUnit(claim) === "RR"
+      ? `${amount.toLocaleString()} RR`
+      : `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   const filtered = useMemo(() =>
     filter === "all"
       ? claims
@@ -84,10 +94,10 @@ function ClaimsPage() {
             payoutMethod: c.payoutTarget === "rr-wallet" ? "RR ledger" : "Auto credit (RebateBoard wallet)",
             payoutTxRef: "auto",
           });
-          toast.success(`Approved & credited $${c.amount} to ${c.user?.name ?? "user"}`);
+          toast.success(`Approved & credited ${formatClaimAmount(c)} to ${c.user?.name ?? "user"}`);
         } else {
           await financeApi.updateClaimStatus(token, c.id, { status: "APPROVED" });
-          toast.success(`Approved — pay $${c.amount} via broker, then "Mark as paid"`);
+          toast.success(`Approved — pay ${formatClaimAmount(c)} via broker, then "Mark as paid"`);
         }
       } else if (action === "mark-paid") {
         await financeApi.updateClaimStatus(token, c.id, {
@@ -126,7 +136,12 @@ function ClaimsPage() {
         <StatCard label="Approved" value={stats ? String(stats.approved) : "—"} delta="awaiting payout" tone="flat" />
         <StatCard label="Paid" value={stats ? String(stats.paid) : "—"} delta="credited to user" tone="up" />
         <StatCard label="Rejected" value={stats ? String(stats.rejected) : "—"} delta="invalid" tone="down" />
-        <StatCard label="Total $" value={stats ? `$${Number(stats.totalAmountPaid).toLocaleString()}` : "—"} delta="across all paid" tone="flat" />
+        <StatCard
+          label="Paid totals"
+          value={stats ? `$${Number(stats.totalAmountPaidUSD ?? stats.totalAmountPaid).toLocaleString()} · ${Number(stats.totalAmountPaidRR ?? 0).toLocaleString()} RR` : "—"}
+          delta="USD and RR kept separate"
+          tone="flat"
+        />
       </div>
 
       <Toolbar>
@@ -152,7 +167,7 @@ function ClaimsPage() {
                 <td>{c.partner}</td>
                 <td className="font-mono text-xs">{c.accountId || "—"}</td>
                 <td>{c.type}</td>
-                <td className="font-mono text-emerald-300">${Number(c.amount).toLocaleString()}</td>
+                <td className="font-mono text-emerald-300">{formatClaimAmount(c)}</td>
                 <td>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${t.cls}`} title={t.note}>
                     {t.icon}{t.label}
@@ -194,8 +209,8 @@ function ClaimsPage() {
         title={
           confirm?.action === "approve"
             ? (isAutoTarget(confirm.c.payoutTarget)
-                ? `Approve & auto-credit $${confirm.c.amount}?`
-                : `Approve $${confirm.c.amount}? (manual payout)`)
+                ? `Approve & auto-credit ${formatClaimAmount(confirm.c)}?`
+                : `Approve ${formatClaimAmount(confirm.c)}? (manual payout)`)
             : `Reject claim #${confirm?.c.id}?`
         }
         message={
@@ -213,7 +228,7 @@ function ClaimsPage() {
       {confirm?.action === "mark-paid" && (
         <Modal open onClose={() => setConfirm(null)} title={`Mark #${confirm.c.id} as paid`} size="sm">
           <p className="mb-3 text-xs text-muted-foreground">
-            Confirms ${confirm.c.amount} was sent to {confirm.c.user?.name ?? "user"} for {confirm.c.partner}. The user's claim will flip to "paid".
+            Confirms {formatClaimAmount(confirm.c)} was sent to {confirm.c.user?.name ?? "user"} for {confirm.c.partner}. The user's claim will flip to "paid".
           </p>
           <div className="grid gap-3">
             <Field label="Payout method">
@@ -259,7 +274,7 @@ function ClaimsPage() {
               <Field label="Registered email"><input className={fieldCls} value={viewing.registeredEmail || "—"} readOnly /></Field>
               <Field label="Order / Receipt ID"><input className={fieldCls} value={viewing.orderId || "—"} readOnly /></Field>
               <Field label="Claim type"><input className={fieldCls} value={viewing.type} readOnly /></Field>
-              <Field label="Amount requested"><input className={fieldCls} value={`$${viewing.amount}`} readOnly /></Field>
+              <Field label="Amount requested"><input className={fieldCls} value={formatClaimAmount(viewing)} readOnly /></Field>
               <Field label="User chose payout to"><input className={fieldCls} value={t.label} readOnly /></Field>
               {viewing.note && <Field label="User / system note" span={2}><textarea rows={2} className={fieldCls} value={viewing.note} readOnly /></Field>}
             </div>

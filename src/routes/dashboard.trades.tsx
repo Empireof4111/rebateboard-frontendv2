@@ -64,9 +64,9 @@ function TradesPage() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Net PnL" value={`${totals.netPnl >= 0 ? "+" : ""}$${totals.netPnl.toFixed(2)}`} accent={totals.netPnl >= 0 ? "success" : "destructive"} trend={totals.netPnl >= 0 ? "up" : "down"} />
-        <StatCard label="Win rate" value={totals.totalTrades ? `${totals.winRate}%` : "Not Enough Activity"} accent="primary" />
-        <StatCard label="Average R" value={totals.totalTrades ? `${totals.averageR.toFixed(2)}R` : "Not Enough Activity"} accent="primary" />
-        <StatCard label="Plan adherence" value={totals.totalTrades ? `${totals.adherence}%` : "Not Enough Activity"} accent={totals.adherence >= 80 ? "success" : totals.adherence >= 50 ? "warning" : "destructive"} />
+        <StatCard label="Win rate" value={totals.totalTrades ? `${totals.winRate}%` : "0%"} accent="primary" />
+        <StatCard label="Average R" value={totals.totalTrades ? `${totals.averageR.toFixed(2)}R` : "0.00R"} accent="primary" />
+        <StatCard label="Plan adherence" value={totals.totalTrades ? `${totals.adherence}%` : "0%"} accent={totals.adherence >= 80 ? "success" : totals.adherence >= 50 ? "warning" : "destructive"} />
       </div>
 
       {plan.strategies.length === 0 && (

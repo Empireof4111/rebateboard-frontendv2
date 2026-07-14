@@ -28,6 +28,7 @@ type UIClaim = {
   accountId: string;
   type: string;
   amount: number;
+  amountCurrency?: string;
   evidence: number;
   evidenceUrls: string[];
   registeredEmail?: string;
@@ -61,6 +62,7 @@ function mapClaim(c: CashbackClaim): UIClaim {
     accountId: c.accountId ?? "",
     type: c.type,
     amount: Number(c.amount),
+    amountCurrency: c.amountCurrency || (c.payoutTarget === "rr-wallet" ? "RR" : "USD"),
     evidence: c.evidence,
     evidenceUrls: c.evidenceUrls ?? [],
     registeredEmail: c.registeredEmail,
@@ -120,6 +122,24 @@ function ClaimsPage() {
 
   const claims = useMemo(() => rawClaims.map(mapClaim), [rawClaims]);
 
+  const formatClaimAmount = (claim: UIClaim) => {
+    const unit = claim.amountCurrency?.toUpperCase() || (claim.payoutTarget === "rr-wallet" ? "RR" : "USD");
+    return unit === "RR" ? `${claim.amount.toLocaleString()} RR` : `$${claim.amount.toFixed(2)}`;
+  };
+
+  const formatAmountGroup = (items: UIClaim[]) => {
+    const usd = items
+      .filter((item) => (item.amountCurrency?.toUpperCase() || (item.payoutTarget === "rr-wallet" ? "RR" : "USD")) !== "RR")
+      .reduce((sum, item) => sum + item.amount, 0);
+    const rr = items
+      .filter((item) => (item.amountCurrency?.toUpperCase() || (item.payoutTarget === "rr-wallet" ? "RR" : "USD")) === "RR")
+      .reduce((sum, item) => sum + item.amount, 0);
+    const parts = [];
+    if (usd > 0) parts.push(`$${usd.toFixed(2)}`);
+    if (rr > 0) parts.push(`${rr.toLocaleString()} RR`);
+    return parts.join(" / ") || "$0.00";
+  };
+
   const brands = useMemo(() => Array.from(new Set(claims.map((c) => c.partner).filter(Boolean))).sort(), [claims]);
   const accountTypes = useMemo(() => Array.from(new Set(claims.map((c) => c.type).filter(Boolean))).sort(), [claims]);
   const filtered = useMemo(() => claims.filter((c) => {
@@ -139,11 +159,11 @@ function ClaimsPage() {
   }), [accountTypeFilter, brandFilter, claims, dateFilter, q, status]);
 
   const totals = useMemo(() => ({
-    pending: claims.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0),
+    pending: claims.filter((c) => c.status === "pending"),
     processing: claims.filter((c) => c.status === "processing").length,
     needsAction: claims.filter((c) => c.status === "needs_action").length,
-    approved: claims.filter((c) => c.status === "approved").reduce((s, c) => s + c.amount, 0),
-    paid: claims.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0),
+    approved: claims.filter((c) => c.status === "approved"),
+    paid: claims.filter((c) => c.status === "paid"),
     rejected: claims.filter((c) => c.status === "rejected").length,
     expired: claims.filter((c) => c.status === "expired").length,
   }), [claims]);
@@ -173,11 +193,11 @@ function ClaimsPage() {
       </header>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Pending" value={`$${totals.pending.toFixed(2)}`} tone="violet" />
+        <Stat label="Pending" value={formatAmountGroup(totals.pending)} tone="violet" />
         <Stat label="Processing" value={`${totals.processing}`} tone="sky" />
         <Stat label="Needs Action" value={`${totals.needsAction}`} tone="violet" />
-        <Stat label="Approved" value={`$${totals.approved.toFixed(2)}`} tone="sky" />
-        <Stat label="Paid" value={`$${totals.paid.toFixed(2)}`} tone="emerald" />
+        <Stat label="Approved" value={formatAmountGroup(totals.approved)} tone="sky" />
+        <Stat label="Paid" value={formatAmountGroup(totals.paid)} tone="emerald" />
         <Stat label="Rejected" value={`${totals.rejected}`} tone="rose" />
       </div>
 
@@ -294,7 +314,7 @@ function ClaimsPage() {
               </div>
               <div className="col-span-1 sm:col-span-2 text-white/70">{c.type}</div>
               <div className="col-span-1 sm:col-span-2 text-white/60 font-mono text-xs">{c.accountId || "—"}</div>
-              <div className="col-span-1 sm:col-span-2 text-right font-semibold text-white">${c.amount.toFixed(2)}</div>
+              <div className="col-span-1 sm:col-span-2 text-right font-semibold text-white">{formatClaimAmount(c)}</div>
               <div className="col-span-1 sm:col-span-2 text-white/50 text-xs">{c.submitted}</div>
               <div className="col-span-2 sm:col-span-1 sm:text-right">
                 <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${

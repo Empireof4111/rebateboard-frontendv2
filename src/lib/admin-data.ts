@@ -440,6 +440,7 @@ export type Claim = {
   accountId: string;
   type: "Cashback" | "Missing Trade" | "Manual Credit";
   amount: number;
+  amountCurrency?: "USD" | "RR" | string;
   evidence: number; // count of attachments
   evidenceUrls?: string[]; // proof images / data URLs
   invoiceUrl?: string;     // single primary invoice / screenshot

@@ -30,8 +30,8 @@ export function StatCard({
 }: { label: string; value: string; hint?: string; trend?: "up" | "down" | "neutral"; accent?: "primary" | "success" | "warning" | "destructive" }) {
   const normalizedValue = String(value ?? "").trim();
   const placeholderValues = new Set(["", "—", "--", "$0", "$0.00", "0.0"]);
-  const displayValue = placeholderValues.has(normalizedValue) ? "No Data Yet" : value;
-  const isPlaceholder = displayValue === "No Data Yet" || displayValue === "Coming Soon" || displayValue === "Awaiting Verification" || displayValue === "Not Enough Activity";
+  const displayValue = placeholderValues.has(normalizedValue) ? "0" : value;
+  const isPlaceholder = displayValue === "Coming Soon" || displayValue === "Awaiting Verification" || displayValue === "Start building";
   const trendColor = trend === "up" ? "text-success" : trend === "down" ? "text-destructive" : "text-muted-foreground";
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
   const accentRing = {

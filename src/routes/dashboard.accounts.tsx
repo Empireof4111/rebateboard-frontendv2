@@ -96,7 +96,7 @@ function TrtPage() {
           value={money(summary.net)}
           accent={summary.net >= 0 ? "success" : "destructive"}
           trend={summary.net >= 0 ? "up" : "down"}
-          hint={summary.txCount === 0 ? "No data yet" : `${summary.txCount} txns`}
+          hint={summary.txCount === 0 ? "Add income or expense" : `${summary.txCount} txns`}
         />
         <TrackerKpiCard
           label="Total spend"

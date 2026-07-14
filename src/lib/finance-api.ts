@@ -58,6 +58,7 @@ export type Wallet = {
   accountNumber: string;
   address: string;
   balance: number;
+  balanceRR?: number;
   prevBalance?: number;
   status: string;
   currency: string;
@@ -150,6 +151,7 @@ export type CashbackClaim = {
   purchaseSessionReference?: string;
   type: string;
   amount: number;
+  amountCurrency?: string;
   evidence: number;
   evidenceUrls?: string[];
   payoutTarget: string;
@@ -201,6 +203,8 @@ export type ClaimStats = {
   paid: number;
   rejected: number;
   totalAmountPaid: number;
+  totalAmountPaidUSD?: number;
+  totalAmountPaidRR?: number;
 };
 
 export type PartnerRequestRecord = {
@@ -422,6 +426,7 @@ export const financeApi = {
   // User: submit a cashback claim
   submitClaim(token: string, body: {
     partner: string; partnerCategory?: string; amount: number;
+    amountCurrency?: string;
     accountId?: string; registeredEmail?: string; orderId?: string;
     purchaseSessionReference?: string;
     evidenceUrls?: string[]; payoutTarget?: string; note?: string; type?: string;

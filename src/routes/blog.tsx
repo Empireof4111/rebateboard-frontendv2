@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Search,
   Clock,
@@ -13,6 +13,7 @@ import {
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { articleRouteId, fetchPublicBlogPosts, type BlogPost } from "@/lib/admin-api";
+import { subscribeToNewsletter } from "@/lib/newsletter";
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
@@ -43,6 +44,9 @@ export function BlogExperience({ embedded = false }: { embedded?: boolean }) {
   const [q, setQ] = useState("");
   const [tag, setTag] = useState("All");
   const [sort, setSort] = useState<"latest" | "popular">("latest");
+  const [edgeEmail, setEdgeEmail] = useState("");
+  const [edgeStatus, setEdgeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [edgeMessage, setEdgeMessage] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +68,26 @@ export function BlogExperience({ embedded = false }: { embedded?: boolean }) {
       cancelled = true;
     };
   }, []);
+
+  async function handleEdgeSubscribe(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setEdgeStatus("loading");
+    setEdgeMessage("");
+
+    try {
+      const result = await subscribeToNewsletter(edgeEmail, "Blog");
+      setEdgeStatus("success");
+      setEdgeMessage(
+        result.alreadySubscribed
+          ? "You are already subscribed to The Edge."
+          : "You are in. The next RebateBoard weekly edge will land in your inbox.",
+      );
+      setEdgeEmail("");
+    } catch (error) {
+      setEdgeStatus("error");
+      setEdgeMessage(error instanceof Error ? error.message : "Could not join right now.");
+    }
+  }
 
   const published = useMemo(() => items.filter((p) => p.status === "published"), [items]);
   const visibleTags = useMemo(() => {
@@ -247,15 +271,33 @@ export function BlogExperience({ embedded = false }: { embedded?: boolean }) {
                   The single email serious traders read. Payout shifts, firm changes, and one strong
                   setup. No fluff.
                 </p>
-                <form className="mt-4 flex gap-2" onSubmit={(e) => e.preventDefault()}>
+                <form className="mt-4 flex gap-2" onSubmit={handleEdgeSubscribe}>
                   <input
+                    type="email"
+                    value={edgeEmail}
+                    onChange={(event) => setEdgeEmail(event.target.value)}
                     placeholder="you@trader.com"
                     className="flex-1 rounded-xl bg-black/30 px-3 py-2 text-xs outline-none ring-1 ring-white/10 placeholder:text-white/40"
+                    disabled={edgeStatus === "loading"}
+                    required
                   />
-                  <button className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#0d0420]">
-                    Join
+                  <button
+                    className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#0d0420] disabled:cursor-not-allowed disabled:opacity-70"
+                    disabled={edgeStatus === "loading"}
+                  >
+                    {edgeStatus === "loading" ? "Joining..." : "Join"}
                   </button>
                 </form>
+                {edgeMessage && (
+                  <p
+                    className={`mt-3 text-xs ${
+                      edgeStatus === "error" ? "text-red-200" : "text-emerald-200"
+                    }`}
+                    role="status"
+                  >
+                    {edgeMessage}
+                  </p>
+                )}
               </div>
 
               <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">

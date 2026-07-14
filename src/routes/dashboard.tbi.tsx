@@ -39,14 +39,14 @@ function clampScore(value: number) {
 }
 
 function scoreLabel(score: number | null, activeSignals: number) {
-  if (score == null || activeSignals < 2) return "Not Enough Activity";
+  if (score == null || activeSignals < 2) return "Start building";
   if (score >= 8) return "Strong";
   if (score >= 6) return "Building";
   return "Needs Attention";
 }
 
 function formatScore(score: number | null, activeSignals: number) {
-  return score == null || activeSignals < 2 ? "Not Enough Activity" : `${score.toFixed(1)} / 10`;
+  return score == null || activeSignals < 2 ? "Pending activity" : `${score.toFixed(1)} / 10`;
 }
 
 function TraderTBIPage() {
@@ -177,9 +177,9 @@ function TraderTBIPage() {
                   </p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <StatCard label="Approved Reviews" value={approvedReviews.length ? String(approvedReviews.length) : "No Data Yet"} accent="primary" />
-                  <StatCard label="Linked Accounts" value={linkedAccountsCount ? String(linkedAccountsCount) : "No Data Yet"} accent="success" />
-                  <StatCard label="Journal Trades" value={trades.length ? String(trades.length) : "No Data Yet"} accent="primary" />
+                  <StatCard label="Approved Reviews" value={String(approvedReviews.length)} accent="primary" />
+                  <StatCard label="Linked Accounts" value={String(linkedAccountsCount)} accent="success" />
+                  <StatCard label="Journal Trades" value={String(trades.length)} accent="primary" />
                   <StatCard label="Trader Level" value={levelProgress.current.name} hint={`${levelProgress.rr.toLocaleString()} RR`} accent="primary" />
                 </div>
               </div>
@@ -217,7 +217,7 @@ function TraderTBIPage() {
                     </div>
                     <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>Score</span>
-                      <span className="font-semibold text-white">{signal.score == null ? "No Data Yet" : `${signal.score.toFixed(1)} / 10`}</span>
+                      <span className="font-semibold text-white">{signal.score == null ? "Pending activity" : `${signal.score.toFixed(1)} / 10`}</span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
                       <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-[width] duration-500" style={{ width: `${width}%` }} />
@@ -271,10 +271,10 @@ function TraderTBIPage() {
           <Panel title="Performance History">
             {trades.length || reviews.length || claimCount ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard label="Reviews Submitted" value={reviews.length ? String(reviews.length) : "No Data Yet"} accent="primary" />
-                <StatCard label="Proof-backed Reviews" value={proofBackedReviews.length ? String(proofBackedReviews.length) : "No Data Yet"} accent="success" />
-                <StatCard label="Cashback Claims" value={claimCount ? String(claimCount) : "No Data Yet"} accent="primary" />
-                <StatCard label="Plan Adherence" value={avgAdherence == null ? "No Data Yet" : `${Math.round(avgAdherence)}%`} accent="success" />
+                <StatCard label="Reviews Submitted" value={String(reviews.length)} accent="primary" />
+                <StatCard label="Proof-backed Reviews" value={String(proofBackedReviews.length)} accent="success" />
+                <StatCard label="Cashback Claims" value={String(claimCount)} accent="primary" />
+                <StatCard label="Plan Adherence" value={avgAdherence == null ? "Start building" : `${Math.round(avgAdherence)}%`} accent="success" />
               </div>
             ) : (
               <EmptyState

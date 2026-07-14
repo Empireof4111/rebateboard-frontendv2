@@ -132,13 +132,13 @@
   --rb-liquid-shadow: 0 18px 60px rgba(0, 0, 0, 0.4);
   --rb-liquid-blur: 24px;
   --rb-liquid-saturation: 145%;
-  --rb-header-glass-bg: linear-gradient(135deg, rgba(13, 12, 20, 0.86), rgba(7, 7, 11, 0.8));
-  --rb-header-glass-border: rgba(255, 255, 255, 0.135);
-  --rb-header-glass-highlight: rgba(255, 255, 255, 0.085);
+  --rb-header-glass-bg: linear-gradient(135deg, rgba(19, 16, 29, 0.78), rgba(7, 7, 11, 0.64));
+  --rb-header-glass-border: rgba(255, 255, 255, 0.16);
+  --rb-header-glass-highlight: rgba(255, 255, 255, 0.12);
   --rb-header-glass-violet: var(--rb-liquid-violet);
-  --rb-header-glass-shadow: 0 22px 72px rgba(0, 0, 0, 0.48);
-  --rb-header-blur: 46px;
-  --rb-header-lens-blur: 18px;
+  --rb-header-glass-shadow: 0 24px 78px rgba(0, 0, 0, 0.5);
+  --rb-header-blur: 56px;
+  --rb-header-lens-blur: 30px;
 
   --rb-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.22);
   --rb-shadow-card-hover: 0 18px 42px rgba(45, 18, 105, 0.2);
@@ -488,19 +488,20 @@
     isolation: isolate;
     overflow: hidden;
     background:
-      radial-gradient(circle at 20% 0%, rgba(126, 77, 255, 0.075), transparent 34%),
-      linear-gradient(135deg, rgba(13, 12, 20, 0.86), rgba(7, 7, 11, 0.8)),
-      rgba(8, 8, 12, 0.82);
+      radial-gradient(circle at 18% 0%, rgba(126, 77, 255, 0.11), transparent 36%),
+      radial-gradient(circle at 78% 8%, rgba(255, 255, 255, 0.045), transparent 28%),
+      var(--rb-header-glass-bg),
+      rgba(8, 8, 12, 0.68);
     border: 1px solid var(--rb-header-glass-border);
-    border-top-color: rgba(255, 255, 255, 0.18);
+    border-top-color: rgba(255, 255, 255, 0.23);
     box-shadow:
       inset 0 1px 0 var(--rb-header-glass-highlight),
-      inset 0 -1px 0 rgba(126, 77, 255, 0.09),
-      inset 0 0 42px rgba(255, 255, 255, 0.026),
+      inset 0 -1px 0 rgba(126, 77, 255, 0.12),
+      inset 0 0 46px rgba(255, 255, 255, 0.032),
       0 1px 0 rgba(255, 255, 255, 0.04),
       var(--rb-header-glass-shadow);
-    backdrop-filter: blur(var(--rb-header-blur)) saturate(130%) contrast(0.58) brightness(0.72);
-    -webkit-backdrop-filter: blur(var(--rb-header-blur)) saturate(130%) contrast(0.58) brightness(0.72);
+    backdrop-filter: blur(var(--rb-header-blur)) saturate(168%) contrast(0.42) brightness(0.74);
+    -webkit-backdrop-filter: blur(var(--rb-header-blur)) saturate(168%) contrast(0.42) brightness(0.74);
     transition:
       background var(--rb-motion-standard) var(--rb-ease-out),
       border-color var(--rb-motion-standard) var(--rb-ease-out),
@@ -515,12 +516,14 @@
     pointer-events: none;
     border-radius: inherit;
     background:
-      radial-gradient(ellipse 28% 72% at 18% 6%, rgba(255, 255, 255, 0.105), transparent 62%),
-      radial-gradient(ellipse 34% 82% at 64% 12%, rgba(126, 77, 255, 0.105), transparent 66%),
-      radial-gradient(ellipse 46% 90% at 92% 4%, rgba(255, 255, 255, 0.052), transparent 70%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%, rgba(5, 5, 8, 0.18));
-    opacity: 0.88;
-    filter: blur(10px);
+      linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 18% 72%, rgba(126, 77, 255, 0.065)),
+      radial-gradient(ellipse 38% 92% at 17% 2%, rgba(255, 255, 255, 0.12), transparent 64%),
+      radial-gradient(ellipse 44% 98% at 66% 10%, rgba(126, 77, 255, 0.13), transparent 66%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 22%, rgba(5, 5, 8, 0.24));
+    opacity: 0.92;
+    backdrop-filter: blur(calc(var(--rb-header-lens-blur) * 0.82)) saturate(155%) contrast(0.56) brightness(0.82);
+    -webkit-backdrop-filter: blur(calc(var(--rb-header-lens-blur) * 0.82)) saturate(155%) contrast(0.56) brightness(0.82);
+    mix-blend-mode: screen;
     transform: translate3d(0, 0, 0);
     animation: rb-header-liquid-drift 16s ease-in-out infinite alternate;
   }
@@ -532,14 +535,14 @@
     pointer-events: none;
     border-radius: inherit;
     background:
-      radial-gradient(ellipse 22% 120% at 13% 50%, rgba(255, 255, 255, 0.13), transparent 62%),
-      radial-gradient(ellipse 18% 120% at 42% 50%, rgba(126, 77, 255, 0.105), transparent 66%),
-      radial-gradient(ellipse 22% 120% at 76% 50%, rgba(255, 255, 255, 0.07), transparent 64%);
-    opacity: 0.34;
+      radial-gradient(ellipse 22% 120% at 13% 50%, rgba(255, 255, 255, 0.16), transparent 62%),
+      radial-gradient(ellipse 18% 120% at 42% 50%, rgba(126, 77, 255, 0.14), transparent 66%),
+      radial-gradient(ellipse 22% 120% at 76% 50%, rgba(255, 255, 255, 0.085), transparent 64%);
+    opacity: 0.46;
     mix-blend-mode: screen;
-    filter: blur(16px);
-    backdrop-filter: blur(var(--rb-header-lens-blur)) saturate(150%) contrast(0.72);
-    -webkit-backdrop-filter: blur(var(--rb-header-lens-blur)) saturate(150%) contrast(0.72);
+    filter: blur(14px);
+    backdrop-filter: blur(var(--rb-header-lens-blur)) saturate(180%) contrast(0.44) brightness(0.86);
+    -webkit-backdrop-filter: blur(var(--rb-header-lens-blur)) saturate(180%) contrast(0.44) brightness(0.86);
     mask-image:
       radial-gradient(ellipse 24% 90% at 14% 50%, #000 0 44%, transparent 72%),
       radial-gradient(ellipse 22% 90% at 43% 50%, #000 0 38%, transparent 70%),
@@ -555,16 +558,17 @@
   }
   [data-site-header="scrolled"] .site-header-glass {
     background:
-      radial-gradient(circle at 20% 0%, rgba(126, 77, 255, 0.07), transparent 34%),
-      linear-gradient(135deg, rgba(13, 12, 20, 0.9), rgba(7, 7, 11, 0.86)),
-      rgba(8, 8, 12, 0.88);
-    border-color: rgba(255, 255, 255, 0.155);
+      radial-gradient(circle at 18% 0%, rgba(126, 77, 255, 0.105), transparent 36%),
+      radial-gradient(circle at 78% 8%, rgba(255, 255, 255, 0.04), transparent 28%),
+      linear-gradient(135deg, rgba(17, 14, 25, 0.84), rgba(7, 7, 11, 0.74)),
+      rgba(8, 8, 12, 0.76);
+    border-color: rgba(255, 255, 255, 0.18);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.105),
-      inset 0 -1px 0 rgba(126, 77, 255, 0.105),
-      inset 0 0 46px rgba(255, 255, 255, 0.028),
-      0 24px 78px rgba(0, 0, 0, 0.54),
-      0 8px 26px rgba(45, 18, 105, 0.14);
+      inset 0 1px 0 rgba(255, 255, 255, 0.13),
+      inset 0 -1px 0 rgba(126, 77, 255, 0.12),
+      inset 0 0 48px rgba(255, 255, 255, 0.03),
+      0 26px 84px rgba(0, 0, 0, 0.56),
+      0 8px 28px rgba(45, 18, 105, 0.16);
   }
   .site-header-glass > * {
     position: relative;
@@ -716,8 +720,8 @@
     .site-header-glass,
     .navigation-glass-panel {
       --rb-liquid-blur: 18px;
-      --rb-header-blur: 18px;
-      --rb-header-lens-blur: 10px;
+      --rb-header-blur: 30px;
+      --rb-header-lens-blur: 18px;
     }
     .glow-orb {
       opacity: 0.48;

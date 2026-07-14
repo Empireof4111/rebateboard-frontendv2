@@ -25,13 +25,13 @@ function fmtUSD(n: number) {
 
 function displayMoney(value: number | null | undefined, hasActivity = true) {
   if (value === null || value === undefined) return "Preparing";
-  if (!hasActivity && Math.abs(Number(value)) < 0.01) return "No Data Yet";
+  if (!hasActivity && Math.abs(Number(value)) < 0.01) return "$0";
   return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 function displayCount(value: number | null | undefined, hasActivity = true) {
   if (value === null || value === undefined) return "Preparing";
-  if (!hasActivity && Number(value) === 0) return "No Data Yet";
+  if (!hasActivity && Number(value) === 0) return "0";
   return Number(value).toLocaleString();
 }
 
@@ -396,12 +396,12 @@ function DashboardHome() {
               ) : (
                 <li className="flex gap-2 rounded-lg bg-violet-500/10 p-2.5">
                   <Zap className="mt-0.5 h-4 w-4 shrink-0 text-violet-400" />
-                  <span className="text-white">Available wallet balance is <b>{summary && walletHasActivity ? fmtUSD(Number(summary.availableForWithdrawal)) : "No Data Yet"}</b>.</span>
+                  <span className="text-white">Available wallet balance is <b>{summary && walletHasActivity ? fmtUSD(Number(summary.availableForWithdrawal)) : "$0"}</b>.</span>
                 </li>
               )}
               <li className="flex gap-2 rounded-lg bg-primary/10 p-2.5">
                 <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
-                <span className="text-white">Current RR balance: <b>{Number(user?.rrBalance ?? 0) > 0 ? `${Math.round(user?.rrBalance ?? 0).toLocaleString()} RR` : "No Data Yet"}</b>.</span>
+                <span className="text-white">Current RR balance: <b>{Number(user?.rrBalance ?? 0) > 0 ? `${Math.round(user?.rrBalance ?? 0).toLocaleString()} RR` : "0 RR"}</b>.</span>
               </li>
               <li>
                 <Link to={"/dashboard/brands" as string} className="mt-1 inline-flex items-center gap-1 text-[11px] text-violet-300 hover:underline">
@@ -425,12 +425,12 @@ function DashboardHome() {
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
             <Users className="h-3.5 w-3.5" /> {t("dashboard.referrals")}
           </div>
-          <div className="mt-1 text-2xl font-bold text-white">{referralStats && referralStats.total > 0 ? referralStats.total : "No Data Yet"}</div>
+          <div className="mt-1 text-2xl font-bold text-white">{referralStats && referralStats.total > 0 ? referralStats.total : "0"}</div>
           <div className="text-[11px] text-muted-foreground">{t("dashboard.tradersReferred")}</div>
         </div>
         <div>
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("dashboard.thisMonth")}</div>
-          <div className="mt-1 text-2xl font-bold text-white">{referralStats && referralStats.thisMonth > 0 ? `+${referralStats.thisMonth}` : "No Data Yet"}</div>
+          <div className="mt-1 text-2xl font-bold text-white">{referralStats && referralStats.thisMonth > 0 ? `+${referralStats.thisMonth}` : "0"}</div>
           <div className="text-[11px] text-muted-foreground">{t("dashboard.newSignups")}</div>
         </div>
         <div className="flex items-end justify-end">
@@ -624,15 +624,15 @@ function DashboardHome() {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">Available</div>
-              <div className="mt-1 text-xl font-bold text-white">{dailyTaskBoard?.stats.total ? dailyTaskBoard.stats.total : "No Data Yet"}</div>
+              <div className="mt-1 text-xl font-bold text-white">{dailyTaskBoard?.stats.total ?? 0}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">Completed</div>
-              <div className="mt-1 text-xl font-bold text-emerald-300">{dailyTaskBoard?.stats.completedToday ? dailyTaskBoard.stats.completedToday : "No Data Yet"}</div>
+              <div className="mt-1 text-xl font-bold text-emerald-300">{dailyTaskBoard?.stats.completedToday ?? 0}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase text-muted-foreground">RR Claimed</div>
-              <div className="mt-1 text-xl font-bold text-violet-200">{dailyTaskBoard?.stats.rrClaimedToday ? dailyTaskBoard.stats.rrClaimedToday : "No Data Yet"}</div>
+              <div className="mt-1 text-xl font-bold text-violet-200">{dailyTaskBoard?.stats.rrClaimedToday ? `${dailyTaskBoard.stats.rrClaimedToday} RR` : "0 RR"}</div>
             </div>
           </div>
           <div className="mt-4 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/80">
