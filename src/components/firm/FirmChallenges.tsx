@@ -523,7 +523,7 @@ function ChallengeCard({
                 onClick={onBuy}
                 className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[11px] font-bold text-white transition hover:shadow-[0_0_20px_rgba(192,132,252,0.46)]"
               >
-                Start <ArrowRight className="h-3 w-3" />
+                Buy <ArrowRight className="h-3 w-3" />
               </button>
             </div>
 
@@ -560,7 +560,7 @@ function ChallengeCard({
               onClick={onBuy}
               className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-3 py-1.5 text-[11px] font-bold text-white transition hover:shadow-[0_0_20px_rgba(192,132,252,0.46)]"
             >
-              Start Challenge <ArrowRight className="h-3 w-3" />
+              Buy <ArrowRight className="h-3 w-3" />
             </button>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground ring-1 ring-white/10">
@@ -763,7 +763,7 @@ function CheckoutModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid animate-in place-items-center px-4 py-6 duration-200 fade-in">
+    <div className="fixed inset-0 z-[200] grid animate-in place-items-center px-4 py-6 duration-200 fade-in">
       <div className="absolute inset-0 bg-[rgba(8,8,12,0.80)] backdrop-blur-sm" onClick={onClose} />
       <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-violet-400/18 bg-[rgba(18,18,25,0.98)] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)] animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(90,34,241,0.12),transparent_34%),radial-gradient(circle_at_88%_18%,rgba(126,77,255,0.08),transparent_30%)]" />

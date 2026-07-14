@@ -16,7 +16,6 @@ import {
   Rocket,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
   Star,
   TrendingUp,
   UserCheck,
@@ -1086,16 +1085,22 @@ function RecommendationCard({ brand }: { brand: AdminBrandRecord }) {
 function FilterSidebar({
   groups,
   selected,
+  sortMode,
   openGroups,
+  totalCount,
   onToggleGroup,
   onToggleOption,
+  onSortChange,
   onClear,
 }: {
   groups: FilterGroup[];
   selected: Record<string, string[]>;
+  sortMode: SortMode;
   openGroups: Record<string, boolean>;
+  totalCount: number;
   onToggleGroup: (group: string) => void;
   onToggleOption: (group: string, option: string) => void;
+  onSortChange: (mode: SortMode) => void;
   onClear: () => void;
 }) {
   const count = selectedFilterCount(selected);
@@ -1115,6 +1120,28 @@ function FilterSidebar({
             <X className="h-3 w-3" /> Clear
           </button>
         )}
+      </div>
+      <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-2 text-xs font-black text-white">
+            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+            Sort listings
+          </div>
+          <span className="text-[10px] font-bold text-white/42">
+            {totalCount} {totalCount === 1 ? "brand" : "brands"}
+          </span>
+        </div>
+        <select
+          value={sortMode}
+          onChange={(event) => onSortChange(event.target.value as SortMode)}
+          className="h-10 w-full rounded-xl border border-white/10 bg-[rgba(17,17,24,0.88)] px-3 text-xs font-bold text-white outline-none focus:border-primary/55"
+          aria-label="Sort listings"
+        >
+          <option value="recommended" className="bg-[var(--rb-bg-input)]">Recommended</option>
+          <option value="recent" className="bg-[var(--rb-bg-input)]">Recently Added</option>
+          <option value="tbi" className="bg-[var(--rb-bg-input)]">Highest TBI</option>
+          <option value="name" className="bg-[var(--rb-bg-input)]">Brand Name</option>
+        </select>
       </div>
       {groups.map((group, index) => {
         const isOpen = openGroups[group.name] ?? index < 2;
@@ -1318,6 +1345,19 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
                 className="h-11 w-full rounded-full bg-white/[0.075] pl-10 pr-4 text-sm font-semibold text-white outline-none ring-1 ring-white/14 placeholder:text-white/34 focus:ring-primary/55"
               />
             </label>
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen((value) => !value)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white/[0.075] px-4 text-xs font-bold text-white ring-1 ring-white/14 lg:hidden"
+            >
+              <Filter className="h-3.5 w-3.5 text-primary" />
+              Filters
+              {selectedFilterCount(filters) > 0 && (
+                <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px]">
+                  {selectedFilterCount(filters)}
+                </span>
+              )}
+            </button>
             {comparedIds.length > 0 && (
               <Link
                 to="/compare"
@@ -1355,55 +1395,22 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
           </section>
         )}
 
-        <section className="relative mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setMobileFiltersOpen((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-full bg-white/[0.07] px-3 py-2 text-xs font-bold text-white ring-1 ring-white/12 lg:hidden"
-            >
-              <Filter className="h-3.5 w-3.5 text-primary" />
-              Filters
-              {selectedFilterCount(filters) > 0 && (
-                <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px]">
-                  {selectedFilterCount(filters)}
-                </span>
-              )}
-            </button>
-            <label className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 ring-1 ring-white/10">
-              <TrendingUp className="h-3.5 w-3.5 text-primary" />
-              <select
-                value={sortMode}
-                onChange={(event) => {
-                  setSortMode(event.target.value as SortMode);
-                  setVisibleCount(PAGE_SIZE);
-                }}
-                className="h-9 bg-transparent pr-1 text-xs font-bold text-white outline-none"
-                aria-label="Sort listings"
-              >
-                <option value="recommended" className="bg-[var(--rb-bg-input)]">Recommended</option>
-                <option value="recent" className="bg-[var(--rb-bg-input)]">Recently Added</option>
-                <option value="tbi" className="bg-[var(--rb-bg-input)]">Highest TBI</option>
-                <option value="name" className="bg-[var(--rb-bg-input)]">Brand Name</option>
-              </select>
-            </label>
-          </div>
-          <span className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/[0.055] px-3 py-2 text-[11px] font-semibold text-white/55 ring-1 ring-white/10 sm:w-auto">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-            {filteredBrands.length} {filteredBrands.length === 1 ? "brand" : "brands"}
-          </span>
-        </section>
-
         {mobileFiltersOpen && (
           <div className="relative mb-4 lg:hidden">
             <FilterSidebar
               groups={filterGroups}
               selected={filters}
+              sortMode={sortMode}
               openGroups={openGroups}
+              totalCount={filteredBrands.length}
               onToggleGroup={(group) =>
                 setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }))
               }
               onToggleOption={toggleFilter}
+              onSortChange={(mode) => {
+                setSortMode(mode);
+                setVisibleCount(PAGE_SIZE);
+              }}
               onClear={() => setFilters({})}
             />
           </div>
@@ -1417,11 +1424,17 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
               <FilterSidebar
                 groups={filterGroups}
                 selected={filters}
+                sortMode={sortMode}
                 openGroups={openGroups}
+                totalCount={filteredBrands.length}
                 onToggleGroup={(group) =>
                   setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }))
                 }
                 onToggleOption={toggleFilter}
+                onSortChange={(mode) => {
+                  setSortMode(mode);
+                  setVisibleCount(PAGE_SIZE);
+                }}
                 onClear={() => setFilters({})}
               />
             )}

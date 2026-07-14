@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Coins, Plus, RefreshCcw, Save, ShoppingCart, Trash2, Users } from "lucide-react";
+import { CheckCircle2, Coins, Plus, RefreshCcw, Save, ShoppingCart, Trash2, Users, XCircle } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
+import { useAuth } from "@/lib/auth";
+import { rrApi, type RrRedemptionClaim } from "@/lib/rr-api";
 import {
   deleteRrPurchasePackage,
   fetchRrPurchaseAdminBoard,
@@ -17,16 +19,23 @@ export const Route = createFileRoute("/superadmin/rr-purchases")({
 });
 
 function RrPurchasesPage() {
+  const { token } = useAuth();
   const [board, setBoard] = useState<RrPurchaseAdminBoard | null>(null);
+  const [accountClaims, setAccountClaims] = useState<RrRedemptionClaim[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reviewingClaimId, setReviewingClaimId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const payload = await fetchRrPurchaseAdminBoard();
+        const [payload, claimsRes] = await Promise.all([
+          fetchRrPurchaseAdminBoard(),
+          token ? rrApi.getRedemptionClaims(token, 0, 100, "all") : Promise.resolve(null),
+        ]);
         if (!cancelled) setBoard(payload);
+        if (!cancelled && claimsRes?.payload) setAccountClaims(claimsRes.payload.page);
       } catch (error) {
         if (!cancelled) toast.error(error instanceof Error ? error.message : "Failed to load RR purchases");
       } finally {
@@ -37,7 +46,7 @@ function RrPurchasesPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   const pricing = board?.pricing ?? {
     pricePerRr: 0.01,
@@ -156,6 +165,24 @@ function RrPurchasesPage() {
       toast.error(error instanceof Error ? error.message : "Unable to save RR pricing");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function reviewAccountClaim(claim: RrRedemptionClaim, status: "approved" | "fulfilled" | "rejected") {
+    if (!token) return;
+    const rejectionReason = status === "rejected" ? window.prompt("Why are we rejecting this account claim?") : undefined;
+    if (status === "rejected" && !rejectionReason) return;
+    try {
+      setReviewingClaimId(claim.id);
+      const result = await rrApi.reviewRedemptionClaim(token, claim.id, status, rejectionReason || undefined);
+      if (result.payload) {
+        setAccountClaims((current) => current.map((item) => (item.id === claim.id ? result.payload! : item)));
+      }
+      toast.success(`Account claim ${status}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update account claim");
+    } finally {
+      setReviewingClaimId(null);
     }
   }
 
@@ -379,6 +406,100 @@ function RrPurchasesPage() {
                     </td>
                     <td className="py-3 font-mono text-xs text-muted-foreground">{log.reference}</td>
                     <td className="py-3 text-muted-foreground">{new Date(log.when).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      <Panel title="RR account claims" action={<Pill tone="neutral">{accountClaims.length} requests</Pill>}>
+        {accountClaims.length === 0 ? (
+          <div className="grid gap-3 md:grid-cols-3">
+            <EmptyMetricCard
+              icon={ShoppingCart}
+              title="No account claims yet"
+              text="When traders reach an RR target and choose an eligible prop firm, the request will appear here."
+            />
+            <EmptyMetricCard
+              icon={Users}
+              title="User details included"
+              text="Each request includes the trader, selected firm, account size, RR cost, and current status."
+            />
+            <EmptyMetricCard
+              icon={Coins}
+              title="Admin fulfillment queue"
+              text="Use this queue to arrange the trader's account before marking it approved or fulfilled."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="pb-3">Trader</th>
+                  <th className="pb-3">Account</th>
+                  <th className="pb-3">Selected firm</th>
+                  <th className="pb-3">RR cost</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">When</th>
+                  <th className="pb-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {accountClaims.map((claim) => (
+                  <tr key={claim.id}>
+                    <td className="py-3">
+                      <div className="font-semibold text-white">{claim.user?.name || `User #${claim.userId}`}</div>
+                      <div className="text-xs text-muted-foreground">{claim.user?.emailAddress || "No email"}</div>
+                    </td>
+                    <td className="py-3">
+                      <div className="font-semibold text-white">{claim.rewardLabel}</div>
+                      <div className="text-xs text-muted-foreground">{claim.accountSize || "Account size not set"}</div>
+                    </td>
+                    <td className="py-3">
+                      <div className="font-semibold text-white">{claim.brandName}</div>
+                      <div className="text-xs text-muted-foreground">{claim.brandCategory || "Prop firm"} · {claim.brandSlug}</div>
+                    </td>
+                    <td className="py-3 font-semibold text-violet-200">{claim.cost.toLocaleString()} RR</td>
+                    <td className="py-3">
+                      <Pill tone={claim.status === "pending" ? "warn" : claim.status === "rejected" ? "neutral" : "good"}>{claim.status}</Pill>
+                    </td>
+                    <td className="py-3 text-muted-foreground">{new Date(claim.createdAt).toLocaleString()}</td>
+                    <td className="py-3 text-right">
+                      {claim.status === "pending" ? (
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={reviewingClaimId === claim.id}
+                            onClick={() => void reviewAccountClaim(claim, "approved")}
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-200 ring-1 ring-emerald-400/25"
+                          >
+                            <CheckCircle2 className="h-3 w-3" /> Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={reviewingClaimId === claim.id}
+                            onClick={() => void reviewAccountClaim(claim, "rejected")}
+                            className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-semibold text-rose-200 ring-1 ring-rose-400/25"
+                          >
+                            <XCircle className="h-3 w-3" /> Reject
+                          </button>
+                        </div>
+                      ) : claim.status === "approved" ? (
+                        <button
+                          type="button"
+                          disabled={reviewingClaimId === claim.id}
+                          onClick={() => void reviewAccountClaim(claim, "fulfilled")}
+                          className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-semibold text-violet-100 ring-1 ring-violet-400/25"
+                        >
+                          <CheckCircle2 className="h-3 w-3" /> Mark fulfilled
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Reviewed</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

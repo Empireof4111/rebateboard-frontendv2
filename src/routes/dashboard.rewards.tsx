@@ -10,9 +10,10 @@ import {
 } from "lucide-react";
 import {
   rrApi,
-  type RrAllConfig, type RrClaim, type RrSpendRule, type RrUserStreak,
+  type RrAllConfig, type RrClaim, type RrRedemptionClaim, type RrSpendRule, type RrUserStreak,
 } from "@/lib/rr-api";
 import { ApiError } from "@/lib/api";
+import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import {
   buyRr,
   fetchRrPurchaseCatalog,
@@ -68,6 +69,8 @@ function RewardsPage() {
   const [customAmount, setCustomAmount] = useState("");
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [customBuying, setCustomBuying] = useState(false);
+  const [eligibleBrands, setEligibleBrands] = useState<AdminBrandRecord[]>([]);
+  const [redemptionClaims, setRedemptionClaims] = useState<RrRedemptionClaim[]>([]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -82,6 +85,23 @@ function RewardsPage() {
       if (cfgRes.status === "fulfilled" && cfgRes.value.payload) setConfig(cfgRes.value.payload);
       if (claimsRes.status === "fulfilled" && claimsRes.value.payload) setClaims(claimsRes.value.payload.page);
       if (streakRes.status === "fulfilled" && streakRes.value.payload) setStreak(streakRes.value.payload);
+    } catch {}
+
+    try {
+      const [brands, accountClaims] = await Promise.allSettled([
+        fetchPublicAdminBrands(undefined, token),
+        rrApi.getRedemptionClaims(token, 0, 100),
+      ]);
+      if (brands.status === "fulfilled") {
+        setEligibleBrands(
+          brands.value.filter((brand) =>
+            ["Prop Firm", "Futures Prop Firm", "Crypto Prop Firm", "Stock Prop Firm", "DEX Prop Firm"].includes(brand.category),
+          ),
+        );
+      }
+      if (accountClaims.status === "fulfilled" && accountClaims.value.payload) {
+        setRedemptionClaims(accountClaims.value.payload.page);
+      }
     } catch {}
 
     try {
@@ -488,7 +508,15 @@ function RewardsPage() {
       </Panel>
 
       {redeemOpen && (
-        <RedeemModal kind={redeemOpen} rrBalance={rrBalance} spendRules={config.spend_rules.filter((rule) => rule.enabled)} onClose={() => setRedeemOpen(null)} />
+        <RedeemModal
+          kind={redeemOpen}
+          rrBalance={rrBalance}
+          spendRules={config.spend_rules.filter((rule) => rule.enabled)}
+          brands={eligibleBrands}
+          claims={redemptionClaims}
+          onSubmitted={(claim) => setRedemptionClaims((current) => [claim, ...current.filter((item) => item.id !== claim.id)])}
+          onClose={() => setRedeemOpen(null)}
+        />
       )}
     </div>
   );
@@ -672,13 +700,23 @@ function RedeemModal({
   kind,
   rrBalance,
   spendRules,
+  brands,
+  claims,
+  onSubmitted,
   onClose,
 }: {
   kind: RedeemKind;
   rrBalance: number;
   spendRules: RrSpendRule[];
+  brands: AdminBrandRecord[];
+  claims: RrRedemptionClaim[];
+  onSubmitted: (claim: RrRedemptionClaim) => void;
   onClose: () => void;
 }) {
+  const { token } = useAuth();
+  const [selectedBrands, setSelectedBrands] = useState<Record<string, string>>({});
+  const [submittingRuleId, setSubmittingRuleId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const categoryMap: Record<RedeemKind, string[]> = {
     cash: ["boost", "cashback", "cash"],
     propfirm: ["partner", "discount", "challenge"],
@@ -693,13 +731,43 @@ function RedeemModal({
   };
   const options = spendRules.filter((rule) => categoryMap[kind].includes(String(rule.category).toLowerCase()));
 
+  async function submitAccountClaim(rule: RrSpendRule) {
+    if (!token) return;
+    const brandId = Number(selectedBrands[rule.id]);
+    if (!brandId) {
+      setError("Select the prop firm you want for this account claim.");
+      return;
+    }
+    setSubmittingRuleId(rule.id);
+    setError(null);
+    try {
+      const response = await rrApi.submitRedemptionClaim(token, rule.id, brandId);
+      if (response.payload) onSubmitted(response.payload);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not submit this account claim.");
+    } finally {
+      setSubmittingRuleId(null);
+    }
+  }
+
   return (
     <ModalShell title={titles[kind]} onClose={onClose}>
       <div className="space-y-3">
+        {error ? (
+          <div className="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+            {error}
+          </div>
+        ) : null}
         {options.length > 0 ? (
           options.map((rule) => {
             const affordable = rrBalance >= rule.cost;
             const outOfStock = rule.stock != null && rule.redeemed >= rule.stock;
+            const isChallenge = String(rule.category).toLowerCase() === "challenge";
+            const eligibleBrandIds = new Set((rule.eligibleBrandIds ?? []).map(Number).filter(Boolean));
+            const ruleBrands = isChallenge && eligibleBrandIds.size
+              ? brands.filter((brand) => eligibleBrandIds.has(Number(brand.id)))
+              : [];
+            const pendingClaim = claims.find((claim) => claim.spendRuleId === rule.id && claim.status === "pending");
             return (
               <div key={rule.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
                 <div className="flex items-start justify-between gap-3">
@@ -715,6 +783,45 @@ function RedeemModal({
                   {!affordable && <span>Need {(rule.cost - rrBalance).toLocaleString()} more RR.</span>}
                   {outOfStock && <span>Out of stock.</span>}
                 </div>
+                {isChallenge ? (
+                  <div className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
+                    {pendingClaim ? (
+                      <div className="text-xs text-violet-100">
+                        <div className="font-semibold text-white">Claim submitted</div>
+                        <p className="mt-1 text-muted-foreground">
+                          {pendingClaim.brandName} is pending admin review. We’ll contact you with the next steps once the account is being arranged.
+                        </p>
+                      </div>
+                    ) : ruleBrands.length > 0 ? (
+                      <div className="space-y-2">
+                        <Field label="Choose eligible prop firm">
+                          <select
+                            value={selectedBrands[rule.id] ?? ""}
+                            onChange={(event) => setSelectedBrands((current) => ({ ...current, [rule.id]: event.target.value }))}
+                            className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-violet-400/60"
+                          >
+                            <option value="">Select firm</option>
+                            {ruleBrands.map((brand) => (
+                              <option key={brand.id} value={brand.id}>{brand.name}</option>
+                            ))}
+                          </select>
+                        </Field>
+                        <button
+                          type="button"
+                          disabled={!affordable || outOfStock || submittingRuleId === rule.id}
+                          onClick={() => void submitAccountClaim(rule)}
+                          className="w-full rounded-xl rb-gradient-primary py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {submittingRuleId === rule.id ? "Submitting..." : "Claim this account"}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Eligible firms for this account size are not configured yet. Admin must select which prop firms traders can claim.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
               </div>
             );
           })

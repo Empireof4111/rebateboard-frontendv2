@@ -14,6 +14,7 @@ import {
 } from "@/lib/rr-api";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { fetchAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 
 export const Route = createFileRoute("/superadmin/rr")({
   head: () => ({
@@ -44,6 +45,7 @@ function RrControlCenter() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
+  const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -60,6 +62,15 @@ function RrControlCenter() {
     } finally {
       setLoading(false);
     }
+
+    try {
+      const brandRows = await fetchAdminBrands();
+      setBrands(
+        brandRows.filter((brand) =>
+          ["Prop Firm", "Futures Prop Firm", "Crypto Prop Firm", "Stock Prop Firm", "DEX Prop Firm"].includes(brand.category),
+        ),
+      );
+    } catch {}
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
@@ -138,7 +149,7 @@ function RrControlCenter() {
           {tab === "caps" && <CapsPanel caps={config.caps} saving={saving === "caps"} onSave={(v) => saveKey("caps", v)} onReset={() => resetKey("caps")} />}
           {tab === "social" && <SocialRulesPanel rules={config.social_rules} saving={saving === "social_rules"} onSave={(v) => saveKey("social_rules", v)} onReset={() => resetKey("social_rules")} />}
           {tab === "streaks" && <StreaksPanel cfg={config.streak_config} stats={stats} saving={saving === "streak_config"} onSave={(v) => saveKey("streak_config", v)} onReset={() => resetKey("streak_config")} />}
-          {tab === "spend" && <SpendRulesPanel rules={config.spend_rules} saving={saving === "spend_rules"} onSave={(v) => saveKey("spend_rules", v)} onReset={() => resetKey("spend_rules")} />}
+          {tab === "spend" && <SpendRulesPanel brands={brands} rules={config.spend_rules} saving={saving === "spend_rules"} onSave={(v) => saveKey("spend_rules", v)} onReset={() => resetKey("spend_rules")} />}
           {tab === "claims" && <ClaimsPanel socialRules={config.social_rules} />}
           {tab === "ledger" && <LedgerPanel />}
         </>
@@ -522,7 +533,7 @@ function SocialRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSocialR
 
 const SPEND_CATS = ["challenge", "cash", "discount", "fees", "academy", "boost", "partner", "badge", "raffle", "other"] as const;
 
-function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRule[]; saving: boolean; onSave: (v: RrSpendRule[]) => void; onReset: () => void }) {
+function SpendRulesPanel({ brands, rules, saving, onSave, onReset }: { brands: AdminBrandRecord[]; rules: RrSpendRule[]; saving: boolean; onSave: (v: RrSpendRule[]) => void; onReset: () => void }) {
   const [draft, setDraft] = useState<RrSpendRule[]>(rules);
   useEffect(() => setDraft(rules), [rules]);
 
@@ -546,7 +557,7 @@ function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRul
       </Note>
       <NewSpendForm onAdd={add} />
 
-      <DataTable head={<><th>Reward</th><th>Category</th><th>Account</th><th>Cost (RR)</th><th>Tier gate</th><th>Stock</th><th>Status</th><th></th></>}>
+      <DataTable head={<><th>Reward</th><th>Category</th><th>Account</th><th>Eligible firms</th><th>Cost (RR)</th><th>Tier gate</th><th>Stock</th><th>Status</th><th></th></>}>
         {draft.map((r) => (
           <tr key={r.id}>
             <td>
@@ -565,6 +576,17 @@ function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRul
               <input value={r.accountSize ?? ""} onChange={(e) => update(r.id, { accountSize: e.target.value.trim() || undefined })}
                 placeholder="5K"
                 className="w-20 rounded-md bg-black/30 px-2 py-1 text-xs font-semibold text-white ring-1 ring-white/10 outline-none placeholder:text-muted-foreground" />
+            </td>
+            <td>
+              {String(r.category).toLowerCase() === "challenge" ? (
+                <BrandMultiSelect
+                  brands={brands}
+                  selectedIds={(r.eligibleBrandIds ?? []).map(Number).filter(Boolean)}
+                  onChange={(eligibleBrandIds) => update(r.id, { eligibleBrandIds })}
+                />
+              ) : (
+                <span className="text-xs text-muted-foreground">Not required</span>
+              )}
             </td>
             <td>
               <input type="number" min={0} value={r.cost} onChange={(e) => update(r.id, { cost: Math.max(0, Number(e.target.value) || 0) })}
@@ -596,6 +618,52 @@ function SpendRulesPanel({ rules, saving, onSave, onReset }: { rules: RrSpendRul
 
       <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
     </Panel>
+  );
+}
+
+function BrandMultiSelect({
+  brands,
+  selectedIds,
+  onChange,
+}: {
+  brands: AdminBrandRecord[];
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const selected = new Set(selectedIds);
+  return (
+    <details className="relative">
+      <summary className="w-40 cursor-pointer list-none rounded-md bg-black/30 px-2 py-1 text-xs font-semibold text-white ring-1 ring-white/10">
+        {selected.size ? `${selected.size} selected` : "Select firms"}
+      </summary>
+      <div className="absolute z-30 mt-2 max-h-64 w-72 overflow-auto rounded-xl border border-white/10 bg-[#111118] p-2 shadow-2xl">
+        {brands.length === 0 ? (
+          <div className="px-2 py-3 text-xs text-muted-foreground">No prop firm brands found.</div>
+        ) : (
+          brands.map((brand) => {
+            const id = Number(brand.id);
+            const active = selected.has(id);
+            return (
+              <label key={brand.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-white hover:bg-white/5">
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={(event) => {
+                    const next = new Set(selected);
+                    if (event.target.checked) next.add(id);
+                    else next.delete(id);
+                    onChange([...next]);
+                  }}
+                  className="h-3.5 w-3.5 accent-violet-500"
+                />
+                <span className="truncate">{brand.name}</span>
+                <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{brand.category}</span>
+              </label>
+            );
+          })
+        )}
+      </div>
+    </details>
   );
 }
 

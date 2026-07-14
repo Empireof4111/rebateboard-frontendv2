@@ -13,8 +13,8 @@ const sizeClass = {
 } as const;
 
 const stateClass: Record<TbiState, string> = {
-  preliminary: "fill-[#c7894a] text-[#1f1207] drop-shadow-[0_0_10px_rgba(199,137,74,0.34)]",
-  partial: "fill-slate-200 text-[#111827] drop-shadow-[0_0_10px_rgba(226,232,240,0.40)]",
+  preliminary: "fill-slate-200 text-[#111827] drop-shadow-[0_0_10px_rgba(226,232,240,0.40)]",
+  partial: "fill-[#c7894a] text-[#1f1207] drop-shadow-[0_0_10px_rgba(199,137,74,0.34)]",
   full: "fill-[var(--rb-full-unlock-gold)] text-[#241600] drop-shadow-[0_0_12px_rgba(255,201,40,0.42)]",
 };
 

@@ -226,6 +226,25 @@ function reviewProviderTypeForCategory(category?: string) {
   return "Prop Firm";
 }
 
+function listingPathForCategory(category?: string) {
+  const value = String(category || "").toLowerCase();
+
+  if (value.includes("broker")) return "/brokers";
+  if (value.includes("exchange")) return "/exchanges";
+  if (value.includes("crypto prop")) return "/crypto-prop-firms";
+  if (value.includes("futures prop") || value.includes("future")) return "/futures-prop-firms";
+  if (value.includes("stock prop") || value.includes("stock")) return "/stock-prop-firms";
+  if (value.includes("dex")) return "/dex-prop-firms";
+  if (value.includes("copy")) return "/copy-trading-platforms";
+  if (value.includes("platform")) return "/trading-platforms";
+  if (value.includes("software")) return "/trading-software";
+  if (value.includes("tool")) return "/trading-tools";
+  if (value.includes("education") || value.includes("academy")) return "/education-providers";
+  if (value.includes("signal")) return "/signal-providers";
+
+  return "/programs";
+}
+
 function buildReviewHref(slug: string, category?: string) {
   const params = new URLSearchParams({
     itemSlug: slug,
@@ -607,35 +626,35 @@ function tbiStageTheme(stage?: TbiProfile["state"]) {
   if (stage === "partial") {
     return {
       label: "Partial Unlock",
-      caption: "Silver trust engine",
+      caption: "Bronze trust engine",
       background:
-        "radial-gradient(circle at 88% 12%, rgba(226, 232, 240, 0.30), transparent 28%), radial-gradient(circle at 16% 84%, rgba(126, 77, 255, 0.16), transparent 36%), linear-gradient(145deg, #313642 0%, #171522 54%, #0f0b18 100%)",
-      ring: "ring-slate-100/28",
-      glow: "bg-slate-200/16",
-      badge: "from-slate-100 via-slate-300 to-slate-400 text-[#111827]",
-      radarA: "#e2e8f0",
-      radarB: "#94a3b8",
-      radarFillA: "#e2e8f0",
+        "radial-gradient(circle at 88% 12%, rgba(199, 137, 74, 0.25), transparent 28%), radial-gradient(circle at 14% 84%, rgba(90, 34, 241, 0.14), transparent 36%), linear-gradient(145deg, #2d1b10 0%, #171119 54%, #0f0b18 100%)",
+      ring: "ring-[rgba(199,137,74,0.26)]",
+      glow: "bg-[rgba(199,137,74,0.16)]",
+      badge: "from-[#e0ad72] via-[#c7894a] to-[#8c552c] text-[#1f1207]",
+      radarA: "#e0ad72",
+      radarB: "#c7894a",
+      radarFillA: "#e0ad72",
       radarFillB: "#7e4dff",
-      bar: "from-slate-200 via-slate-300 to-violet-300",
-      chip: "bg-slate-100/14 text-slate-50 ring-slate-100/25",
+      bar: "from-[#e0ad72] via-[#c7894a] to-violet-300",
+      chip: "bg-[rgba(199,137,74,0.14)] text-[#f1c28b] ring-[rgba(199,137,74,0.24)]",
     };
   }
 
   return {
     label: "Preliminary",
-    caption: "Bronze trust engine",
+    caption: "Silver trust engine",
     background:
-      "radial-gradient(circle at 88% 12%, rgba(199, 137, 74, 0.25), transparent 28%), radial-gradient(circle at 14% 84%, rgba(90, 34, 241, 0.14), transparent 36%), linear-gradient(145deg, #2d1b10 0%, #171119 54%, #0f0b18 100%)",
-    ring: "ring-[rgba(199,137,74,0.26)]",
-    glow: "bg-[rgba(199,137,74,0.16)]",
-    badge: "from-[#e0ad72] via-[#c7894a] to-[#8c552c] text-[#1f1207]",
-    radarA: "#e0ad72",
-    radarB: "#c7894a",
-    radarFillA: "#e0ad72",
+      "radial-gradient(circle at 88% 12%, rgba(226, 232, 240, 0.30), transparent 28%), radial-gradient(circle at 16% 84%, rgba(126, 77, 255, 0.16), transparent 36%), linear-gradient(145deg, #313642 0%, #171522 54%, #0f0b18 100%)",
+    ring: "ring-slate-100/28",
+    glow: "bg-slate-200/16",
+    badge: "from-slate-100 via-slate-300 to-slate-400 text-[#111827]",
+    radarA: "#e2e8f0",
+    radarB: "#94a3b8",
+    radarFillA: "#e2e8f0",
     radarFillB: "#7e4dff",
-    bar: "from-[#e0ad72] via-[#c7894a] to-violet-300",
-    chip: "bg-[rgba(199,137,74,0.14)] text-[#f1c28b] ring-[rgba(199,137,74,0.24)]",
+    bar: "from-slate-200 via-slate-300 to-violet-300",
+    chip: "bg-slate-100/14 text-slate-50 ring-slate-100/25",
   };
 }
 
@@ -1017,6 +1036,9 @@ const sectionIconMap: Record<string, LucideIcon> = {
   "Pros & Cons": ThumbsUp,
   "TBI Breakdown": ListChecks,
 };
+
+const BRAND_PROFILE_STICKY_GAP = 14;
+const BRAND_PROFILE_TAB_TO_SECTION_GAP = 18;
 
 function FormattedText({ value, className = "" }: { value: string; className?: string }) {
   const raw = String(value || "");
@@ -1974,8 +1996,10 @@ function FirmDetailsPage() {
   const isBrandOwner = brandOwnerSession?.slug?.toLowerCase() === brandSlug.toLowerCase();
   const canEditProfile = isAdmin || isBrandOwner;
   const followerCount = compactCount(followState.followersCount);
-  const stickyTabsTop = stickyMetrics.headerHeight + 8;
-  const stickySidebarTop = stickyTabsTop + stickyMetrics.tabsHeight + 22;
+  const stickyTabsTop = stickyMetrics.headerHeight + BRAND_PROFILE_STICKY_GAP;
+  const stickySidebarTop =
+    stickyTabsTop + stickyMetrics.tabsHeight + BRAND_PROFILE_TAB_TO_SECTION_GAP;
+  const backToListingsPath = listingPathForCategory(brand?.category);
 
   useEffect(() => {
     setProfileAssets(readStoredProfileAssets(firmId));
@@ -2026,7 +2050,8 @@ function FirmDetailsPage() {
     const updateStickyMetrics = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-      const headerHeight = Math.ceil(header?.getBoundingClientRect().bottom ?? 142);
+      const headerBottom = Math.ceil(header?.getBoundingClientRect().bottom ?? 142);
+      const headerHeight = Math.max(headerBottom, 96);
       const tabsHeight = Math.ceil(tabs?.getBoundingClientRect().height ?? 48);
 
       setStickyMetrics((current) =>
@@ -2199,7 +2224,7 @@ function FirmDetailsPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-black/[0.02] to-black/15" />
               <button
-                onClick={() => navigate({ to: "/" })}
+                onClick={() => navigate({ to: backToListingsPath })}
                 className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full bg-[rgba(18,18,25,0.72)] px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/18 shadow-lg shadow-black/20 backdrop-blur-xl transition hover:bg-[rgba(27,25,38,0.86)] hover:ring-white/28"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back

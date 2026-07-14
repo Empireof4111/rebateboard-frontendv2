@@ -52,6 +52,7 @@ export type RrSpendRule = {
   description: string;
   category: string;
   accountSize?: string;
+  eligibleBrandIds?: number[];
   cost: number;
   tierGate: string | null;
   stock: number | null;
@@ -86,6 +87,27 @@ export type RrClaim = {
   rejectionReason?: string;
   createdAt: string;
   user?: { id: number; name: string; emailAddress: string };
+};
+
+export type RrRedemptionClaim = {
+  id: number;
+  userId: number;
+  user?: { id: number; name: string; emailAddress: string } | null;
+  spendRuleId: string;
+  rewardLabel: string;
+  accountSize?: string;
+  cost: number;
+  brandId: number;
+  brandName: string;
+  brandSlug?: string;
+  brandCategory?: string;
+  status: "pending" | "approved" | "rejected" | "fulfilled";
+  rejectionReason?: string;
+  details?: Record<string, unknown>;
+  reviewedById?: number;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
 };
 
 export type RrStats = {
@@ -134,6 +156,20 @@ export const rrApi = {
 
   async reviewClaim(token: string, claimId: number, status: string, rejectionReason?: string): Promise<ApiResponse<RrClaim>> {
     return apiRequest(`/rr/claims/${claimId}/status`, { method: "PUT", token, body: { status, rejectionReason } });
+  },
+
+  async getRedemptionClaims(token: string, page = 0, size = 50, status?: string): Promise<ApiResponse<{ page: RrRedemptionClaim[]; size: number; currentPage: number; totalPages: number }>> {
+    const params = new URLSearchParams({ page: String(page), size: String(size) });
+    if (status && status !== "all") params.set("status", status);
+    return apiRequest(`/rr/redemption-claims?${params}`, { token });
+  },
+
+  async submitRedemptionClaim(token: string, spendRuleId: string, brandId: number, notes?: string): Promise<ApiResponse<RrRedemptionClaim>> {
+    return apiRequest("/rr/redemption-claims", { method: "POST", token, body: { spendRuleId, brandId, notes } });
+  },
+
+  async reviewRedemptionClaim(token: string, claimId: number, status: string, rejectionReason?: string): Promise<ApiResponse<RrRedemptionClaim>> {
+    return apiRequest(`/rr/redemption-claims/${claimId}/status`, { method: "PUT", token, body: { status, rejectionReason } });
   },
 
   async getStats(token: string): Promise<ApiResponse<RrStats>> {

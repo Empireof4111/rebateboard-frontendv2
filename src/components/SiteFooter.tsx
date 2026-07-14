@@ -142,8 +142,8 @@ export function SiteFooter() {
 
       {/* FOOTER */}
       <footer className="mt-8 glass rounded-3xl p-5 sm:p-6 lg:p-7">
-        <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-[1.35fr_repeat(6,minmax(0,1fr))]">
-          <div>
+        <div className="grid grid-cols-2 gap-x-7 gap-y-8 md:grid-cols-3 xl:grid-cols-[1.35fr_repeat(6,minmax(0,1fr))]">
+          <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
               <Logo heightClass="h-9" />
             </div>
