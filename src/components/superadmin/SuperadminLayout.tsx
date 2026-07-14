@@ -164,7 +164,6 @@ export function SuperadminLayout() {
     return window.localStorage.getItem(SIDEBAR_PREF_KEY) === "true";
   });
   const [searchOpen, setSearchOpen] = useState(false);
-  const [navQuery, setNavQuery] = useState("");
   const [bugBountyOpenCount, setBugBountyOpenCount] = useState<string>("");
   const sidebarWidth = sidebarCollapsed ? "5rem" : "16rem";
   const [open, setOpen] = useState<Record<string, boolean>>(loadOpenGroups);
@@ -177,23 +176,6 @@ export function SuperadminLayout() {
       .filter((g) => g.items.length > 0),
     [canRoute],
   );
-
-  const visibleGroups = useMemo(() => {
-    const term = navQuery.trim().toLowerCase();
-    if (!term) return permittedGroups;
-    return permittedGroups
-      .map((group) => {
-        const groupMatches = group.label.toLowerCase().includes(term);
-        const items = groupMatches
-          ? group.items
-          : group.items.filter((item) =>
-            [item.label, item.to, group.label]
-              .some((value) => value.toLowerCase().includes(term)),
-          );
-        return { ...group, items };
-      })
-      .filter((group) => group.items.length > 0);
-  }, [navQuery, permittedGroups]);
 
   const activeGroupIds = useMemo(
     () => permittedGroups
@@ -251,7 +233,7 @@ export function SuperadminLayout() {
         ?.scrollIntoView({ block: "nearest" });
     }, 80);
     return () => window.clearTimeout(handle);
-  }, [pathname, visibleGroups.length]);
+  }, [pathname, permittedGroups.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -311,35 +293,10 @@ export function SuperadminLayout() {
           </button>
         </div>
 
-        <div className={`px-2 pt-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-          <label className="sr-only" htmlFor="admin-sidebar-page-search">Search admin pages</label>
-          <div className="flex h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <Search className="h-4 w-4 shrink-0 text-violet-200/80" />
-            <input
-              id="admin-sidebar-page-search"
-              value={navQuery}
-              onChange={(event) => setNavQuery(event.target.value)}
-              placeholder="Search admin pages..."
-              className="min-w-0 flex-1 bg-transparent text-xs font-medium text-white outline-none placeholder:text-white/38"
-            />
-            {navQuery && (
-              <button
-                type="button"
-                onClick={() => setNavQuery("")}
-                className="grid h-6 w-6 place-items-center rounded-full text-white/55 transition hover:bg-white/10 hover:text-white"
-                aria-label="Clear admin page search"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-
         <nav className={`admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
-          {visibleGroups.map((g) => {
+          {permittedGroups.map((g) => {
             const isOpen = open[g.id];
-            const searching = Boolean(navQuery.trim());
-            const showItems = sidebarCollapsed || isOpen || searching;
+            const showItems = sidebarCollapsed || isOpen;
             return (
               <div key={g.id} className="mb-1">
                 {sidebarCollapsed ? (
@@ -389,11 +346,6 @@ export function SuperadminLayout() {
               </div>
             );
           })}
-          {visibleGroups.length === 0 && (
-            <div className={`rounded-2xl border border-white/8 bg-white/[0.035] px-3 py-4 text-center text-xs text-white/50 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-              No admin pages match “{navQuery.trim()}”.
-            </div>
-          )}
         </nav>
       </aside>
 
@@ -416,7 +368,7 @@ export function SuperadminLayout() {
               className="glass hidden flex-1 items-center gap-2 rounded-full px-4 py-2 text-left transition-colors hover:bg-white/5 md:flex md:max-w-md"
             >
               <Search className="h-4 w-4 text-muted-foreground" />
-              <span className="flex-1 truncate text-sm text-muted-foreground">Search users, brands, complaints, payouts…</span>
+              <span className="flex-1 truncate text-sm text-muted-foreground">Search admin pages, users, brands, payouts…</span>
               <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">⌘K</kbd>
             </button>
             <button

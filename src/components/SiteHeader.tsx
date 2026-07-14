@@ -824,6 +824,7 @@ export function SiteHeader() {
         <div className="mx-auto w-full max-w-[96rem] px-3 sm:px-5 lg:px-7">
           <LiquidGlassSurface
             variant="header"
+            data-site-header-surface
             className="w-full max-w-full rounded-[1.15rem] px-2.5 py-2.5 sm:rounded-[1.35rem] sm:px-4"
           >
             <nav className="flex min-w-0 items-center justify-between gap-3">

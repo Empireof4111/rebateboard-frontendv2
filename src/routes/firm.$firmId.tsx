@@ -1037,8 +1037,9 @@ const sectionIconMap: Record<string, LucideIcon> = {
   "TBI Breakdown": ListChecks,
 };
 
-const BRAND_PROFILE_STICKY_GAP = 14;
-const BRAND_PROFILE_TAB_TO_SECTION_GAP = 18;
+const BRAND_PROFILE_STICKY_GAP = 6;
+const BRAND_PROFILE_TAB_TO_SECTION_GAP = 10;
+const BRAND_PROFILE_HEADER_FALLBACK = 172;
 
 function FormattedText({ value, className = "" }: { value: string; className?: string }) {
   const raw = String(value || "");
@@ -1933,7 +1934,7 @@ function FirmDetailsPage() {
   const [topTab, setTopTab] = useState<BrandTopTab>("Overview");
   const tabsRef = useRef<HTMLDivElement>(null);
   const [stickyMetrics, setStickyMetrics] = useState({
-    headerHeight: 142,
+    headerHeight: BRAND_PROFILE_HEADER_FALLBACK,
     tabsHeight: 48,
   });
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -2042,6 +2043,7 @@ function FirmDetailsPage() {
     if (typeof window === "undefined") return;
 
     const header =
+      document.querySelector<HTMLElement>("[data-site-header-surface]") ??
       document.querySelector<HTMLElement>("[data-site-header]") ??
       document.querySelector<HTMLElement>("header.fixed");
     const tabs = tabsRef.current;
@@ -2050,8 +2052,8 @@ function FirmDetailsPage() {
     const updateStickyMetrics = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-      const headerBottom = Math.ceil(header?.getBoundingClientRect().bottom ?? 142);
-      const headerHeight = Math.max(headerBottom, 96);
+      const headerBottom = Math.ceil(header?.getBoundingClientRect().bottom ?? BRAND_PROFILE_HEADER_FALLBACK);
+      const headerHeight = Math.max(headerBottom, BRAND_PROFILE_HEADER_FALLBACK);
       const tabsHeight = Math.ceil(tabs?.getBoundingClientRect().height ?? 48);
 
       setStickyMetrics((current) =>
