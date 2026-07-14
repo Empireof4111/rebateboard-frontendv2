@@ -20,6 +20,7 @@ export type PaginatedResult<T> = {
 
 export type WalletSummary = {
   balance: number;
+  balanceRR?: number;
   accountNumber: string;
   address: string;
   status: string;

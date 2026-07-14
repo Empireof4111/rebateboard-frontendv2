@@ -216,10 +216,115 @@ export function addTrade(t: Trade) {
   safeSet(TRADES_KEY, list);
   emit();
 }
+export function mergeBackendTrades(records: Array<Record<string, any>>) {
+  if (!Array.isArray(records) || records.length === 0) return;
+  const mapped = records.map(mapBackendTrade).filter(Boolean) as Trade[];
+  if (mapped.length === 0) return;
+  const byId = new Map<string, Trade>();
+  for (const trade of mapped) byId.set(trade.id, trade);
+  for (const trade of tradesState) {
+    if (!byId.has(trade.id)) byId.set(trade.id, trade);
+  }
+  tradesState = [...byId.values()].sort(
+    (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
+  );
+  safeSet(TRADES_KEY, tradesState);
+  emit();
+}
 export function deleteTrade(id: string) {
   tradesState = tradesState.filter((t) => t.id !== id);
   safeSet(TRADES_KEY, tradesState);
   emit();
+}
+
+function asNumber(value: unknown, fallback = 0) {
+  const next = Number(value ?? fallback);
+  return Number.isFinite(next) ? next : fallback;
+}
+
+function asMarket(value: unknown): MarketType {
+  const raw = String(value || "forex").toLowerCase();
+  if (["forex", "crypto", "futures", "stocks", "indices", "commodities"].includes(raw)) {
+    return raw as MarketType;
+  }
+  return "forex";
+}
+
+function asSession(value: unknown): Session {
+  const raw = String(value || "london").toLowerCase();
+  if (["asia", "london", "ny", "sydney"].includes(raw)) return raw as Session;
+  return "london";
+}
+
+function asOutcome(value: unknown): TradeOutcome {
+  const raw = String(value || "pending").toLowerCase();
+  if (raw === "profit" || raw === "loss" || raw === "breakeven" || raw === "pending") return raw;
+  if (raw === "win") return "profit";
+  return "pending";
+}
+
+function asResultSource(value: unknown): TradeResultSource {
+  const raw = String(value || "manual").toLowerCase();
+  if (
+    raw === "manual" ||
+    raw === "csv_import" ||
+    raw === "broker_import" ||
+    raw === "exchange_import" ||
+    raw === "calculated" ||
+    raw === "legacy_unverified"
+  ) {
+    return raw;
+  }
+  return "manual";
+}
+
+function mapBackendTrade(record: Record<string, any>): Trade | null {
+  const raw = (record.raw && typeof record.raw === "object" ? record.raw : {}) as Partial<Trade>;
+  const createdAt = String(record.tradedAt || record.createdAt || raw.createdAt || new Date().toISOString());
+  const id = String(raw.id || `backend:${record.id}`);
+  const entry = asNumber(record.entryPrice ?? raw.entry);
+  const exit = asNumber(record.exitPrice ?? raw.exit);
+  const stop = asNumber(record.stopLoss ?? raw.stop);
+  const target = asNumber(record.takeProfit ?? raw.target);
+  const lot = asNumber(record.positionSize ?? raw.lot, 1);
+  const outcome = asOutcome(record.outcome ?? raw.outcome);
+  const netPnl = record.netPnl === null || record.netPnl === undefined ? raw.netPnl ?? null : asNumber(record.netPnl);
+  const grossPnl = record.grossPnl === null || record.grossPnl === undefined ? raw.grossPnl ?? null : asNumber(record.grossPnl);
+  return {
+    ...raw,
+    id,
+    createdAt,
+    asset: String(record.asset || raw.asset || "Unknown"),
+    market: asMarket(record.market ?? raw.market),
+    direction: String(record.direction || raw.direction || "long").toLowerCase() === "short" ? "short" : "long",
+    entry,
+    exit,
+    lot,
+    riskPct: asNumber(raw.riskPct),
+    stop,
+    target,
+    session: asSession(record.session ?? raw.session),
+    instrumentId: String(record.instrumentId || raw.instrumentId || "") || undefined,
+    instrumentDisplayName: String(record.instrumentDisplayName || raw.instrumentDisplayName || "") || undefined,
+    instrumentSource: String(record.instrumentSource || raw.instrumentSource || "") || undefined,
+    strategyId: String(record.strategy || raw.strategyId || "") || null,
+    narrative: String(record.notes || raw.narrative || "") || undefined,
+    pnl: asNumber(record.pnl ?? raw.pnl),
+    outcome,
+    grossPnl,
+    netPnl,
+    fees: asNumber(record.fees ?? raw.fees),
+    pnlCurrency: String(record.pnlCurrency || raw.pnlCurrency || "USD"),
+    resultSource: asResultSource(record.resultSource ?? raw.resultSource),
+    resultNotes: String(record.resultNotes || raw.resultNotes || "") || undefined,
+    rr: asNumber(record.rMultiple ?? raw.rr ?? raw.rMultiple),
+    rMultiple: asNumber(record.rMultiple ?? raw.rMultiple ?? raw.rr),
+    percentageGain: asNumber(record.percentageGain ?? raw.percentageGain),
+    beforeImg: String((record.screenshots as any)?.before || raw.beforeImg || "") || undefined,
+    afterImg: String((record.screenshots as any)?.after || raw.afterImg || "") || undefined,
+    adherence: asNumber(raw.adherence),
+    violations: Array.isArray(raw.violations) ? raw.violations : [],
+  };
 }
 
 // --- helpers ---

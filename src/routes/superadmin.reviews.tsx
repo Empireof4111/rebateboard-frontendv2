@@ -25,7 +25,12 @@ function ReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected" | "flagged">("pending");
   const [selected, setSelected] = useState<ReviewRecord | null>(null);
-  const [view, setView] = useState<"moderation" | "testimonials">("moderation");
+  const [view, setView] = useState<"moderation" | "testimonials">(() => {
+    if (typeof window === "undefined") return "moderation";
+    return new URLSearchParams(window.location.search).get("view") === "testimonials"
+      ? "testimonials"
+      : "moderation";
+  });
   const [testimonials, setTestimonials] = useState<FeaturedTestimonial[]>([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [editingTestimonial, setEditingTestimonial] = useState<FeaturedTestimonial | null>(null);

@@ -149,6 +149,24 @@ export function addTransaction(input: Omit<TrtTransaction, "id" | "createdAt">) 
   return t;
 }
 
+export function mergeLedgerEvents(events: Array<Record<string, any>>) {
+  if (!Array.isArray(events) || events.length === 0) return;
+  const mapped = events.map(mapLedgerEvent).filter(Boolean) as TrtTransaction[];
+  if (mapped.length === 0) return;
+  const byId = new Map<string, TrtTransaction>();
+  for (const tx of mapped) byId.set(tx.id, tx);
+  for (const tx of state.transactions) {
+    if (!byId.has(tx.id)) byId.set(tx.id, tx);
+  }
+  const transactions = [...byId.values()].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  const payoutIds = new Set(state.payouts.map((p) => p.txId));
+  const importedPayouts = transactions
+    .filter((tx) => tx.direction === "income" && tx.category === "payout" && !payoutIds.has(tx.id))
+    .map((tx) => ({ id: `payout:${tx.id}`, txId: tx.id }));
+  state = { ...state, transactions, payouts: [...state.payouts, ...importedPayouts] };
+  persist(); emit();
+}
+
 export function updateTransaction(id: string, patch: Partial<TrtTransaction>) {
   state = {
     ...state,
@@ -195,6 +213,51 @@ export function removeAccount(id: string) {
 export function setBaseCurrency(c: string) {
   state = { ...state, baseCurrency: c };
   persist(); emit();
+}
+
+function normalizeStatus(value: unknown): TrtTransaction["status"] {
+  const raw = String(value || "pending").toLowerCase();
+  if (["confirmed", "approved", "successful", "success", "paid"].includes(raw)) return "confirmed";
+  if (["cancelled", "canceled", "rejected", "declined"].includes(raw)) return "cancelled";
+  return "pending";
+}
+
+function normalizeCategory(direction: TrtDirection, value: unknown): TrtCategory {
+  const raw = String(value || "").toLowerCase();
+  const known = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES] as string[];
+  if (known.includes(raw)) return raw as TrtCategory;
+  if (raw.includes("cashback") || raw.includes("rebate")) return "rebate";
+  if (raw.includes("payout") || raw.includes("withdrawal")) return "payout";
+  if (raw.includes("deposit")) return direction === "income" ? "broker_withdrawal" : "broker_deposit";
+  if (raw.includes("challenge") || raw.includes("purchase")) return "challenge_fee";
+  if (raw.includes("subscription")) return "platform_subscription";
+  return direction === "income" ? "other_income" : "other_expense";
+}
+
+function mapLedgerEvent(event: Record<string, any>): TrtTransaction | null {
+  const rawDirection = String(event.direction || "").toLowerCase();
+  if (rawDirection !== "income" && rawDirection !== "expense") return null;
+  const direction = rawDirection as TrtDirection;
+  const source = String(event.source || "ledger");
+  const sourceId = String(event.sourceId || event.id || uid("ledger"));
+  const id = source === "manual" && sourceId.startsWith("tx_") ? sourceId : `ledger:${source}:${sourceId}`;
+  const amount = Number(event.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const brandName = String(event.brand || (event.metadata && event.metadata.brand) || "RebateBoard");
+  const brandId = String(event.brandId || (brandName ? `custom:${brandName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "custom:rebateboard"));
+  return {
+    id,
+    date: String(event.occurredAt || event.createdAt || new Date().toISOString()),
+    direction,
+    category: normalizeCategory(direction, event.category),
+    brand: { id: brandId, name: brandName, custom: !event.brandId },
+    accountId: event.accountId ? String(event.accountId) : undefined,
+    amount,
+    currency: String(event.currency || "USD"),
+    status: normalizeStatus(event.status),
+    notes: String((event.metadata && (event.metadata.narration || event.metadata.ref)) || "") || undefined,
+    createdAt: String(event.createdAt || event.occurredAt || new Date().toISOString()),
+  };
 }
 
 // ---------- Aggregations ----------

@@ -9,6 +9,7 @@ import { ToggleLeft, ToggleRight } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/settings")({
   component: SettingsAdmin,
+  errorComponent: ({ error, reset }) => <SettingsAdminError error={error} reset={reset} />,
 });
 
 const AUTH_STORAGE_KEY = "rb_auth_session";
@@ -175,6 +176,34 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between border-b border-white/5 pb-2 last:border-0">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium text-white">{value}</span>
+    </div>
+  );
+}
+
+function SettingsAdminError({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="mx-auto flex min-h-[60vh] max-w-3xl items-center justify-center p-6">
+      <div className="w-full rounded-3xl border border-white/10 bg-[rgba(18,18,25,0.92)] p-6 text-center shadow-2xl ring-1 ring-violet-400/10">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/25">
+          !
+        </div>
+        <h1 className="mt-4 text-2xl font-bold text-white">Settings are temporarily unavailable</h1>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+          The admin shell is working, but the settings workspace could not finish loading. Try reloading the panel.
+        </p>
+        {import.meta.env.DEV ? (
+          <pre className="mt-4 max-h-40 overflow-auto rounded-2xl bg-black/30 p-3 text-left text-xs text-rose-100">
+            {error.message}
+          </pre>
+        ) : null}
+        <button
+          type="button"
+          onClick={reset}
+          className="mt-5 rounded-full bg-[var(--rb-gradient-primary)] px-5 py-2 text-sm font-bold text-white shadow-[var(--rb-shadow-primary)]"
+        >
+          Reload settings
+        </button>
+      </div>
     </div>
   );
 }

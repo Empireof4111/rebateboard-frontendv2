@@ -17,9 +17,10 @@ import { AccountModal } from "@/components/trt/AccountModal";
 import { ShareCardBuilder } from "@/components/trt/ShareCardBuilder";
 import {
   useTrt, summarize, timelineByMonth, breakdownByBrand, breakdownByCategory,
-  generateInsights, removeTransaction, removeAccount, money, labelCategory, labelAccountType,
+  generateInsights, removeTransaction, removeAccount, mergeLedgerEvents, money, labelCategory, labelAccountType,
   type Period, type TrtDirection,
 } from "@/lib/trt-store";
+import { fetchFinancialLedgerEvents } from "@/lib/financial-intelligence-api";
 
 export const Route = createFileRoute("/dashboard/accounts")({
   head: () => ({
@@ -44,6 +45,20 @@ function TrtPage() {
   const summary = useMemo(() => summarize(trt, period), [trt, period]);
   const lifetime = useMemo(() => summarize(trt, "all"), [trt]);
   const insights = useMemo(() => generateInsights(trt), [trt]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFinancialLedgerEvents({ page: 0, size: 100 })
+      .then((events) => {
+        if (!cancelled) mergeLedgerEvents(events as unknown as Array<Record<string, any>>);
+      })
+      .catch(() => {
+        // Keep local TRT records available if live ledger sync is temporarily unavailable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const openDrawer = (d: TrtDirection = "expense") => {
     setDrawerDirection(d);

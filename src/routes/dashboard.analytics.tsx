@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { openAddTrade } from "@/lib/ui-bus";
-import { resolveTradeNetPnl, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { mergeBackendTrades, resolveTradeNetPnl, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { fetchJournalTradesFromBackend } from "@/lib/financial-intelligence-api";
 import { BarChart3, Plus, Bot } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
@@ -85,6 +86,20 @@ function MetricPanel({ title, rows }: { title: string; rows: GroupMetric[] }) {
 function AnalyticsPage() {
   const trades = useTrades();
   const plan = useTradingPlan();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJournalTradesFromBackend()
+      .then((records) => {
+        if (!cancelled) mergeBackendTrades(records as unknown as Array<Record<string, any>>);
+      })
+      .catch(() => {
+        // Local journal remains available; backend sync is best-effort for analytics freshness.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const metrics = useMemo(() => {
     const completed = trades

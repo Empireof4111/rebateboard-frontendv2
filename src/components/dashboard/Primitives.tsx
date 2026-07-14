@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
@@ -47,12 +47,18 @@ export function StatCard({
     destructive: "from-rose-600 to-rose-400",
   }[accent ?? "primary"];
   return (
-    <div className={`glass card-hover min-h-[104px] overflow-hidden rounded-2xl p-3.5 ring-1 sm:p-4 ${accentRing}`}>
+    <div className={`glass card-hover min-h-[112px] overflow-hidden rounded-2xl p-3.5 ring-1 sm:p-4 ${accentRing}`}>
       <div className={`mb-3 h-0.5 w-8 rounded-full bg-gradient-to-r ${accentBar}`} aria-hidden />
       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px]">{label}</div>
-      <div className={`mt-1.5 break-words font-bold tracking-tight text-white tabular-nums ${isPlaceholder ? "text-sm sm:text-base" : "text-xl sm:text-2xl"}`}>
-        {displayValue}
-      </div>
+      {isPlaceholder ? (
+        <div className="mt-2 inline-flex max-w-full items-center rounded-full border border-violet-300/18 bg-violet-400/10 px-3 py-1.5 text-sm font-bold text-violet-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:text-base">
+          {displayValue}
+        </div>
+      ) : (
+        <div className="mt-1.5 break-words text-xl font-bold tracking-tight text-white tabular-nums sm:text-2xl">
+          {displayValue}
+        </div>
+      )}
       {hint && (
         <div className={`mt-1 inline-flex items-center gap-1 text-[10px] font-medium sm:text-[11px] ${trendColor}`}>
           {trend && <TrendIcon className="h-3 w-3" aria-hidden />}
@@ -88,18 +94,28 @@ export function Pill({ children, tone = "default" }: { children: ReactNode; tone
 
 export function EmptyState({ icon: Icon, title, description, action }: { icon?: React.ElementType; title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
+    <div className="relative isolate flex flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-violet-300/18 bg-[radial-gradient(circle_at_50%_0%,rgba(126,77,255,0.13),transparent_55%),rgba(18,18,25,0.76)] px-6 py-10 text-center shadow-[0_18px_48px_rgba(0,0,0,0.26)]">
+      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/35 to-transparent" aria-hidden />
       {Icon && (
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
           <Icon className="h-5 w-5" />
         </div>
       )}
       <div>
-        <div className="text-sm font-semibold text-white">{title}</div>
-        {description && <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">{description}</p>}
+        <div className="text-base font-bold text-white">{title}</div>
+        {description && <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>}
       </div>
       {action && <div className="mt-1">{action}</div>}
     </div>
+  );
+}
+
+export function EmptyStateAction({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--rb-gradient-primary)] px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)] transition hover:brightness-110">
+      {children}
+      <ArrowUpRight className="h-3.5 w-3.5" />
+    </span>
   );
 }
 

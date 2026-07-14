@@ -20,6 +20,8 @@ function buildModuleIndex(): Hit[] {
     ["Cashback Engine", "/superadmin/cashback"],
     ["User Wallets", "/superadmin/wallets"],
     ["Transactions", "/superadmin/transactions"],
+    ["Reviews", "/superadmin/reviews"],
+    ["Landing Testimonials", "/superadmin/reviews?view=testimonials"],
     ["Add Brand", "/superadmin/brands/new"],
     ["Announcements", "/superadmin/announcements"],
     ["Pop-ups", "/superadmin/popups"],

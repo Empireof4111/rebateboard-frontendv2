@@ -19,13 +19,21 @@ import {
   type LiveNotificationPreferences,
 } from "@/lib/notification-preferences";
 
-const SENSITIVE_ROUTES = ["/login", "/signup", "/review", "/business/onboarding", "/verify"];
+const POPUP_SUPPRESSED_ROUTES = [
+  "/login",
+  "/signup",
+  "/review",
+  "/business/onboarding",
+  "/verify",
+  "/admin",
+  "/superadmin",
+];
 
 export function PublicEngagementLayer() {
   const location = useRouterState({ select: (state) => state.location });
   const { user } = useAuth();
   const route = location.pathname;
-  const sensitive = SENSITIVE_ROUTES.some((path) => route.startsWith(path));
+  const sensitive = POPUP_SUPPRESSED_ROUTES.some((path) => route.startsWith(path));
   const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
   const [activity, setActivity] = useState<PublicActivityEvent | null>(null);
   const [activityQueue, setActivityQueue] = useState<PublicActivityEvent[]>([]);

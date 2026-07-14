@@ -5,7 +5,7 @@ import {
   ArrowDownLeft, Filter, Search, CheckCircle2, Clock, CircleDollarSign,
   TrendingUp, Building2, Zap, Upload, Coins, Banknote, IdCard,
 } from "lucide-react";
-import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
+import { EmptyState, PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
 import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import { LinkAccountModal } from "@/components/dashboard/LinkAccountModal";
 import { useAuth } from "@/lib/auth";
@@ -17,7 +17,7 @@ const PAYOUT_PREF_KEY = "rb-user:payoutPref";
 type PayoutTarget = "rr-wallet" | "rebate-wallet" | "revete-wallet" | "broker-wallet";
 type PayoutPref = { default: PayoutTarget };
 const defaultPref: PayoutPref = { default: "rebate-wallet" };
-type TxStatus = "Pending" | "Approved" | "Credited" | "Withdrawn" | "Completed";
+type TxStatus = "Pending" | "Approved" | "Credited" | "Withdrawn" | "Completed" | "Rejected";
 type WalletTransaction = {
   id: string;
   date: string;
@@ -64,6 +64,7 @@ const statusTone: Record<TxStatus, "success" | "warning" | "primary" | "default"
   Pending: "warning",
   Withdrawn: "default",
   Completed: "success",
+  Rejected: "default",
 };
 
 function WalletPage() {
@@ -138,26 +139,61 @@ function WalletPage() {
     if (!token) return;
     setLoadingData(true);
     try {
-      const [summaryRes, logsRes, brkRes, timeRes, acctRes] = await Promise.allSettled([
+      const [summaryRes, logsRes, withdrawalRes, brkRes, timeRes, acctRes] = await Promise.allSettled([
         financeApi.getWalletSummary(token),
         financeApi.getTransactions(token, { size: 50 }),
+        financeApi.getMyWithdrawals(token, { size: 50 }),
         financeApi.getEarningsBreakdown(token),
         financeApi.getEarningsTimeline(token),
         financeApi.getMyPartnerRequests(token, { size: 50 }),
       ]);
       if (summaryRes.status === "fulfilled" && summaryRes.value.payload) setSummary(summaryRes.value.payload);
+      let nextTransactions: WalletTransaction[] = [];
+      let nextTransfers: WalletTransaction[] = [];
       if (logsRes.status === "fulfilled" && logsRes.value.payload) {
         const all = logsRes.value.payload.page.map(mapLog);
-        setTransactions(all.filter((t) => t.type !== "Transfer" || t.amount >= 0));
-        setInternalTransfers(logsRes.value.payload.page
+        nextTransactions = all.filter((t) => t.type !== "Transfer" || t.amount >= 0);
+        nextTransfers = logsRes.value.payload.page
           .filter((l) => l.channel === "Wallet Transfer")
-          .map((l): WalletTransaction => ({
-            ...mapLog(l),
-            source: "Internal",
-            type: "Transfer",
-          }))
+          .map((l): WalletTransaction => {
+            const mapped = mapLog(l);
+            return {
+              ...mapped,
+              source: "Internal",
+              type: "Transfer",
+              direction: mapped.amount >= 0 ? "in" : "out",
+            };
+          });
+      }
+      if (withdrawalRes.status === "fulfilled" && withdrawalRes.value.payload) {
+        const requestRows = withdrawalRes.value.payload.page
+          .filter((w) => !["ACTIVE", "SUCCESSFUL"].includes(String(w.status).toUpperCase()))
+          .map((w): WalletTransaction => {
+            const rawStatus = String(w.status).toUpperCase();
+            const status: TxStatus =
+              rawStatus === "APPROVED"
+                ? "Approved"
+                : rawStatus === "DECLINED" || rawStatus === "CANCELED"
+                  ? "Rejected"
+                  : "Pending";
+            const destination = w.walletAddress || w.accountNumber || w.accountName || w.bankName || w.walletType || "Destination pending";
+            return {
+              id: `withdrawal_${w.id}`,
+              date: w.createdAt,
+              source: "Internal",
+              brandName: `Withdrawal request · ${w.channel || "Wallet"}`,
+              type: "Withdrawal",
+              amount: -Math.abs(Number(w.amount || 0)),
+              status,
+              note: `${destination}${w.narration ? ` · ${w.narration}` : ""}`,
+            };
+          });
+        nextTransactions = [...requestRows, ...nextTransactions].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
         );
       }
+      setTransactions(nextTransactions);
+      setInternalTransfers(nextTransfers);
       if (brkRes.status === "fulfilled" && brkRes.value.payload) setEarningsBySource(brkRes.value.payload);
       if (timeRes.status === "fulfilled" && timeRes.value.payload) setEarningsTimeline(timeRes.value.payload);
       if (acctRes.status === "fulfilled" && acctRes.value.payload) setLinkedAccts(acctRes.value.payload.page);
@@ -184,6 +220,7 @@ function WalletPage() {
   // Derive summary values — fall back to 0 while loading
   const walletSummary = {
     balance: summary?.balance ?? 0,
+    accountNumber: summary?.accountNumber ?? "",
     totalEarned: summary?.totalEarned ?? 0,
     availableForWithdrawal: summary?.availableForWithdrawal ?? 0,
     pendingWithdrawals: summary?.pendingWithdrawals ?? 0,
@@ -193,7 +230,7 @@ function WalletPage() {
       const now = new Date();
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.amount > 0;
     }).reduce((s, t) => s + t.amount, 0),
-    rrBalance: user?.rrBalance ?? 0,
+    rrBalance: summary?.balanceRR ?? user?.rrBalance ?? 0,
   };
   const kycVerified =
     user?.kycStatus === "verified" ||
@@ -242,6 +279,13 @@ function WalletPage() {
               <Pill tone="success"><TrendingUp className="h-3 w-3" /> +{fmtUSD(walletSummary.cashbackThisMonth)} this month</Pill>
               <span>· RR balance: <b className="text-white">{Math.round(walletSummary.rrBalance).toLocaleString()} RR</b></span>
             </div>
+            <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-xs text-muted-foreground">
+              <IdCard className="h-3.5 w-3.5 shrink-0 text-violet-300" />
+              <span className="shrink-0 uppercase tracking-[0.16em] text-[10px]">Wallet account</span>
+              <span className="min-w-0 truncate font-mono text-sm font-semibold text-white">
+                {walletSummary.accountNumber || "Creating account..."}
+              </span>
+            </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <button onClick={() => setWithdrawOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400">
                 <ArrowDownToLine className="h-3.5 w-3.5" /> Withdraw funds
@@ -277,11 +321,33 @@ function WalletPage() {
         <Panel title="Earnings over time" action={<Pill tone="primary">6m</Pill>}>
           {earningsTimeline.length > 0
             ? <MiniLineChart data={earningsTimeline} />
-            : <div className="flex h-[120px] items-center justify-center text-xs text-muted-foreground">No data yet.</div>}
+            : (
+              <EmptyState
+                icon={TrendingUp}
+                title="Build your earnings history"
+                description="Link an account or claim cashback so your monthly wallet trend can start tracking real activity."
+                action={
+                  <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                    <Building2 className="h-3.5 w-3.5" /> Link earning account
+                  </button>
+                }
+              />
+            )}
         </Panel>
         <Panel title="Cashback by source">
           {earningsBySource.length === 0
-            ? <div className="flex h-[100px] items-center justify-center text-xs text-muted-foreground">No earnings data yet.</div>
+            ? (
+              <EmptyState
+                icon={Coins}
+                title="No cashback source yet"
+                description="Submit your first cashback claim or connect a partner account to see which brands generate earnings."
+                action={
+                  <button onClick={() => setClaimOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                    <Upload className="h-3.5 w-3.5" /> Claim cashback
+                  </button>
+                }
+              />
+            )
             : <div className="space-y-2">
               {earningsBySource.map((s) => {
                 const max = Math.max(...earningsBySource.map((x) => x.amount));
@@ -320,9 +386,16 @@ function WalletPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center text-xs text-muted-foreground">
-              Earnings intelligence appears after wallet activity, linked accounts, or cashback claims are recorded.
-            </div>
+            <EmptyState
+              icon={Zap}
+              title="Activate wallet intelligence"
+              description="Once wallet activity starts, RebateBoard will surface your best earning sources, pending withdrawals, and next actions."
+              action={
+                <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                  <Building2 className="h-3.5 w-3.5" /> Connect account
+                </button>
+              }
+            />
           )}
         </Panel>
       </div>
@@ -393,7 +466,20 @@ function WalletPage() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">No transactions match.</td></tr>
+                <tr>
+                  <td colSpan={9} className="py-4">
+                    <EmptyState
+                      icon={Wallet}
+                      title={query || tab !== "all" ? "No matching transactions" : "No wallet transactions yet"}
+                      description={query || tab !== "all" ? "Try clearing filters or search for another brand, status, or wallet activity." : "Your cashback credits, transfers, withdrawals, and rewards will appear here once activity starts."}
+                      action={
+                        <button onClick={() => setClaimOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                          <Upload className="h-3.5 w-3.5" /> Submit first claim
+                        </button>
+                      }
+                    />
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -416,13 +502,36 @@ function WalletPage() {
               </div>
             </button>
           ))}
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={Wallet}
+              title={query || tab !== "all" ? "No matching transactions" : "No wallet transactions yet"}
+              description={query || tab !== "all" ? "Clear the filters to see all wallet activity." : "Submit a cashback claim or link an account to start building wallet history."}
+              action={
+                <button onClick={() => setClaimOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                  <Upload className="h-3.5 w-3.5" /> Submit first claim
+                </button>
+              }
+            />
+          ) : null}
         </div>
       </div>
 
       {/* Internal transfers */}
       <Panel title="Internal Transfer History">
         <div className="space-y-2">
-          {internalTransfers.map((tr) => (
+          {internalTransfers.length === 0 ? (
+            <EmptyState
+              icon={Send}
+              title="No internal transfers yet"
+              description="Send funds to another RebateBoard user when you need to move wallet balance securely inside the platform."
+              action={
+                <button onClick={() => setTransferOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                  <Send className="h-3.5 w-3.5" /> Start transfer
+                </button>
+              }
+            />
+          ) : internalTransfers.map((tr) => (
             <div key={tr.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
                 <div className={`grid h-9 w-9 place-items-center rounded-full ${tr.direction === "in" ? "bg-emerald-500/15 text-emerald-400" : "bg-violet-500/15 text-violet-400"}`}>
@@ -478,9 +587,16 @@ function WalletPage() {
         </button>
       }>
         {linkedAccts.length === 0 ? (
-          <div className="rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 text-center text-xs text-muted-foreground">
-            No linked accounts yet. Link a broker or exchange to start earning automatic cashback.
-          </div>
+          <EmptyState
+            icon={Building2}
+            title="Link your first earning account"
+            description="Connect a broker, prop firm, or exchange account so eligible cashback can be tracked and paid to your wallet."
+            action={
+              <button onClick={() => setLinkOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)]">
+                <Building2 className="h-3.5 w-3.5" /> Link account
+              </button>
+            }
+          />
         ) : (
           <div className="space-y-2">
             {linkedAccts.map((la) => {

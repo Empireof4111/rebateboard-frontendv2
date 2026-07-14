@@ -8,8 +8,6 @@ import { saveJournalTradeToBackend } from "@/lib/financial-intelligence-api";
 import { formatUploadLimit, validateFileSize } from "@/lib/upload-limits";
 import { getPopularInstruments, makeCustomInstrument, resolveTradingInstrument, searchTradingInstruments, type TradingInstrument } from "@/lib/trading-instruments";
 
-type Mode = "quick" | "advanced";
-
 const EMOTIONS: Emotion[] = ["calm", "confident", "neutral", "fomo", "fearful", "angry", "tilt"];
 const MISTAKES = ["No SL", "Moved SL", "Overleverage", "Revenge trade", "Chased entry", "Closed early", "FOMO entry", "Ignored bias"];
 const MARKET_CONFIG: Record<MarketType, { label: string; sizeLabel: string; helper: string }> = {
@@ -24,7 +22,6 @@ const MARKET_OPTIONS = Object.keys(MARKET_CONFIG) as MarketType[];
 
 export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const plan = useTradingPlan();
-  const [mode, setMode] = useState<Mode>("quick");
   const [step, setStep] = useState(0);
   const [savedTrade, setSavedTrade] = useState<Trade | null>(null);
   const [form, setForm] = useState<Partial<Trade>>(() => ({
@@ -94,9 +91,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
   );
   const validationNotes = useMemo(() => validateTrade(form), [form]);
 
-  const steps = mode === "quick"
-    ? ["Trade", "Result"]
-    : ["Details", "Strategy & Context", "Execution & Psychology", "Result", "Screenshots"];
+  const steps = ["Details", "Strategy & Context", "Execution & Psychology", "Result", "Screenshots"];
 
   if (!open) return null;
 
@@ -215,13 +210,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             <h2 className="text-base font-bold text-white">Log Trade</h2>
             <p className="text-[11px] text-muted-foreground">Step {step + 1} of {steps.length} — {steps[step]}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-full bg-white/5 p-1 text-[10px]">
-              <button onClick={() => { setMode("quick"); setStep(0); }} className={`rounded-full px-2 py-1 ${mode === "quick" ? "bg-white/15 text-white" : "text-muted-foreground"}`}>Quick</button>
-              <button onClick={() => { setMode("advanced"); setStep(0); }} className={`rounded-full px-2 py-1 ${mode === "advanced" ? "bg-white/15 text-white" : "text-muted-foreground"}`}>Advanced</button>
-            </div>
-            <button onClick={onClose} className="text-muted-foreground hover:text-white"><X className="h-4 w-4" /></button>
-          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-white"><X className="h-4 w-4" /></button>
         </div>
 
         {/* Adherence bar */}
@@ -253,45 +242,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
 
         {/* Body */}
         <div className="max-h-[55vh] overflow-y-auto px-5 py-4">
-          {/* Quick Mode */}
-          {mode === "quick" && step === 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Market"><Select value={form.market} onChange={(v) => setMarket(v as MarketType)} options={MARKET_OPTIONS} labels={MARKET_OPTIONS.map((m) => MARKET_CONFIG[m].label)} /></Field>
-              <Field label="Instrument">
-                <InstrumentSelector
-                  market={(form.market as MarketType) ?? "forex"}
-                  value={form.asset}
-                  onSelect={(instrument) => {
-                    setForm((f) => ({
-                      ...f,
-                      asset: instrument.symbol,
-                      instrumentId: instrument.id,
-                      instrumentDisplayName: instrument.displayName,
-                      instrumentSource: instrument.source,
-                    }));
-                  }}
-                />
-              </Field>
-              <Field label="Direction">
-                <Toggle a="long" b="short" value={form.direction as string} onChange={(v) => set("direction", v as "long" | "short")} />
-              </Field>
-              <Field label="Entry"><Num value={form.entry} onChange={(v) => set("entry", v)} /></Field>
-              <Field label="Stop"><Num value={form.stop} onChange={(v) => set("stop", v)} /></Field>
-              <Field label="Target"><Num value={form.target} onChange={(v) => set("target", v)} /></Field>
-              <Field label={MARKET_CONFIG[(form.market as MarketType) ?? "forex"].sizeLabel}><Num value={form.lot} onChange={(v) => set("lot", v)} /></Field>
-              <Field label="Risk %"><Num value={form.riskPct} onChange={(v) => set("riskPct", v)} step={0.1} /></Field>
-              <Field label="Session"><Select value={form.session} onChange={(v) => set("session", v as Session)} options={["asia", "london", "ny", "sydney"]} /></Field>
-              <div className="col-span-2 rounded-xl border border-violet-300/15 bg-violet-300/10 p-3 text-xs text-violet-50">
-                {MARKET_CONFIG[(form.market as MarketType) ?? "forex"].helper}
-              </div>
-            </div>
-          )}
-          {mode === "quick" && step === 1 && (
-            <QuickResult form={form} set={set} result={manualResult} rr={rr} plan={plan} />
-          )}
-
-          {/* Advanced */}
-          {mode === "advanced" && step === 0 && (
+          {step === 0 && (
             <div className="grid grid-cols-2 gap-3">
               <Field label="Market">
                 <Select value={form.market} onChange={(v) => setMarket(v as MarketType)} options={MARKET_OPTIONS} labels={MARKET_OPTIONS.map((m) => MARKET_CONFIG[m].label)} />
@@ -337,7 +288,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             </div>
           )}
 
-          {mode === "advanced" && step === 1 && (
+          {step === 1 && (
             <div className="space-y-3">
               <Field label="Strategy">
                 {plan.strategies.length === 0 ? (
@@ -356,7 +307,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             </div>
           )}
 
-          {mode === "advanced" && step === 2 && (
+          {step === 2 && (
             <div className="space-y-3">
               <Field label="Emotion before"><Chips options={EMOTIONS} value={form.emotionBefore ?? ""} onChange={(v) => set("emotionBefore", v as Emotion)} /></Field>
               <Field label="Confidence (1-10)">
@@ -390,11 +341,11 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
             </div>
           )}
 
-          {mode === "advanced" && step === 3 && (
+          {step === 3 && (
             <QuickResult form={form} set={set} result={manualResult} rr={rr} plan={plan} advanced />
           )}
 
-          {mode === "advanced" && step === 4 && (
+          {step === 4 && (
             <ScreenshotStep form={form} set={set} />
           )}
         </div>

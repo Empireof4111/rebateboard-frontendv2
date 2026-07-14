@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
+import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
 import { Plus, Upload, Filter, Flag, Camera, AlertTriangle, ShieldCheck, Trash2, Eye, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AddTradeModal } from "@/components/dashboard/AddTradeModal";
-import { deleteTrade, formatTradePnl, resolveTradeNetPnl, resolveTradeOutcome, summarizeTrades, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { deleteTrade, formatTradePnl, mergeBackendTrades, resolveTradeNetPnl, resolveTradeOutcome, summarizeTrades, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
+import { fetchJournalTradesFromBackend } from "@/lib/financial-intelligence-api";
 
 export const Route = createFileRoute("/dashboard/trades")({
   component: TradesPage,
@@ -15,6 +16,20 @@ function TradesPage() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const trades = useTrades();
   const plan = useTradingPlan();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJournalTradesFromBackend()
+      .then((records) => {
+        if (!cancelled) mergeBackendTrades(records as unknown as Array<Record<string, any>>);
+      })
+      .catch(() => {
+        // Keep local journal fallback if the live backend is unavailable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     return trades.filter((t) => {
@@ -81,12 +96,16 @@ function TradesPage() {
 
       <Panel title={`Trades (${filtered.length})`}>
         {filtered.length === 0 ? (
-          <div className="grid place-items-center py-10 text-center">
-            <p className="text-sm text-muted-foreground">No trades yet.</p>
-            <button onClick={() => setOpen(true)} className="mt-3 inline-flex items-center gap-1 rounded-full rb-gradient-primary px-3 py-1.5 text-xs font-semibold text-white">
-              <Plus className="h-3.5 w-3.5" /> Log your first trade
-            </button>
-          </div>
+          <EmptyState
+            icon={Plus}
+            title="Start your trading journal"
+            description="Log your first trade to unlock win rate, average R, plan adherence, screenshots, and Rebeta trade memory."
+            action={
+              <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-full rb-gradient-primary px-4 py-2 text-xs font-bold text-white shadow-[var(--rb-shadow-primary)] transition hover:brightness-110">
+                <Plus className="h-3.5 w-3.5" /> Log your first trade
+              </button>
+            }
+          />
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             {filtered.map((trade) => (

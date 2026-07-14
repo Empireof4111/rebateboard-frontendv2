@@ -95,6 +95,7 @@ const groups: Group[] = [
       { to: "/superadmin/news", label: "Company News", icon: Radio },
       { to: "/superadmin/homepage-videos", label: "Homepage Videos", icon: Youtube },
       { to: "/superadmin/faqs", label: "FAQs", icon: HelpCircle },
+      { to: "/superadmin/reviews?view=testimonials", label: "Landing Testimonials", icon: Star },
       { to: "/superadmin/offers", label: "Offers & Discounts", icon: Megaphone },
       { to: "/superadmin/popups", label: "Pop-ups", icon: MousePointerClick },
       { to: "/superadmin/announcements", label: "Announcements", icon: Megaphone },
@@ -138,9 +139,10 @@ const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
 };
 
 function isActiveRoute(pathname: string, item: Item) {
+  const itemPath = item.to.split("?")[0];
   return item.exact
-    ? pathname === item.to
-    : pathname === item.to || pathname.startsWith(item.to + "/");
+    ? pathname === itemPath
+    : pathname === itemPath || pathname.startsWith(itemPath + "/");
 }
 
 function loadOpenGroups() {
@@ -355,9 +357,7 @@ export function SuperadminLayout() {
                 {showItems && (
                   <div className="mt-0.5 flex flex-col gap-0.5">
                     {g.items.map((item) => {
-                      const active = item.exact
-                        ? pathname === item.to
-                        : pathname === item.to || pathname.startsWith(item.to + "/");
+                      const active = isActiveRoute(pathname, item);
                       const Icon = item.icon;
                       return (
                         <Link

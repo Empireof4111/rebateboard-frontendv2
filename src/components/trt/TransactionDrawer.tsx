@@ -7,6 +7,7 @@ import {
   addTransaction, labelCategory, getTrt,
   type TrtBrand, type TrtCategory, type TrtDirection, type TrtTransaction,
 } from "@/lib/trt-store";
+import { addFinancialLedgerEvent } from "@/lib/financial-intelligence-api";
 
 export function TransactionDrawer({
   open, onClose, defaultDirection = "expense",
@@ -48,7 +49,7 @@ export function TransactionDrawer({
 
   const apply = (and?: "another") => {
     if (!valid || !brand) return;
-    addTransaction({
+    const savedTransaction = addTransaction({
       direction, category, brand,
       accountId,
       amount: Number(amount),
@@ -56,6 +57,24 @@ export function TransactionDrawer({
       date: new Date(date).toISOString(),
       status,
       notes: notes.trim() || undefined,
+    });
+    addFinancialLedgerEvent({
+      sourceId: savedTransaction.id,
+      direction,
+      category,
+      amount: Number(amount),
+      currency,
+      status,
+      brand: brand.name,
+      brandId: brand.custom ? undefined : brand.id,
+      accountId,
+      occurredAt: new Date(date).toISOString(),
+      metadata: {
+        notes: notes.trim() || undefined,
+        trtTransactionId: savedTransaction.id,
+      },
+    }).catch(() => {
+      // Local TRT remains the instant source; backend sync will retry through future ledger activity.
     });
     setSaved(true);
     if (and === "another") {
