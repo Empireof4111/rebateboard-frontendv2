@@ -106,6 +106,10 @@ export function SiteFooter() {
       ],
     },
   ];
+  const mobileFooterColumnGroups = [
+    [footerColumns[0], footerColumns[2], footerColumns[4]],
+    [footerColumns[1], footerColumns[3], footerColumns[5]],
+  ];
 
   return (
     <div className="container-app relative">
@@ -142,7 +146,42 @@ export function SiteFooter() {
 
       {/* FOOTER */}
       <footer className="mt-8 glass rounded-3xl p-5 sm:p-6 lg:p-7">
-        <div className="grid grid-cols-2 gap-x-7 gap-y-8 md:grid-cols-3 xl:grid-cols-[1.35fr_repeat(6,minmax(0,1fr))]">
+        <div className="md:hidden">
+          <div>
+            <div className="flex items-center gap-2">
+              <Logo heightClass="h-9" />
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              Helping traders earn more, lose less, and make smarter decisions through
+              transparency, trusted reviews, cashback, AI, and financial intelligence.
+            </p>
+          </div>
+          <div className="mt-8 grid grid-cols-2 gap-x-8">
+            {mobileFooterColumnGroups.map((group, index) => (
+              <div key={index} className="space-y-8">
+                {group.map(({ col, items }) => (
+                  <div key={col}>
+                    <div className="mb-3 text-sm font-semibold">{col}</div>
+                    <ul className="space-y-2 text-xs text-muted-foreground">
+                      {items.map((item) => (
+                        <li key={`${col}-${item.label}`}>
+                          <Link
+                            to={item.to as any}
+                            params={item.params as any}
+                            className="inline-flex py-1 transition hover:text-foreground"
+                          >
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="hidden grid-cols-2 gap-x-7 gap-y-8 md:grid md:grid-cols-3 xl:grid-cols-[1.35fr_repeat(6,minmax(0,1fr))]">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
               <Logo heightClass="h-9" />

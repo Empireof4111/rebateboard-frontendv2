@@ -29,6 +29,7 @@ import {
   Handshake,
   Globe2,
   MessageCircle,
+  FlaskConical,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
@@ -2092,7 +2093,8 @@ function Index() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(90,34,241,0.12),transparent_36%),radial-gradient(circle_at_88%_18%,rgba(126,77,255,0.07),transparent_30%)]" />
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3 py-1 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
-              ✨ NEW • AI Backtest Lab
+              <FlaskConical className="h-3.5 w-3.5" />
+              NEW • AI Backtest Lab
             </span>
             <h2 className="mt-4 max-w-3xl text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl">
               Backtest Smarter. Trade Better.{" "}
