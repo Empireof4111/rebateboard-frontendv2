@@ -138,6 +138,7 @@
   --rb-header-glass-violet: var(--rb-liquid-violet);
   --rb-header-glass-shadow: 0 22px 72px rgba(0, 0, 0, 0.48);
   --rb-header-blur: 46px;
+  --rb-header-lens-blur: 18px;
 
   --rb-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.22);
   --rb-shadow-card-hover: 0 18px 42px rgba(45, 18, 105, 0.2);
@@ -514,20 +515,43 @@
     pointer-events: none;
     border-radius: inherit;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%, rgba(5, 5, 8, 0.18)),
-      radial-gradient(circle at 18% 0%, rgba(126, 77, 255, 0.075), transparent 36%);
-    opacity: 0.86;
+      radial-gradient(ellipse 28% 72% at 18% 6%, rgba(255, 255, 255, 0.105), transparent 62%),
+      radial-gradient(ellipse 34% 82% at 64% 12%, rgba(126, 77, 255, 0.105), transparent 66%),
+      radial-gradient(ellipse 46% 90% at 92% 4%, rgba(255, 255, 255, 0.052), transparent 70%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%, rgba(5, 5, 8, 0.18));
+    opacity: 0.88;
+    filter: blur(10px);
+    transform: translate3d(0, 0, 0);
+    animation: rb-header-liquid-drift 16s ease-in-out infinite alternate;
   }
   .site-header-glass::after {
     content: "";
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: 1;
     pointer-events: none;
     border-radius: inherit;
     background:
-      linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 18%, rgba(126, 77, 255, 0.035) 58%, transparent 88%),
-      linear-gradient(180deg, rgba(255,255,255,0.018), rgba(8, 7, 12, 0.42));
+      radial-gradient(ellipse 22% 120% at 13% 50%, rgba(255, 255, 255, 0.13), transparent 62%),
+      radial-gradient(ellipse 18% 120% at 42% 50%, rgba(126, 77, 255, 0.105), transparent 66%),
+      radial-gradient(ellipse 22% 120% at 76% 50%, rgba(255, 255, 255, 0.07), transparent 64%);
+    opacity: 0.34;
+    mix-blend-mode: screen;
+    filter: blur(16px);
+    backdrop-filter: blur(var(--rb-header-lens-blur)) saturate(150%) contrast(0.72);
+    -webkit-backdrop-filter: blur(var(--rb-header-lens-blur)) saturate(150%) contrast(0.72);
+    mask-image:
+      radial-gradient(ellipse 24% 90% at 14% 50%, #000 0 44%, transparent 72%),
+      radial-gradient(ellipse 22% 90% at 43% 50%, #000 0 38%, transparent 70%),
+      radial-gradient(ellipse 24% 90% at 78% 50%, #000 0 40%, transparent 72%);
+    -webkit-mask-image:
+      radial-gradient(ellipse 24% 90% at 14% 50%, #000 0 44%, transparent 72%),
+      radial-gradient(ellipse 22% 90% at 43% 50%, #000 0 38%, transparent 70%),
+      radial-gradient(ellipse 24% 90% at 78% 50%, #000 0 40%, transparent 72%);
+    mask-composite: add;
+    -webkit-mask-composite: source-over;
+    transform: translate3d(0, 0, 0);
+    animation: rb-header-lens-drift 18s ease-in-out infinite alternate;
   }
   [data-site-header="scrolled"] .site-header-glass {
     background:
@@ -544,7 +568,25 @@
   }
   .site-header-glass > * {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+  }
+  @keyframes rb-header-liquid-drift {
+    from {
+      transform: translate3d(-1.2%, -1px, 0) scale(1.015);
+    }
+    to {
+      transform: translate3d(1.2%, 1px, 0) scale(1.025);
+    }
+  }
+  @keyframes rb-header-lens-drift {
+    from {
+      transform: translate3d(-1.8%, 0, 0) scaleX(1.02);
+      opacity: 0.28;
+    }
+    to {
+      transform: translate3d(1.8%, 0, 0) scaleX(1.05);
+      opacity: 0.39;
+    }
   }
   .rb-icon-tile {
     display: grid;
@@ -675,6 +717,7 @@
     .navigation-glass-panel {
       --rb-liquid-blur: 18px;
       --rb-header-blur: 18px;
+      --rb-header-lens-blur: 10px;
     }
     .glow-orb {
       opacity: 0.48;
@@ -687,6 +730,10 @@
     .navigation-glass-panel,
     .mobile-navigation-drawer {
       background: rgba(13, 12, 20, 0.94);
+    }
+    .site-header-glass::after {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
   }
   @media (min-width: 768px) {
@@ -713,6 +760,10 @@
     box-shadow: var(--rb-shadow-card-hover);
   }
   @media (prefers-reduced-motion: reduce) {
+    .site-header-glass::before,
+    .site-header-glass::after {
+      animation: none;
+    }
     .card-hover {
       transition: none;
     }

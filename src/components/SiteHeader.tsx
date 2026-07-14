@@ -12,13 +12,13 @@ import {
   ChevronDown,
   CircleHelp,
   ClipboardList,
+  Compass,
   Copy,
   FlaskConical,
   Globe2,
   GraduationCap,
   Landmark,
   LayoutDashboard,
-  LayoutGrid,
   LineChart,
   LogOut,
   Menu,
@@ -483,52 +483,64 @@ const utilityLinks: {
   icon: LucideIcon;
 }[] = [
   {
-    label: "Dashboard",
-    description: "Wallet, RR, claims, journal, and trader tools",
-    to: "/dashboard",
-    icon: LayoutDashboard,
+    label: "Economic Calendar",
+    description: "Prepare around market sessions and macro events",
+    to: "/economic-calendar",
+    icon: CalendarDays,
   },
   {
-    label: "Programs",
-    description: "Compare brokers, prop firms, exchanges, and tools",
-    to: "/programs",
-    icon: TrendingUp,
+    label: "Trading Academy",
+    description: "Learn with guides, lessons, and trader education",
+    to: "/academy",
+    icon: GraduationCap,
   },
   {
-    label: "Cashback",
-    description: "Learn how rebates, claims, and withdrawals work",
-    to: "/cashback",
-    icon: WalletCards,
+    label: "Demo Accounts",
+    description: "Practice and explore before committing capital",
+    to: "/demo-accounts",
+    icon: MonitorUp,
   },
   {
-    label: "Offers",
-    description: "Promotions, rebates, and partner rewards",
-    to: "/offers",
-    icon: Tags,
+    label: "Help Center",
+    description: "Answers for cashback, claims, accounts, and reviews",
+    to: "/help-center",
+    icon: CircleHelp,
   },
   {
-    label: "Reviews",
-    description: "Read verified trader experiences and trust signals",
-    to: "/reviews",
+    label: "Community",
+    description: "Join the RebateBoard trader community",
+    to: "/community",
     icon: MessageSquare,
   },
   {
-    label: "Compare",
-    description: "Review brands side by side before you choose",
-    to: "/compare",
+    label: "How We Make Money",
+    description: "Understand RebateBoard's transparency model",
+    to: "/how-we-make-money",
     icon: Scale,
   },
   {
-    label: "Blogs",
-    description: "Guides, platform updates, and trader education",
-    to: "/blog",
-    icon: BookOpen,
+    label: "List Your Brand",
+    description: "Apply to bring your firm or platform to RebateBoard",
+    to: "/business/join",
+    icon: Building2,
   },
   {
-    label: "FAQ",
-    description: "Quick answers about cashback, reviews, and TBI",
-    to: "/faqs",
-    icon: CircleHelp,
+    label: "Affiliate Program",
+    description: "Partner with RebateBoard and grow with traders",
+    to: "/affiliate-program",
+    icon: Network,
+  },
+  {
+    label: "Merit Awards",
+    description: "Explore RebateBoard awards and recognition",
+    to: "/merit-awards",
+    icon: Landmark,
+  },
+  {
+    label: "Bug Bounty",
+    description: "Report security issues and help improve the platform",
+    to: "/bug-bounty",
+    icon: Wrench,
   },
 ];
 
@@ -536,10 +548,10 @@ function UtilityMenu() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
-        aria-label="Open RebateBoard menu"
+        aria-label="Open RebateBoard resources"
         className="liquid-glass-inset hidden h-10 w-10 place-items-center rounded-full text-white outline-none transition hover:border-violet-300/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring sm:grid"
       >
-        <LayoutGrid className="h-4 w-4" />
+        <Compass className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
@@ -548,10 +560,10 @@ function UtilityMenu() {
       >
         <DropdownMenuLabel className="px-2 pb-2 pt-1">
           <span className="block text-[10px] uppercase tracking-[0.22em] text-violet-100/55">
-            Explore RebateBoard
+            Resources
           </span>
           <span className="mt-1 block text-xs font-semibold text-white">
-            Fast paths for traders and partners
+            Helpful links from across RebateBoard
           </span>
         </DropdownMenuLabel>
         <div className="grid gap-1 sm:grid-cols-2">
