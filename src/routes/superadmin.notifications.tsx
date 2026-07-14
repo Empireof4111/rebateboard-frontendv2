@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Bell, Bug, Coins, Mail, Send, ShieldCheck, Bot } from "lucide-react";
+import { Bell, Bug, Coins, Mail, Send, ShieldCheck } from "lucide-react";
 import { PageHeader, Panel, StatusPill, StatCard, Pill, EmptyState } from "@/components/superadmin/AdminUI";
 import { fetchAdminBugBountyReports, type BugBountyReportRecord } from "@/lib/bug-bounty-api";
 import { toast } from "sonner";
@@ -194,7 +194,7 @@ function NotificationsAdmin() {
           )}
         </Panel>
 
-        <Panel title="Bug bounty notification rules" action={<Bot className="h-3.5 w-3.5 text-violet-300" />}>
+        <Panel title="Bug bounty notification rules" action={<Bug className="h-3.5 w-3.5 text-violet-300" />}>
           <div className="space-y-3 text-sm text-white/85">
             <div className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/10">
               <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white">Acceptance notice</div>

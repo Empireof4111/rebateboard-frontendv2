@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   LayoutDashboard, Users, Building2, Star, FileWarning, Wallet, Trophy, Award,
   GraduationCap, Newspaper, Megaphone, Shield, Flag, Settings, KeyRound,
-  Bell, Activity, Coins, Handshake, Scale, Search, Menu, X, ChevronDown, Bot,
+  Bell, Activity, Coins, Handshake, Scale, Search, Menu, X, ChevronDown, LogOut,
   CircleDollarSign, ClipboardCheck, ArrowDownToLine, HelpCircle,
   ShieldCheck, Inbox, Mail, Radio, MousePointerClick, FlaskConical, BarChart3,
   Bug,
@@ -434,7 +434,7 @@ export function SuperadminLayout() {
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               </span>
               <Link to="/" className="glass-pill hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white sm:inline-flex">
-                <Bot className="h-3.5 w-3.5 text-violet-400" /> Exit admin
+                <LogOut className="h-3.5 w-3.5 text-violet-400" /> Exit admin
               </Link>
               <label className="hidden items-center gap-1.5 md:inline-flex" title="Preview the dashboard as this role">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Acting as</span>

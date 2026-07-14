@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus, Trash2, Save, Eye, MousePointerClick, Power, X, Megaphone, Bot, Flame, RefreshCw,
+  Plus, Trash2, Save, Eye, MousePointerClick, Power, X, Megaphone, Flame, RefreshCw,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard } from "@/components/superadmin/AdminUI";
 import { ThumbnailUploader, toast } from "@/components/superadmin/AdminActions";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/superadmin/ads")({
 
 const FORMATS: { value: AdFormat; label: string; icon: typeof Megaphone; hint: string }[] = [
   { value: "marquee", label: "Sliding text", icon: Megaphone, hint: "One-line scrolling promo" },
-  { value: "single", label: "Single banner", icon: Bot, hint: "Headline + CTA" },
+  { value: "single", label: "Single banner", icon: Megaphone, hint: "Headline + CTA" },
   { value: "carousel", label: "Multi-brand", icon: Flame, hint: "2–5 brand strip" },
   { value: "trending", label: "Auto trending", icon: Flame, hint: "Top TBI brands" },
 ];
@@ -29,6 +29,7 @@ const PLACEMENTS: { value: AdPlacement; label: string; hint: string }[] = [
   { value: "landing-hero", label: "Landing · Hero card", hint: "4-slide rotating card on landing hero" },
   { value: "landing-sponsors", label: "Landing · Sponsors strip", hint: "Logo row under the hero headline" },
   { value: "landing-advertise", label: "Landing · Advertise box", hint: "Promo box near the cashback calculator" },
+  { value: "economic-calendar", label: "Economic Calendar", hint: "Single banner beside the calendar preparation panel" },
 ];
 
 function emptyAd(): DashboardAd {
@@ -405,7 +406,7 @@ function Editor({ ad, blogPosts, brands, saving, onSave, onClose }: {
           {PLACEMENTS.map((p) => {
             const active = (draft.placement ?? "dashboard") === p.value;
             return (
-              <button key={p.value} onClick={() => { set("placement", p.value); if (p.value === "landing-sponsors") set("format", "carousel"); if (p.value === "landing-advertise") set("format", "single"); if (p.value === "landing-hero" && draft.format !== "carousel") set("format", "carousel"); }}
+              <button key={p.value} onClick={() => { set("placement", p.value); if (p.value === "landing-sponsors") set("format", "carousel"); if (p.value === "landing-advertise" || p.value === "economic-calendar") set("format", "single"); if (p.value === "landing-hero" && draft.format !== "carousel") set("format", "carousel"); }}
                 className={`rounded-xl border p-2.5 text-left transition ${active ? "border-violet-400/40 bg-violet-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"}`}
               >
                 <div className="text-xs font-semibold text-white">{p.label}</div>

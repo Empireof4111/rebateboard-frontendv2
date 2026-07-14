@@ -11,6 +11,7 @@ const placements: AdPlacement[] = [
   "landing-sponsors",
   "landing-advertise",
   "homepage-video",
+  "economic-calendar",
 ];
 
 function asRecord(value: unknown): Record<string, unknown> {

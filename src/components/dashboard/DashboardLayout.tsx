@@ -26,7 +26,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { markDashboardVisit } from "@/components/dashboard/OnboardingChecklist";
 
-type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; exact?: boolean; badge?: string };
+type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; exact?: boolean; badge?: string; tooltip?: string };
 type NavGroup = { id: string; labelKey: string; items: NavItem[] };
 
 const SIDEBAR_PREF_KEY = "rb.dashboard.sidebar.collapsed";
@@ -51,17 +51,17 @@ const groups: NavGroup[] = [
       { to: "/dashboard/analytics", labelKey: "dashboard.nav.analytics", icon: BarChart3 },
       { to: "/dashboard/calendar", labelKey: "dashboard.nav.pnlCalendar", icon: Calendar },
       { to: "/dashboard/accounts", labelKey: "dashboard.nav.roiTracker", icon: Wallet, badge: "TRT" },
-      { to: "/dashboard/risk", labelKey: "dashboard.nav.risk", icon: ShieldAlert },
+      { to: "/dashboard/risk", labelKey: "dashboard.nav.risk", icon: ShieldAlert, tooltip: "Protect yourself from emotional trading." },
     ],
   },
   {
     id: "intelligence",
     labelKey: "dashboard.group.intelligence",
     items: [
-      { to: "/dashboard/ai-coach", labelKey: "dashboard.nav.rebeta", icon: Bot },
+      { to: "/dashboard/ai-coach", labelKey: "dashboard.nav.rebeta", icon: Bot, tooltip: "Your AI Trading Assistant." },
       { to: "/dashboard/intelligence", labelKey: "dashboard.nav.intelligence", icon: Brain },
-      { to: "/dashboard/tbi", labelKey: "dashboard.nav.tbiRankings", icon: Trophy },
-      { to: "/dashboard/backtest", labelKey: "dashboard.nav.backtest", icon: FlaskConical, badge: "NEW" },
+      { to: "/dashboard/tbi", labelKey: "dashboard.nav.tbiRankings", icon: Trophy, tooltip: "Measure your trading consistency and discipline." },
+      { to: "/dashboard/backtest", labelKey: "dashboard.nav.backtest", icon: FlaskConical, badge: "NEW", tooltip: "Test strategies before risking capital." },
       { to: "/dashboard/tools", labelKey: "dashboard.nav.tools", icon: Calculator },
     ],
   },
@@ -324,16 +324,22 @@ export function DashboardLayout() {
                           to={item.to as string}
                           onClick={() => setMobileOpen(false)}
                           aria-current={active ? "page" : undefined}
-                          title={sidebarCollapsed ? t(item.labelKey) : undefined}
+                          title={sidebarCollapsed ? `${t(item.labelKey)}${item.tooltip ? ` — ${item.tooltip}` : ""}` : undefined}
                           className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring/60 ${
                             active
-                              ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                              ? "bg-[linear-gradient(135deg,rgba(90,34,241,0.24),rgba(255,255,255,0.08))] text-white shadow-[0_12px_28px_rgba(90,34,241,0.18),inset_0_1px_0_rgba(255,255,255,0.13)] ring-1 ring-violet-300/24"
                               : "text-muted-foreground hover:bg-white/5 hover:text-white"
                           } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
                         >
-                          {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-gradient-to-b from-violet-400 to-violet-500" aria-hidden />}
+                          {active && <span className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-gradient-to-b from-violet-300 via-violet-500 to-violet-300 shadow-[0_0_14px_rgba(126,77,255,0.72)]" aria-hidden />}
                           <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-violet-300" : "group-hover:text-white/90"}`} />
                           <span className={`flex-1 truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>{t(item.labelKey)}</span>
+                          {item.tooltip && !sidebarCollapsed && (
+                            <span className="pointer-events-none absolute left-[calc(100%+0.5rem)] top-1/2 z-50 hidden w-56 -translate-y-1/2 rounded-xl border border-white/10 bg-[rgba(18,18,25,0.96)] px-3 py-2 text-[11px] leading-5 text-white/75 opacity-0 shadow-2xl backdrop-blur-xl transition group-hover:block group-hover:opacity-100">
+                              <span className="block font-semibold text-white">{t(item.labelKey)}</span>
+                              {item.tooltip}
+                            </span>
+                          )}
                           {item.badge && (
                             <span className={`rounded-full rb-gradient-primary px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                               {item.badge}

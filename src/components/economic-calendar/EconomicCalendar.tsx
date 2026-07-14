@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, Brain,
   Calendar as CalendarIcon, ChevronDown, Filter, Globe2, LineChart, Radio,
-  Search, Bot, TrendingUp, Zap,
+  Search, Eye, TrendingUp, Zap,
 } from "lucide-react";
 import {
   AssetClass, EconEvent, Impact, SESSIONS, activeSessions,
@@ -149,7 +149,7 @@ export function EconomicCalendar({ embedded = false }: { embedded?: boolean }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-violet-400" />
+              <Brain className="h-5 w-5 text-violet-400" />
               <span className="text-[11px] uppercase tracking-[0.25em] text-violet-300/80">RebateBoard Intelligence</span>
             </div>
             <h1 className="mt-1 bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-2xl font-bold text-transparent md:text-4xl">
@@ -650,7 +650,7 @@ function WatchlistPanel({ events }: { events: EconEvent[] }) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white">
-        <Bot className="h-4 w-4 text-violet-300" /> Your Watchlist
+        <Eye className="h-4 w-4 text-violet-300" /> Your Watchlist
       </div>
       <ul className="space-y-1.5 text-[12px]">
         {counts.map((c) => (

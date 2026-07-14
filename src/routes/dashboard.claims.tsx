@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardCheck, Search, Filter, Plus, RefreshCw } from "lucide-react";
+import { ClipboardCheck, Search, Filter, Plus, RefreshCw, Upload, Building2, Clock, CheckCircle2 } from "lucide-react";
 import { ClaimDetailDrawer } from "@/components/dashboard/ClaimDetailDrawer";
+import { EmptyStateAction, GuidedEmptyState } from "@/components/dashboard/Primitives";
 import { useAuth } from "@/lib/auth";
 import { financeApi, type CashbackClaim } from "@/lib/finance-api";
 import { ApiError } from "@/lib/api";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/dashboard/claims")({
 });
 
 // Map backend CashbackClaim to the shape ClaimDetailDrawer expects
-type UIClaimStatus = "pending" | "approved" | "paid" | "rejected";
+type UIClaimStatus = "pending" | "processing" | "needs_action" | "approved" | "paid" | "rejected" | "expired";
 type UIClaim = {
   id: string;
   user: string;
@@ -44,9 +45,13 @@ type UIClaim = {
 function mapClaim(c: CashbackClaim): UIClaim {
   const statusMap: Record<string, UIClaimStatus> = {
     PENDING: "pending",
+    PROCESSING: "processing",
+    NEEDS_ACTION: "needs_action",
     APPROVED: "approved",
     PAID: "paid",
     DECLINED: "rejected",
+    REJECTED: "rejected",
+    EXPIRED: "expired",
   };
   return {
     id: String(c.id),
@@ -80,6 +85,9 @@ function ClaimsPage() {
   const [challengeRows, setChallengeRows] = useState<ChallengePurchaseRow[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | UIClaimStatus>("all");
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
+  const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -112,19 +120,32 @@ function ClaimsPage() {
 
   const claims = useMemo(() => rawClaims.map(mapClaim), [rawClaims]);
 
-  const filtered = useMemo(() => claims.filter((c) =>
-    (status === "all" || c.status === status) &&
-    (q.trim() === "" ||
+  const brands = useMemo(() => Array.from(new Set(claims.map((c) => c.partner).filter(Boolean))).sort(), [claims]);
+  const accountTypes = useMemo(() => Array.from(new Set(claims.map((c) => c.type).filter(Boolean))).sort(), [claims]);
+  const filtered = useMemo(() => claims.filter((c) => {
+    if (status !== "all" && c.status !== status) return false;
+    if (brandFilter !== "all" && c.partner !== brandFilter) return false;
+    if (accountTypeFilter !== "all" && c.type !== accountTypeFilter) return false;
+    if (dateFilter !== "all") {
+      const submitted = new Date(c.submitted).getTime();
+      const now = Date.now();
+      const days = dateFilter === "7d" ? 7 : dateFilter === "30d" ? 30 : 90;
+      if (!Number.isFinite(submitted) || now - submitted > days * 24 * 60 * 60 * 1000) return false;
+    }
+    return q.trim() === "" ||
       c.partner.toLowerCase().includes(q.toLowerCase()) ||
       c.id.toLowerCase().includes(q.toLowerCase()) ||
-      c.accountId.toLowerCase().includes(q.toLowerCase()))
-  ), [claims, q, status]);
+      c.accountId.toLowerCase().includes(q.toLowerCase());
+  }), [accountTypeFilter, brandFilter, claims, dateFilter, q, status]);
 
   const totals = useMemo(() => ({
     pending: claims.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0),
+    processing: claims.filter((c) => c.status === "processing").length,
+    needsAction: claims.filter((c) => c.status === "needs_action").length,
     approved: claims.filter((c) => c.status === "approved").reduce((s, c) => s + c.amount, 0),
     paid: claims.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0),
     rejected: claims.filter((c) => c.status === "rejected").length,
+    expired: claims.filter((c) => c.status === "expired").length,
   }), [claims]);
 
   const open = openId ? claims.find((c) => c.id === openId) : null;
@@ -153,7 +174,9 @@ function ClaimsPage() {
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Pending" value={`$${totals.pending.toFixed(2)}`} tone="violet" />
-        <Stat label="Approved (awaiting)" value={`$${totals.approved.toFixed(2)}`} tone="sky" />
+        <Stat label="Processing" value={`${totals.processing}`} tone="sky" />
+        <Stat label="Needs Action" value={`${totals.needsAction}`} tone="violet" />
+        <Stat label="Approved" value={`$${totals.approved.toFixed(2)}`} tone="sky" />
         <Stat label="Paid" value={`$${totals.paid.toFixed(2)}`} tone="emerald" />
         <Stat label="Rejected" value={`${totals.rejected}`} tone="rose" />
       </div>
@@ -198,13 +221,27 @@ function ClaimsPage() {
         </div>
         <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
           <Filter className="h-3.5 w-3.5 text-white/40" />
-          {(["all", "pending", "approved", "paid", "rejected"] as const).map((s) => (
+          {(["all", "pending", "processing", "needs_action", "approved", "paid", "rejected", "expired"] as const).map((s) => (
             <button key={s} onClick={() => setStatus(s)}
               className={`rounded-full px-3 py-1.5 text-xs ${status === s ? "bg-accent text-black" : "bg-white/5 text-white/70 hover:bg-white/10"}`}>
-              {s[0].toUpperCase() + s.slice(1)}
+              {formatStatusLabel(s)}
             </button>
           ))}
         </div>
+        <select value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white">
+          <option value="all">All brands</option>
+          {brands.map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+        </select>
+        <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white">
+          <option value="all">All dates</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+          <option value="90d">Last 90 days</option>
+        </select>
+        <select value={accountTypeFilter} onChange={(e) => setAccountTypeFilter(e.target.value)} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white">
+          <option value="all">All account types</option>
+          {accountTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+        </select>
       </div>
 
       {error && claims.length === 0 ? (
@@ -232,8 +269,20 @@ function ClaimsPage() {
             <div className="col-span-1 text-right">Status</div>
           </div>
           {filtered.length === 0 && (
-            <div className="px-6 py-12 text-center text-sm text-white/50">
-              No claims match. Open the wallet and tap "Claim cashback" to submit your first one.
+            <div className="p-4">
+              <GuidedEmptyState
+                icon={Upload}
+                title={claims.length === 0 ? "Submit your first cashback claim" : "No claims match your filters"}
+                description={claims.length === 0
+                  ? "Choose an eligible brand, attach proof, select your payout wallet, and RebateBoard will track the review timeline here."
+                  : "Clear one or two filters, or search another brand, account ID, or claim reference."}
+                action={
+                  <button onClick={() => navigate({ to: "/dashboard/wallet" })}>
+                    <EmptyStateAction>{claims.length === 0 ? "Submit Cashback" : "Open Wallet"}</EmptyStateAction>
+                  </button>
+                }
+                preview={<ExampleClaimPreview />}
+              />
             </div>
           )}
           {filtered.map((c) => (
@@ -251,9 +300,12 @@ function ClaimsPage() {
                 <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
                   c.status === "paid" ? "bg-emerald-500/15 text-emerald-300"
                   : c.status === "approved" ? "bg-sky-500/15 text-sky-300"
+                  : c.status === "processing" ? "bg-violet-500/15 text-violet-200"
+                  : c.status === "needs_action" ? "bg-amber-500/15 text-amber-200"
                   : c.status === "rejected" ? "bg-rose-500/15 text-rose-300"
+                  : c.status === "expired" ? "bg-white/10 text-white/45"
                   : "bg-violet-500/15 text-violet-200"
-                }`}>{c.status}</span>
+                }`}>{formatStatusLabel(c.status)}</span>
               </div>
             </button>
           ))}
@@ -291,6 +343,43 @@ function purchaseStatusLabel(step: string) {
     reward_credited: "Reward credited",
   };
   return labels[step] || "In progress";
+}
+
+function formatStatusLabel(status: "all" | UIClaimStatus) {
+  const labels: Record<"all" | UIClaimStatus, string> = {
+    all: "All",
+    pending: "Pending",
+    processing: "Processing",
+    needs_action: "Needs Action",
+    approved: "Approved",
+    paid: "Paid",
+    rejected: "Rejected",
+    expired: "Expired",
+  };
+  return labels[status];
+}
+
+function ExampleClaimPreview() {
+  return (
+    <div className="grid gap-2 text-xs text-white/70 sm:grid-cols-4">
+      <div className="flex items-center gap-2 rounded-xl bg-white/[0.035] px-3 py-2">
+        <Building2 className="h-3.5 w-3.5 text-violet-300" />
+        FundingPips
+      </div>
+      <div className="flex items-center gap-2 rounded-xl bg-white/[0.035] px-3 py-2">
+        <Upload className="h-3.5 w-3.5 text-violet-300" />
+        Proof attached
+      </div>
+      <div className="flex items-center gap-2 rounded-xl bg-white/[0.035] px-3 py-2">
+        <Clock className="h-3.5 w-3.5 text-violet-300" />
+        Under review
+      </div>
+      <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-emerald-200">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        Paid to wallet
+      </div>
+    </div>
+  );
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: "violet" | "emerald" | "rose" | "sky" }) {

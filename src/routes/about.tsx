@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Brain, ChartNoAxesCombined, CircleDollarSign, Compass, DatabaseZap, Handshake, ShieldCheck, Bot, Users } from "lucide-react";
+import { Brain, ChartNoAxesCombined, CircleDollarSign, Compass, DatabaseZap, Handshake, ShieldCheck, Trophy, Users } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
@@ -25,7 +25,7 @@ const principles = [
 const pillars = [
   { title: "Trust", body: "TBI, verified reviews, complaints, payouts, and transparency signals.", icon: ShieldCheck },
   { title: "Financial", body: "Cashback, wallet activity, ROI tracking, payouts, and cost reduction.", icon: CircleDollarSign },
-  { title: "Rewards", body: "RR, trader levels, milestones, unlocks, and meaningful participation.", icon: Bot },
+  { title: "Rewards", body: "RR, trader levels, milestones, unlocks, and meaningful participation.", icon: Trophy },
   { title: "Intelligence", body: "Rebeta AI, plans, journals, analytics, and personal trading context.", icon: Brain },
 ];
 

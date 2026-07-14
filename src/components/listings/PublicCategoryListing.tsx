@@ -17,7 +17,6 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  Bot,
   Star,
   TrendingUp,
   UserCheck,
@@ -905,8 +904,9 @@ function BrandCard({
             </div>
             <button
               type="button"
-              onClick={() => onFollow(brand)}
-              disabled={followBusy}
+              onClick={() => {
+                if (!followBusy) onFollow(brand);
+              }}
               className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition ${
                 brand.isFollowing
                   ? "bg-primary/25 text-primary"
@@ -1029,8 +1029,9 @@ function BrandCard({
         </div>
         <button
           type="button"
-          onClick={() => onFollow(brand)}
-          disabled={followBusy}
+          onClick={() => {
+            if (!followBusy) onFollow(brand);
+          }}
           className={`mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-[10px] font-bold ring-1 transition ${
             brand.isFollowing
               ? "bg-white text-violet-950 ring-white/80"
@@ -1038,7 +1039,7 @@ function BrandCard({
           }`}
         >
           {brand.isFollowing ? <UserCheck className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
-          {followBusy ? "Updating..." : brand.isFollowing ? "Following" : "Follow"}
+          {brand.isFollowing ? "Following" : "Follow"}
         </button>
         <label className="mt-2 flex items-center gap-1.5 text-[10px] text-white/48">
           <input
@@ -1253,6 +1254,7 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
       void navigate({ to: "/login" });
       return;
     }
+    if (followBusy === brand.id) return;
     const previous = brands;
     setFollowBusy(brand.id);
     setBrands((current) =>
@@ -1333,10 +1335,12 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
           <section className="relative mb-4 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-primary" />
+                <ShieldCheck className="h-4 w-4 text-primary" />
                 <div>
-                  <h2 className="text-sm font-black text-white">Recommended Brands</h2>
-                  <p className="text-[10px] text-white/42">Admin-featured profiles for this category.</p>
+                  <h2 className="text-sm font-black text-white">{config.featuredLabel}</h2>
+                  <p className="text-[10px] text-white/42">
+                    Highlighted options to help you compare trusted profiles faster.
+                  </p>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-[10px] font-bold text-primary ring-1 ring-primary/20">
@@ -1443,7 +1447,7 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
               />
             ) : categoryBrands.length === 0 ? (
               <StatePanel
-                icon={Bot}
+                icon={ShieldCheck}
                 title={`${config.title} are coming to RebateBoard`}
                 body={`There are no published ${config.title.toLowerCase()} yet. Once the research team publishes a brand from the admin dashboard, its logo, profile, category facts, TBI state, and available rewards will appear here automatically.`}
               />

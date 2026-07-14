@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  FlaskConical, Upload, Bot, Calendar, FileText,
+  FlaskConical, Upload, Calendar, FileText,
   BookOpen, Zap, GitCompare, Wallet, AlertTriangle,
   CheckCircle2, Info, Plus, Play, Save, Pencil, Brain, ShieldAlert,
   FileUp, X,
@@ -53,7 +53,7 @@ const tabs: { id: Tab; label: string; icon: typeof FlaskConical }[] = [
   { id: "reports", label: "Reports", icon: FileText },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "templates", label: "Templates", icon: BookOpen },
-  { id: "insights", label: "AI Insights", icon: Bot },
+  { id: "insights", label: "AI Insights", icon: Brain },
   { id: "compare", label: "Compare", icon: GitCompare },
   { id: "saved", label: "Saved", icon: Save },
 ];
@@ -93,7 +93,7 @@ function BacktestLab() {
         subtitle="Trade Intelligence • Stop guessing. Backtest your strategy and your real trades in minutes."
        actions={
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500/20 to-violet-600/20 px-3 py-1.5 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
-            <Bot className="h-3.5 w-3.5" /> NEW
+            <FlaskConical className="h-3.5 w-3.5" /> NEW
           </span>
         }
       />
@@ -392,7 +392,7 @@ function NewStrategy({ onRun, onSavedTemplate }: { onRun: () => void; onSavedTem
             >
               {interpretLoading
                 ? <span className="h-3.5 w-3.5 animate-spin rounded-full border border-white border-t-transparent" />
-                : <Bot className="h-3.5 w-3.5" />}
+                : <Brain className="h-3.5 w-3.5" />}
               {interpretLoading ? "Interpreting…" : "Interpret with AI →"}
             </button>
           </div>
@@ -917,7 +917,7 @@ function Insights() {
           disabled={loading || !report}
           className="inline-flex items-center gap-1.5 rounded-lg rb-gradient-primary px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
         >
-          {loading ? <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" /> : <Bot className="h-3 w-3" />}
+          {loading ? <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" /> : <Brain className="h-3 w-3" />}
           {loading ? "Analyzing…" : "Generate AI Insights"}
         </button>
       }
@@ -944,7 +944,7 @@ function Insights() {
         </div>
       ) : (
         <EmptyState
-          icon={Bot}
+          icon={Brain}
           title="No AI insights yet"
           description="Generate insights after you run a backtest or import real trades. No canned analysis is shown."
         />

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useBrandAuth } from "@/lib/brand-auth";
 import { useReviews } from "@/lib/reviews-store";
-import { TrendingUp, Star, ShieldAlert, MessageSquare, ExternalLink, Bot, AlertTriangle, ArrowRight } from "lucide-react";
+import { TrendingUp, Star, ShieldAlert, MessageSquare, ExternalLink, ShieldCheck, AlertTriangle, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/brand/")({
   component: BrandOverview,
@@ -77,7 +77,7 @@ function BrandOverview() {
 
         <div className="space-y-4">
           <div className="glass rounded-2xl p-5 ring-1 ring-white/10">
-            <div className="flex items-center gap-2 text-violet-300"><Bot className="h-4 w-4" /></div>
+            <div className="flex items-center gap-2 text-violet-300"><ShieldCheck className="h-4 w-4" /></div>
             <h3 className="mt-1 text-sm font-bold text-white">Improve your TBI</h3>
             <ul className="mt-3 space-y-2 text-[11px] text-muted-foreground">
               <li>• Reply to all pending reviews within 48h</li>

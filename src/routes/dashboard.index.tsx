@@ -8,7 +8,7 @@ import {
   TrendingUp, Bot, AlertTriangle, Activity,
   Plus, Star, Building2, Lightbulb,
   Wallet, ArrowDownToLine, Send, Users, Zap, ArrowRight, ClipboardCheck, Bug, Gift,
-  CheckCircle2, Target,
+  CheckCircle2, Target, WalletCards,
 } from "lucide-react";
 import { openAddTrade } from "@/lib/ui-bus";
 import { financeApi, type WalletSummary, type WalletTransaction } from "@/lib/finance-api";
@@ -157,6 +157,39 @@ function DashboardHome() {
   const subtitle = visibleMarkets || visibleGoals
     ? `${t("dashboard.tunedFor")} ${visibleMarkets || t("dashboard.yourMarkets")}${visibleGoals ? ` · ${t("dashboard.goal")}: ${visibleGoals}` : ""}.`
     : t("dashboard.commandCenter");
+  const personalizedFocus = useMemo(() => {
+    const text = `${marketLabels.join(" ")} ${goalLabels.join(" ")}`.toLowerCase();
+    if (/prop|funded|funding/.test(text)) {
+      return {
+        title: "Prop firm path prioritized",
+        body: "We’ll surface funded-account programs, challenge offers, payout education, and TBI trust signals first.",
+        href: "/dashboard/brands",
+        cta: "Explore prop firms",
+      };
+    }
+    if (/crypto|exchange|web3/.test(text)) {
+      return {
+        title: "Crypto workspace prioritized",
+        body: "Exchange offers, crypto education, wallet activity, and risk-aware Rebeta guidance will be easier to reach.",
+        href: "/dashboard/brands",
+        cta: "Explore exchanges",
+      };
+    }
+    if (/forex|broker|fx/.test(text)) {
+      return {
+        title: "Forex workspace prioritized",
+        body: "Broker comparisons, Forex cashback sources, market sessions, and trading-cost tools are moved closer to your workflow.",
+        href: "/dashboard/tools",
+        cta: "Open Forex tools",
+      };
+    }
+    return {
+      title: "Personalization is ready",
+      body: "Add markets and goals in your profile to tune offers, education, Rebeta context, and dashboard recommendations.",
+      href: "/dashboard/profile",
+      cta: "Update preferences",
+    };
+  }, [goalLabels, marketLabels]);
 
   return (
     <div className="space-y-6">
@@ -241,46 +274,90 @@ function DashboardHome() {
         <StatCard label={t("dashboard.referrals")} value={displayCount(referralStats?.total, Number(referralStats?.total ?? 0) > 0)} hint={referralStats && referralStats.thisMonth > 0 ? `+${referralStats.thisMonth} ${t("dashboard.thisMonthPlus")}` : ""} />
       </div>
 
-      {/* Wallet Hero */}
-      <div className="glass relative overflow-hidden rounded-2xl p-5 ring-1 ring-white/10">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-500/30 to-violet-500/20 blur-3xl" />
-        <div className="relative grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="flex items-center gap-4">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
-              <Wallet className="h-6 w-6 text-white" />
+      {/* Cashback value hero */}
+      <div className="relative isolate overflow-hidden rounded-[28px] border border-emerald-300/18 bg-[radial-gradient(circle_at_12%_0%,rgba(16,185,129,0.20),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(126,77,255,0.22),transparent_36%),rgba(18,18,25,0.86)] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.34)] sm:p-7">
+        <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-200/45 to-transparent" aria-hidden />
+        <div className="relative grid gap-6 lg:grid-cols-[1fr_280px] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/18 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200">
+              <WalletCards className="h-3.5 w-3.5" /> RebateBoard Cashback
             </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("dashboard.availableToWithdraw")}</div>
-              <div className="text-2xl font-bold text-white">
-                {summary && walletHasActivity
-                  ? `$${Number(summary.availableForWithdrawal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                  : summary
-                    ? "Awaiting Activity"
-                    : "Preparing"}
+            <h2 className="mt-4 max-w-2xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Earn Up to 80% Cashback
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+              Trade with eligible brokers, prop firms, and exchanges and get paid automatically.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link
+                to={"/dashboard/claims" as string}
+                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-sm font-bold text-white shadow-[0_18px_34px_rgba(16,185,129,0.28)] transition hover:brightness-110"
+              >
+                <ArrowDownToLine className="h-4 w-4" /> Claim Cashback
+              </Link>
+              <Link
+                to={"/cashback" as string}
+                className="glass-pill inline-flex min-h-10 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white"
+              >
+                Learn More <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="mt-5 grid gap-2 text-xs text-white/65 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                <div className="font-bold text-white">{displayMoney(summary?.totalEarned, walletHasActivity)}</div>
+                <div>Lifetime cashback</div>
               </div>
-              <div className="text-[11px] text-muted-foreground">
-                {summary && walletHasActivity
-                  ? `${t("dashboard.pending")} ${fmtUSD(Number(summary.pendingWithdrawals))}`
-                  : "Cashback and withdrawals will appear here."}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                <div className="font-bold text-white">{displayMoney(summary?.availableForWithdrawal, walletHasActivity)}</div>
+                <div>Available balance</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                <div className="font-bold text-white">{linkedAccountsCount || "0"}</div>
+                <div>Linked accounts</div>
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to={(walletHasActivity ? "/dashboard/wallet" : "/dashboard/brands") as string} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]">
-              <ArrowDownToLine className="h-3.5 w-3.5" /> {walletHasActivity ? t("dashboard.withdraw") : "Explore Programs"}
-            </Link>
-            <Link to={"/dashboard/wallet" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              <Send className="h-3.5 w-3.5" /> {t("dashboard.transfer")}
-            </Link>
-            <Link to={"/dashboard/wallet" as string} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-              {t("dashboard.openWallet")} <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+          <div className="relative mx-auto h-56 w-56 lg:h-64 lg:w-64">
+            <div className="absolute inset-0 rounded-full bg-emerald-400/10 blur-2xl" />
+            <div className="absolute left-1/2 top-8 h-32 w-32 -translate-x-1/2 animate-[float_5s_ease-in-out_infinite] rounded-full border border-emerald-200/30 bg-[radial-gradient(circle_at_35%_25%,rgba(255,255,255,0.30),transparent_24%),linear-gradient(145deg,#10B981,#5A22F1)] shadow-[0_24px_60px_rgba(16,185,129,0.28)]">
+              <div className="absolute inset-5 grid place-items-center rounded-full border border-white/20 bg-black/35">
+                <span className="text-4xl font-black text-white">RR</span>
+              </div>
+            </div>
+            <div className="absolute bottom-6 left-2 right-2 rounded-[24px] border border-white/12 bg-black/35 p-4 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-300/20">
+                  <Wallet className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">Auto wallet</div>
+                  <div className="text-sm font-bold text-white">Cashback ready</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Earnings Intelligence */}
       <div className="grid gap-4 lg:grid-cols-3">
+        <Panel title="Personalized for you" action={<Pill tone="primary">Live</Pill>}>
+          <div className="rounded-2xl border border-violet-300/18 bg-violet-500/8 p-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
+                <Target className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">{personalizedFocus.title}</div>
+                <p className="mt-1 text-xs leading-5 text-white/65">{personalizedFocus.body}</p>
+                <Link to={personalizedFocus.href as string} className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-200 hover:text-white">
+                  {personalizedFocus.cta} <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Panel>
+
         <Panel title={t("dashboard.earningsOverTime")} action={<Pill tone="success">6m</Pill>}>
           {earningsTimeline.length > 0
             ? <MiniLineChart data={earningsTimeline.map((d) => ({ label: d.month, amount: d.amount }))} height={140} />
@@ -302,12 +379,12 @@ function DashboardHome() {
             <ul className="space-y-2.5 text-xs">
               {topEarningSource ? (
                 <li className="flex gap-2 rounded-lg bg-emerald-500/10 p-2.5">
-                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  <WalletCards className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                   <span className="text-white"><b>{topEarningSource.source}</b> is your top tracked earning source at <b>{fmtUSD(Number(topEarningSource.amount))}</b>.</span>
                 </li>
               ) : (
                 <li className="flex gap-2 rounded-lg bg-white/5 p-2.5">
-                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <WalletCards className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="text-white/75">No cashback earnings have landed yet. Link an account or submit a claim to start tracking.</span>
                 </li>
               )}
@@ -426,7 +503,7 @@ function DashboardHome() {
               </li>
               {journalSnapshot.strongestAsset && (
                 <li className="flex gap-2">
-                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span className="text-white/90"><b>{journalSnapshot.strongestAsset[0]}</b> is your strongest logged asset at <b>{journalSnapshot.strongestAsset[1].pnl >= 0 ? "+" : "−"}${Math.abs(journalSnapshot.strongestAsset[1].pnl).toFixed(2)}</b>.</span>
                 </li>
               )}

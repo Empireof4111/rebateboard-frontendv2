@@ -632,7 +632,7 @@ export type DashboardAd = {
   id: string;
   name: string;
   format: "marquee" | "single" | "carousel" | "trending";
-  placement: "dashboard" | "landing-hero" | "landing-sponsors" | "landing-advertise" | "homepage-video";
+  placement: "dashboard" | "landing-hero" | "landing-sponsors" | "landing-advertise" | "homepage-video" | "economic-calendar";
   active: boolean;
   priority: number;
   headline: string;
@@ -697,7 +697,8 @@ function normalizeAdPlacement(value: unknown): DashboardAd["placement"] {
     raw === "landing-hero" ||
     raw === "landing-sponsors" ||
     raw === "landing-advertise" ||
-    raw === "homepage-video"
+    raw === "homepage-video" ||
+    raw === "economic-calendar"
   ) {
     return raw;
   }

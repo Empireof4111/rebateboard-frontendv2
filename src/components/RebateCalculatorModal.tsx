@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Calculator, TrendingUp, Wallet, Info, Bot } from "lucide-react";
+import { X, Calculator, TrendingUp, Wallet, Info } from "lucide-react";
 
 type Broker = { name: string; commissionPerLot: number; cashbackPct: number };
 
@@ -150,7 +150,7 @@ export function RebateCalculatorModal({ open, onClose }: { open: boolean; onClos
           {/* Result */}
           <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-4 ring-1 ring-violet-300/30">
             <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/80">
-              <Bot className="h-3 w-3 text-violet-200" /> Estimated cashback
+              <Calculator className="h-3 w-3 text-violet-200" /> Estimated cashback
             </div>
             <div className="mt-2 grid grid-cols-2 gap-3">
               <div>

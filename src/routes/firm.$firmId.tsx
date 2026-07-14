@@ -588,53 +588,54 @@ function tbiStageTheme(stage?: TbiProfile["state"]) {
   if (stage === "full") {
     return {
       label: "Fully Unlocked",
-      caption: "Gold trust engine",
+      caption: "Premium gold trust engine",
       background:
-        "radial-gradient(circle at 88% 12%, rgba(255, 226, 137, 0.45), transparent 28%), radial-gradient(circle at 12% 86%, rgba(168, 85, 247, 0.28), transparent 36%), linear-gradient(145deg, #4a310c 0%, #171019 52%, #0f0b10 100%)",
-      ring: "ring-amber-200/35",
-      glow: "bg-amber-200/25",
-      badge: "from-amber-100 via-yellow-300 to-orange-400 text-[#2d1800]",
-      radarA: "#fde68a",
-      radarB: "#f59e0b",
-      radarFillA: "#fde68a",
+        "radial-gradient(circle at 88% 12%, rgba(255, 201, 40, 0.34), transparent 28%), radial-gradient(circle at 12% 86%, rgba(126, 77, 255, 0.20), transparent 36%), linear-gradient(145deg, #271c08 0%, #161219 52%, #0f0b10 100%)",
+      ring: "ring-[rgba(255,201,40,0.34)]",
+      glow: "bg-[rgba(255,201,40,0.20)]",
+      badge: "text-[#241600]",
+      badgeStyle: { background: "var(--rb-gradient-full-unlock)" },
+      radarA: "#ffd866",
+      radarB: "#ffc928",
+      radarFillA: "#ffd866",
       radarFillB: "#7e4dff",
-      bar: "from-amber-200 via-yellow-300 to-orange-400",
-      chip: "bg-amber-200/20 text-amber-50 ring-amber-100/30",
+      bar: "from-[var(--rb-gold-500)] via-[var(--rb-gold-300)] to-[var(--rb-gold-400)]",
+      chip: "bg-[rgba(255,201,40,0.14)] text-[var(--rb-gold-200)] ring-[rgba(255,201,40,0.30)]",
     };
   }
 
   if (stage === "partial") {
     return {
       label: "Partial Unlock",
-      caption: "Bronze trust engine",
+      caption: "Silver trust engine",
       background:
-        "radial-gradient(circle at 88% 12%, rgba(251, 146, 60, 0.35), transparent 28%), radial-gradient(circle at 16% 84%, rgba(217, 70, 239, 0.22), transparent 36%), linear-gradient(145deg, #3f2013 0%, #201122 54%, #120a19 100%)",
-      ring: "ring-orange-200/30",
-      glow: "bg-orange-300/20",
-      badge: "from-orange-200 via-amber-400 to-rose-400 text-[#2b1306]",
-      radarA: "#fdba74",
-      radarB: "#f472b6",
-      radarFillA: "#fdba74",
+        "radial-gradient(circle at 88% 12%, rgba(226, 232, 240, 0.30), transparent 28%), radial-gradient(circle at 16% 84%, rgba(126, 77, 255, 0.16), transparent 36%), linear-gradient(145deg, #313642 0%, #171522 54%, #0f0b18 100%)",
+      ring: "ring-slate-100/28",
+      glow: "bg-slate-200/16",
+      badge: "from-slate-100 via-slate-300 to-slate-400 text-[#111827]",
+      radarA: "#e2e8f0",
+      radarB: "#94a3b8",
+      radarFillA: "#e2e8f0",
       radarFillB: "#7e4dff",
-      bar: "from-orange-200 via-amber-300 to-violet-400",
-      chip: "bg-orange-200/20 text-orange-50 ring-orange-100/30",
+      bar: "from-slate-200 via-slate-300 to-violet-300",
+      chip: "bg-slate-100/14 text-slate-50 ring-slate-100/25",
     };
   }
 
   return {
     label: "Preliminary",
-    caption: "Silver trust engine",
+    caption: "Bronze trust engine",
     background:
-      "radial-gradient(circle at 88% 12%, rgba(226, 232, 240, 0.38), transparent 28%), radial-gradient(circle at 14% 84%, rgba(147, 197, 253, 0.22), transparent 36%), linear-gradient(145deg, #394150 0%, #171522 54%, #0f0b18 100%)",
-    ring: "ring-slate-100/30",
-    glow: "bg-slate-200/20",
-    badge: "from-slate-100 via-slate-300 to-sky-300 text-[#111827]",
-    radarA: "#e2e8f0",
-    radarB: "#93c5fd",
-    radarFillA: "#e2e8f0",
-    radarFillB: "#60a5fa",
-    bar: "from-slate-200 via-sky-300 to-violet-300",
-    chip: "bg-slate-100/15 text-slate-50 ring-slate-100/25",
+      "radial-gradient(circle at 88% 12%, rgba(199, 137, 74, 0.25), transparent 28%), radial-gradient(circle at 14% 84%, rgba(90, 34, 241, 0.14), transparent 36%), linear-gradient(145deg, #2d1b10 0%, #171119 54%, #0f0b18 100%)",
+    ring: "ring-[rgba(199,137,74,0.26)]",
+    glow: "bg-[rgba(199,137,74,0.16)]",
+    badge: "from-[#e0ad72] via-[#c7894a] to-[#8c552c] text-[#1f1207]",
+    radarA: "#e0ad72",
+    radarB: "#c7894a",
+    radarFillA: "#e0ad72",
+    radarFillB: "#7e4dff",
+    bar: "from-[#e0ad72] via-[#c7894a] to-violet-300",
+    chip: "bg-[rgba(199,137,74,0.14)] text-[#f1c28b] ring-[rgba(199,137,74,0.24)]",
   };
 }
 
@@ -689,6 +690,7 @@ function TbiScoreCard({
         </div>
         <div
           className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br ${theme.badge} ring-1 ring-white/30`}
+          style={theme.badgeStyle}
         >
           <BadgeCheck className="h-5 w-5" />
         </div>
@@ -2143,6 +2145,7 @@ function FirmDetailsPage() {
       void navigate({ to: "/login" });
       return;
     }
+    if (followBusy) return;
 
     setFollowBusy(true);
     const previous = followState;
@@ -2180,7 +2183,7 @@ function FirmDetailsPage() {
       <div className="container-app relative pb-6 pt-3 sm:pt-4">
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
           <div className="glass-strong h-full overflow-hidden rounded-3xl bg-[rgba(18,18,25,0.90)] ring-1 ring-violet-400/20">
-            <div className="relative h-24 overflow-hidden bg-[var(--rb-bg-section)] sm:h-28 lg:h-32 xl:h-[136px]">
+            <div className="relative h-28 overflow-hidden bg-[var(--rb-bg-section)] sm:h-32 lg:h-36 xl:h-[152px]">
               {displayBanner ? (
                 <img
                   src={displayBanner}
@@ -2227,8 +2230,8 @@ function FirmDetailsPage() {
 
             <div className="px-5 pb-5 sm:px-6">
               <div className="min-w-0">
-                <div className="-mt-8 flex flex-col items-start gap-3 sm:-mt-11 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[22px] bg-white/[0.04] shadow-2xl sm:h-28 sm:w-28 sm:rounded-[26px]">
+                <div className="-mt-5 flex flex-col items-start gap-4 sm:-mt-7 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[20px] border border-white/12 bg-[var(--rb-bg-card)] shadow-[0_16px_40px_rgba(0,0,0,0.34)] ring-4 ring-[var(--rb-bg-canvas)] sm:h-24 sm:w-24 sm:rounded-[24px]">
                     {displayAvatar ? (
                       <img
                         src={displayAvatar}
@@ -2264,7 +2267,7 @@ function FirmDetailsPage() {
                     ) : null}
                   </div>
 
-                  <div className="grid w-full grid-cols-2 gap-2 sm:mb-2 sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+                  <div className="grid w-full grid-cols-2 gap-2 pt-1 sm:w-auto sm:flex sm:translate-y-3 sm:flex-wrap sm:items-center sm:justify-end">
                     <a
                       href={
                         supportEmail
@@ -2307,20 +2310,19 @@ function FirmDetailsPage() {
                     </a>
                     <button
                       type="button"
-                      disabled={followBusy || !brand?.id}
                       onClick={() => void toggleFollow()}
                       className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-xs font-bold ring-1 transition sm:col-span-1 ${
                         followState.isFollowing
                           ? "bg-white text-[#1a0b2e] ring-white/70 hover:bg-rose-50 hover:text-rose-700"
                           : "rb-gradient-primary text-white ring-violet-300/40 hover:brightness-110"
-                      } ${followBusy || !brand?.id ? "opacity-60" : ""}`}
+                      } ${!brand?.id ? "opacity-60" : ""}`}
                     >
                       {followState.isFollowing ? (
                         <UserCheck className="h-3.5 w-3.5" />
                       ) : (
                         <UserPlus className="h-3.5 w-3.5" />
                       )}
-                      {followBusy ? "Updating..." : followState.isFollowing ? "Unfollow" : "Follow"}
+                      {followState.isFollowing ? "Unfollow" : "Follow"}
                     </button>
                   </div>
                 </div>

@@ -23,13 +23,15 @@ export type AdFormat = "marquee" | "single" | "carousel" | "trending";
  *  - "landing-sponsors"   : the "Sponsored partners" logo strip on the landing hero
  *  - "landing-advertise"  : the "Advertise Here" promo box near the cashback calculator
  *  - "homepage-video"     : featured YouTube videos near the homepage calculator
+ *  - "economic-calendar"  : single banner beside/below the public and dashboard calendar
  */
 export type AdPlacement =
   | "dashboard"
   | "landing-hero"
   | "landing-sponsors"
   | "landing-advertise"
-  | "homepage-video";
+  | "homepage-video"
+  | "economic-calendar";
 
 export type AdSlide = {
   brandSlug?: string;

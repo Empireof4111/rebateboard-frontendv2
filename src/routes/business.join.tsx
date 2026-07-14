@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CATEGORY_META, useBrandApplicationSettings, type BrandCategory } from "@/lib/tbi-onboarding";
 import { fetchBrandApplicationSettings } from "@/lib/brand-application-settings-api";
-import { Shield, ArrowRight, CheckCircle2, Bot, TrendingUp, Lock, Bell, Mail } from "lucide-react";
+import { Shield, ArrowRight, CheckCircle2, ShieldCheck, TrendingUp, Lock, Bell, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/business/join")({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/business/join")({
 const BENEFITS = [
   { icon: Shield, title: "Verified Trust Profile", text: "Independent TBI score backed by real trader data — not paid ranking." },
   { icon: TrendingUp, title: "Direct trader access", text: "Be discovered by 48,000+ active traders evaluating brands every day." },
-  { icon: Bot, title: "Live unlock journey", text: "Watch your score grow from preliminary to fully verified as reviews roll in." },
+  { icon: ShieldCheck, title: "Live unlock journey", text: "Watch your score grow from preliminary to fully verified as reviews roll in." },
   { icon: CheckCircle2, title: "Free baseline listing", text: "No fees to apply. Premium placement only when you actively engage." },
 ];
 

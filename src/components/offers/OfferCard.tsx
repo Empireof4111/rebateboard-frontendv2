@@ -7,7 +7,7 @@ import {
   Flame,
   Gift,
   Image as ImageIcon,
-  Bot,
+  BadgeCheck,
   Tag,
   X,
 } from "lucide-react";
@@ -154,7 +154,7 @@ export function OfferCard({
                 </div>
               )}
             </div>
-            <Bot className="h-16 w-16 text-white/25 sm:h-20 sm:w-20" />
+            <Tag className="h-16 w-16 text-white/25 sm:h-20 sm:w-20" />
           </div>
         )}
 
@@ -237,7 +237,7 @@ export function OfferCard({
               </span>
             </span>
             <span className="inline-flex shrink-0 items-center gap-1.5 text-violet-200/80">
-              <Bot className="h-3.5 w-3.5" />
+              <BadgeCheck className="h-3.5 w-3.5" />
               Verified
             </span>
           </div>
@@ -430,7 +430,7 @@ export function OfferDetailModal({
           </div>
 
           <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white/[0.035] px-4 py-3 text-[11px] text-white/50 ring-1 ring-white/10">
-            <Bot className="h-3.5 w-3.5 text-violet-300" />
+            <BadgeCheck className="h-3.5 w-3.5 text-violet-300" />
             Verified offer from RebateBoard
           </div>
         </div>

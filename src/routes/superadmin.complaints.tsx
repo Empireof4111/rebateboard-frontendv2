@@ -3,7 +3,7 @@ import { PageHeader, Panel, DataTable, StatusPill, SeverityPill, StatCard, Toolb
 import { useEffect, useMemo, useState } from "react";
 import {
   Paperclip, MessageSquare, Send, FileText, FileImage, FileSpreadsheet, Mail,
-  Bot, ShieldAlert, ArrowUp, BadgeCheck, Eye, Download, ExternalLink,
+  ShieldAlert, ArrowUp, BadgeCheck, Eye, Download, ExternalLink,
 } from "lucide-react";
 import { deleteComplaint, fetchAdminComplaints, moderateComplaint, type ComplaintRecord, type ComplaintStatus } from "@/lib/complaints-api";
 import { toast } from "sonner";
@@ -273,7 +273,7 @@ function ComplaintsPage() {
               <section className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl bg-gradient-to-br from-violet-500/15 to-violet-500/15 p-3 ring-1 ring-violet-300/30">
                   <div className="flex items-center gap-1.5">
-                    <Bot className="h-3 w-3 text-violet-200" />
+                    <ShieldAlert className="h-3 w-3 text-violet-200" />
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80">Credibility</span>
                   </div>
                   <div className="mt-1 text-xl font-bold text-white">{active.credibility}<span className="text-[10px] text-muted-foreground"> / 100</span></div>

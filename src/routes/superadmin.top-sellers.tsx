@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { EyeOff, Pin, Bot, Trophy, Zap } from "lucide-react";
+import { EyeOff, Pin, Star, Trophy, Zap } from "lucide-react";
 import { DataTable, PageHeader, Panel, Pill, StatCard, StatusPill } from "@/components/superadmin/AdminUI";
 import {
   fetchTopSellerBoard,
@@ -236,7 +236,7 @@ function TopSellersPage() {
                         <ActionChip
                           active={Boolean(override.featured)}
                           disabled={isSaving}
-                          icon={<Bot className="h-3 w-3" />}
+                          icon={<Star className="h-3 w-3" />}
                           label="Feature"
                           onClick={() => void patchOverride(brand.id, { featured: !override.featured })}
                         />

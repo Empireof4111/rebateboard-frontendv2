@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  Award, Bot, BookOpen, Brain, Check, ChevronRight, CircleCheck, Clock, GraduationCap,
-  Lock, MessageCircle, PlayCircle, Bot, Star, Trophy, Wallet, X, ArrowLeft,
+  Award, BookOpen, Brain, Check, ChevronRight, CircleCheck, Clock, GraduationCap,
+  Lock, MessageCircle, PlayCircle, Star, Trophy, Wallet, X, ArrowLeft,
   CheckCircle2, AlertCircle, Send, Zap, Download, FileImage, FileText, Eye, Printer,
 } from "lucide-react";
 import {
@@ -146,7 +146,7 @@ function Home({ setView, preview }: { setView: (v: View) => void; preview: boole
         <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-violet-300/90">
-            <Bot className="h-3 w-3" /> Trader University
+            <GraduationCap className="h-3 w-3" /> Trader University
           </div>
           <h1 className="mt-4 max-w-3xl bg-gradient-to-r from-white via-violet-200 to-violet-300 bg-clip-text text-3xl font-bold leading-tight text-transparent md:text-5xl">
             The Academy that turns reading into <span className="text-emerald-300">RR rewards</span>.
@@ -717,7 +717,7 @@ function QuizRunner({
               </div>
               {submitted && q.explain && (
                 <div className="mt-2 flex items-start gap-2 rounded-lg border border-violet-500/20 bg-violet-500/5 p-2 text-[11px] text-white/80">
-                  <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" /> {q.explain}
+                  <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" /> {q.explain}
                 </div>
               )}
             </div>
@@ -1074,7 +1074,7 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
         className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full rb-gradient-primary text-white shadow-lg shadow-violet-500/30 transition hover:scale-105"
         aria-label="Open AI Tutor"
       >
-        {open ? <X className="h-5 w-5" /> : <Bot className="h-6 w-6" />}
+        {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-6 w-6" />}
       </button>
 
       {open && (
@@ -1082,7 +1082,7 @@ function FloatingTutor({ open, setOpen, contextView }: { open: boolean; setOpen:
           <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-violet-500/20 to-violet-500/20 px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="grid h-8 w-8 place-items-center rounded-full rb-gradient-primary">
-                <Bot className="h-4 w-4 text-white" />
+                <MessageCircle className="h-4 w-4 text-white" />
               </div>
               <div>
                 <div className="text-sm font-bold text-white">AI Tutor</div>

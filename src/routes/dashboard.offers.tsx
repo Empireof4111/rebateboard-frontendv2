@@ -5,7 +5,7 @@ import { type AdminOffer, type OfferCategory } from "@/lib/admin-data";
 import { fetchPublicOffers } from "@/lib/offers-api";
 import { fetchPublicAdminBrands } from "@/lib/admin-brands-api";
 import { enrichOffersWithBrandAssets } from "@/lib/offer-brand-assets";
-import { Flame, Bot, Clock, LayoutGrid, Search, ExternalLink } from "lucide-react";
+import { Flame, Clock, LayoutGrid, Search, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/offers")({
   component: DashboardOffers,
@@ -121,7 +121,7 @@ function DashboardOffers() {
 
       <section>
         <div className="mb-3 flex items-center gap-2">
-          <Bot className="h-4 w-4 text-emerald-400" />
+          <Clock className="h-4 w-4 text-emerald-400" />
           <h2 className="text-base font-bold">Latest</h2>
         </div>
         <div className="grid gap-3 lg:grid-cols-2">

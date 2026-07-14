@@ -37,6 +37,9 @@ type ChecklistTask = {
   id: string;
   label: string;
   description: string;
+  why: string;
+  time: string;
+  reward: number;
   done: boolean;
   to: string;
   icon: typeof Circle;
@@ -74,6 +77,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "profile",
         label: "Complete Profile",
         description: "Add your trading preferences and payout details.",
+        why: "Personalizes your dashboard, brand suggestions, and Rebeta context.",
+        time: "2 min",
+        reward: 25,
         done: profileCompletion >= 80 || Boolean(user?.onboardingCompleted),
         to: "/dashboard/profile",
         icon: ShieldCheck,
@@ -82,6 +88,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "email",
         label: "Verify Email",
         description: "Secure your account and unlock account actions.",
+        why: "Protects your account and enables wallet, rewards, and notification updates.",
+        time: "1 min",
+        reward: 20,
         done: verified,
         to: "/dashboard/settings",
         icon: CheckCircle2,
@@ -90,6 +99,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "account",
         label: "Link Trading Account",
         description: "Connect account details for cashback tracking.",
+        why: "Lets eligible brokers and exchanges attribute cashback to your wallet.",
+        time: "3 min",
+        reward: 40,
         done: Number(signals.linkedAccounts ?? 0) > 0,
         to: "/dashboard/wallet",
         icon: CreditCard,
@@ -98,6 +110,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "programs",
         label: "Explore Programs",
         description: "Compare trusted brands and funding options.",
+        why: "Helps RebateBoard prioritize the markets and offers you actually trade.",
+        time: "2 min",
+        reward: 15,
         done: visitedPrograms,
         to: "/dashboard/brands",
         icon: LayoutDashboard,
@@ -106,6 +121,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "review",
         label: "Submit First Review",
         description: "Help improve public trust signals.",
+        why: "Real trader feedback strengthens brand transparency and your trust profile.",
+        time: "4 min",
+        reward: 50,
         done: Number(signals.reviews ?? 0) > 0,
         to: "/dashboard/reviews",
         icon: Star,
@@ -114,6 +132,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "cashback",
         label: "Claim First Cashback",
         description: "Submit a claim when you trade with a supported brand.",
+        why: "Turns eligible activity into wallet earnings and creates proof history.",
+        time: "3 min",
+        reward: 60,
         done: Number(signals.claims ?? 0) > 0,
         to: "/dashboard/claims",
         icon: Wallet,
@@ -122,6 +143,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "plan",
         label: "Create Trading Plan",
         description: "Set rules before you start logging trades.",
+        why: "Improves discipline signals and gives Rebeta better context.",
+        time: "5 min",
+        reward: 35,
         done: Boolean(signals.hasTradingPlan),
         to: "/dashboard/trading-plan",
         icon: FileText,
@@ -130,6 +154,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "rebeta",
         label: "Try Rebeta AI",
         description: "Ask Rebeta for a trading or journal review.",
+        why: "Gives you personalized guidance using your profile and activity.",
+        time: "2 min",
+        reward: 20,
         done: triedRebeta,
         to: "/dashboard/ai-coach",
         icon: Bot,
@@ -138,6 +165,9 @@ export function useDashboardChecklist(signals: DashboardChecklistSignals = {}) {
         id: "rr",
         label: "Earn First RR",
         description: "Earn reward points from verified platform activity.",
+        why: "Starts your progression toward discounts, perks, and trader milestones.",
+        time: "Ongoing",
+        reward: 10,
         done: Number(user?.rrBalance ?? 0) > 0,
         to: "/dashboard/rewards",
         icon: Trophy,
@@ -193,6 +223,9 @@ export function DashboardChecklist({
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">
                   {checklist.completed} / {checklist.total} Completed
                 </span>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200 ring-1 ring-emerald-400/20">
+                  {checklist.tasks.reduce((sum, task) => sum + (task.done ? task.reward : 0), 0)} RR earned
+                </span>
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 Complete your setup to personalize RebateBoard, unlock rewards, and get cleaner recommendations.
@@ -216,7 +249,7 @@ export function DashboardChecklist({
                 <Link
                   key={task.id}
                   to={task.to as string}
-                  className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 transition hover:border-primary/35 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3 transition hover:border-primary/35 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                 >
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ring-1 ${
                     task.done
@@ -226,8 +259,16 @@ export function DashboardChecklist({
                     {task.done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-semibold text-white">{task.label}</span>
+                    <span className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-white">
+                      <span className="truncate">{task.label}</span>
+                      <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] text-emerald-200">+{task.reward} RR</span>
+                    </span>
                     <span className="mt-0.5 line-clamp-1 block text-[11px] text-muted-foreground">{task.description}</span>
+                    <span className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-white/45">
+                      <span>{task.time}</span>
+                      <span>•</span>
+                      <span className="line-clamp-1">{task.why}</span>
+                    </span>
                   </span>
                   {!task.done && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-violet-200" />}
                 </Link>

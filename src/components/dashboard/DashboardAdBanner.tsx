@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Megaphone, ArrowRight } from "lucide-react";
+import { Megaphone, ArrowRight } from "lucide-react";
 import {
   type DashboardAd,
   type AdSlide,
@@ -188,7 +188,7 @@ function Single({ ad, onClick }: { ad: DashboardAd; onClick: () => void }) {
     <Shell accent={ad.accent}>
       <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/15">
-          <Bot className="h-5 w-5 text-violet-100" />
+          <Megaphone className="h-5 w-5 text-violet-100" />
         </div>
         <div className="flex-1">
           <div className="text-sm font-semibold text-white">{ad.headline}</div>

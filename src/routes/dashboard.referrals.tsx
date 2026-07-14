@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Copy, Check, Share2, QrCode, Twitter, MessageCircle, Send, Mail, Link2,
-  Users, MousePointerClick, ShieldCheck, DollarSign, Bot, Gift, ExternalLink, Pencil, X,
+  Users, MousePointerClick, ShieldCheck, DollarSign, Gift, ExternalLink, Pencil, X,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard, Pill, EmptyState } from "@/components/dashboard/Primitives";
 import { useAuth } from "@/lib/auth";
@@ -161,7 +161,7 @@ function ReferralsPage() {
         <div className="space-y-4">
           <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-violet-500/10 to-transparent p-4">
             <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-              <Bot className="h-3 w-3" /> Code:
+              <Gift className="h-3 w-3" /> Code:
               <span className="rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs text-white">{profile.code}</span>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -263,7 +263,7 @@ function ReferralsPage() {
         <div className="lg:col-span-2">
           <Panel title="Recent activity" compact>
             {events.length === 0 ? (
-              <EmptyState icon={Bot} title="No activity yet" description="Share your link to see clicks and signups appear here in real time." />
+              <EmptyState icon={Users} title="No activity yet" description="Share your link to see clicks and signups appear here in real time." />
             ) : (
               <ul className="divide-y divide-white/5">
                 {events.slice(0, 8).map((e) => (

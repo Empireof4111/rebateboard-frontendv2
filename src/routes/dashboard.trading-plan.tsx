@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Panel, Pill } from "@/components/dashboard/Primitives";
 import { useTradingPlan, savePlan, uid, type Strategy, type Session, type MarketType } from "@/lib/trading-plan";
-import { Plus, Trash2, Bot, Brain, Shield, ListChecks, Save } from "lucide-react";
+import { Plus, Trash2, Clock, Brain, Shield, ListChecks, Save } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/trading-plan")({
@@ -38,7 +38,7 @@ function TradingPlanPage() {
         actions={
           <>
             <Pill tone="success"><Save className="h-3 w-3" /> Autosaved</Pill>
-            <Pill tone="primary"><Bot className="h-3 w-3" /> Updated {new Date(plan.updatedAt).toLocaleDateString()}</Pill>
+            <Pill tone="primary"><Clock className="h-3 w-3" /> Updated {new Date(plan.updatedAt).toLocaleDateString()}</Pill>
           </>
         }
       />

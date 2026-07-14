@@ -4,9 +4,9 @@ import { useAuth } from "@/lib/auth";
 import { financeApi } from "@/lib/finance-api";
 import { EmptyState, PageHeader, Panel, StatCard, Pill } from "@/components/dashboard/Primitives";
 import {
-  Gift, Bot, Zap, TrendingUp, GraduationCap, Percent, Building2, X,
+  Gift, Zap, TrendingUp, GraduationCap, Percent, Building2, X,
   CheckCircle2, ArrowRight, Trophy, Flame,
-  Instagram, Youtube, Send, MessageCircle, Mail, Music2, ExternalLink, Check, Clock, Target,
+  Instagram, Youtube, Send, MessageCircle, Mail, Music2, ExternalLink, Check, Clock, Target, WalletCards,
 } from "lucide-react";
 import {
   rrApi,
@@ -292,7 +292,7 @@ function RewardsPage() {
       )}
 
       {/* Redeem grid */}
-      <Panel title="Redeem your RR" action={<Pill tone="primary"><Bot className="h-3 w-3" />Use at checkout</Pill>}>
+      <Panel title="Redeem your RR" action={<Pill tone="primary"><WalletCards className="h-3 w-3" />Use at checkout</Pill>}>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {redeemOptions.map((opt) => {
             const Icon = opt.icon;
@@ -434,7 +434,7 @@ function RewardsPage() {
       </Panel>
 
       {/* Earn opportunities */}
-      <Panel title="Earn RR" action={<Bot className="h-4 w-4 text-violet-300" />}>
+      <Panel title="Earn RR" action={<Gift className="h-4 w-4 text-violet-300" />}>
         {earnRules.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {earnRules.map((rule) => (
@@ -498,7 +498,7 @@ function RewardsPage() {
 
 const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   follow_instagram: Instagram,
-  follow_twitter: Bot,
+  follow_twitter: X,
   subscribe_youtube: Youtube,
   follow_tiktok: Music2,
   join_telegram: Send,
@@ -522,13 +522,13 @@ function FollowAndEarnPanel({
 
   return (
     <>
-      <Panel title="Follow & earn — one-time RR rewards" action={<Pill tone="primary"><Bot className="h-3 w-3" />Once per account</Pill>}>
+      <Panel title="Follow & earn — one-time RR rewards" action={<Pill tone="primary"><CheckCircle2 className="h-3 w-3" />Once per account</Pill>}>
         <p className="mb-3 text-[12px] text-muted-foreground">
           Follow our official channels to unlock RR. Each reward is paid <b>once per account</b> after we verify your follow/subscribe.
         </p>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {social.map((r) => {
-            const Icon = SOCIAL_ICONS[r.id] ?? Bot;
+            const Icon = SOCIAL_ICONS[r.id] ?? ExternalLink;
             const claim = claims.find((c) => c.socialId === r.id);
             const claimed = claim?.status === "approved";
             const pending = claim?.status === "pending";

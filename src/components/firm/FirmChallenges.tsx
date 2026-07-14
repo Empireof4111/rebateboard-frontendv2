@@ -18,7 +18,6 @@ import {
   RotateCcw,
   Search,
   Shield,
-  Bot,
   Star,
   Tag,
   TrendingUp,
@@ -879,7 +878,7 @@ function CheckoutModal({
                   key={option}
                   active={rewardPreference === option}
                   onClick={() => selectRewardPreference(option)}
-                  icon={option === "cashback" ? <Gift className="h-3 w-3" /> : option === "rr" ? <Coins className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+                  icon={option === "cashback" ? <Gift className="h-3 w-3" /> : option === "rr" ? <Coins className="h-3 w-3" /> : <Percent className="h-3 w-3" />}
                   label={option === "rr" ? "RR" : option[0].toUpperCase() + option.slice(1)}
                 />
               ))}

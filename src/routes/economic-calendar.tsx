@@ -5,16 +5,23 @@ import {
   Brain,
   CalendarDays,
   Clock3,
+  ExternalLink,
   Globe2,
+  Megaphone,
   Moon,
   Radio,
   RefreshCw,
-  ShieldAlert,
   Timer,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { DashboardAd } from "@/lib/dashboard-ads";
+import {
+  fetchPublicAdverts,
+  trackPublicAdvertClick,
+  trackPublicAdvertImpression,
+} from "@/lib/public-adverts-api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/economic-calendar")({
@@ -221,15 +228,7 @@ export function EconomicCalendarExperience({ embedded = false }: { embedded?: bo
           <TradingViewCalendar />
           <aside className="space-y-4">
             <RebetaPreparationCard />
-            <article className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-5">
-              <div className="flex items-center gap-2 text-sm font-black">
-                <ShieldAlert className="h-4 w-4 text-cyan-200" />
-                Journal Context
-              </div>
-              <p className="mt-3 text-sm leading-7 text-white/60">
-                Future synchronization can connect trade timestamps, instruments, selected timezone, and verified event proximity. Until a structured event API is connected, Rebeta will not treat TradingView iframe data as internal live data.
-              </p>
-            </article>
+            <EconomicCalendarAdBanner />
           </aside>
         </section>
 
@@ -529,10 +528,85 @@ function SessionTimeline({ sessions, timezone, now }: { sessions: SessionState[]
           ))}
         </div>
       </div>
-      <p className="mt-5 rounded-3xl border border-white/10 bg-black/15 p-4 text-sm leading-6 text-white/58">
-        Completed portions are muted, upcoming portions remain visible, and active sessions are highlighted. Use this as preparation context, not a prediction of market direction.
-      </p>
     </article>
+  );
+}
+
+function EconomicCalendarAdBanner() {
+  const [ad, setAd] = useState<DashboardAd | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = () => {
+      fetchPublicAdverts("economic-calendar").then((items) => {
+        if (active) setAd(items.find((item) => item.format === "single" || item.format === "marquee") ?? items[0] ?? null);
+      });
+    };
+    load();
+    window.addEventListener("rb:dashboard-ads", load);
+    return () => {
+      active = false;
+      window.removeEventListener("rb:dashboard-ads", load);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (ad?.id) void trackPublicAdvertImpression(ad.id);
+  }, [ad?.id]);
+
+  if (!ad) return null;
+
+  const href = ad.href || "/brands";
+  const handleClick = () => {
+    if (ad.id) void trackPublicAdvertClick(ad.id);
+  };
+
+  return (
+    <a
+      href={href}
+      onClick={handleClick}
+      className="group block overflow-hidden rounded-[2rem] border border-white/10 bg-[rgba(22,22,31,0.94)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] transition hover:-translate-y-0.5 hover:border-violet-300/35"
+      aria-label={ad.headline || ad.name || "Sponsored calendar placement"}
+    >
+      {ad.image ? (
+        <div className="relative aspect-[16/9] overflow-hidden bg-[var(--rb-bg-section)]">
+          <img
+            src={ad.image}
+            alt=""
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/10 to-transparent" />
+          <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-black/45 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white ring-1 ring-white/15 backdrop-blur">
+            <Megaphone className="h-3 w-3 text-violet-200" />
+            Sponsored
+          </div>
+        </div>
+      ) : null}
+      <div className="relative p-5">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_0%,rgba(90,34,241,0.14),transparent_34%)]" />
+        <div className="relative">
+          {!ad.image ? (
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-violet-500/14 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-100 ring-1 ring-violet-300/24">
+              <Megaphone className="h-3 w-3" />
+              Sponsored
+            </div>
+          ) : null}
+          <h3 className="text-lg font-black leading-tight text-white">
+            {ad.headline || ad.name || "Featured trading partner"}
+          </h3>
+          {(ad.sub || ad.description) && (
+            <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/62">
+              {ad.sub || ad.description}
+            </p>
+          )}
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/[0.07] px-3 py-2 text-xs font-bold text-white ring-1 ring-white/10 transition group-hover:bg-violet-500/18 group-hover:ring-violet-300/28">
+            {ad.cta || "Learn more"}
+            <ExternalLink className="h-3.5 w-3.5" />
+          </div>
+        </div>
+      </div>
+    </a>
   );
 }
 

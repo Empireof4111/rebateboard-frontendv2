@@ -17,9 +17,9 @@ const badgeVariants = cva(
         success: "border-[rgba(16,185,129,0.28)] bg-[var(--rb-success-soft)] text-emerald-100",
         info: "border-[rgba(59,130,246,0.28)] bg-[var(--rb-info-soft)] text-blue-100",
         warning: "border-[rgba(245,158,11,0.28)] bg-[var(--rb-warning-soft)] text-amber-100",
-        preliminary: "border-[rgba(182,154,255,0.18)] bg-white/[0.06] text-[var(--rb-purple-200)]",
-        partial: "border-[rgba(59,130,246,0.26)] bg-[var(--rb-info-soft)] text-blue-100",
-        full: "border-[rgba(16,185,129,0.28)] bg-[var(--rb-success-soft)] text-emerald-100",
+        preliminary: "border-[rgba(199,137,74,0.24)] bg-[rgba(199,137,74,0.12)] text-[#f1c28b]",
+        partial: "border-[rgba(226,232,240,0.24)] bg-white/[0.07] text-slate-100",
+        full: "border-[rgba(255,201,40,0.36)] bg-[rgba(255,201,40,0.13)] text-[var(--rb-gold-200)]",
       },
     },
     defaultVariants: {

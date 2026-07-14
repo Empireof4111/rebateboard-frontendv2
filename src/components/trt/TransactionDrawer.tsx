@@ -1,6 +1,6 @@
 // Universal Add Transaction modal — handles both income & expense via steps.
 import { useEffect, useMemo, useState } from "react";
-import { X, ArrowDown, ArrowUp, Check, Bot, Save, Plus } from "lucide-react";
+import { X, ArrowDown, ArrowUp, Check, Save, Plus } from "lucide-react";
 import { BrandPicker } from "./BrandPicker";
 import {
   EXPENSE_CATEGORIES, INCOME_CATEGORIES, QUICK_TEMPLATES,
@@ -128,7 +128,7 @@ export function TransactionDrawer({
           {/* Quick templates */}
           <div>
             <div className="mb-2 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <Bot className="h-3 w-3 text-accent" /> Quick templates
+              <Save className="h-3 w-3 text-accent" /> Quick templates
             </div>
             <div className="flex flex-wrap gap-1.5">
               {QUICK_TEMPLATES.map((tpl) => (

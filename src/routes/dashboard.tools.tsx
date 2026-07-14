@@ -2,7 +2,7 @@ import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Calculator, DollarSign, TrendingUp, ArrowLeftRight, Gift, Search,
-  Star, History, Bot, X, Save, BookPlus, Share2, AlertTriangle,
+  Star, History, X, Save, BookPlus, Share2, AlertTriangle,
   BarChart3,
 } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/dashboard/Primitives";
@@ -186,7 +186,7 @@ function ToolsPage() {
           )}
         </Panel>
 
-        <Panel title="Journal guidance" action={<Bot className="h-4 w-4 text-violet-300" />}>
+        <Panel title="Journal guidance" action={<BookPlus className="h-4 w-4 text-violet-300" />}>
           {journalGuidance ? (
             <ul className="space-y-2 text-xs">
               <li className="rounded-xl bg-white/5 p-3 text-white/85">

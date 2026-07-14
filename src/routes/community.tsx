@@ -7,7 +7,7 @@ import {
   Send,
   ShieldAlert,
   ShieldCheck,
-  Bot,
+  Instagram,
   Users,
 } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -70,7 +70,7 @@ const platforms = [
     name: "Instagram",
     description: "Visual updates, short-form education, and community milestones.",
     href: communityConfig.instagram,
-    icon: Bot,
+    icon: Instagram,
     cta: "Follow",
   },
   {
@@ -165,7 +165,7 @@ function CommunityPage() {
         <section className="grid gap-4 lg:grid-cols-3">
           {benefits.map((benefit) => (
             <article key={benefit} className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_70px_rgba(42,12,84,0.18)]">
-              <Bot className="h-5 w-5 text-violet-200" />
+              <Users className="h-5 w-5 text-violet-200" />
               <p className="mt-4 text-sm leading-6 text-white/68">{benefit}</p>
             </article>
           ))}

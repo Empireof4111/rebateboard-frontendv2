@@ -14,6 +14,13 @@ function money(value: number) {
   return `${sign}$${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
+function calendarGuidance(monthTrades: number) {
+  if (monthTrades === 0) {
+    return "This month is ready for your first logged trade. Quiet days stay blank, and completed journal results will appear as your PnL heatmap.";
+  }
+  return "Only days with journal activity are highlighted. Quiet days stay blank so your real trading behavior is easier to scan.";
+}
+
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
@@ -97,21 +104,39 @@ function CalendarPage() {
             }
           />
         ) : (
-          <div className="grid grid-cols-7 gap-2">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-              <div key={day} className="text-center text-[10px] uppercase text-muted-foreground">{day}</div>
-            ))}
-            {data.dayRows.map((day, index) => (
-              day ? (
-                <div key={day.day} className={`flex min-h-16 flex-col items-center justify-center rounded-xl p-2 ${colorFor(day.pnl, day.trades)}`}>
-                  <div className="text-[10px] opacity-70">{day.day}</div>
-                  <div className="text-xs font-semibold">{day.trades === day.pending ? "Pending" : money(day.pnl)}</div>
-                  {day.trades > 0 && <div className="mt-0.5 text-[9px] opacity-70">{day.trades} trade{day.trades === 1 ? "" : "s"}</div>}
-                </div>
-              ) : (
-                <div key={`blank-${index}`} className="min-h-16 rounded-xl bg-transparent" />
-              )
-            ))}
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.035] px-4 py-3 text-sm text-muted-foreground">
+              {calendarGuidance(data.monthTrades.length)}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                <div key={day} className="text-center text-[10px] uppercase text-muted-foreground">{day}</div>
+              ))}
+              {data.dayRows.map((day, index) => {
+                if (!day) return <div key={`blank-${index}`} className="min-h-16 rounded-xl bg-transparent" />;
+
+                const hasTrades = day.trades > 0;
+                const hasOnlyPendingTrades = hasTrades && day.trades === day.pending;
+
+                return (
+                  <div
+                    key={day.day}
+                    className={`flex min-h-16 flex-col items-center justify-center rounded-xl p-2 ${
+                      hasTrades ? colorFor(day.pnl, day.trades) : "bg-white/[0.025] text-muted-foreground/55"
+                    }`}
+                  >
+                    <div className="text-[10px] opacity-70">{day.day}</div>
+                    {hasTrades && (
+                      <>
+                        <div className="text-xs font-semibold">{hasOnlyPendingTrades ? "Open result" : money(day.pnl)}</div>
+                        <div className="mt-0.5 text-[9px] opacity-70">{day.trades} trade{day.trades === 1 ? "" : "s"}</div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </Panel>

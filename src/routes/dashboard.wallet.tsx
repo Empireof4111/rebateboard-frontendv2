@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Wallet, ArrowDownToLine, Send, Bot, X, ChevronRight, ArrowUpRight,
+  Wallet, ArrowDownToLine, Send, X, ChevronRight, ArrowUpRight,
   ArrowDownLeft, Filter, Search, CheckCircle2, Clock, CircleDollarSign,
   TrendingUp, Building2, Zap, Upload, Coins, Banknote, IdCard,
 } from "lucide-react";
@@ -297,7 +297,7 @@ function WalletPage() {
                 <Building2 className="h-3.5 w-3.5" /> Link account · earn
               </button>
               <button onClick={() => setClaimOpen(true)} className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white">
-                <Bot className="h-3.5 w-3.5 text-violet-300" /> Claim cashback
+                <CircleDollarSign className="h-3.5 w-3.5 text-violet-300" /> Claim cashback
               </button>
               <Link to="/dashboard/claims" className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-white/80 hover:text-white">
                 View all claims →
@@ -561,7 +561,7 @@ function WalletPage() {
         <div className="grid gap-2 md:grid-cols-3">
           <PrefOption
             active={pref.default === "rr-wallet"} onClick={() => updatePref({ default: "rr-wallet" })}
-            icon={<Bot className="h-4 w-4 text-violet-300" />}
+            icon={<Coins className="h-4 w-4 text-violet-300" />}
             title="RR (Reward) wallet"
             desc="System auto-credits — no proof required when you used our affiliate link."
           />

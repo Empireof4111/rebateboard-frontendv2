@@ -12,7 +12,7 @@ import {
   LockKeyhole,
   Megaphone,
   ShieldCheck,
-  Bot,
+  Brain,
   WalletCards,
   XCircle,
 } from "lucide-react";
@@ -48,7 +48,7 @@ const revenueSources = [
     text: "Brands may sponsor educational campaigns or promotional placements. Sponsored content is always clearly labeled.",
   },
   {
-    icon: Bot,
+    icon: Brain,
     title: "Future Rebeta Pro",
     text: "Advanced AI features will eventually be available through an optional premium subscription. Core transparency tools will remain free.",
   },

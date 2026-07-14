@@ -4,6 +4,7 @@ import {
   Bot,
   ChevronRight,
   CircleDollarSign,
+  Compass,
   FileQuestion,
   HelpCircle,
   MessageCircle,
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/help-center")({
 });
 
 const categories = [
-  { name: "Getting Started", icon: Bot, keywords: ["account", "start", "free", "signup"] },
+  { name: "Getting Started", icon: Compass, keywords: ["account", "start", "free", "signup"] },
   { name: "Cashback and Claims", icon: CircleDollarSign, keywords: ["cashback", "claim", "rebate"] },
   { name: "Wallet and Withdrawals", icon: Wallet, keywords: ["wallet", "withdrawal", "payment"] },
   { name: "Reviews", icon: MessageCircle, keywords: ["review", "verified"] },

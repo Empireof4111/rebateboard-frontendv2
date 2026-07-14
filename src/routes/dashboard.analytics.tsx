@@ -4,7 +4,7 @@ import { EmptyState, PageHeader, Panel, Pill, StatCard } from "@/components/dash
 import { openAddTrade } from "@/lib/ui-bus";
 import { mergeBackendTrades, resolveTradeNetPnl, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
 import { fetchJournalTradesFromBackend } from "@/lib/financial-intelligence-api";
-import { BarChart3, Plus, Bot } from "lucide-react";
+import { BarChart3, BookOpen, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
   component: AnalyticsPage,
@@ -169,7 +169,7 @@ function AnalyticsPage() {
             <MetricPanel title="Asset Performance" rows={metrics.assetRows} />
           </div>
 
-          <Panel title="Best Conditions Engine" action={<Pill tone="primary"><Bot className="h-3 w-3" />Journal</Pill>}>
+          <Panel title="Best Conditions Engine" action={<Pill tone="primary"><BookOpen className="h-3 w-3" />Journal</Pill>}>
             {bestConditions.length > 0 ? (
               <>
                 <p className="text-sm text-white">Your strongest logged conditions so far:</p>

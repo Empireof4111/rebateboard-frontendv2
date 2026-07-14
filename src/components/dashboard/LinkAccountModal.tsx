@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronRight, ChevronLeft, Search, Mail, CheckCircle2, ExternalLink, Building2, Bot, Banknote, Coins, AlertTriangle, Send } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Search, Mail, CheckCircle2, ExternalLink, Building2, Banknote, Coins, AlertTriangle, Send } from "lucide-react";
 import { fetchPublicAdminBrands, type AdminBrandRecord } from "@/lib/admin-brands-api";
 import { ApiError } from "@/lib/api";
 import { financeApi, type PartnerRequestRecord } from "@/lib/finance-api";

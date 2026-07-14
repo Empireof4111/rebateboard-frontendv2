@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3, Bot } from "lucide-react";
+import { ArrowRight, Clock3, ShieldCheck } from "lucide-react";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
 
@@ -25,7 +25,7 @@ export function ComingSoonPage({
               {eyebrow}
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/70">
-              <Bot className="h-3.5 w-3.5 text-violet-200" />
+              <ShieldCheck className="h-3.5 w-3.5 text-violet-200" />
               RebateBoard 2.0
             </span>
           </div>

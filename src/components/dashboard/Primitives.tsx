@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, Compass } from "lucide-react";
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
@@ -96,6 +96,8 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon?: 
   return (
     <div className="relative isolate flex flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-violet-300/18 bg-[radial-gradient(circle_at_50%_0%,rgba(126,77,255,0.13),transparent_55%),rgba(18,18,25,0.76)] px-6 py-10 text-center shadow-[0_18px_48px_rgba(0,0,0,0.26)]">
       <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/35 to-transparent" aria-hidden />
+      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/10 blur-2xl" aria-hidden />
+      <div className="pointer-events-none absolute -left-8 bottom-0 h-20 w-20 rounded-full bg-emerald-500/8 blur-2xl" aria-hidden />
       {Icon && (
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
           <Icon className="h-5 w-5" />
@@ -106,6 +108,43 @@ export function EmptyState({ icon: Icon, title, description, action }: { icon?: 
         {description && <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>}
       </div>
       {action && <div className="mt-1">{action}</div>}
+    </div>
+  );
+}
+
+export function GuidedEmptyState({
+  icon: Icon = Compass,
+  title,
+  description,
+  action,
+  preview,
+}: {
+  icon?: React.ElementType;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  preview?: ReactNode;
+}) {
+  return (
+    <div className="relative isolate overflow-hidden rounded-2xl border border-violet-300/18 bg-[radial-gradient(circle_at_12%_0%,rgba(126,77,255,0.16),transparent_44%),rgba(18,18,25,0.82)] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.26)]">
+      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/35 to-transparent" aria-hidden />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-violet-200 ring-1 ring-primary/25">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-base font-bold text-white">{title}</div>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
+      {preview && (
+        <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+          {preview}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Megaphone, ArrowUpRight, Calendar, Bot, Bell, Clock } from "lucide-react";
+import { Megaphone, ArrowUpRight, Calendar, Bell, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { fetchPublicAnnouncements, type Announcement } from "@/lib/admin-api";
 
@@ -140,7 +140,7 @@ function FeaturedCard({ a, firmName }: { a: Announcement; firmName: string }) {
       <div className="relative">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full rb-gradient-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-violet-500/30">
-            <Bot className="h-3 w-3" /> Featured
+            <Megaphone className="h-3 w-3" /> Featured
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-200 ring-1 ring-emerald-300/30">
             <span className="relative flex h-1.5 w-1.5">

@@ -52,6 +52,7 @@ import { useAuth } from "@/lib/auth";
 import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 import { useI18n, type LanguageCode, type TranslationKey } from "@/lib/i18n";
 import { getTraderLevelProgress } from "@/lib/trader-levels";
+import { LiquidGlassSurface } from "@/components/ui/LiquidGlassSurface";
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -70,7 +71,7 @@ function UserPill() {
   const dashboardHref = `/login?reauth=1&email=${encodeURIComponent(user.email)}&redirect=/dashboard`;
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="group flex max-w-[18rem] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-2.5 text-left outline-none transition hover:border-white/20 hover:bg-white/[0.08]">
+      <DropdownMenuTrigger className="liquid-glass-inset group flex max-w-[18rem] items-center gap-2 rounded-full py-1 pl-1 pr-2.5 text-left outline-none transition hover:border-white/20 hover:bg-white/[0.08]">
         <Avatar className="h-8 w-8 shrink-0 shadow-[0_0_18px_rgba(192,132,252,0.38)]">
           <AvatarImage
             src={user.dp || undefined}
@@ -442,7 +443,7 @@ function LanguageSelector() {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-label={t("common.language")}
-        className="flex h-9 items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] px-2 text-xs font-semibold text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-violet-300/25 hover:bg-white/[0.08] sm:px-3"
+        className="liquid-glass-inset flex h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold text-white outline-none transition hover:border-violet-300/25 hover:bg-white/[0.08] sm:px-3"
       >
         <Globe2 className="h-3.5 w-3.5 text-primary" />
         <span className="hidden sm:inline">{languageMeta.code.toUpperCase()}</span>
@@ -536,7 +537,7 @@ function UtilityMenu() {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-label="Open RebateBoard menu"
-        className="hidden h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.045] text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-violet-300/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring sm:grid"
+        className="liquid-glass-inset hidden h-10 w-10 place-items-center rounded-full text-white outline-none transition hover:border-violet-300/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring sm:grid"
       >
         <LayoutGrid className="h-4 w-4" />
       </DropdownMenuTrigger>
@@ -635,8 +636,10 @@ function MobileNavigationDrawer({
           open ? "opacity-100" : "opacity-0"
         }`}
       />
-      <aside
-        className={`navigation-glass-panel mobile-navigation-drawer fixed inset-y-0 left-auto right-0 flex h-dvh w-full max-w-full flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300 sm:w-[min(24rem,92vw)] ${
+      <LiquidGlassSurface
+        as="aside"
+        variant="mobile-nav"
+        className={`fixed inset-y-0 left-auto right-0 flex h-dvh w-full max-w-full flex-col rounded-none border-y-0 border-r-0 p-4 text-white transition-transform duration-300 sm:w-[min(24rem,92vw)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -768,7 +771,7 @@ function MobileNavigationDrawer({
             </div>
           </div>
         </div>
-      </aside>
+      </LiquidGlassSurface>
     </div>
   );
 }
@@ -819,7 +822,10 @@ export function SiteHeader() {
           {user ? "auth" : "guest"}
         </span>
         <div className="mx-auto w-full max-w-[96rem] px-3 sm:px-5 lg:px-7">
-          <div className="site-header-glass w-full max-w-full overflow-hidden rounded-[1.15rem] px-2.5 py-2.5 sm:rounded-[1.35rem] sm:px-4">
+          <LiquidGlassSurface
+            variant="header"
+            className="w-full max-w-full rounded-[1.15rem] px-2.5 py-2.5 sm:rounded-[1.35rem] sm:px-4"
+          >
             <nav className="flex min-w-0 items-center justify-between gap-3">
               <Link
                 to="/"
@@ -834,7 +840,7 @@ export function SiteHeader() {
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
-                  className="flex h-9 w-full items-center gap-3 rounded-full border border-white/10 bg-black/15 px-4 text-left shadow-[inset_0_1px_8px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.035)] transition hover:border-violet-300/25 hover:bg-white/[0.065] focus-visible:border-violet-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/20"
+                  className="liquid-glass-inset flex h-9 w-full items-center gap-3 rounded-full px-4 text-left transition hover:border-violet-300/25 hover:bg-white/[0.065] focus-visible:border-violet-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/20"
                 >
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <span className="flex-1 text-sm text-muted-foreground">{t("common.search")}</span>
@@ -849,7 +855,7 @@ export function SiteHeader() {
                   type="button"
                   onClick={() => setSearchOpen(true)}
                   aria-label="Open search"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.055] text-white transition hover:border-violet-300/25 hover:bg-white/[0.08] lg:hidden"
+                  className="liquid-glass-inset grid h-9 w-9 place-items-center rounded-full text-white transition hover:border-violet-300/25 hover:bg-white/[0.08] lg:hidden"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -859,7 +865,7 @@ export function SiteHeader() {
                   type="button"
                   onClick={() => setMobileMenuOpen(true)}
                   aria-label="Open navigation menu"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.055] text-white transition hover:border-violet-300/25 hover:bg-white/[0.08] lg:hidden"
+                  className="liquid-glass-inset grid h-9 w-9 place-items-center rounded-full text-white transition hover:border-violet-300/25 hover:bg-white/[0.08] lg:hidden"
                 >
                   <Menu className="h-4 w-4" />
                 </button>
@@ -875,7 +881,7 @@ export function SiteHeader() {
                 </div>
               </div>
             </div>
-          </div>
+          </LiquidGlassSurface>
         </div>
         <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </header>
