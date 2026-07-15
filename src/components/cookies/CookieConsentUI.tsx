@@ -67,13 +67,13 @@ export function CookieConsentManager() {
 }
 
 function CookieConsentBanner() {
-  const { isLoaded, hasResponded, acceptAll, rejectOptional, openPreferences } = useCookieConsent();
+  const { isLoaded, hasResponded, isPreferencesOpen, acceptAll, rejectOptional, openPreferences } = useCookieConsent();
 
-  if (!isLoaded || hasResponded) return null;
+  if (!isLoaded || hasResponded || isPreferencesOpen) return null;
 
   return (
     <section
-      className="fixed inset-x-3 bottom-3 z-[80] mx-auto max-w-3xl rounded-[26px] border border-white/10 bg-[rgba(13,12,20,0.84)] p-4 text-white shadow-[0_20px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl sm:bottom-5 sm:p-5"
+      className="fixed inset-x-3 bottom-3 z-[2147482000] mx-auto max-w-3xl rounded-[26px] border border-white/10 bg-[rgba(13,12,20,0.84)] p-4 text-white shadow-[0_20px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl sm:bottom-5 sm:p-5"
       aria-label="Cookie consent"
     >
       <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_14%_0%,rgba(126,77,255,0.16),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.055),transparent_38%)]" />
@@ -140,7 +140,7 @@ function CookiePreferencesModal() {
 
   return (
     <Dialog open={isPreferencesOpen} onOpenChange={(open) => (open ? undefined : closePreferences())}>
-      <DialogContent className="cookie-preferences-modal max-w-2xl border-white/12 bg-[rgba(13,12,20,0.9)] p-0 text-white shadow-[0_24px_80px_rgba(0,0,0,0.52)] backdrop-blur-2xl">
+      <DialogContent className="cookie-preferences-modal z-[2147482100] max-w-2xl border-white/12 bg-[rgba(13,12,20,0.9)] p-0 text-white shadow-[0_24px_80px_rgba(0,0,0,0.52)] backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_18%_0%,rgba(126,77,255,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
         <div className="relative">
           <DialogHeader className="border-b border-white/10 px-5 py-5 pr-12 sm:px-6">
