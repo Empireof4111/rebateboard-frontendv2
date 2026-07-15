@@ -4,6 +4,7 @@ import {
   RotateCcw, Plus, Trash2, GraduationCap, BookOpen, Star, UserPlus, Flag,
   Instagram, Youtube, Send, MessageCircle, Mail, Coins, ShieldCheck, Check, X,
   TrendingUp, Users, Gift, Activity, ExternalLink, Music2, Flame, Save, RefreshCw,
+  ClipboardCheck,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard, DataTable, Pill } from "@/components/superadmin/AdminUI";
 import { toast } from "@/components/superadmin/AdminActions";
@@ -272,6 +273,7 @@ function OverviewPanel({ stats, config }: { stats: RrStats | null; config: RrAll
 /* ============================================================ Earn Rules */
 
 const EARN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  onboarding_complete: ClipboardCheck,
   academy_course_complete: GraduationCap,
   trade_log: BookOpen,
   review_submit: Star,

@@ -32,6 +32,7 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ConsentGate } from "@/components/cookies/CookieConsentUI";
 import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
 import heroChart from "@/assets/hero-chart.jpg";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -884,13 +885,22 @@ function HomepageVideoSlider() {
     <div className="glass-strong overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-0.5">
       <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-white/[0.035]">
         {playing && videoId ? (
-          <iframe
-            className="h-full w-full"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
-            title={current.headline || current.name}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
+          <ConsentGate category="functional" fallback={
+            <div className="grid h-full place-items-center bg-white/[0.035] p-5 text-center">
+              <div>
+                <Youtube className="mx-auto h-8 w-8 text-violet-200" />
+                <p className="mt-3 text-sm font-bold text-white">Enable functional cookies to play this video.</p>
+              </div>
+            </div>
+          }>
+            <iframe
+              className="h-full w-full"
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+              title={current.headline || current.name}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </ConsentGate>
         ) : thumbnail ? (
           <img
             src={thumbnail}

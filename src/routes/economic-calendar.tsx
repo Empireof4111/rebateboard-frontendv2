@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { ConsentGate } from "@/components/cookies/CookieConsentUI";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardAd } from "@/lib/dashboard-ads";
 import {
@@ -225,7 +226,9 @@ export function EconomicCalendarExperience({ embedded = false }: { embedded?: bo
         </section>
 
         <section id="calendar" className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <TradingViewCalendar />
+          <ConsentGate category="functional">
+            <TradingViewCalendar />
+          </ConsentGate>
           <aside className="space-y-4">
             <RebetaPreparationCard />
             <EconomicCalendarAdBanner />

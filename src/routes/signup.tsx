@@ -209,6 +209,7 @@ function SignupPage() {
             <StepSuccess
               name={user?.name ?? "Trader"}
               walletId={user?.walletId ?? "-"}
+              rrBalance={user?.rrBalance ?? 0}
               onExplore={() => navigate({ to: "/dashboard" })}
               onConnect={() => navigate({ to: "/programs" as any })}
               onOffers={() => navigate({ to: "/dashboard/offers" as any })}
@@ -1190,8 +1191,15 @@ function ChipRow({
 }
 
 function StepSuccess({
-  name, walletId, onExplore, onConnect, onOffers,
-}: { name: string; walletId: string | number; onExplore: () => void; onConnect: () => void; onOffers: () => void }) {
+  name, walletId, rrBalance, onExplore, onConnect, onOffers,
+}: {
+  name: string;
+  walletId: string | number;
+  rrBalance: number;
+  onExplore: () => void;
+  onConnect: () => void;
+  onOffers: () => void;
+}) {
   return (
     <div className="text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-[0_0_40px_rgba(16,185,129,0.55)]">
@@ -1206,7 +1214,8 @@ function StepSuccess({
         <Wallet className="h-3.5 w-3.5 text-emerald-400" />
         Wallet ID <span className="font-mono text-white">{walletId}</span>
         <span className="text-white/30">-</span>
-        <Trophy className="h-3.5 w-3.5 text-violet-300" /> RR balance 0
+        <Trophy className="h-3.5 w-3.5 text-violet-300" /> RR balance{" "}
+        <span className="font-mono text-white">{Number(rrBalance || 0).toLocaleString()}</span>
       </div>
 
       <div className="mt-7 grid gap-3 sm:grid-cols-3">

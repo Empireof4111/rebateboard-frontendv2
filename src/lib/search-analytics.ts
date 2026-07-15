@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api";
+import { hasCookieConsent } from "@/lib/cookie-consent";
 
 /**
  * Global Search analytics helpers.
@@ -86,6 +87,8 @@ function readSearchSessionId() {
 }
 
 export function logSearchEvent(ev: Omit<SearchEvent, "id" | "at"> & { at?: string }) {
+  if (!hasCookieConsent("analytics")) return;
+
   const row: SearchEvent = {
     id: `se_${Math.random().toString(36).slice(2, 9)}`,
     at: ev.at ?? new Date().toISOString(),
