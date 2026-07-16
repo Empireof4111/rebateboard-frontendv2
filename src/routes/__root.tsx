@@ -1,7 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth";
-import { captureRefFromUrl } from "@/lib/referral-store";
 import { I18nProvider } from "@/lib/i18n";
 import { PublicEngagementLayer } from "@/components/PublicEngagementLayer";
 import { CookieConsentManager } from "@/components/cookies/CookieConsentUI";
@@ -77,7 +75,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  useEffect(() => { captureRefFromUrl(); }, []);
   return (
     <I18nProvider>
       <AuthProvider>

@@ -19,6 +19,9 @@ export type ReferralStats = {
   earned: number;
   paid: number;
   pending: number;
+  rrEarned?: number;
+  pendingReferrals?: number;
+  expiredReferrals?: number;
   clickToSignupCvr: string;
   signupToQualifiedRate: string;
   profile: ReferralProfile;
@@ -53,6 +56,14 @@ export type RefereeRow = {
   commission: number;
 };
 
+export type ReferralResolution = {
+  code: string;
+  customSlug?: string | null;
+  attributionToken: string;
+  expiresAt: string;
+  redirectTo: string;
+};
+
 export const referralApi = {
   async getOrCreateProfile(token: string): Promise<ApiResponse<ReferralProfile>> {
     return apiRequest("/referral/my", { token });
@@ -82,8 +93,11 @@ export const referralApi = {
     return apiRequest("/referral/capture", { method: "POST", body: { code, source } });
   },
 
-  async recordSignup(code: string, refereeName: string, refereeEmail: string, source?: string): Promise<ApiResponse<{ recorded: boolean }>> {
-    return apiRequest("/referral/signup", { method: "POST", body: { code, refereeName, refereeEmail, source } });
+  async resolveLink(identifier: string, source?: string, campaign?: string): Promise<ApiResponse<ReferralResolution>> {
+    return apiRequest("/referral/resolve", {
+      method: "POST",
+      body: { identifier, source, campaign },
+    });
   },
 
   async adminListProfiles(token: string, page = 0, size = 30): Promise<ApiResponse<{ page: (ReferralProfile & { user: any })[] }>> {

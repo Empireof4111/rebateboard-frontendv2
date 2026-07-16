@@ -38,6 +38,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/dashboard", labelKey: "dashboard.nav.dashboard", icon: LayoutDashboard, exact: true },
       { to: "/dashboard/wallet", labelKey: "dashboard.nav.wallet", icon: Wallet, badge: "NEW" },
+      { to: "/dashboard/rewards", labelKey: "dashboard.nav.rewards", icon: Gift },
       { to: "/dashboard/claims", labelKey: "dashboard.nav.claims", icon: ClipboardCheck },
       { to: "/dashboard/brands", labelKey: "dashboard.nav.programs", icon: Layers },
       { to: "/dashboard/offers", labelKey: "dashboard.nav.offers", icon: Megaphone },
@@ -89,7 +90,6 @@ const groups: NavGroup[] = [
     id: "account",
     labelKey: "dashboard.group.account",
     items: [
-      { to: "/dashboard/rewards", labelKey: "dashboard.nav.rewards", icon: Gift },
       { to: "/dashboard/risk", labelKey: "dashboard.nav.reports", icon: FileWarning },
       { to: "/dashboard/profile", labelKey: "dashboard.profile", icon: UserIcon },
       { to: "/dashboard/settings", labelKey: "dashboard.nav.settings", icon: Settings },

@@ -33,25 +33,30 @@ const emptyData: JournalAnalyticsResponse = {
     range: 30,
     market: "All",
     experience: "All",
-    withPlanOnly: false,
+    completedOnly: false,
+    userId: null,
     availableMarkets: ["All"],
     availableExperiences: ["All"],
+    availableTraders: [{ id: 0, label: "All traders" }],
   },
   summary: {
     trackedEntries: 0,
-    rebateEarned: 0,
-    commissionTracked: 0,
-    volumeLots: 0,
+    completedEntries: 0,
     activeTraders: 0,
-    academyPlanners: 0,
-    academyCompleted: 0,
-    averageRrBalance: 0,
-    pendingClaims: 0,
+    netPnl: 0,
+    totalFees: 0,
+    averageR: 0,
+    winRate: 0,
+    lossRate: 0,
+    profitFactor: 0,
+    screenshotsAttached: 0,
+    strategiesUsed: 0,
   },
   dailyActivity: [],
   marketMix: [],
-  experienceMix: [],
+  resultMix: [],
   topTraders: [],
+  traderBreakdown: null,
 };
 
 function toCsvValue(value: string | number | boolean | null | undefined) {
@@ -71,16 +76,18 @@ function exportCsv(data: JournalAnalyticsResponse) {
   });
   rows.push("");
   rows.push("Daily Activity");
-  rows.push("day,rebateEarned,commissionTracked,entries,activeTraders,academyEnrollments");
+  rows.push("day,netPnl,entries,completed,wins,losses,activeTraders,averageR");
   data.dailyActivity.forEach((row) => {
     rows.push(
       [
         row.day,
-        row.rebateEarned,
-        row.commissionTracked,
+        row.netPnl,
         row.entries,
+        row.completed,
+        row.wins,
+        row.losses,
         row.activeTraders,
-        row.academyEnrollments,
+        row.averageR,
       ]
         .map((value) => toCsvValue(value))
         .join(","),
@@ -88,7 +95,7 @@ function exportCsv(data: JournalAnalyticsResponse) {
   });
   rows.push("");
   rows.push("Top Traders");
-  rows.push("trader,email,country,entries,rebateEarned,commissionTracked,volumeLots,rrBalance,academyCourses");
+  rows.push("trader,email,country,entries,completed,netPnl,winRate,averageR,screenshots,lastTradeAt,rrBalance");
   data.topTraders.forEach((row) => {
     rows.push(
       [
@@ -96,11 +103,13 @@ function exportCsv(data: JournalAnalyticsResponse) {
         row.email,
         row.country,
         row.entries,
-        row.rebateEarned,
-        row.commissionTracked,
-        row.volumeLots,
+        row.completed,
+        row.netPnl,
+        row.winRate,
+        row.averageR,
+        row.screenshots,
+        row.lastTradeAt,
         row.rrBalance,
-        row.academyCourses,
       ]
         .map((value) => toCsvValue(value))
         .join(","),
@@ -122,7 +131,8 @@ function JournalAnalyticsPage() {
   const [range, setRange] = useState<(typeof RANGE_OPTIONS)[number]>(30);
   const [market, setMarket] = useState("All");
   const [experience, setExperience] = useState("All");
-  const [withPlanOnly, setWithPlanOnly] = useState(false);
+  const [completedOnly, setCompletedOnly] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<JournalAnalyticsResponse>(emptyData);
@@ -135,7 +145,8 @@ function JournalAnalyticsPage() {
         range,
         market,
         experience,
-        withPlanOnly,
+        completedOnly,
+        userId: selectedUserId,
       });
       setData(next);
     } catch (err) {
@@ -147,23 +158,23 @@ function JournalAnalyticsPage() {
 
   useEffect(() => {
     void load();
-  }, [range, market, experience, withPlanOnly]);
+  }, [range, market, experience, completedOnly, selectedUserId]);
 
   const marketChart = useMemo(
     () => (data.marketMix.length ? data.marketMix : [{ name: "No live data yet", value: 0 }]),
     [data.marketMix],
   );
 
-  const experienceChart = useMemo(
-    () => (data.experienceMix.length ? data.experienceMix : [{ name: "No live data yet", value: 0 }]),
-    [data.experienceMix],
+  const resultChart = useMemo(
+    () => (data.resultMix.length ? data.resultMix : [{ name: "No live data yet", value: 0 }]),
+    [data.resultMix],
   );
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Journal Analytics"
-        subtitle="Live trader-activity view powered by cashback entries, onboarding preferences, RR balances, and academy progress."
+        subtitle="Live admin view of user-posted trading journal entries, performance, discipline signals, and per-trader breakdowns."
         actions={
           <>
             <div className="glass inline-flex rounded-full p-1 text-xs">
@@ -225,64 +236,78 @@ function JournalAnalyticsPage() {
             options={data.filters.availableExperiences}
             onChange={setExperience}
           />
+          <label className="min-w-[220px]">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Trader</span>
+            <select
+              value={selectedUserId}
+              onChange={(event) => setSelectedUserId(Number(event.target.value))}
+              className="w-full rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition focus:border-violet-400/40"
+            >
+              {data.filters.availableTraders.map((trader) => (
+                <option key={trader.id} value={trader.id} className="bg-[var(--rb-bg-elevated)] text-white">
+                  {trader.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
-            onClick={() => setWithPlanOnly((value) => !value)}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${withPlanOnly ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30" : "bg-white/10 text-white ring-1 ring-white/10"}`}
+            onClick={() => setCompletedOnly((value) => !value)}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${completedOnly ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30" : "bg-white/10 text-white ring-1 ring-white/10"}`}
           >
             <ShieldCheck className="h-4 w-4" />
-            {withPlanOnly ? "Academy planners only" : "All profiles"}
+            {completedOnly ? "Completed trades only" : "All journal entries"}
           </button>
         </div>
       </Panel>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Tracked Entries"
+          label="Journal Entries"
           value={loading ? "..." : data.summary.trackedEntries.toLocaleString()}
-          delta={`${data.summary.activeTraders.toLocaleString()} active traders`}
+          delta={`${data.summary.activeTraders.toLocaleString()} traders posted`}
           tone="up"
         />
         <StatCard
-          label="Rebate Earned"
-          value={loading ? "..." : `$${data.summary.rebateEarned.toLocaleString()}`}
-          delta={`$${data.summary.commissionTracked.toLocaleString()} tracked commission`}
-          tone="up"
+          label="Net P&L"
+          value={loading ? "..." : `$${data.summary.netPnl.toLocaleString()}`}
+          delta={`${data.summary.completedEntries.toLocaleString()} completed entries`}
+          tone={data.summary.netPnl > 0 ? "up" : data.summary.netPnl < 0 ? "down" : "flat"}
         />
         <StatCard
-          label="Volume Lots"
-          value={loading ? "..." : data.summary.volumeLots.toLocaleString()}
-          delta="live cashback ledger"
+          label="Win Rate"
+          value={loading ? "..." : `${data.summary.winRate.toLocaleString()}%`}
+          delta={`${data.summary.lossRate.toLocaleString()}% loss rate`}
+          tone={data.summary.winRate >= 50 ? "up" : "flat"}
+        />
+        <StatCard
+          label="Average R"
+          value={loading ? "..." : data.summary.averageR.toLocaleString()}
+          delta={`Profit factor ${data.summary.profitFactor.toLocaleString()}`}
+          tone={data.summary.averageR > 0 ? "up" : data.summary.averageR < 0 ? "down" : "flat"}
+        />
+        <StatCard
+          label="Strategies Used"
+          value={loading ? "..." : data.summary.strategiesUsed.toLocaleString()}
+          delta="unique strategy tags"
           tone="flat"
         />
         <StatCard
-          label="Average RR Balance"
-          value={loading ? "..." : data.summary.averageRrBalance.toLocaleString()}
-          delta="per filtered profile"
+          label="Screenshots"
+          value={loading ? "..." : data.summary.screenshotsAttached.toLocaleString()}
+          delta="entries with proof/context"
           tone="flat"
         />
         <StatCard
-          label="Academy Planners"
-          value={loading ? "..." : data.summary.academyPlanners.toLocaleString()}
-          delta={`${data.summary.academyCompleted.toLocaleString()} completed final exam`}
-          tone="up"
-        />
-        <StatCard
-          label="Pending Claims"
-          value={loading ? "..." : data.summary.pendingClaims.toLocaleString()}
-          delta="filtered trader cohort"
-          tone={data.summary.pendingClaims > 0 ? "down" : "flat"}
-        />
-        <StatCard
-          label="Market Signals"
+          label="Journal Markets"
           value={loading ? "..." : data.marketMix.length.toLocaleString()}
-          delta={data.marketMix[0]?.name ? `${data.marketMix[0].name} leads` : "No preference signals yet"}
+          delta={data.marketMix[0]?.name ? `${data.marketMix[0].name} leads` : "No market entries yet"}
           tone="flat"
         />
         <StatCard
-          label="Experience Segments"
-          value={loading ? "..." : data.experienceMix.length.toLocaleString()}
-          delta={data.experienceMix[0]?.name ? `${data.experienceMix[0].name} is largest` : "No experience data yet"}
+          label="Result Segments"
+          value={loading ? "..." : data.resultMix.length.toLocaleString()}
+          delta={data.resultMix[0]?.name ? `${data.resultMix[0].name} is largest` : "No results yet"}
           tone="flat"
         />
       </div>
@@ -294,7 +319,7 @@ function JournalAnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.dailyActivity} margin={{ top: 10, right: 18, left: -18, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="journalRebate" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="journalPnl" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#7e4dff" stopOpacity={0.5} />
                       <stop offset="95%" stopColor="#7e4dff" stopOpacity={0} />
                     </linearGradient>
@@ -308,7 +333,7 @@ function JournalAnalyticsPage() {
                   <YAxis yAxisId="left" stroke="rgba(255,255,255,0.45)" fontSize={11} />
                   <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
                   <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }} />
-                  <Area yAxisId="left" type="monotone" dataKey="rebateEarned" stroke="#7e4dff" strokeWidth={2} fill="url(#journalRebate)" name="Rebate earned" />
+                  <Area yAxisId="left" type="monotone" dataKey="netPnl" stroke="#7e4dff" strokeWidth={2} fill="url(#journalPnl)" name="Net P&L" />
                   <Area yAxisId="right" type="monotone" dataKey="entries" stroke="#06b6d4" strokeWidth={2} fill="url(#journalEntries)" name="Tracked entries" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -316,12 +341,12 @@ function JournalAnalyticsPage() {
           ) : (
             <EmptyState
               title="No trader activity in this window"
-              description="Once cashback entries or academy enrollments land in the selected range, this chart will populate."
+              description="Once users post trading journal entries in the selected range, this chart will populate."
             />
           )}
         </Panel>
 
-        <Panel title="Market preference mix" action={<Pill tone="neutral">{data.marketMix.length} live signals</Pill>}>
+        <Panel title="Journal market mix" action={<Pill tone="neutral">{data.marketMix.length} markets</Pill>}>
           {data.marketMix.length ? (
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -340,25 +365,25 @@ function JournalAnalyticsPage() {
             </div>
           ) : (
             <EmptyState
-              title="No market preference data yet"
-              description="This panel uses saved onboarding and trading-preference signals from user profiles."
+              title="No journal market data yet"
+              description="This panel uses the market saved on each user-posted journal entry."
             />
           )}
         </Panel>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Panel title="Experience mix" action={<Pill tone="neutral">{data.experienceMix.length} segments</Pill>}>
-          {data.experienceMix.length ? (
+        <Panel title="Result mix" action={<Pill tone="neutral">{data.resultMix.length} segments</Pill>}>
+          {data.resultMix.length ? (
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={experienceChart} layout="vertical" margin={{ top: 8, right: 20, left: 10, bottom: 0 }}>
+                <BarChart data={resultChart} layout="vertical" margin={{ top: 8, right: 20, left: 10, bottom: 0 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" stroke="rgba(255,255,255,0.45)" fontSize={11} allowDecimals={false} />
                   <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.6)" fontSize={11} width={130} />
                   <Tooltip contentStyle={{ background: "#1a0d36", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }} />
                   <Bar dataKey="value" radius={[0, 10, 10, 0]}>
-                    {experienceChart.map((entry, index) => (
+                    {resultChart.map((entry, index) => (
                       <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Bar>
@@ -367,8 +392,8 @@ function JournalAnalyticsPage() {
             </div>
           ) : (
             <EmptyState
-              title="No experience mix yet"
-              description="Trader experience distribution appears here once users complete onboarding profile fields."
+              title="No result mix yet"
+              description="Wins, losses, breakeven, and pending outcomes appear here from actual journal entries."
             />
           )}
         </Panel>
@@ -380,8 +405,8 @@ function JournalAnalyticsPage() {
                 <>
                   <th>Trader</th>
                   <th>Entries</th>
-                  <th>Rebate</th>
-                  <th>RR</th>
+                  <th>Net P&L</th>
+                  <th>Win</th>
                 </>
               }
             >
@@ -389,14 +414,14 @@ function JournalAnalyticsPage() {
                 <tr key={trader.userId}>
                   <td>
                     <div className="font-semibold text-white">{trader.trader}</div>
-                    <div className="text-xs text-muted-foreground">{trader.country} · {trader.academyCourses} academy courses</div>
+                    <div className="text-xs text-muted-foreground">{trader.country} · {trader.screenshots} entries with screenshots</div>
                   </td>
                   <td>
-                    <Pill tone="neutral">{trader.entries}</Pill>
+                    <Pill tone="neutral">{trader.entries} / {trader.completed}</Pill>
                   </td>
-                  <td className="font-semibold text-emerald-300">${trader.rebateEarned.toLocaleString()}</td>
+                  <td className={`font-semibold ${trader.netPnl >= 0 ? "text-emerald-300" : "text-rose-300"}`}>${trader.netPnl.toLocaleString()}</td>
                   <td>
-                    <Pill tone={trader.rrBalance > 0 ? "good" : "neutral"}>{trader.rrBalance.toLocaleString()}</Pill>
+                    <Pill tone={trader.winRate >= 50 ? "good" : "neutral"}>{trader.winRate}%</Pill>
                   </td>
                 </tr>
               ))}
@@ -404,11 +429,68 @@ function JournalAnalyticsPage() {
           ) : (
             <EmptyState
               title="No ranked traders yet"
-              description="Top traders will appear here once filtered users accumulate cashback entries."
+              description="Top traders will appear here once users post journal entries in the selected range."
             />
           )}
         </Panel>
       </div>
+
+      <Panel title="Selected trader journal breakdown" action={<Pill tone="neutral">{data.traderBreakdown ? data.traderBreakdown.trader : "Choose a trader"}</Pill>}>
+        {data.traderBreakdown ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <MiniMetric label="Entries" value={data.traderBreakdown.summary.entries} />
+              <MiniMetric label="Completed" value={data.traderBreakdown.summary.completed} />
+              <MiniMetric label="Net P&L" value={`$${data.traderBreakdown.summary.netPnl.toLocaleString()}`} />
+              <MiniMetric label="Win rate" value={`${data.traderBreakdown.summary.winRate}%`} />
+              <MiniMetric label="Average R" value={data.traderBreakdown.summary.averageR} />
+              <MiniMetric label="Screenshots" value={data.traderBreakdown.summary.screenshots} />
+            </div>
+            {data.traderBreakdown.recentTrades.length ? (
+              <DataTable
+                head={
+                  <>
+                    <th>Trade</th>
+                    <th>Result</th>
+                    <th>Net P&L</th>
+                    <th>R</th>
+                  </>
+                }
+              >
+                {data.traderBreakdown.recentTrades.map((trade) => (
+                  <tr key={trade.id}>
+                    <td>
+                      <div className="font-semibold text-white">{trade.asset}</div>
+                      <div className="text-xs text-muted-foreground">{trade.market} · {trade.direction} · {trade.strategy}</div>
+                    </td>
+                    <td>
+                      <Pill tone={trade.netPnl > 0 ? "good" : trade.netPnl < 0 ? "bad" : "neutral"}>{trade.result || trade.outcome}</Pill>
+                    </td>
+                    <td className={`font-semibold ${trade.netPnl >= 0 ? "text-emerald-300" : "text-rose-300"}`}>${trade.netPnl.toLocaleString()}</td>
+                    <td>{trade.rMultiple}</td>
+                  </tr>
+                ))}
+              </DataTable>
+            ) : (
+              <EmptyState title="No recent trades for this trader" description="This trader has no entries inside the selected range and filters." />
+            )}
+          </div>
+        ) : (
+          <EmptyState
+            title="Select a trader for individual analytics"
+            description="Use the Trader filter above to review one user’s journal totals and most recent entries."
+          />
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-white">{value}</div>
     </div>
   );
 }

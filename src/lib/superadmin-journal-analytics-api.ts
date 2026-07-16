@@ -26,34 +26,40 @@ export type JournalAnalyticsResponse = {
     range: number;
     market: string;
     experience: string;
-    withPlanOnly: boolean;
+    completedOnly: boolean;
+    userId: number | null;
     availableMarkets: string[];
     availableExperiences: string[];
+    availableTraders: { id: number; label: string }[];
   };
   summary: {
     trackedEntries: number;
-    rebateEarned: number;
-    commissionTracked: number;
-    volumeLots: number;
+    completedEntries: number;
     activeTraders: number;
-    academyPlanners: number;
-    academyCompleted: number;
-    averageRrBalance: number;
-    pendingClaims: number;
+    netPnl: number;
+    totalFees: number;
+    averageR: number;
+    winRate: number;
+    lossRate: number;
+    profitFactor: number;
+    screenshotsAttached: number;
+    strategiesUsed: number;
   };
   dailyActivity: {
     day: string;
-    rebateEarned: number;
-    commissionTracked: number;
+    netPnl: number;
     entries: number;
+    completed: number;
+    wins: number;
+    losses: number;
     activeTraders: number;
-    academyEnrollments: number;
+    averageR: number;
   }[];
   marketMix: {
     name: string;
     value: number;
   }[];
-  experienceMix: {
+  resultMix: {
     name: string;
     value: number;
   }[];
@@ -63,25 +69,56 @@ export type JournalAnalyticsResponse = {
     email: string;
     country: string;
     entries: number;
-    rebateEarned: number;
-    commissionTracked: number;
-    volumeLots: number;
+    completed: number;
+    netPnl: number;
+    winRate: number;
+    averageR: number;
+    screenshots: number;
+    lastTradeAt: string | null;
     rrBalance: number;
-    academyCourses: number;
   }[];
+  traderBreakdown: null | {
+    userId: number;
+    trader: string;
+    email: string;
+    country: string;
+    summary: {
+      entries: number;
+      completed: number;
+      netPnl: number;
+      winRate: number;
+      averageR: number;
+      screenshots: number;
+    };
+    recentTrades: {
+      id: number;
+      asset: string;
+      market: string;
+      direction: string;
+      result: string;
+      outcome: string;
+      netPnl: number;
+      rMultiple: number;
+      strategy: string;
+      session: string;
+      tradedAt: string;
+    }[];
+  };
 };
 
 export async function fetchSuperadminJournalAnalytics(params: {
   range: number;
   market: string;
   experience: string;
-  withPlanOnly: boolean;
+  completedOnly: boolean;
+  userId: number;
 }) {
   const query = new URLSearchParams({
     range: String(params.range),
     market: params.market,
     experience: params.experience,
-    withPlanOnly: String(params.withPlanOnly),
+    completedOnly: String(params.completedOnly),
+    userId: String(params.userId),
   });
 
   const response = await apiRequest<JournalAnalyticsResponse>(

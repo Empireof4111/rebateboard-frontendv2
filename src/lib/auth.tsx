@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { apiRequest } from "@/lib/api";
 import { recordOnboardingSubmission } from "@/lib/onboarding-analytics";
+import { clearReferralAttribution, readReferralAttribution } from "@/lib/referral-attribution";
 
 export type TradingExperience = "beginner" | "intermediate" | "advanced";
 export type MonthlyVolume = "lt1k" | "1k_10k" | "10k_50k" | "gt50k";
@@ -386,13 +387,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup: AuthContextType["signup"] = async (input) => {
+    const pendingReferral = readReferralAttribution();
     const response = await apiRequest<BackendUser>("/user/", {
       method: "POST",
-      body: input,
+      body: {
+        ...input,
+        referralAttributionToken: pendingReferral?.token,
+      },
     });
 
     const nextUser = normalizeUser(response.payload);
     if (!nextUser) throw new Error("Missing signup response");
+    clearReferralAttribution();
 
     syncSession({
       token: null,

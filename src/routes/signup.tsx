@@ -170,10 +170,7 @@ function SignupPage() {
           {step === 1 && (
             <StepAccount
               onDone={async (input) => {
-                const u = await signup(input);
-                import("@/lib/referral-store").then(({ recordReferralSignup }) =>
-                  recordReferralSignup({ refereeName: u.fullName ?? u.name, refereeEmail: u.email }),
-                );
+                await signup(input);
                 setStep("verify");
               }}
             />

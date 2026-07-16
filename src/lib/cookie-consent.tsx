@@ -10,6 +10,7 @@ import {
 
 export const COOKIE_CONSENT_VERSION = 1;
 export const COOKIE_CONSENT_STORAGE_KEY = "rb_cookie_consent_v1";
+const COOKIE_CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 export type CookieConsentCategory =
   | "essential"
@@ -83,26 +84,62 @@ export function validateStoredCookieConsent(value: unknown): StoredCookieConsent
   };
 }
 
+function readConsentCookie() {
+  if (typeof document === "undefined") return null;
+  const prefix = `${COOKIE_CONSENT_STORAGE_KEY}=`;
+  const cookie = document.cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(prefix));
+  if (!cookie) return null;
+
+  try {
+    return validateStoredCookieConsent(JSON.parse(decodeURIComponent(cookie.slice(prefix.length))));
+  } catch {
+    return null;
+  }
+}
+
+function writeConsentCookie(consent: StoredCookieConsent) {
+  if (typeof document === "undefined") return;
+  const secureAttribute =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${COOKIE_CONSENT_STORAGE_KEY}=${encodeURIComponent(JSON.stringify(consent))}; path=/; max-age=${COOKIE_CONSENT_MAX_AGE_SECONDS}; SameSite=Lax${secureAttribute}`;
+}
+
+function clearConsentCookie() {
+  if (typeof document === "undefined") return;
+  const secureAttribute =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${COOKIE_CONSENT_STORAGE_KEY}=; path=/; max-age=0; SameSite=Lax${secureAttribute}`;
+}
+
 export class LocalConsentStorageAdapter implements ConsentStorageAdapter {
   async load() {
     if (typeof window === "undefined") return null;
     try {
       const raw = window.localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY);
-      if (!raw) return null;
-      return validateStoredCookieConsent(JSON.parse(raw));
+      const stored = raw ? validateStoredCookieConsent(JSON.parse(raw)) : null;
+      const cookie = readConsentCookie();
+      const consent = stored ?? cookie;
+      if (consent && !stored) window.localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, JSON.stringify(consent));
+      if (consent && !cookie) writeConsentCookie(consent);
+      return consent;
     } catch {
-      return null;
+      return readConsentCookie();
     }
   }
 
   async save(consent: StoredCookieConsent) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, JSON.stringify(consent));
+    writeConsentCookie(consent);
   }
 
   async clear() {
     if (typeof window === "undefined") return;
     window.localStorage.removeItem(COOKIE_CONSENT_STORAGE_KEY);
+    clearConsentCookie();
   }
 }
 
@@ -122,9 +159,9 @@ export function readStoredCookieConsentSync(): StoredCookieConsent | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY);
-    return raw ? validateStoredCookieConsent(JSON.parse(raw)) : null;
+    return raw ? validateStoredCookieConsent(JSON.parse(raw)) : readConsentCookie();
   } catch {
-    return null;
+    return readConsentCookie();
   }
 }
 
@@ -188,6 +225,7 @@ export function CookieConsentProvider({
     if (typeof window === "undefined" || import.meta.env.PROD) return;
     (window as typeof window & { rbResetCookieConsent?: () => void }).rbResetCookieConsent = () => {
       window.localStorage.removeItem(COOKIE_CONSENT_STORAGE_KEY);
+      clearConsentCookie();
       window.location.reload();
     };
   }, []);
