@@ -32,7 +32,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { t } = useI18n();
-  const { login, user } = useAuth();
+  const { login, user, authEngine } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" }) as LoginSearch;
   const isReauth = search.reauth === "1" && !!user;
@@ -116,13 +116,23 @@ function LoginPage() {
                   ? `${t("auth.welcomeBack")}, ${(user!.fullName || user!.name).split(" ")[0]}`
                   : t("auth.welcomeBack")}
               </h2>
-              <Link to="/" className="text-xs text-muted-foreground hover:text-white">
-                &larr; {t("auth.home")}
-              </Link>
+              <div className="flex items-center gap-2">
+                <span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-100 sm:inline-flex">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
+                  {authEngine === "clerk" ? "Secured by Clerk" : "Secure auth"}
+                </span>
+                <Link to="/" className="text-xs text-muted-foreground hover:text-white">
+                  &larr; {t("auth.home")}
+                </Link>
+              </div>
             </div>
             <p className="mb-6 text-sm text-muted-foreground">
               Welcome back. Keep tracking rewards, cashback, and trusted brand insights.
             </p>
+            <div className="mb-5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[11px] text-white/60 sm:hidden">
+              <ShieldCheck className="h-4 w-4 text-emerald-300" />
+              {authEngine === "clerk" ? "Login and session security are running through Clerk." : "Login is using RebateBoard secure authentication."}
+            </div>
 
             {isReauth && (
               <div className="mb-5 flex items-start gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-3 py-2.5 text-[11px] text-emerald-100">

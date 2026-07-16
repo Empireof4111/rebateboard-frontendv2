@@ -62,6 +62,7 @@ import {
   LandingSponsorsStrip,
   LandingAdvertiseBox,
 } from "@/components/landing/LandingAdSlots";
+import { RebateBoardHelpBot } from "@/components/landing/RebateBoardHelpBot";
 import { LiveCashbackActivityCard } from "@/components/landing/LiveCashbackActivityCard";
 import { fetchPublicAdverts } from "@/lib/public-adverts-api";
 import type { DashboardAd } from "@/lib/dashboard-ads";
@@ -2174,6 +2175,7 @@ function Index() {
         onClose={() => setCompareOpen(null)}
       />
       <OfferDetailModal offer={activeOffer} onClose={() => setActiveOffer(null)} />
+      <RebateBoardHelpBot />
     </div>
   );
 }
