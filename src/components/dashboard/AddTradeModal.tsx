@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, ChevronLeft, ChevronRight, Camera, Check, AlertTriangle, Bot, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import {
   addTrade, calculateManualTradeResult, calculateTradeMetrics, computeAdherence, detectSession, formatTradePnl, uid, useTradingPlan,
   type Emotion, type MarketType, type Session, type Trade, type TradeOutcome,
@@ -127,7 +128,7 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
   const handleSave = () => {
     const outcome = (form.outcome as TradeOutcome) ?? "pending";
     if ((outcome === "profit" || outcome === "loss") && Math.abs(Number(form.grossPnl) || 0) <= 0) {
-      alert("Enter the realized P&L amount for profit or loss trades.");
+      toast.error("Enter the realized P&L amount for profit or loss trades.");
       return;
     }
     const trade: Trade = {
@@ -481,7 +482,7 @@ function ScreenshotStep({ form, set }: { form: Partial<Trade>; set: <K extends k
                 const f = e.target.files?.[0]; if (!f) return;
                 const sizeError = validateFileSize(f);
                 if (sizeError) {
-                  alert(sizeError);
+                  toast.error(sizeError);
                   e.currentTarget.value = "";
                   return;
                 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   BadgeCheck,
   Check,
@@ -476,7 +477,7 @@ export function ShareCardBuilder() {
       setExportComplete(true);
       markFirstCardCreated();
     } catch {
-      window.alert("We couldn't export this card right now. Please try again.");
+      toast.error("We couldn't export this card right now. Please try again.");
     } finally {
       setExporting(null);
     }
@@ -490,7 +491,7 @@ export function ShareCardBuilder() {
       setExportComplete(true);
       markFirstCardCreated();
     } catch {
-      window.alert("We couldn't open the verification page right now. Please try again.");
+      toast.error("We couldn't open the verification page right now. Please try again.");
     } finally {
       setExporting(null);
     }
@@ -504,7 +505,7 @@ export function ShareCardBuilder() {
       setShareSheetOpen(true);
       markFirstCardCreated();
     } catch {
-      window.alert("We couldn't prepare social sharing right now. Please try again.");
+      toast.error("We couldn't prepare social sharing right now. Please try again.");
     } finally {
       setExporting(null);
     }

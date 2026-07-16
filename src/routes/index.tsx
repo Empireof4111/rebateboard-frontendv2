@@ -871,9 +871,9 @@ function HomepageVideoSlider() {
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/25">
               <Youtube className="h-5 w-5" />
             </div>
-            <p className="mt-3 text-sm font-semibold text-white">Homepage videos coming soon</p>
+            <p className="mt-3 text-sm font-semibold text-white">Featured videos are being curated</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Fresh trading walkthroughs and platform guides will appear here soon.
+              Fresh trading walkthroughs and platform guides will appear here once they are published.
             </p>
           </div>
         </div>
@@ -1739,7 +1739,7 @@ function Index() {
           </div>
         </section>
 
-        {/* TESTIMONIALS */}
+        {/* COMMUNITY REVIEWS */}
         {(testimonialsLoading || testimonials.length > 0) && (
           <section className="mt-10 sm:mt-12" aria-labelledby="landing-testimonials-heading">
             <div className="mb-6 text-center">
@@ -1903,11 +1903,9 @@ function Index() {
                   <div>
                     <h4 className="text-sm font-semibold">Latest review</h4>
                     <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                      Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                      Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-                      when an unknown printer took a galley of type and scrambled it to make a type
-                      specimen book. It has survived not only five centuries, but also the leap into
-                      electronic typesetting, remaining essentially unchanged.
+                      Traders use RebateBoard to compare trusted brands, understand cashback opportunities,
+                      and make decisions with proof-backed data instead of guesswork. Featured community
+                      reviews will appear here as soon as they are approved by the moderation team.
                     </p>
                     <div className="mt-5 flex items-center gap-2">
                       <button className="rounded-full bg-white/5 px-4 py-2 text-xs font-semibold ring-1 ring-white/10 hover:bg-white/10">
@@ -2097,7 +2095,7 @@ function Index() {
           </div>
         </section>
 
-        {/* AI BACKTEST LAB */}
+        {/* AI ANALYSIS LAB */}
         <section className="relative mt-10 overflow-hidden rounded-3xl border border-white/10 bg-[rgba(22,22,31,0.94)] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)] ring-1 ring-violet-500/12 md:p-8">
           <div className="pointer-events-none absolute left-[-10%] top-[-20%] h-[400px] w-[400px] rounded-full bg-violet-500/[0.08] blur-[120px]" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(90,34,241,0.12),transparent_36%),radial-gradient(circle_at_88%_18%,rgba(126,77,255,0.07),transparent_30%)]" />

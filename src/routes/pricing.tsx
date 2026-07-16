@@ -332,13 +332,13 @@ function EarlyAccessPage() {
 
         <section className="mt-18 sm:mt-20">
           <SectionHeading
-            eyebrow="Coming soon"
+            eyebrow="Preview"
             title="Meet Rebeta Pro"
             copy="Designed for traders who want deeper intelligence, automation, and AI-powered workflows."
           />
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {proFeatures.map((item) => (
-              <FeatureCard key={item.title} item={item} badge="Coming Soon" />
+              <FeatureCard key={item.title} item={item} badge="Preview" />
             ))}
           </div>
         </section>

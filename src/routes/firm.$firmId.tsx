@@ -1116,7 +1116,7 @@ function VideoReviewCard({ name, url }: { name: string; url: string }) {
       </div>
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="text-xs font-semibold text-white">
-          {hasVideo ? "Watch video review" : "Video review coming soon"}
+          {hasVideo ? "Watch video review" : "Video review unavailable"}
         </div>
       </div>
     </div>
@@ -1884,7 +1884,7 @@ function PayoutsComingSoon({ firmName }: { firmName: string }) {
             Payout intelligence preview
           </div>
           <h2 className="mt-4 text-2xl font-black tracking-tight md:text-3xl">
-            Verified payout insights for {firmName} are coming soon.
+            Verified payout insights for {firmName} are being prepared.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/68">
             We are preparing a premium payout transparency layer with verified payout timelines,
@@ -2628,7 +2628,7 @@ function FirmDetailsPage() {
         ) : topTab !== "Overview" ? (
           <div className="mt-4 glass rounded-2xl p-10 text-center text-sm text-muted-foreground ring-1 ring-white/10">
             <div className="text-base font-semibold text-white">{topTab}</div>
-            <p className="mt-2">This section is coming soon.</p>
+            <p className="mt-2">This section is not available for this profile yet.</p>
           </div>
         ) : (
           <div className="mt-4 grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">

@@ -410,7 +410,7 @@ function StepAccount({
       >
         <GoogleIcon />
         Continue with Google
-        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Coming Soon</span>
+        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Email only</span>
       </button>
       <div className="my-3 flex items-center gap-3 text-[11px] text-white/40">
         <div className="h-px flex-1 bg-white/10" /> or sign up with email <div className="h-px flex-1 bg-white/10" />

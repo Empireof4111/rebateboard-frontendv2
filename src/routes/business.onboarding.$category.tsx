@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, notFound, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
@@ -117,7 +118,7 @@ function OnboardingFlow() {
 
   const handleSubmit = () => {
     if (!data.identity.brandName || !data.contact.email || !(data.identity.logo ?? []).length || !(data.identity.coverImage ?? []).length) {
-      alert("Please add your brand name, contact email, logo, and cover image before submitting.");
+      toast.error("Please add your brand name, contact email, logo, and cover image before submitting.");
       return;
     }
     const sub = createSubmission({

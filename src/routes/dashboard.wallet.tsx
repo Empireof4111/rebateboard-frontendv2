@@ -197,8 +197,8 @@ function WalletPage() {
       if (brkRes.status === "fulfilled" && brkRes.value.payload) setEarningsBySource(brkRes.value.payload);
       if (timeRes.status === "fulfilled" && timeRes.value.payload) setEarningsTimeline(timeRes.value.payload);
       if (acctRes.status === "fulfilled" && acctRes.value.payload) setLinkedAccts(acctRes.value.payload.page);
-    } catch (e) {
-      console.error("Wallet load failed", e);
+    } catch {
+      // Keep the wallet shell usable; individual sections render their guided empty states.
     } finally {
       setLoadingData(false);
     }

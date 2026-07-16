@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Coins, Plus, RefreshCcw, Save, ShoppingCart, Trash2, Users, XCircle } from "lucide-react";
 import { PageHeader, Panel, Pill, StatCard } from "@/components/superadmin/AdminUI";
-import { toast } from "@/components/superadmin/AdminActions";
+import { Modal, toast } from "@/components/superadmin/AdminActions";
 import { useAuth } from "@/lib/auth";
 import { rrApi, type RrRedemptionClaim } from "@/lib/rr-api";
 import {
@@ -25,6 +25,8 @@ function RrPurchasesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reviewingClaimId, setReviewingClaimId] = useState<number | null>(null);
+  const [rejectingClaim, setRejectingClaim] = useState<RrRedemptionClaim | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -170,15 +172,21 @@ function RrPurchasesPage() {
 
   async function reviewAccountClaim(claim: RrRedemptionClaim, status: "approved" | "fulfilled" | "rejected") {
     if (!token) return;
-    const rejectionReason = status === "rejected" ? window.prompt("Why are we rejecting this account claim?") : undefined;
-    if (status === "rejected" && !rejectionReason) return;
+    if (status === "rejected" && !rejectionReason.trim()) {
+      setRejectingClaim(claim);
+      return;
+    }
     try {
       setReviewingClaimId(claim.id);
-      const result = await rrApi.reviewRedemptionClaim(token, claim.id, status, rejectionReason || undefined);
+      const result = await rrApi.reviewRedemptionClaim(token, claim.id, status, status === "rejected" ? rejectionReason.trim() : undefined);
       if (result.payload) {
         setAccountClaims((current) => current.map((item) => (item.id === claim.id ? result.payload! : item)));
       }
       toast.success(`Account claim ${status}`);
+      if (status === "rejected") {
+        setRejectingClaim(null);
+        setRejectionReason("");
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to update account claim");
     } finally {
@@ -507,6 +515,48 @@ function RrPurchasesPage() {
           </div>
         )}
       </Panel>
+      <Modal
+        open={rejectingClaim !== null}
+        onClose={() => {
+          setRejectingClaim(null);
+          setRejectionReason("");
+        }}
+        title="Reject account claim"
+        subtitle="Add the reason the trader will see in the claim history."
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setRejectingClaim(null);
+                setRejectionReason("");
+              }}
+              className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!rejectionReason.trim() || !rejectingClaim || reviewingClaimId === rejectingClaim.id}
+              onClick={() => rejectingClaim && void reviewAccountClaim(rejectingClaim, "rejected")}
+              className="rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Reject claim
+            </button>
+          </>
+        }
+      >
+        <label className="block">
+          <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Rejection reason</span>
+          <textarea
+            value={rejectionReason}
+            onChange={(event) => setRejectionReason(event.target.value)}
+            rows={4}
+            className={`${fieldClassName} min-h-28 resize-none`}
+            placeholder="Explain what is missing or why this claim cannot be fulfilled."
+          />
+        </label>
+      </Modal>
     </div>
   );
 }

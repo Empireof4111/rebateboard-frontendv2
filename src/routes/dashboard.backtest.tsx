@@ -481,7 +481,7 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
     const file = files?.[0];
     if (!file) return;
     if (!/\.(csv|txt)$/i.test(file.name)) {
-      setError("Please upload a .csv or .txt file. (Excel/HTML statements coming soon.)");
+      setError("Please upload a .csv or .txt file. Excel and HTML statements are not supported in this launch.");
       return;
     }
     const sizeError = validateFileSize(file);
@@ -543,8 +543,8 @@ function RealTrades({ onAnalyze }: { onAnalyze: () => void }) {
               <div className="mt-1 text-[11px] text-muted-foreground">Drag, drop or click. Max {formatUploadLimit()}.</div>
             </button>
             {[
-              { l: "Connect Exchange API", icon: Zap, hint: "Read-only — coming soon" },
-              { l: "Paste Wallet Address", icon: Wallet, hint: "On-chain trades — coming soon" },
+              { l: "Connect Exchange API", icon: Zap, hint: "Read-only connection is not enabled in this launch" },
+              { l: "Paste Wallet Address", icon: Wallet, hint: "On-chain import is not enabled in this launch" },
               { l: "Manual Trade Import", icon: Pencil, hint: "Use journal Add Trade" },
             ].map((c) => {
               const Icon = c.icon;

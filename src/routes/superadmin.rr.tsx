@@ -7,7 +7,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { PageHeader, Panel, StatCard, DataTable, Pill } from "@/components/superadmin/AdminUI";
-import { toast } from "@/components/superadmin/AdminActions";
+import { ConfirmDialog, toast } from "@/components/superadmin/AdminActions";
 import {
   rrApi,
   type RrAllConfig, type RrRule, type RrTier, type RrCaps,
@@ -47,6 +47,7 @@ function RrControlCenter() {
   const [saving, setSaving] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [brands, setBrands] = useState<AdminBrandRecord[]>([]);
+  const [confirmResetKey, setConfirmResetKey] = useState<keyof RrAllConfig | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -93,7 +94,7 @@ function RrControlCenter() {
   }, [token]);
 
   const resetKey = useCallback(async (key: keyof RrAllConfig) => {
-    if (!token || !confirm(`Reset ${key} to defaults?`)) return;
+    if (!token) return;
     setSaving(key);
     try {
       const res = await rrApi.resetConfig(token, key);
@@ -145,16 +146,27 @@ function RrControlCenter() {
       ) : (
         <>
           {tab === "overview" && <OverviewPanel stats={stats} config={config} />}
-          {tab === "earn" && <EarnRulesPanel rules={config.earn_rules} saving={saving === "earn_rules"} onSave={(v) => saveKey("earn_rules", v)} onReset={() => resetKey("earn_rules")} />}
-          {tab === "tiers" && <TiersPanel tiers={config.tiers} saving={saving === "tiers"} onSave={(v) => saveKey("tiers", v)} onReset={() => resetKey("tiers")} />}
-          {tab === "caps" && <CapsPanel caps={config.caps} saving={saving === "caps"} onSave={(v) => saveKey("caps", v)} onReset={() => resetKey("caps")} />}
-          {tab === "social" && <SocialRulesPanel rules={config.social_rules} saving={saving === "social_rules"} onSave={(v) => saveKey("social_rules", v)} onReset={() => resetKey("social_rules")} />}
-          {tab === "streaks" && <StreaksPanel cfg={config.streak_config} stats={stats} saving={saving === "streak_config"} onSave={(v) => saveKey("streak_config", v)} onReset={() => resetKey("streak_config")} />}
-          {tab === "spend" && <SpendRulesPanel brands={brands} rules={config.spend_rules} saving={saving === "spend_rules"} onSave={(v) => saveKey("spend_rules", v)} onReset={() => resetKey("spend_rules")} />}
+          {tab === "earn" && <EarnRulesPanel rules={config.earn_rules} saving={saving === "earn_rules"} onSave={(v) => saveKey("earn_rules", v)} onReset={() => setConfirmResetKey("earn_rules")} />}
+          {tab === "tiers" && <TiersPanel tiers={config.tiers} saving={saving === "tiers"} onSave={(v) => saveKey("tiers", v)} onReset={() => setConfirmResetKey("tiers")} />}
+          {tab === "caps" && <CapsPanel caps={config.caps} saving={saving === "caps"} onSave={(v) => saveKey("caps", v)} onReset={() => setConfirmResetKey("caps")} />}
+          {tab === "social" && <SocialRulesPanel rules={config.social_rules} saving={saving === "social_rules"} onSave={(v) => saveKey("social_rules", v)} onReset={() => setConfirmResetKey("social_rules")} />}
+          {tab === "streaks" && <StreaksPanel cfg={config.streak_config} stats={stats} saving={saving === "streak_config"} onSave={(v) => saveKey("streak_config", v)} onReset={() => setConfirmResetKey("streak_config")} />}
+          {tab === "spend" && <SpendRulesPanel brands={brands} rules={config.spend_rules} saving={saving === "spend_rules"} onSave={(v) => saveKey("spend_rules", v)} onReset={() => setConfirmResetKey("spend_rules")} />}
           {tab === "claims" && <ClaimsPanel socialRules={config.social_rules} />}
           {tab === "ledger" && <LedgerPanel />}
         </>
       )}
+      <ConfirmDialog
+        open={confirmResetKey !== null}
+        onClose={() => setConfirmResetKey(null)}
+        title="Reset RR configuration"
+        message={`Reset ${confirmResetKey ?? "this section"} to its default settings? This will replace the current saved configuration for that section.`}
+        confirmText="Reset defaults"
+        tone="danger"
+        onConfirm={() => {
+          if (confirmResetKey) resetKey(confirmResetKey);
+        }}
+      />
     </div>
   );
 }
@@ -537,15 +549,13 @@ const SPEND_CATS = ["challenge", "cash", "discount", "fees", "academy", "boost",
 
 function SpendRulesPanel({ brands, rules, saving, onSave, onReset }: { brands: AdminBrandRecord[]; rules: RrSpendRule[]; saving: boolean; onSave: (v: RrSpendRule[]) => void; onReset: () => void }) {
   const [draft, setDraft] = useState<RrSpendRule[]>(rules);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
   useEffect(() => setDraft(rules), [rules]);
 
   const update = (id: string, patch: Partial<RrSpendRule>) =>
     setDraft((prev) => prev.map((r) => r.id === id ? { ...r, ...patch } : r));
 
-  const remove = (id: string) => {
-    if (!confirm("Remove this spend rule?")) return;
-    setDraft((prev) => prev.filter((r) => r.id !== id));
-  };
+  const remove = (id: string) => setPendingRemoveId(id);
 
   const add = (newRule: Omit<RrSpendRule, "id" | "redeemed">) => {
     const id = `sr-${Math.random().toString(36).slice(2, 8)}`;
@@ -619,6 +629,17 @@ function SpendRulesPanel({ brands, rules, saving, onSave, onReset }: { brands: A
       </DataTable>
 
       <SaveBar onSave={() => onSave(draft)} onReset={onReset} saving={saving} />
+      <ConfirmDialog
+        open={pendingRemoveId !== null}
+        onClose={() => setPendingRemoveId(null)}
+        title="Remove spend rule"
+        message="Remove this RR spend rule from the draft configuration?"
+        confirmText="Remove"
+        tone="danger"
+        onConfirm={() => {
+          if (pendingRemoveId) setDraft((prev) => prev.filter((r) => r.id !== pendingRemoveId));
+        }}
+      />
     </Panel>
   );
 }
@@ -710,13 +731,11 @@ function StreaksPanel({ cfg, stats, saving, onSave, onReset }: { cfg: RrStreakCo
   useEffect(() => setDraft(cfg), [cfg]);
 
   const [newMilestone, setNewMilestone] = useState({ days: 21, reward: 150, label: "" });
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
 
   const updateMilestone = (id: string, patch: Partial<typeof draft.milestones[0]>) =>
     setDraft((d) => ({ ...d, milestones: d.milestones.map((m) => m.id === id ? { ...m, ...patch } : m) }));
-  const removeMilestone = (id: string) => {
-    if (!confirm("Remove this milestone?")) return;
-    setDraft((d) => ({ ...d, milestones: d.milestones.filter((m) => m.id !== id) }));
-  };
+  const removeMilestone = (id: string) => setPendingRemoveId(id);
   const addMilestone = () => {
     if (!newMilestone.label.trim()) return;
     setDraft((d) => ({ ...d, milestones: [...d.milestones, { id: `ms-${Math.random().toString(36).slice(2, 8)}`, ...newMilestone, enabled: true }] }));
@@ -818,6 +837,19 @@ function StreaksPanel({ cfg, stats, saving, onSave, onReset }: { cfg: RrStreakCo
           <Mini icon={Gift} label="Streaks enabled" value={draft.enabled ? "Yes" : "Paused"} />
         </div>
       </Panel>
+      <ConfirmDialog
+        open={pendingRemoveId !== null}
+        onClose={() => setPendingRemoveId(null)}
+        title="Remove streak milestone"
+        message="Remove this streak milestone from the draft configuration?"
+        confirmText="Remove"
+        tone="danger"
+        onConfirm={() => {
+          if (pendingRemoveId) {
+            setDraft((d) => ({ ...d, milestones: d.milestones.filter((m) => m.id !== pendingRemoveId) }));
+          }
+        }}
+      />
     </div>
   );
 }

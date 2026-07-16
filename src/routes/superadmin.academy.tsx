@@ -57,8 +57,7 @@ function AcademyAdmin() {
       }
       toast.success(`Faculty "${fac.title}" saved`);
       refreshCurriculum();
-    } catch (e) {
-      console.warn("Academy API error (faculty):", e);
+    } catch {
       toast.error("Failed to save faculty");
     }
   };
@@ -77,8 +76,7 @@ function AcademyAdmin() {
       }
       toast.success(`Program "${prog.title}" saved`);
       refreshCurriculum();
-    } catch (e) {
-      console.warn("Academy API error (program):", e);
+    } catch {
       toast.error("Failed to save program");
     }
   };
@@ -108,8 +106,7 @@ function AcademyAdmin() {
       }
       toast.success(`Course "${course.title}" saved`);
       refreshCurriculum();
-    } catch (e) {
-      console.warn("Academy API error (course):", e);
+    } catch {
       toast.error("Failed to save course");
     }
   };
@@ -131,8 +128,7 @@ function AcademyAdmin() {
       }
       toast.success(`Deleted ${delTarget.label}`);
       refreshCurriculum();
-    } catch (e) {
-      console.warn("Academy API error (delete):", e);
+    } catch {
       toast.error("Failed to delete");
     }
     setDelTarget(null);

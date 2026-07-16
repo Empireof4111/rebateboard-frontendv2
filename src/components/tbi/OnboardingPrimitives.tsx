@@ -4,6 +4,7 @@
  */
 import { ReactNode, useRef } from "react";
 import { Check, Lock, Upload, X, Info, AlertTriangle, ShieldCheck, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 import type { TrustScoreMode, UploadedFile, TrustBreakdown } from "@/lib/tbi-onboarding";
 import { UNLOCK_THRESHOLDS } from "@/lib/tbi-onboarding";
 import { filterFilesByUploadLimit } from "@/lib/upload-limits";
@@ -402,7 +403,7 @@ export function FileUploadBlock({
         onChange={(e) => {
           const list = Array.from(e.target.files ?? []);
           const { accepted, rejected } = filterFilesByUploadLimit(list);
-          if (rejected.length) window.alert(rejected.join("\n"));
+          rejected.forEach((message) => toast.error(message));
           if (accepted.length) onAdd(accepted);
           e.target.value = "";
         }}
