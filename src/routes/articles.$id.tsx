@@ -18,14 +18,34 @@ import {
   fetchPublicBlogPosts,
   type BlogPost,
 } from "@/lib/admin-api";
+import { resolveMediaUrl } from "@/lib/brand-assets";
+import { absoluteSiteUrl, socialImageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/articles/$id")({
-  head: ({ params }) => ({
-    meta: [
-      { title: `Article — RebateBoard` },
-      { name: "description", content: `RebateBoard editorial article ${params.id}.` },
-    ],
-  }),
+  loader: ({ params }) => fetchPublicBlogPost(params.id),
+  head: ({ params, loaderData }) => {
+    const post = loaderData;
+    const title = post?.seoTitle || post?.title || "Article — RebateBoard";
+    const description =
+      post?.seoDescription ||
+      post?.excerpt ||
+      `RebateBoard editorial article ${params.id}.`;
+    const url = absoluteSiteUrl(`/articles/${encodeURIComponent(params.id)}`);
+    const image = post?.cover ? resolveMediaUrl(post.cover) : undefined;
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: url },
+        ...socialImageMeta(image, post?.title || "RebateBoard article"),
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: ArticlePage,
   notFoundComponent: ArticleNotFound,
 });
@@ -261,9 +281,10 @@ function parseMarkdown(src: string): Block[] {
 
 function ArticlePage() {
   const { id } = Route.useParams();
+  const initialPost = Route.useLoaderData();
   const [items, setItems] = useState<BlogPost[]>([]);
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<BlogPost | null>(initialPost);
+  const [loading, setLoading] = useState(!initialPost);
 
   useEffect(() => {
     let cancelled = false;
@@ -272,7 +293,7 @@ function ArticlePage() {
       setLoading(true);
       try {
         const [selected, posts] = await Promise.all([
-          fetchPublicBlogPost(id),
+          initialPost ? Promise.resolve(initialPost) : fetchPublicBlogPost(id),
           fetchPublicBlogPosts(),
         ]);
         if (cancelled) return;
@@ -297,7 +318,7 @@ function ArticlePage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, initialPost]);
 
   const blocks = useMemo(() => parseMarkdown(post?.body ?? ""), [post?.body]);
   const toc = useMemo(
@@ -464,7 +485,7 @@ function ArticlePage() {
 
           {/* Sidebar TOC */}
           <aside className="hidden lg:block">
-            <div className="sticky top-6 space-y-6">
+            <div className="sticky top-[var(--rb-public-sticky-top)] space-y-6">
               {toc.length > 0 && (
                 <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-violet-300">

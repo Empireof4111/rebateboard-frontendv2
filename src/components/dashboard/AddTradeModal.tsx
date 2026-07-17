@@ -50,6 +50,18 @@ export function AddTradeModal({ open, onClose }: { open: boolean; onClose: () =>
     if (open) { setStep(0); setSavedTrade(null); }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const firstStrategyId = plan.strategies[0]?.id ?? null;
+    if (!firstStrategyId) return;
+    setForm((current) => {
+      const currentStrategyStillExists = Boolean(
+        current.strategyId && plan.strategies.some((strategy) => strategy.id === current.strategyId),
+      );
+      return currentStrategyStillExists ? current : { ...current, strategyId: firstStrategyId };
+    });
+  }, [open, plan.strategies]);
+
   const set = <K extends keyof Trade>(k: K, v: Trade[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setMarket = (market: MarketType) => {
     const first = getPopularInstruments(market, 1)[0] ?? makeCustomInstrument(market, "");

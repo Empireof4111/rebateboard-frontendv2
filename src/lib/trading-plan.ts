@@ -64,6 +64,7 @@ export type Emotion = "calm" | "confident" | "fomo" | "fearful" | "angry" | "til
 
 export type Trade = {
   id: string;
+  backendId?: string | number;
   createdAt: string;
   asset: string;
   market: MarketType;
@@ -182,8 +183,41 @@ function scheduleBackendPlanSync(plan: TradingPlan) {
   }, 900);
 }
 
+function normalizePlan(value: Partial<TradingPlan> | null | undefined): TradingPlan {
+  const next = value ?? {};
+  return {
+    ...defaultPlan,
+    ...next,
+    profile: next.profile ?? defaultPlan.profile,
+    strategies: Array.isArray(next.strategies) ? next.strategies : defaultPlan.strategies,
+    rules: {
+      ...defaultPlan.rules,
+      ...(next.rules ?? {}),
+      allowedSessions: Array.isArray(next.rules?.allowedSessions)
+        ? next.rules.allowedSessions
+        : defaultPlan.rules.allowedSessions,
+      noTradeConditions: Array.isArray(next.rules?.noTradeConditions)
+        ? next.rules.noTradeConditions
+        : defaultPlan.rules.noTradeConditions,
+    },
+    psychology: {
+      ...defaultPlan.psychology,
+      ...(next.psychology ?? {}),
+      emotionalTriggers: Array.isArray(next.psychology?.emotionalTriggers)
+        ? next.psychology.emotionalTriggers
+        : defaultPlan.psychology.emotionalTriggers,
+      behaviorRestrictions: Array.isArray(next.psychology?.behaviorRestrictions)
+        ? next.psychology.behaviorRestrictions
+        : defaultPlan.psychology.behaviorRestrictions,
+    },
+    checklist: Array.isArray(next.checklist) ? next.checklist : defaultPlan.checklist,
+    premium: Boolean(next.premium ?? defaultPlan.premium),
+    updatedAt: next.updatedAt || defaultPlan.updatedAt,
+  };
+}
+
 function readPlanState(): TradingPlan {
-  return safeGet<TradingPlan>(PLAN_KEY, defaultPlan);
+  return normalizePlan(safeGet<TradingPlan>(PLAN_KEY, defaultPlan));
 }
 
 function readTradesState(): Trade[] {
@@ -207,6 +241,40 @@ export function updatePlan(patch: Partial<TradingPlan>) {
   savePlan({ ...getPlan(), ...patch });
 }
 
+let backendPlanHydrationStarted = false;
+
+export async function hydrateTradingPlanFromBackend(force = false) {
+  if (typeof window === "undefined") return planState;
+  if (backendPlanHydrationStarted && !force) return planState;
+  backendPlanHydrationStarted = true;
+
+  try {
+    const { fetchTradingPlanFromBackend } = await import("@/lib/financial-intelligence-api");
+    const fetchedPlan = await fetchTradingPlanFromBackend();
+    if (!fetchedPlan) return planState;
+    const remotePlan = normalizePlan(fetchedPlan);
+
+    const localUpdatedAt = +new Date(planState.updatedAt || 0);
+    const remoteUpdatedAt = +new Date(remotePlan.updatedAt || 0);
+    const localLooksEmpty =
+      planState.strategies.length === 0 &&
+      !planState.profile &&
+      +new Date(planState.updatedAt || 0) === +new Date(defaultPlan.updatedAt || 0);
+
+    if (localLooksEmpty || remoteUpdatedAt >= localUpdatedAt) {
+      planState = remotePlan;
+      safeSet(PLAN_KEY, planState);
+      emit();
+    } else if (localUpdatedAt > remoteUpdatedAt) {
+      scheduleBackendPlanSync(planState);
+    }
+  } catch {
+    // Local plan remains available when backend hydration is unavailable.
+  }
+
+  return planState;
+}
+
 export function getTrades(): Trade[] {
   return tradesState;
 }
@@ -217,13 +285,22 @@ export function addTrade(t: Trade) {
   emit();
 }
 export function mergeBackendTrades(records: Array<Record<string, any>>) {
-  if (!Array.isArray(records) || records.length === 0) return;
+  if (!Array.isArray(records)) return;
+  if (records.length === 0) {
+    const localOnly = tradesState.filter((trade) => !trade.backendId);
+    if (localOnly.length !== tradesState.length) {
+      tradesState = localOnly;
+      safeSet(TRADES_KEY, tradesState);
+      emit();
+    }
+    return;
+  }
   const mapped = records.map(mapBackendTrade).filter(Boolean) as Trade[];
   if (mapped.length === 0) return;
   const byId = new Map<string, Trade>();
   for (const trade of mapped) byId.set(trade.id, trade);
   for (const trade of tradesState) {
-    if (!byId.has(trade.id)) byId.set(trade.id, trade);
+    if (!trade.backendId && !byId.has(trade.id)) byId.set(trade.id, trade);
   }
   tradesState = [...byId.values()].sort(
     (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
@@ -293,6 +370,7 @@ function mapBackendTrade(record: Record<string, any>): Trade | null {
   return {
     ...raw,
     id,
+    backendId: record.id,
     createdAt,
     asset: String(record.asset || raw.asset || "Unknown"),
     market: asMarket(record.market ?? raw.market),
@@ -577,8 +655,12 @@ export function uid(prefix = "id") {
 }
 
 // React hook
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 export function useTradingPlan() {
+  useEffect(() => {
+    void hydrateTradingPlanFromBackend();
+  }, []);
+
   return useSyncExternalStore(
     (cb) => subscribe(cb),
     () => getPlan(),

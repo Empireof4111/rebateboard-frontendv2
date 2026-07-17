@@ -133,6 +133,16 @@ export async function syncTradingPlanToBackend(plan: TradingPlan) {
   return response.payload ?? null;
 }
 
+export async function fetchTradingPlanFromBackend() {
+  const token = getFinancialAuthToken();
+  if (!token) return null;
+  const response = await apiRequest<TradingPlan | null>("/financial-intelligence/trading-plan", {
+    method: "GET",
+    token,
+  });
+  return response.payload ?? null;
+}
+
 export async function saveJournalTradeToBackend(trade: Trade) {
   const token = getFinancialAuthToken();
   if (!token) return null;
@@ -152,6 +162,18 @@ export async function fetchJournalTradesFromBackend() {
     token,
   });
   return response.payload ?? [];
+}
+
+export async function deleteJournalTradeFromBackend(trade: Pick<Trade, "id" | "backendId"> | string) {
+  const token = getFinancialAuthToken();
+  if (!token) return null;
+  const tradeId = typeof trade === "string" ? trade : trade.backendId ?? trade.id;
+  if (!tradeId) return null;
+  const response = await apiRequest(`/financial-intelligence/journal/${encodeURIComponent(String(tradeId))}`, {
+    method: "DELETE",
+    token,
+  });
+  return response.payload ?? null;
 }
 
 export async function fetchFinancialLedgerEvents(params: { page?: number; size?: number; maxPages?: number } = {}) {

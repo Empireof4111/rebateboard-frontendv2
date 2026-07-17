@@ -38,6 +38,7 @@
 
 :root {
   --radius: 1rem;
+  --rb-public-sticky-top: calc(env(safe-area-inset-top, 0px) + 9.5rem);
   --rb-radius-sm: 10px;
   --rb-radius-md: 14px;
   --rb-radius-lg: 20px;

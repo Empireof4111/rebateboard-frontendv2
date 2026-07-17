@@ -98,14 +98,38 @@ function valueOrFallback(value: unknown, fallback = EMPTY) {
   return text(value) || fallback;
 }
 
-function mediaUrl(value: unknown) {
-  const raw = text(value);
+function mediaSource(value: unknown): string {
+  if (typeof value === "string" || typeof value === "number") {
+    const direct = text(value);
+    if (direct) return direct;
+  }
+
+  const record = asRecord(value);
+  return firstText(
+    record.url,
+    record.secureUrl,
+    record.publicUrl,
+    record.fileUrl,
+    record.logoUrl,
+    record.imageUrl,
+    record.thumbnailUrl,
+    record.src,
+    record.path,
+    record.key,
+    record.storageKey,
+  );
+}
+
+function mediaUrl(...values: unknown[]) {
+  const raw = firstText(...values.map(mediaSource));
   if (!raw) return "";
   if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
 
   const apiOrigin = API_BASE_URL.replace(/\/api\/v1$/i, "");
   if (raw.startsWith("/api/v1/")) return `${apiOrigin}${raw}`;
   if (raw.startsWith("/file/")) return `${API_BASE_URL}${raw}`;
+  if (raw.startsWith("api/v1/")) return `${apiOrigin}/${raw}`;
+  if (raw.startsWith("file/")) return `${API_BASE_URL}/${raw}`;
   if (raw.startsWith("/")) return `${apiOrigin}${raw}`;
 
   return `${API_BASE_URL}/file/view?key=${encodeURIComponent(raw)}`;
@@ -125,6 +149,21 @@ function splitList(...values: unknown[]) {
     );
 }
 
+function jsonArray(value: unknown): unknown[] | null {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return null;
+
+  const raw = text(value);
+  if (!raw.startsWith("[")) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function splitParagraphLines(value: unknown) {
   return text(value)
     .split(/\r?\n|;/)
@@ -133,8 +172,10 @@ function splitParagraphLines(value: unknown) {
 }
 
 function namedLogoItems(value: unknown, fallbackText = ""): ProfileLogoItem[] {
-  if (Array.isArray(value)) {
-    const items = value
+  const sourceItems = jsonArray(value) ?? jsonArray(fallbackText);
+
+  if (sourceItems) {
+    const items = sourceItems
       .map((item, index) => {
         if (typeof item === "string") {
           const name = text(item);
@@ -147,8 +188,23 @@ function namedLogoItems(value: unknown, fallbackText = ""): ProfileLogoItem[] {
         }
 
         const row = asRecord(item);
-        const name = text(row.name);
-        const logo = mediaUrl(firstText(row.logo, row.logoUrl, row.url, row.src, row.key));
+        const name = firstText(row.name, row.label, row.title, row.method, row.platform, row.value);
+        const logo = mediaUrl(
+          row.logo,
+          row.logoUrl,
+          row.image,
+          row.imageUrl,
+          row.thumbnail,
+          row.thumbnailUrl,
+          row.file,
+          row.fileUrl,
+          row.publicUrl,
+          row.url,
+          row.src,
+          row.path,
+          row.key,
+          row.storageKey,
+        );
         if (!name && !logo) return null;
         return {
           id: text(row.id) || `logo_${index}`,
@@ -165,6 +221,14 @@ function namedLogoItems(value: unknown, fallbackText = ""): ProfileLogoItem[] {
     id: `fallback_logo_${index}_${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
     name,
   }));
+}
+
+function uniqueLogoItems(items: ProfileLogoItem[]) {
+  return items.filter(
+    (item, index, all) =>
+      all.findIndex((candidate) => candidate.name.toLowerCase() === item.name.toLowerCase()) ===
+      index,
+  );
 }
 
 function regionName(code: string, fallback: string) {
@@ -309,15 +373,18 @@ export function normalizePropFirmProfile(
   const propPlatforms = namedLogoItems(prop.tradingPlatformItems, firstText(prop.platform));
   const brokerPlatforms = namedLogoItems(broker.tradingPlatformItems, firstText(broker.platforms));
   const depositMethods = namedLogoItems(broker.depositMethodItems, firstText(broker.deposits));
+  const paymentMethods = uniqueLogoItems([
+    ...namedLogoItems(brand.paymentGatewayItems, firstText(brand.paymentGateways)),
+    ...namedLogoItems(prop.paymentGatewayItems, firstText(prop.paymentGateways)),
+    ...namedLogoItems(broker.paymentGatewayItems, firstText(broker.paymentGateways)),
+    ...namedLogoItems(exchange.paymentGatewayItems, firstText(exchange.paymentGateways)),
+    ...depositMethods,
+  ]);
   const withdrawalMethods = namedLogoItems(
     broker.withdrawalMethodItems,
     firstText(broker.withdrawals, exchange.withdrawals),
   );
-  const tradingPlatforms = [...propPlatforms, ...brokerPlatforms].filter(
-    (item, index, all) =>
-      all.findIndex((candidate) => candidate.name.toLowerCase() === item.name.toLowerCase()) ===
-      index,
-  );
+  const tradingPlatforms = uniqueLogoItems([...propPlatforms, ...brokerPlatforms]);
 
   const country = countriesFromText(identity.country, identity.hq, profile.country)[0] ?? {
     name: "Global",
@@ -475,7 +542,7 @@ export function normalizePropFirmProfile(
       card("Web3 Integration", exchange.web3Integration),
     ]),
     tradingPlatforms,
-    paymentMethods: depositMethods,
+    paymentMethods,
     withdrawalMethods,
     communityCards: cardsWithFallback([
       card("Community", profile.supportCommunity || profile.community),

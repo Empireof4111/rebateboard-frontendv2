@@ -271,7 +271,7 @@ function OnboardingFlow() {
           </div>
 
           {/* RIGHT — Score panel */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <aside className="space-y-4 lg:sticky lg:top-[var(--rb-public-sticky-top)] lg:self-start">
             <TrustScoreCard
               score={score}
               maxScore={cap}

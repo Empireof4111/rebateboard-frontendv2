@@ -189,7 +189,7 @@ function LegalDocPage() {
 
         {/* Desktop sticky TOC */}
         <aside className="hidden xl:block">
-          <div className="sticky top-6">
+          <div className="sticky top-[var(--rb-public-sticky-top)]">
             <div className="glass rounded-2xl p-4 ring-1 ring-white/10">
               <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 On this page

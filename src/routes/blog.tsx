@@ -14,6 +14,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { articleRouteId, fetchPublicBlogPosts, type BlogPost } from "@/lib/admin-api";
 import { subscribeToNewsletter } from "@/lib/newsletter";
+import { absoluteSiteUrl, socialImageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
@@ -29,7 +30,11 @@ export const Route = createFileRoute("/blog")({
         property: "og:description",
         content: "Guides, comparisons and industry reports for serious traders.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: absoluteSiteUrl("/blog") },
+      ...socialImageMeta(undefined, "RebateBoard Blog & Insights"),
     ],
+    links: [{ rel: "canonical", href: absoluteSiteUrl("/blog") }],
   }),
   component: BlogIndex,
 });
@@ -238,7 +243,7 @@ export function BlogExperience({ embedded = false }: { embedded?: boolean }) {
             </div>
 
             {/* Sidebar */}
-            <aside className="space-y-6">
+            <aside className="space-y-6 lg:sticky lg:top-[var(--rb-public-sticky-top)] lg:self-start">
               <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-violet-300">
                   <TrendingUp className="h-3.5 w-3.5" /> Trending

@@ -4,7 +4,8 @@ import { Plus, Upload, Filter, Flag, Camera, AlertTriangle, ShieldCheck, Trash2,
 import { useEffect, useMemo, useState } from "react";
 import { AddTradeModal } from "@/components/dashboard/AddTradeModal";
 import { deleteTrade, formatTradePnl, mergeBackendTrades, resolveTradeNetPnl, resolveTradeOutcome, summarizeTrades, useTrades, useTradingPlan, type Trade } from "@/lib/trading-plan";
-import { fetchJournalTradesFromBackend } from "@/lib/financial-intelligence-api";
+import { deleteJournalTradeFromBackend, fetchJournalTradesFromBackend } from "@/lib/financial-intelligence-api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/trades")({
   component: TradesPage,
@@ -41,6 +42,19 @@ function TradesPage() {
   }, [trades, filter]);
 
   const totals = useMemo(() => summarizeTrades(trades), [trades]);
+
+  const handleDeleteTrade = async (trade: Trade) => {
+    try {
+      await deleteJournalTradeFromBackend(trade);
+      deleteTrade(trade.id);
+      if (selectedTrade?.id === trade.id) setSelectedTrade(null);
+      toast.success("Trade deleted");
+    } catch {
+      deleteTrade(trade.id);
+      if (selectedTrade?.id === trade.id) setSelectedTrade(null);
+      toast.warning("Trade removed locally. If it reappears, refresh after the backend is available.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -113,7 +127,7 @@ function TradesPage() {
                 key={trade.id}
                 trade={trade}
                 onOpen={() => setSelectedTrade(trade)}
-                onDelete={() => deleteTrade(trade.id)}
+                onDelete={() => void handleDeleteTrade(trade)}
               />
             ))}
           </div>

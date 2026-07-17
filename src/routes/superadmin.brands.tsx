@@ -5,11 +5,13 @@ import { Modal, ConfirmDialog, Field, fieldCls, ThumbnailUploader, toast } from 
 import {
   deleteAdminBrand,
   fetchAdminBrands,
+  generateBrandPreviewLink,
+  revokeBrandPreviewLink,
   updateAdminBrand,
   type AdminBrandRecord as AdminBrand,
 } from "@/lib/admin-brands-api";
 import { uploadMediaFile, uploadMediaFiles } from "@/lib/media-api";
-import { Plus, Search, Edit3, Trash2, ExternalLink, ArrowUp, ArrowDown, RefreshCw, Copy } from "lucide-react";
+import { Plus, Search, Edit3, Trash2, ExternalLink, ArrowUp, ArrowDown, RefreshCw, Copy, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/superadmin/brands")({
   component: BrandsPage,
@@ -244,6 +246,7 @@ function BrandsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [deleting, setDeleting] = useState<AdminBrand | null>(null);
+  const [previewBusy, setPreviewBusy] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -365,6 +368,52 @@ function BrandsPage() {
       toast.success("Ranks re-synced from TBI scores");
     } catch (ex) {
       toast.error(ex instanceof Error ? ex.message : "Unable to re-sync ranks");
+    }
+  }
+
+  async function copyText(value: string) {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  }
+
+  async function handleGeneratePreview(brand: AdminBrand) {
+    if (previewBusy) return;
+    setPreviewBusy(brand.id);
+    try {
+      const result = await generateBrandPreviewLink(brand.id);
+      const url = `${window.location.origin}${result.path}`;
+      await copyText(url);
+      setItems((current) => current.map((row) => (row.id === brand.id ? result.brand : row)));
+      toast.success("Private preview link copied");
+    } catch (ex) {
+      toast.error(ex instanceof Error ? ex.message : "Unable to create preview link");
+    } finally {
+      setPreviewBusy(null);
+    }
+  }
+
+  async function handleRevokePreview(brand: AdminBrand) {
+    if (previewBusy) return;
+    setPreviewBusy(brand.id);
+    try {
+      const next = await revokeBrandPreviewLink(brand.id);
+      setItems((current) => current.map((row) => (row.id === brand.id ? next : row)));
+      toast.success("Private preview link revoked");
+    } catch (ex) {
+      toast.error(ex instanceof Error ? ex.message : "Unable to revoke preview link");
+    } finally {
+      setPreviewBusy(null);
     }
   }
 
@@ -502,6 +551,24 @@ function BrandsPage() {
                 <td className={b.complaints > 15 ? "font-bold text-rose-300" : ""}>{b.complaints}</td>
                 <td className="text-right">
                   <div className="flex justify-end gap-1">
+                    <button
+                      onClick={() => void handleGeneratePreview(b)}
+                      disabled={previewBusy === b.id}
+                      className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15 text-violet-100 ring-1 ring-violet-300/25 hover:bg-violet-500/25 disabled:opacity-40"
+                      title="Generate and copy private brand-review link"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    {b.previewLinkEnabled ? (
+                      <button
+                        onClick={() => void handleRevokePreview(b)}
+                        disabled={previewBusy === b.id}
+                        className="grid h-7 w-7 place-items-center rounded-md bg-amber-500/15 text-amber-200 ring-1 ring-amber-300/25 hover:bg-amber-500/25 disabled:opacity-40"
+                        title="Revoke active private preview link"
+                      >
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                    ) : null}
                     <button
                       onClick={() => {
                         navigate({

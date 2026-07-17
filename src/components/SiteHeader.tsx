@@ -29,7 +29,6 @@ import {
   RadioTower,
   Scale,
   Search,
-  ShieldCheck,
   Tags,
   TrendingUp,
   User as UserIcon,
@@ -53,6 +52,7 @@ import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 import { useI18n, type LanguageCode, type TranslationKey } from "@/lib/i18n";
 import { getTraderLevelProgress } from "@/lib/trader-levels";
 import { LiquidGlassSurface } from "@/components/ui/LiquidGlassSurface";
+import { TraderTierBadge } from "@/components/TraderTierBadge";
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -71,7 +71,7 @@ function UserPill() {
   const dashboardHref = `/login?reauth=1&email=${encodeURIComponent(user.email)}&redirect=/dashboard`;
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="liquid-glass-inset group flex max-w-[18rem] items-center gap-2 rounded-full py-1 pl-1 pr-2.5 text-left outline-none transition hover:border-white/20 hover:bg-white/[0.08]">
+      <DropdownMenuTrigger className="liquid-glass-inset group flex max-w-[19rem] items-center gap-2 rounded-full py-1 pl-1 pr-2.5 text-left outline-none transition hover:border-white/20 hover:bg-white/[0.08]">
         <Avatar className="h-8 w-8 shrink-0 shadow-[0_0_18px_rgba(192,132,252,0.38)]">
           <AvatarImage
             src={user.dp || undefined}
@@ -82,14 +82,11 @@ function UserPill() {
             {initials}
           </AvatarFallback>
         </Avatar>
-        <span className="hidden min-w-0 flex-col leading-tight md:flex">
-          <span className="max-w-[11rem] truncate text-xs font-semibold text-white" title={display}>
+        <span className="hidden min-w-0 items-center gap-1.5 leading-none md:flex">
+          <span className="max-w-[12rem] truncate text-xs font-semibold text-white lg:max-w-[14rem]" title={display}>
             {display}
           </span>
-          <span className={`mt-1 inline-flex w-fit max-w-[11rem] items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] ${traderLevelBadgeClass(level.id)}`}>
-            <ShieldCheck className="h-2.5 w-2.5" />
-            <span className="truncate">{level.name}</span>
-          </span>
+          <TraderTierBadge levelId={level.id} label={level.name} size="sm" />
         </span>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition group-hover:text-white" />
       </DropdownMenuTrigger>
@@ -131,15 +128,6 @@ function UserPill() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function traderLevelBadgeClass(levelId: string) {
-  if (levelId === "elite") return "border-emerald-300/35 bg-emerald-400/15 text-emerald-100 shadow-[0_0_16px_rgba(52,211,153,0.18)]";
-  if (levelId === "platinum") return "border-cyan-200/30 bg-cyan-300/12 text-cyan-100 shadow-[0_0_16px_rgba(103,232,249,0.14)]";
-  if (levelId === "gold") return "border-violet-200/35 bg-violet-300/14 text-violet-50 shadow-[0_0_16px_rgba(167,139,250,0.16)]";
-  if (levelId === "silver") return "border-indigo-200/25 bg-indigo-300/12 text-indigo-100";
-  if (levelId === "bronze") return "border-violet-200/25 bg-violet-300/12 text-violet-100";
-  return "border-white/12 bg-white/[0.055] text-white/72";
 }
 
 function GuestActions() {

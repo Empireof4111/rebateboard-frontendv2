@@ -4,6 +4,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { PublicEngagementLayer } from "@/components/PublicEngagementLayer";
 import { CookieConsentManager } from "@/components/cookies/CookieConsentUI";
 import { CookieConsentProvider } from "@/lib/cookie-consent";
+import { SITE_ORIGIN, socialImageMeta } from "@/lib/seo";
 
 import appCss from "../styles.css?url";
 
@@ -40,12 +41,16 @@ export const Route = createRootRoute({
       { property: "og:title", content: "RebateBoard | Trade Smarter. Earn Cashback. Choose Trusted Brands." },
       { property: "og:description", content: "Discover trusted brokers, prop firms, and exchanges. Earn cashback, compare TBI trust scores, read verified reviews, track performance, and sharpen your edge with Rebeta AI." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: SITE_ORIGIN },
+      { property: "og:site_name", content: "RebateBoard" },
+      ...socialImageMeta(),
       { name: "twitter:site", content: "@RebateBoard" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "canonical", href: SITE_ORIGIN },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon.png" },
+      { rel: "shortcut icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", sizes: "512x512", href: "/favicon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

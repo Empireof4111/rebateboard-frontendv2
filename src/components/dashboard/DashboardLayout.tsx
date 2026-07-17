@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { markDashboardVisit } from "@/components/dashboard/OnboardingChecklist";
+import { getTraderLevelProgress } from "@/lib/trader-levels";
+import { TraderTierBadge } from "@/components/TraderTierBadge";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; exact?: boolean; badge?: string; tooltip?: string };
 type NavGroup = { id: string; labelKey: string; items: NavItem[] };
@@ -173,6 +175,7 @@ export function DashboardLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const notifications = useNotifications(token);
   const sidebarWidth = sidebarCollapsed ? "5rem" : "16rem";
+  const traderLevel = useMemo(() => getTraderLevelProgress(user?.rrBalance).current, [user?.rrBalance]);
 
   const initialOpen = useMemo(() => {
     const open: Record<string, boolean> = {};
@@ -513,13 +516,19 @@ export function DashboardLayout() {
                 <span className="tabular-nums">{user.rrBalance.toFixed(0)}</span>
                 <span className="hidden sm:inline">RR</span>
               </Link>
-              <Link to={"/dashboard/profile" as string} className="rounded-full outline-none transition-transform hover:scale-[1.04] focus-visible:ring-2 focus-visible:ring-ring/60" aria-label={t("dashboard.profile")}>
+              <Link to={"/dashboard/profile" as string} className="relative inline-flex rounded-full outline-none transition-transform hover:scale-[1.04] focus-visible:ring-2 focus-visible:ring-ring/60" aria-label={t("dashboard.profile")}>
                 <Avatar className="h-9 w-9 ring-1 ring-white/15 shadow-[0_0_14px_rgba(192,132,252,0.3)]">
                   <AvatarImage src={user.dp || undefined} alt={`${user.name} profile`} className="object-cover" />
                   <AvatarFallback className="bg-gradient-to-br from-violet-500 to-violet-600 text-xs font-bold text-white">
                     {user.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
+                <TraderTierBadge
+                  levelId={traderLevel.id}
+                  label={traderLevel.name}
+                  size="xs"
+                  className="absolute -bottom-0.5 -right-0.5 border-[1.5px] ring-2 ring-[rgba(13,12,20,0.95)]"
+                />
               </Link>
             </div>
           </div>

@@ -72,6 +72,9 @@ export type AdminBrandRecord = {
   trust?: Record<string, unknown>;
   seo?: Record<string, unknown>;
   flags?: Record<string, unknown>;
+  previewLinkEnabled?: boolean;
+  previewTokenExpiresAt?: string | null;
+  previewMode?: boolean;
   followersCount?: number;
   reviewsCount?: number;
   isFollowing?: boolean;
@@ -99,6 +102,23 @@ export async function fetchPublicAdminBrand(slug: string, token?: string | null)
     );
     const brand = response.payload ?? null;
     return brand?.visibility === "published" ? brand : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchPreviewAdminBrand(slug: string, previewToken: string, token?: string | null) {
+  try {
+    const params = new URLSearchParams({ token: previewToken });
+    const response = await apiRequest<AdminBrandRecord>(
+      `/admin-brand/preview/${encodeURIComponent(slug)}?${params.toString()}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        token: requestToken(token),
+      },
+    );
+    return response.payload ?? null;
   } catch {
     return null;
   }
@@ -154,6 +174,30 @@ export async function updateAdminBrand(id: string, input: Partial<AdminBrandReco
   const response = await apiRequest<AdminBrandRecord>(`/admin-brand/${id}`, {
     method: "PUT",
     body: input,
+    token: readToken(),
+  });
+  if (!response.payload) throw new Error("Missing brand payload");
+  return response.payload;
+}
+
+export async function generateBrandPreviewLink(id: string, expiresInDays = 14) {
+  const response = await apiRequest<{
+    brand: AdminBrandRecord;
+    token: string;
+    expiresAt: string;
+    path: string;
+  }>(`/admin-brand/${id}/preview-link`, {
+    method: "POST",
+    body: { expiresInDays },
+    token: readToken(),
+  });
+  if (!response.payload) throw new Error("Missing preview-link payload");
+  return response.payload;
+}
+
+export async function revokeBrandPreviewLink(id: string) {
+  const response = await apiRequest<AdminBrandRecord>(`/admin-brand/${id}/preview-link`, {
+    method: "DELETE",
     token: readToken(),
   });
   if (!response.payload) throw new Error("Missing brand payload");

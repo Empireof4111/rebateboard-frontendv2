@@ -37,7 +37,7 @@ function LegalLayout() {
 
         <div className="mt-4 grid gap-6 pb-16 lg:grid-cols-[260px_1fr]">
           {/* Sticky sidebar */}
-          <aside className="lg:sticky lg:top-6 lg:self-start">
+          <aside className="lg:sticky lg:top-[var(--rb-public-sticky-top)] lg:self-start">
             <nav className="glass rounded-2xl p-3 ring-1 ring-white/10">
               <div className="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Legal Center

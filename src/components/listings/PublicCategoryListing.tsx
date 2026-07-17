@@ -1417,7 +1417,7 @@ export function PublicCategoryListing({ config }: { config: ListingCategoryConfi
         )}
 
         <div className="relative grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <div className="hidden self-start lg:sticky lg:top-[9.5rem] lg:block">
+          <div className="hidden self-start lg:sticky lg:top-[var(--rb-public-sticky-top)] lg:block">
             {loading ? (
               <FilterSidebarSkeleton />
             ) : (

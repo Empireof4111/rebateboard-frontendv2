@@ -39,12 +39,14 @@ import { FirmComplaints } from "@/components/firm/FirmComplaints";
 import { FirmAnnouncements } from "@/components/firm/FirmAnnouncements";
 import {
   fetchPublicAdminBrand,
+  fetchPreviewAdminBrand,
   followAdminBrand,
   unfollowAdminBrand,
   updateAdminBrand,
 } from "@/lib/admin-brands-api";
 import { API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { brandLogoUrl } from "@/lib/brand-assets";
 import { resolveCountryDisplay } from "@/lib/country-format";
 import { uploadMediaFile } from "@/lib/media-api";
 import { validateFileSize } from "@/lib/upload-limits";
@@ -61,27 +63,42 @@ import { TBI_BRANDS } from "@/lib/tbi-data";
 import { fetchTbiBrand, type TbiProfile } from "@/lib/tbi-api";
 import { fetchPublicOffers, type AdminOffer } from "@/lib/offers-api";
 import { resolveBrandTbiState } from "@/lib/public-brand";
+import { absoluteSiteUrl, socialImageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/firm/$firmId")({
-  head: ({ params }) => {
-    const name = decodeURIComponent(params.firmId).replace(/-/g, " ");
+  loader: ({ params }) => loadPublicBrandForMetadata(params.firmId),
+  head: ({ params, loaderData }) => {
+    const brand = loaderData;
+    const name = brand?.name ?? decodeURIComponent(params.firmId).replace(/-/g, " ");
+    const title = `${name} — Brand Details · RebateBoard`;
+    const description = `Full breakdown of ${name}: funding program, account options, trading rules, scaling plan, payouts, fees, and more.`;
+    const url = absoluteSiteUrl(`/firm/${encodeURIComponent(params.firmId)}`);
+    const image = brand ? brandLogoUrl(brand) : undefined;
+
     return {
       meta: [
-        { title: `${name} — Firm Details · RebateBoard` },
-        {
-          name: "description",
-          content: `Full breakdown of ${name}: funding program, account options, trading rules, scaling plan, payouts, fees, and more.`,
-        },
-        { property: "og:title", content: `${name} — Firm Details` },
-        {
-          property: "og:description",
-          content: `Full breakdown of ${name}: funding, rules, payouts, fees, and more.`,
-        },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: `${name} — RebateBoard` },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        ...socialImageMeta(image, `${name} logo`),
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   component: FirmDetailsPage,
 });
+
+async function loadPublicBrandForMetadata(slugOrName: string) {
+  const candidates = brandLookupCandidates(slugOrName);
+  for (const candidate of candidates) {
+    const brand = await fetchPublicAdminBrand(candidate, null);
+    if (brand) return brand;
+  }
+  return fallbackBrandFromStaticData(candidates);
+}
 
 const sideTabs = [
   { id: "overview", label: "Overview" },
@@ -115,6 +132,9 @@ type SavedBrand = {
   primaryColor?: string;
   visibility?: "draft" | "published" | "hidden" | "archived";
   status?: string;
+  previewMode?: boolean;
+  previewLinkEnabled?: boolean;
+  previewTokenExpiresAt?: string | null;
   identity?: {
     founded?: string;
     hq?: string;
@@ -318,11 +338,6 @@ function youtubeVideoId(value?: string) {
   }
 
   return "";
-}
-
-function youtubeThumbnailUrl(value?: string) {
-  const videoId = youtubeVideoId(value);
-  return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
 }
 
 function resolveMediaUrl(...values: unknown[]) {
@@ -906,7 +921,23 @@ function fallbackBrandFromStaticData(candidates: string[]): SavedBrand | null {
   };
 }
 
-function useSavedBrand(slugOrName: string, token?: string | null) {
+function usePreviewToken() {
+  const read = () => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("previewToken");
+  };
+  const [previewToken, setPreviewToken] = useState<string | null>(() => read());
+
+  useEffect(() => {
+    const sync = () => setPreviewToken(read());
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
+  return previewToken;
+}
+
+function useSavedBrand(slugOrName: string, token?: string | null, previewToken?: string | null) {
   const [brand, setBrand] = useState<SavedBrand | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -938,11 +969,13 @@ function useSavedBrand(slugOrName: string, token?: string | null) {
     };
     const fallbackBrand = () => fallbackBrandFromStaticData(candidates);
 
-    setBrand(findCachedBrand() ?? fallbackBrand());
+    setBrand(previewToken ? null : findCachedBrand() ?? fallbackBrand());
     async function fetchBrand() {
       for (const candidate of candidates) {
         try {
-          const payload = await fetchPublicAdminBrand(candidate, token);
+          const payload = previewToken
+            ? await fetchPreviewAdminBrand(candidate, previewToken, token)
+            : await fetchPublicAdminBrand(candidate, token);
           if (active && payload) {
             setBrand(payload as unknown as SavedBrand);
             setLoading(false);
@@ -954,14 +987,14 @@ function useSavedBrand(slugOrName: string, token?: string | null) {
       }
 
       if (active) {
-        setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+        setBrand((current) => current ?? (previewToken ? null : findCachedBrand() ?? fallbackBrand()));
         setLoading(false);
       }
     }
 
     fetchBrand().catch(() => {
       if (active) {
-        setBrand((current) => current ?? findCachedBrand() ?? fallbackBrand());
+        setBrand((current) => current ?? (previewToken ? null : findCachedBrand() ?? fallbackBrand()));
         setLoading(false);
       }
     });
@@ -969,7 +1002,7 @@ function useSavedBrand(slugOrName: string, token?: string | null) {
     return () => {
       active = false;
     };
-  }, [slugOrName, token]);
+  }, [slugOrName, token, previewToken]);
   return { brand, loading };
 }
 
@@ -1037,9 +1070,9 @@ const sectionIconMap: Record<string, LucideIcon> = {
   "TBI Breakdown": ListChecks,
 };
 
-const BRAND_PROFILE_STICKY_GAP = 6;
-const BRAND_PROFILE_TAB_TO_SECTION_GAP = 10;
-const BRAND_PROFILE_HEADER_FALLBACK = 172;
+const BRAND_PROFILE_STICKY_GAP = 0;
+const BRAND_PROFILE_TAB_TO_SECTION_GAP = 0;
+const BRAND_PROFILE_HEADER_FALLBACK = 152;
 
 function FormattedText({ value, className = "" }: { value: string; className?: string }) {
   const raw = String(value || "");
@@ -1096,8 +1129,11 @@ function EmptyBlock({ children = "Not available" }: { children?: React.ReactNode
 }
 
 function VideoReviewCard({ name, url }: { name: string; url: string }) {
-  const thumbnail = youtubeThumbnailUrl(url);
-  const hasVideo = Boolean(url);
+  const videoId = youtubeVideoId(url);
+  if (!videoId) return null;
+
+  const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  const href = externalUrl(url);
   const inner = (
     <div className="group relative aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/25 via-violet-600/20 to-sky-500/15 ring-1 ring-white/10">
       {thumbnail ? (
@@ -1115,17 +1151,13 @@ function VideoReviewCard({ name, url }: { name: string; url: string }) {
         </span>
       </div>
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <div className="text-xs font-semibold text-white">
-          {hasVideo ? "Watch video review" : "Video review unavailable"}
-        </div>
+        <div className="text-xs font-semibold text-white">Watch video review</div>
       </div>
     </div>
   );
 
-  if (!hasVideo) return inner;
-
   return (
-    <a href={url} target="_blank" rel="noreferrer" aria-label={`Watch ${name} video review`}>
+    <a href={href} target="_blank" rel="noreferrer" aria-label={`Watch ${name} video review`}>
       {inner}
     </a>
   );
@@ -1680,17 +1712,27 @@ function renderSection(
   profile: NormalizedPropFirmProfile,
 ): React.ReactNode {
   switch (sectionId) {
-    case "overview":
+    case "overview": {
+      const hasVideoReview = Boolean(youtubeVideoId(profile.overview.videoReviewUrl));
       return (
         <Section title="Overview">
-          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_360px] md:items-start">
+          <div
+            className={
+              hasVideoReview
+                ? "grid gap-6 md:grid-cols-[minmax(0,1fr)_360px] md:items-start"
+                : ""
+            }
+          >
             <p className="max-w-3xl text-sm leading-7 text-white/74 sm:text-base sm:leading-8">
               {profile.overview.description}
             </p>
-            <VideoReviewCard name={profile.name} url={profile.overview.videoReviewUrl} />
+            {hasVideoReview ? (
+              <VideoReviewCard name={profile.name} url={profile.overview.videoReviewUrl} />
+            ) : null}
           </div>
         </Section>
       );
+    }
 
     case "trading-rules":
       return (
@@ -1713,7 +1755,7 @@ function renderSection(
           <CardGrid cards={profile.payoutCards} columns="lg:grid-cols-3" />
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <LogoChipList title="Payout Methods" items={profile.payoutMethods} />
-            <LogoChipList title="Withdrawal Methods" items={profile.withdrawalMethods} />
+            <LogoChipList title="Payment Gateways" items={profile.paymentMethods} />
           </div>
         </Section>
       );
@@ -1745,9 +1787,8 @@ function renderSection(
     case "platform-technology":
       return (
         <Section title="Platform & Technology">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6">
             <LogoChipList title="Trading Platforms" items={profile.tradingPlatforms} />
-            <LogoChipList title="Payment Gateways" items={profile.paymentMethods} />
           </div>
           <div className="mt-6">
             <CardGrid cards={profile.platformCards} />
@@ -1919,7 +1960,9 @@ function FirmDetailsPage() {
   const { firmId } = Route.useParams();
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const { brand, loading: brandLoading } = useSavedBrand(firmId, token);
+  const previewToken = usePreviewToken();
+  const { brand, loading: brandLoading } = useSavedBrand(firmId, token, previewToken);
+  const isPrivatePreview = Boolean(previewToken && brand?.previewMode);
   const publishedOffer = usePublicBrandOffer(brand, firmId);
   const name = brand?.name ?? decodeURIComponent(firmId).replace(/-/g, " ");
   const profileData = normalizePropFirmProfile(brand, name);
@@ -1997,7 +2040,7 @@ function FirmDetailsPage() {
   const isBrandOwner = brandOwnerSession?.slug?.toLowerCase() === brandSlug.toLowerCase();
   const canEditProfile = isAdmin || isBrandOwner;
   const followerCount = compactCount(followState.followersCount);
-  const stickyTabsTop = stickyMetrics.headerHeight + BRAND_PROFILE_STICKY_GAP;
+  const stickyTabsTop = Math.max(0, stickyMetrics.headerHeight + BRAND_PROFILE_STICKY_GAP);
   const stickySidebarTop =
     stickyTabsTop + stickyMetrics.tabsHeight + BRAND_PROFILE_TAB_TO_SECTION_GAP;
   const backToListingsPath = listingPathForCategory(brand?.category);
@@ -2046,28 +2089,29 @@ function FirmDetailsPage() {
       document.querySelector<HTMLElement>("[data-site-header-surface]") ??
       document.querySelector<HTMLElement>("[data-site-header]") ??
       document.querySelector<HTMLElement>("header.fixed");
-    const tabs = tabsRef.current;
-
     let frame = 0;
     const updateStickyMetrics = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-      const headerBottom = Math.ceil(header?.getBoundingClientRect().bottom ?? BRAND_PROFILE_HEADER_FALLBACK);
-      const headerHeight = Math.max(headerBottom, BRAND_PROFILE_HEADER_FALLBACK);
-      const tabsHeight = Math.ceil(tabs?.getBoundingClientRect().height ?? 48);
+        const measuredHeaderBottom = header?.getBoundingClientRect().bottom;
+        const headerHeight =
+          Number.isFinite(measuredHeaderBottom) && Number(measuredHeaderBottom) > 0
+            ? Math.ceil(Number(measuredHeaderBottom))
+            : BRAND_PROFILE_HEADER_FALLBACK;
+        const tabsHeight = Math.ceil(tabsRef.current?.getBoundingClientRect().height ?? 48);
 
-      setStickyMetrics((current) =>
-        current.headerHeight === headerHeight && current.tabsHeight === tabsHeight
-          ? current
-          : { headerHeight, tabsHeight },
-      );
+        setStickyMetrics((current) =>
+          current.headerHeight === headerHeight && current.tabsHeight === tabsHeight
+            ? current
+            : { headerHeight, tabsHeight },
+        );
       });
     };
 
     updateStickyMetrics();
     const observer = new ResizeObserver(updateStickyMetrics);
     if (header) observer.observe(header);
-    if (tabs) observer.observe(tabs);
+    if (tabsRef.current) observer.observe(tabsRef.current);
     window.addEventListener("resize", updateStickyMetrics);
     window.addEventListener("scroll", updateStickyMetrics, { passive: true });
 
@@ -2077,7 +2121,7 @@ function FirmDetailsPage() {
       window.removeEventListener("resize", updateStickyMetrics);
       window.removeEventListener("scroll", updateStickyMetrics);
     };
-  }, []);
+  }, [brandLoading]);
 
   useEffect(() => {
     if (!topTabs.includes(topTab)) setTopTab("Overview");
@@ -2201,6 +2245,25 @@ function FirmDetailsPage() {
     return <FirmDetailsSkeleton />;
   }
 
+  if (previewToken && !brand) {
+    return (
+      <div className="relative min-h-screen overflow-x-clip bg-[var(--rb-bg-canvas)] text-white">
+        <SiteHeader />
+        <div className="container-app flex min-h-[70vh] items-center justify-center pt-28">
+          <div className="glass-strong max-w-xl rounded-3xl p-8 text-center ring-1 ring-white/10">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-violet-500/15 text-violet-100 ring-1 ring-violet-300/25">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl font-black text-white">Private preview unavailable</h1>
+            <p className="mt-3 text-sm leading-relaxed text-white/64">
+              This review link may have expired, been revoked, or been copied incorrectly. Ask the RebateBoard team for a fresh private preview link.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-x-clip bg-[var(--rb-bg-canvas)] text-white">
       <SiteHeader />
@@ -2208,6 +2271,17 @@ function FirmDetailsPage() {
       <div className="glow-orb h-[700px] w-[700px] right-0 top-[40%] opacity-30" />
 
       <div className="container-app relative pb-6 pt-3 sm:pt-4">
+        {isPrivatePreview ? (
+          <div className="mb-3 flex flex-col gap-2 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-50 shadow-[0_16px_40px_rgba(0,0,0,0.24)] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 font-semibold">
+              <ShieldCheck className="h-4 w-4 text-amber-200" />
+              Private brand review preview
+            </div>
+            <div className="text-xs text-amber-100/72">
+              This listing is not live publicly. Use this link to review corrections before publishing.
+            </div>
+          </div>
+        ) : null}
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_440px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
           <div className="glass-strong h-full overflow-hidden rounded-3xl bg-[rgba(18,18,25,0.90)] ring-1 ring-violet-400/20">
             <div className="relative h-28 overflow-hidden bg-[var(--rb-bg-section)] sm:h-32 lg:h-36 xl:h-[152px]">
@@ -2513,7 +2587,7 @@ function FirmDetailsPage() {
 
         <div
           ref={tabsRef}
-          className="sticky z-[49] mt-4 flex justify-center rounded-2xl bg-[rgba(18,18,25,0.97)] px-2 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.38)] ring-1 ring-white/12 backdrop-blur-2xl lg:px-3"
+          className="sticky z-[49] mt-3 flex justify-center rounded-2xl bg-[rgba(18,18,25,0.97)] px-2 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.38)] ring-1 ring-white/12 backdrop-blur-2xl lg:px-3"
           style={{ top: `${stickyTabsTop}px` }}
         >
           <div className="no-scrollbar flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto overscroll-x-contain py-0.5 lg:justify-center">
@@ -2636,7 +2710,7 @@ function FirmDetailsPage() {
               className="self-start lg:sticky lg:z-30 lg:overflow-y-auto lg:pr-1"
               style={{
                 top: `${stickySidebarTop}px`,
-                maxHeight: `calc(100dvh - ${stickySidebarTop + 18}px)`,
+                maxHeight: `calc(100dvh - ${stickySidebarTop + 8}px)`,
               }}
             >
               <div className="mb-3 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block">
@@ -2669,7 +2743,7 @@ function FirmDetailsPage() {
                 <div
                   key={section.id}
                   id={profileSectionDomId(section.id)}
-                  style={{ scrollMarginTop: `${stickySidebarTop + 8}px` }}
+                  style={{ scrollMarginTop: `${stickySidebarTop + 4}px` }}
                   className={`transition duration-500 motion-safe:transform ${
                     index === activeIdx
                       ? "translate-y-0 opacity-100"
