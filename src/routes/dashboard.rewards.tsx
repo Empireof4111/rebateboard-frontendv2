@@ -40,10 +40,10 @@ export const Route = createFileRoute("/dashboard/rewards")({
 type RedeemKind = "cash" | "propfirm" | "fees" | "academy";
 
 const redeemOptions = [
-  { id: "cash" as RedeemKind, title: "Cashback Boosts", tagline: "Increase eligible cashback rewards when boosts are available.", rate: "Coming Soon", icon: TrendingUp, accent: "success" as const, cta: "Notify Me" },
+  { id: "cash" as RedeemKind, title: "Cashback Boosts", tagline: "Increase eligible cashback rewards when boosts are available.", rate: "Preparing", icon: TrendingUp, accent: "success" as const, cta: "Notify Me" },
   { id: "propfirm" as RedeemKind, title: "Trading Challenges", tagline: "Use RR toward eligible partner challenge opportunities.", rate: "Eligible partners", icon: Building2, accent: "primary" as const, cta: "View eligible partners" },
-  { id: "fees" as RedeemKind, title: "Trading Fee Perks", tagline: "Reduce selected trading costs through future RR perks.", rate: "Coming Soon", icon: Percent, accent: "primary" as const, cta: "Notify Me" },
-  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Unlock learning content, templates, and premium tools.", rate: "Coming Soon", icon: GraduationCap, accent: "primary" as const, cta: "Notify Me" },
+  { id: "fees" as RedeemKind, title: "Trading Fee Perks", tagline: "Reduce selected trading costs through future RR perks.", rate: "Preparing", icon: Percent, accent: "primary" as const, cta: "Notify Me" },
+  { id: "academy" as RedeemKind, title: "Academy & Tools", tagline: "Unlock learning content, templates, and premium tools.", rate: "Preparing", icon: GraduationCap, accent: "primary" as const, cta: "Notify Me" },
 ];
 
 const DEFAULT_CONFIG: RrAllConfig = {
@@ -286,7 +286,7 @@ function RewardsPage() {
             <div className="mt-3 grid gap-2 sm:grid-cols-4">
               <StatCard label="Current Streak" value={streak.current ? `${streak.current} days` : "0 days"} accent="primary" />
               <StatCard label="Longest Streak" value={streak.longest ? `${streak.longest} days` : "0 days"} accent="success" />
-              <StatCard label="Today's Reward" value={nextMilestone ? `+${nextMilestone.reward} RR` : "Coming Soon"} accent="primary" />
+              <StatCard label="Today's Reward" value={nextMilestone ? `+${nextMilestone.reward} RR` : "No milestone queued"} accent="primary" />
               <StatCard label="Next Milestone" value={nextMilestone ? `${nextMilestone.days} days` : "Completed"} accent="primary" />
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

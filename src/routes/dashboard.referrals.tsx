@@ -129,14 +129,13 @@ function ReferralsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Referrals"
-        subtitle="Every signup with your link earns you commission + RR. No application required — your link is live."
+        subtitle="Invite traders, track clicks and signups, and earn RR automatically when referrals qualify. No application required."
         actions={
           <div className="flex items-center gap-2">
             <Pill tone={profile.status === "active" ? "success" : "destructive"}>
               {profile.status === "active" ? "Active" : "Suspended"}
             </Pill>
-            <Pill tone="primary">{profile.commissionPct}% commission</Pill>
-            <Pill tone="default">{profile.rrPerSignup} RR / signup</Pill>
+            <Pill tone="primary">{profile.rrPerSignup} RR / qualified signup</Pill>
           </div>
         }
       />
@@ -145,8 +144,8 @@ function ReferralsPage() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Clicks" value={stats.clicks.toLocaleString()} hint={`${fmtPct(stats.clickToSignupCvr)} CVR`} trend="up" accent="primary" />
         <StatCard label="Signups" value={stats.signups.toLocaleString()} hint={`${stats.qualified} qualified`} trend="up" accent="success" />
-        <StatCard label="Pending" value={fmtUsd(stats.pending)} hint="ready to claim" trend={stats.pending > 0 ? "up" : "neutral"} accent="warning" />
-        <StatCard label="Lifetime earned" value={fmtUsd(stats.earned)} hint={`${fmtUsd(stats.paid)} paid`} trend="up" accent="success" />
+        <StatCard label="RR earned" value={`${Number(stats.rrEarned ?? 0).toLocaleString()} RR`} hint={`${stats.pendingReferrals ?? 0} pending`} trend={(stats.rrEarned ?? 0) > 0 ? "up" : "neutral"} accent="warning" />
+        <StatCard label="Affiliate commission" value={fmtUsd(stats.earned)} hint="requires approved partner terms" trend="neutral" accent="success" />
       </div>
 
       {/* Link generator */}
@@ -222,8 +221,8 @@ function ReferralsPage() {
           <div className="grid gap-2 md:grid-cols-3">
             {[
               { icon: Share2, title: "1. Share", body: "Drop your link anywhere — socials, Discord, blog, DMs." },
-              { icon: ShieldCheck, title: "2. They sign up", body: "When they create an account & verify, you get RR instantly." },
-              { icon: DollarSign, title: "3. You earn", body: `${profile.commissionPct}% of every cashback / payout they generate, for life.` },
+              { icon: ShieldCheck, title: "2. They qualify", body: "The backend validates the signup and qualification event automatically." },
+              { icon: DollarSign, title: "3. You earn RR", body: `${profile.rrPerSignup} RR is credited to your balance for each qualified referral.` },
             ].map((s) => (
               <div key={s.title} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
                 <div className="flex items-center gap-2">

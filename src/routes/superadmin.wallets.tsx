@@ -157,7 +157,12 @@ function WalletsPage() {
     setFreezing(null);
   };
 
-  const handleBulkAdjust = async (amount: number, narration: string, type: Action) => {
+  const handleBulkAdjust = async (
+    amount: number,
+    narration: string,
+    type: Action,
+    unit: WalletCreditUnit,
+  ) => {
     if (!token) return;
     const targets = wallets.filter((w) => selected.has(w.id));
     if (!targets.length) {
@@ -171,11 +176,21 @@ function WalletsPage() {
       narration,
     }));
     try {
-      const res = await financeApi.bulkAdjustWallets(token, { rows });
-      const succeeded = res.payload?.results?.filter((item) => item.success).length ?? 0;
+      let succeeded = 0;
+      if (unit === "RR") {
+        const results = await Promise.allSettled(
+          rows.map((row) => financeApi.adjustRrBalance(token, row)),
+        );
+        succeeded = results.filter(
+          (item) => item.status === "fulfilled" && item.value.success,
+        ).length;
+      } else {
+        const res = await financeApi.bulkAdjustWallets(token, { rows });
+        succeeded = res.payload?.results?.filter((item) => item.success).length ?? 0;
+      }
       const failed = targets.length - succeeded;
       toast.success(
-        `Bulk ${type} completed: ${succeeded} succeeded${failed ? `, ${failed} failed` : ""}`,
+        `Bulk ${unit} ${type} completed: ${succeeded} succeeded${failed ? `, ${failed} failed` : ""}`,
       );
       setSelected(new Set());
       setBulkOpen(false);
@@ -447,7 +462,9 @@ function WalletsPage() {
           type={bulkType}
           onTypeChange={setBulkType}
           onClose={() => setBulkOpen(false)}
-          onConfirm={(amount, narration, type) => handleBulkAdjust(amount, narration, type)}
+          onConfirm={(amount, narration, type, unit) =>
+            handleBulkAdjust(amount, narration, type, unit)
+          }
         />
       )}
     </div>
@@ -560,10 +577,19 @@ function BulkAdjustmentModal({
   type: Action;
   onTypeChange: (type: Action) => void;
   onClose: () => void;
-  onConfirm: (amount: number, narration: string, type: Action) => void;
+  onConfirm: (
+    amount: number,
+    narration: string,
+    type: Action,
+    unit: WalletCreditUnit,
+  ) => void;
 }) {
   const [amount, setAmount] = useState(0);
+  const [unit, setUnit] = useState<WalletCreditUnit>("USD");
   const [narration, setNarration] = useState("Manual adjustment");
+  const formattedAmount = unit === "RR" ? `${amount.toLocaleString()} RR` : `$${amount}`;
+  const formattedTotal =
+    unit === "RR" ? `${(amount * count).toLocaleString()} RR` : `$${(amount * count).toLocaleString()}`;
   return (
     <Modal
       open
@@ -584,15 +610,27 @@ function BulkAdjustmentModal({
                 toast.error("Amount required");
                 return;
               }
-              onConfirm(amount, narration, type);
+              onConfirm(amount, narration, type, unit);
             }}
             className="rounded-xl rb-gradient-primary px-4 py-2 text-xs font-bold text-white"
           >
-            {type === "credit" ? `Credit $${amount} × ${count}` : `Debit $${amount} × ${count}`}
+            {type === "credit"
+              ? `Credit ${formattedAmount} × ${count}`
+              : `Debit ${formattedAmount} × ${count}`}
           </button>
         </>
       }
     >
+      <Field label="Balance type">
+        <select
+          className={selectCls}
+          value={unit}
+          onChange={(e) => setUnit(e.target.value as WalletCreditUnit)}
+        >
+          <option value="USD">USD wallet</option>
+          <option value="RR">RR balance</option>
+        </select>
+      </Field>
       <Field label="Action">
         <select
           className={selectCls}
@@ -603,11 +641,12 @@ function BulkAdjustmentModal({
           <option value="debit">Debit</option>
         </select>
       </Field>
-      <Field label="Amount per wallet (USD)">
+      <Field label={`Amount per wallet (${unit})`}>
         <input
           type="number"
           className={fieldCls}
           value={amount || ""}
+          placeholder={unit === "RR" ? "0" : "0.00"}
           onChange={(e) => setAmount(Number(e.target.value))}
         />
       </Field>
@@ -619,8 +658,8 @@ function BulkAdjustmentModal({
         />
       </Field>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Total cost:{" "}
-        <span className="font-bold text-emerald-300">${(amount * count).toLocaleString()}</span>
+        Total {unit === "RR" ? "RR" : "cost"}:{" "}
+        <span className="font-bold text-emerald-300">{formattedTotal}</span>
       </p>
     </Modal>
   );

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Facebook, Instagram, Linkedin, MessageCircle, Send, Twitter, Youtube } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { CookiePreferencesTrigger } from "@/components/cookies/CookieConsentUI";
 import { useI18n } from "@/lib/i18n";
 import { subscribeToNewsletter } from "@/lib/newsletter";
 
@@ -293,6 +294,9 @@ export function SiteFooter() {
             <Link to="/legal/$slug" params={{ slug: "privacy" }} className="hover:text-foreground">
               {t("footer.privacyPolicy")}
             </Link>
+            <CookiePreferencesTrigger className="text-muted-foreground hover:text-foreground">
+              Cookie Preferences
+            </CookiePreferencesTrigger>
             <Link to="/legal/$slug" params={{ slug: "terms" }} className="hover:text-foreground">
               {t("footer.termsCondition")}
             </Link>

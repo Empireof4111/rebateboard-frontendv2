@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { Download, MousePointerClick, AlertTriangle, Flame, Save, RotateCcw, Plus, X, Trash2 } from "lucide-react";
 import { PageHeader, Panel, StatCard } from "@/components/superadmin/AdminUI";
-import { toast } from "@/components/superadmin/AdminActions";
+import { ConfirmDialog, toast } from "@/components/superadmin/AdminActions";
 import {
   clearSuperadminSearchAnalyticsEvents,
   fetchSuperadminSearchAnalytics,
@@ -37,6 +37,7 @@ function SearchAnalyticsPage() {
   const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -109,7 +110,6 @@ function SearchAnalyticsPage() {
   }
 
   async function resetEvents() {
-    if (!confirm("Clear all search analytics events? This cannot be undone.")) return;
     setBusy(true);
     try {
       const next = await clearSuperadminSearchAnalyticsEvents();
@@ -141,7 +141,7 @@ function SearchAnalyticsPage() {
             <button onClick={exportCsv} className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/10 hover:bg-white/10">
               <Download className="h-3.5 w-3.5" /> CSV
             </button>
-            <button disabled={busy} onClick={resetEvents} className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 ring-1 ring-red-400/30 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+            <button disabled={busy} onClick={() => setResetOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 ring-1 ring-red-400/30 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60">
               <Trash2 className="h-3.5 w-3.5" /> Reset
             </button>
           </div>
@@ -293,6 +293,15 @@ function SearchAnalyticsPage() {
           </table>
         </div>
       </Panel>
+      <ConfirmDialog
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        title="Clear search analytics"
+        message="Clear all search analytics events? This cannot be undone."
+        confirmText="Clear events"
+        tone="danger"
+        onConfirm={resetEvents}
+      />
     </div>
   );
 }

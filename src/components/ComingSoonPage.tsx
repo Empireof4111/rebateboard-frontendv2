@@ -11,7 +11,7 @@ export type ComingSoonPageProps = {
 export function ComingSoonPage({
   title,
   description,
-  eyebrow = "Coming Soon",
+  eyebrow = "Preview",
 }: ComingSoonPageProps) {
   return (
     <div className="min-h-screen bg-[var(--rb-bg-canvas)] text-white">

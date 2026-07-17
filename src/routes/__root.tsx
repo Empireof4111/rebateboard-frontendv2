@@ -1,9 +1,9 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth";
-import { captureRefFromUrl } from "@/lib/referral-store";
 import { I18nProvider } from "@/lib/i18n";
 import { PublicEngagementLayer } from "@/components/PublicEngagementLayer";
+import { CookieConsentManager } from "@/components/cookies/CookieConsentUI";
+import { CookieConsentProvider } from "@/lib/cookie-consent";
 
 import appCss from "../styles.css?url";
 
@@ -34,14 +34,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "RebateBoard — Trade Smart. Earn More. Always." },
-      { name: "description", content: "Compare platforms, track your ROI, and earn cashback on every trade and purchase." },
+      { title: "RebateBoard | Trade Smarter. Earn Cashback. Choose Trusted Brands." },
+      { name: "description", content: "Discover trusted brokers, prop firms, and exchanges. Earn cashback, compare TBI trust scores, read verified reviews, track performance, and sharpen your edge with Rebeta AI." },
       { name: "author", content: "RebateBoard" },
-      { property: "og:title", content: "RebateBoard — Trade Smart. Earn More." },
-      { property: "og:description", content: "Compare platforms, track your ROI, and earn cashback on every trade." },
+      { property: "og:title", content: "RebateBoard | Trade Smarter. Earn Cashback. Choose Trusted Brands." },
+      { property: "og:description", content: "Discover trusted brokers, prop firms, and exchanges. Earn cashback, compare TBI trust scores, read verified reviews, track performance, and sharpen your edge with Rebeta AI." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@RebateBoard" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -75,12 +75,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  useEffect(() => { captureRefFromUrl(); }, []);
   return (
     <I18nProvider>
       <AuthProvider>
-        <Outlet />
-        <PublicEngagementLayer />
+        <CookieConsentProvider>
+          <Outlet />
+          <PublicEngagementLayer />
+          <CookieConsentManager />
+        </CookieConsentProvider>
       </AuthProvider>
     </I18nProvider>
   );

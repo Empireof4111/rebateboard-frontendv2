@@ -422,7 +422,7 @@ export function bumpReviewCount(id: string, delta: number) {
 }
 
 /* ============================================================
- * MOCK MAGIC LINK
+ * TRUST DASHBOARD LINK
  * ============================================================ */
 
 export function buildMagicLink(submission: BrandSubmission): string {

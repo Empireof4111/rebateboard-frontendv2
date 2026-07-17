@@ -966,7 +966,7 @@ function ComparePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(126,48,190,0.22),transparent_34%),linear-gradient(145deg,#130522,#210a3a_55%,#12051f)] text-white">
+    <div className="min-h-screen bg-[var(--gradient-bg)] text-white">
       <SiteHeader />
       <main className="container-app pb-12 pt-5 sm:pt-8">
         <section className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

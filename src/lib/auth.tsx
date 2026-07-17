@@ -1,6 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  ClerkProvider,
+  useAuth as useClerkAuth,
+  useClerk,
+  useSignIn,
+  useSignUp,
+  useUser,
+} from "@clerk/clerk-react";
 import { apiRequest } from "@/lib/api";
 import { recordOnboardingSubmission } from "@/lib/onboarding-analytics";
+import { clearReferralAttribution, readReferralAttribution } from "@/lib/referral-attribution";
 
 export type TradingExperience = "beginner" | "intermediate" | "advanced";
 export type MonthlyVolume = "lt1k" | "1k_10k" | "10k_50k" | "gt50k";
@@ -68,6 +77,7 @@ export type SignupInput = {
 type AuthContextType = {
   user: User | null;
   token: string | null;
+  authEngine: "legacy" | "clerk";
   login: (email: string, password: string) => Promise<User>;
   signup: (input: SignupInput) => Promise<User>;
   verifyOtp: (otp: string) => Promise<User>;
@@ -119,9 +129,24 @@ type LoginResponse = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 const STORAGE_KEY = "rb_auth_session";
+const rawClerkPublishableKey = (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim();
+const CLERK_PUBLISHABLE_KEY = rawClerkPublishableKey?.startsWith("pk_")
+  ? rawClerkPublishableKey
+  : undefined;
+
+if (rawClerkPublishableKey?.startsWith("sk_")) {
+  throw new Error(
+    "VITE_CLERK_PUBLISHABLE_KEY must use the public pk_ key. Never expose a Clerk sk_ secret in the frontend.",
+  );
+}
 
 export function authErrorMessage(error: unknown, flow: "login" | "signup" | "verify" = "login") {
-  const raw = error instanceof Error ? error.message : String(error ?? "");
+  const clerkError = error as {
+    errors?: Array<{ longMessage?: string; message?: string }>;
+  } | null;
+  const raw = clerkError?.errors?.[0]?.longMessage
+    || clerkError?.errors?.[0]?.message
+    || (error instanceof Error ? error.message : String(error ?? ""));
   const message = raw.toLowerCase();
 
   if (message.includes("email") && (message.includes("already") || message.includes("exist") || message.includes("duplicate"))) {
@@ -273,7 +298,7 @@ function writeSession(session: StoredSession | null) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+function LegacyAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [pendingIdentity, setPendingIdentity] = useState<string | null>(null);
@@ -386,13 +411,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup: AuthContextType["signup"] = async (input) => {
+    const pendingReferral = readReferralAttribution();
     const response = await apiRequest<BackendUser>("/user/", {
       method: "POST",
-      body: input,
+      body: {
+        ...input,
+        referralAttributionToken: pendingReferral?.token,
+      },
     });
 
     const nextUser = normalizeUser(response.payload);
     if (!nextUser) throw new Error("Missing signup response");
+    clearReferralAttribution();
 
     syncSession({
       token: null,
@@ -507,6 +537,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         token,
+        authEngine: "legacy",
         login,
         signup,
         verifyOtp,
@@ -521,6 +552,324 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+function splitName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || name,
+    lastName: parts.slice(1).join(" ") || undefined,
+  };
+}
+
+function ClerkBackedAuthProvider({ children }: { children: ReactNode }) {
+  const clerkAuth = useClerkAuth();
+  const clerk = useClerk();
+  const clerkUser = useUser();
+  const signInState = useSignIn();
+  const signUpState = useSignUp();
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [pendingSignup, setPendingSignup] = useState<SignupInput | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  function syncSession(next: StoredSession) {
+    setUser(next.user);
+    setToken(next.token);
+    writeSession(next);
+  }
+
+  function trackOnboarding(userValue: User, answers: OnboardingAnswers, completed: boolean) {
+    try {
+      recordOnboardingSubmission({
+        userId: String(userValue.id),
+        email: userValue.email,
+        fullName: userValue.fullName,
+        country: userValue.country,
+        answers,
+        completed,
+      });
+    } catch {
+      // Analytics is best-effort and should not block auth flows.
+    }
+  }
+
+  async function getClerkToken() {
+    return (await clerkAuth.getToken()) || null;
+  }
+
+  async function syncRebateBoardUser(fallback?: Partial<SignupInput & User>) {
+    const nextToken = await getClerkToken();
+    if (!nextToken) throw new Error("Missing Clerk session token");
+
+    const pendingReferral = readReferralAttribution();
+    const primaryEmail = clerkUser.user?.primaryEmailAddress?.emailAddress;
+    const fullName =
+      fallback?.fullName ||
+      clerkUser.user?.fullName ||
+      [clerkUser.user?.firstName, clerkUser.user?.lastName].filter(Boolean).join(" ") ||
+      fallback?.name ||
+      primaryEmail?.split("@")[0] ||
+      "Trader";
+
+    const response = await apiRequest<BackendUser>("/auth/clerk/sync", {
+      method: "POST",
+      token: nextToken,
+      body: {
+        clerkUserId: clerkUser.user?.id,
+        email: primaryEmail || fallback?.email,
+        emailAddress: primaryEmail || fallback?.email,
+        fullName,
+        name: fullName,
+        username: fallback?.username,
+        country: fallback?.country,
+        dp: clerkUser.user?.imageUrl,
+        marketingOptIn: fallback?.marketingOptIn,
+        referralAttributionToken: pendingReferral?.token,
+      },
+    });
+
+    const nextUser = normalizeUser(response.payload);
+    if (!nextUser) throw new Error("Missing RebateBoard user profile");
+    clearReferralAttribution();
+
+    syncSession({
+      token: nextToken,
+      user: nextUser,
+      pendingIdentity: null,
+      pendingPassword: null,
+    });
+
+    return nextUser;
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreClerkSession() {
+      if (!clerkAuth.isLoaded || !clerkUser.isLoaded) return;
+
+      if (!clerkAuth.isSignedIn) {
+        if (!cancelled) {
+          setUser(null);
+          setToken(null);
+          writeSession(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const nextUser = await syncRebateBoardUser();
+        if (!cancelled) setUser(nextUser);
+      } catch {
+        if (!cancelled) {
+          const stored = readSession();
+          setUser(stored?.user ?? null);
+          setToken(stored?.token ?? null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void restoreClerkSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clerkAuth.isLoaded, clerkAuth.isSignedIn, clerkUser.isLoaded, clerkUser.user?.id]);
+
+  const login: AuthContextType["login"] = async (email, password) => {
+    if (!signInState.isLoaded) throw new Error("Authentication is still loading.");
+    const signIn = signInState.signIn as any;
+    const setActive = (signInState as any).setActive;
+
+    const result = await signIn.create({
+      identifier: email.trim(),
+      password,
+    });
+
+    if (result.status !== "complete") {
+      throw new Error("Additional verification is required to finish signing in.");
+    }
+
+    await setActive({ session: result.createdSessionId });
+    return syncRebateBoardUser({ email });
+  };
+
+  const signup: AuthContextType["signup"] = async (input) => {
+    if (!signUpState.isLoaded) throw new Error("Authentication is still loading.");
+    const signUp = signUpState.signUp as any;
+    const names = splitName(input.fullName);
+
+    await signUp.create({
+      emailAddress: input.email.trim(),
+      password: input.password,
+      firstName: names.firstName,
+      lastName: names.lastName,
+    });
+
+    await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+    setPendingSignup(input);
+
+    const tempUser = normalizeUser({
+      id: `pending:${input.email}`,
+      walletId: "",
+      name: input.fullName,
+      fullName: input.fullName,
+      username: input.username,
+      email: input.email,
+      country: input.country,
+      rrBalance: 0,
+      traderScore: 0,
+      onboardingCompleted: false,
+      profileCompletion: 0,
+      verified: 0,
+      kycLevel: 0,
+      kycStatus: "not_started",
+      status: "PENDING",
+    });
+
+    syncSession({
+      token: null,
+      user: tempUser,
+      pendingIdentity: input.email,
+      pendingPassword: null,
+    });
+
+    return tempUser!;
+  };
+
+  const verifyOtp: AuthContextType["verifyOtp"] = async (otp) => {
+    if (!signUpState.isLoaded) throw new Error("Authentication is still loading.");
+    const signUp = signUpState.signUp as any;
+    const setActive = (signUpState as any).setActive;
+
+    const result = await signUp.attemptEmailAddressVerification({ code: otp });
+    if (result.status !== "complete") {
+      throw new Error("We couldn’t verify that code. Please check the code and try again.");
+    }
+
+    await setActive({ session: result.createdSessionId });
+    const nextUser = await syncRebateBoardUser(pendingSignup ?? undefined);
+    setPendingSignup(null);
+    return nextUser;
+  };
+
+  const resendOtp: AuthContextType["resendOtp"] = async () => {
+    if (!signUpState.isLoaded) throw new Error("Authentication is still loading.");
+    const signUp = signUpState.signUp as any;
+    await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+  };
+
+  const updateProfile: AuthContextType["updateProfile"] = (patch) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      writeSession({
+        token,
+        user: next,
+        pendingIdentity: null,
+        pendingPassword: null,
+      });
+      return next;
+    });
+  };
+
+  const setOnboarding: AuthContextType["setOnboarding"] = async (answers, completed = true) => {
+    if (!user) throw new Error("You need to be signed in to continue.");
+
+    if (!completed) {
+      const nextUser = {
+        ...user,
+        onboarding: answers,
+        onboardingCompleted: false,
+      };
+      syncSession({
+        token,
+        user: nextUser,
+        pendingIdentity: null,
+        pendingPassword: null,
+      });
+      trackOnboarding(nextUser, answers, false);
+      return;
+    }
+
+    const nextToken = token || (await getClerkToken());
+    const response = await apiRequest<BackendUser>(`/user/questionnaire/${user.id}`, {
+      method: "POST",
+      body: {
+        preferredMarkets: answers.preferredMarkets,
+        currentPlatform: answers.currentPlatform,
+        selectedBrandIds: answers.selectedBrandIds,
+        currentBrands: answers.currentBrands,
+        otherBrands: answers.otherBrands,
+        tradingExperience: answers.tradingExperience,
+        monthlyVolume: answers.monthlyVolume,
+        acquisitionSource: answers.acquisitionSource,
+        primaryGoal: answers.primaryGoal,
+        interestGoals: answers.interestGoals,
+      },
+      token: nextToken,
+    });
+
+    const nextUser = normalizeUser(response.payload);
+    if (!nextUser) throw new Error("Missing onboarding response");
+
+    syncSession({
+      token: nextToken,
+      user: nextUser,
+      pendingIdentity: null,
+      pendingPassword: null,
+    });
+    trackOnboarding(nextUser, answers, true);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    setPendingSignup(null);
+    writeSession(null);
+    void clerk.signOut();
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        authEngine: "clerk",
+        login,
+        signup,
+        verifyOtp,
+        resendOtp,
+        updateProfile,
+        setOnboarding,
+        logout,
+        loading,
+        pendingVerification: Boolean(pendingSignup),
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  if (!CLERK_PUBLISHABLE_KEY) {
+    return <LegacyAuthProvider>{children}</LegacyAuthProvider>;
+  }
+
+  return (
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+      <ClerkBackedAuthProvider>{children}</ClerkBackedAuthProvider>
+    </ClerkProvider>
+  );
+}
+
+export function isClerkAuthEnabled() {
+  return Boolean(CLERK_PUBLISHABLE_KEY);
 }
 
 export function useAuth() {

@@ -139,6 +139,7 @@ function SignupPage() {
     pendingVerification,
     verifyOtp,
     resendOtp,
+    authEngine,
   } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
@@ -169,11 +170,9 @@ function SignupPage() {
         <div className="glass-strong mt-2 w-full rounded-3xl p-3.5 md:p-4">
           {step === 1 && (
             <StepAccount
+              authEngine={authEngine}
               onDone={async (input) => {
-                const u = await signup(input);
-                import("@/lib/referral-store").then(({ recordReferralSignup }) =>
-                  recordReferralSignup({ refereeName: u.fullName ?? u.name, refereeEmail: u.email }),
-                );
+                await signup(input);
                 setStep("verify");
               }}
             />
@@ -209,6 +208,7 @@ function SignupPage() {
             <StepSuccess
               name={user?.name ?? "Trader"}
               walletId={user?.walletId ?? "-"}
+              rrBalance={user?.rrBalance ?? 0}
               onExplore={() => navigate({ to: "/dashboard" })}
               onConnect={() => navigate({ to: "/programs" as any })}
               onOffers={() => navigate({ to: "/dashboard/offers" as any })}
@@ -292,8 +292,10 @@ function Stepper({ step }: { step: Step }) {
 }
 
 function StepAccount({
+  authEngine,
   onDone,
 }: {
+  authEngine: "legacy" | "clerk";
   onDone: (input: {
     fullName: string;
     email: string;
@@ -399,20 +401,21 @@ function StepAccount({
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-white md:text-2xl">Create your account</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Join RebateBoard and start making smarter trading decisions.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-white md:text-2xl">Create your account</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Join RebateBoard and start making smarter trading decisions.</p>
+        </div>
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-semibold text-emerald-100">
+          <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
+          {authEngine === "clerk" ? "Secured by Clerk" : "Secure email signup"}
+        </div>
+      </div>
 
-      <button
-        type="button"
-        disabled
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/45"
-      >
-        <GoogleIcon />
-        Continue with Google
-        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/40">Coming Soon</span>
-      </button>
       <div className="my-3 flex items-center gap-3 text-[11px] text-white/40">
-        <div className="h-px flex-1 bg-white/10" /> or sign up with email <div className="h-px flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-white/10" />
+        Sign up with email
+        <div className="h-px flex-1 bg-white/10" />
       </div>
 
       <form onSubmit={onSubmit} className="grid gap-2.5 md:grid-cols-2">
@@ -584,14 +587,6 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (value: s
         </div>
       )}
     </Field>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1S8.7 5.9 12 5.9c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.4 14.6 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.6H12z"/>
-    </svg>
   );
 }
 
@@ -1190,8 +1185,15 @@ function ChipRow({
 }
 
 function StepSuccess({
-  name, walletId, onExplore, onConnect, onOffers,
-}: { name: string; walletId: string | number; onExplore: () => void; onConnect: () => void; onOffers: () => void }) {
+  name, walletId, rrBalance, onExplore, onConnect, onOffers,
+}: {
+  name: string;
+  walletId: string | number;
+  rrBalance: number;
+  onExplore: () => void;
+  onConnect: () => void;
+  onOffers: () => void;
+}) {
   return (
     <div className="text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-[0_0_40px_rgba(16,185,129,0.55)]">
@@ -1206,7 +1208,8 @@ function StepSuccess({
         <Wallet className="h-3.5 w-3.5 text-emerald-400" />
         Wallet ID <span className="font-mono text-white">{walletId}</span>
         <span className="text-white/30">-</span>
-        <Trophy className="h-3.5 w-3.5 text-violet-300" /> RR balance 0
+        <Trophy className="h-3.5 w-3.5 text-violet-300" /> RR balance{" "}
+        <span className="font-mono text-white">{Number(rrBalance || 0).toLocaleString()}</span>
       </div>
 
       <div className="mt-7 grid gap-3 sm:grid-cols-3">
