@@ -29,6 +29,7 @@ import {
   RadioTower,
   Scale,
   Search,
+  ShieldCheck,
   Tags,
   TrendingUp,
   User as UserIcon,
@@ -83,7 +84,10 @@ function UserPill() {
           </AvatarFallback>
         </Avatar>
         <span className="hidden min-w-0 items-center gap-1.5 leading-none md:flex">
-          <span className="max-w-[12rem] truncate text-xs font-semibold text-white lg:max-w-[14rem]" title={display}>
+          <span
+            className="max-w-[12rem] truncate text-xs font-semibold text-white lg:max-w-[14rem]"
+            title={display}
+          >
             {display}
           </span>
           <TraderTierBadge levelId={level.id} label={level.name} size="sm" />
@@ -353,16 +357,16 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
 
   if (item.items?.length) {
     const menuWidth =
-      item.items.length > 8
-        ? "w-[min(44rem,calc(100vw-2rem))]"
-        : "w-[min(38rem,calc(100vw-2rem))]";
+      item.items.length > 8 ? "w-[min(44rem,calc(100vw-2rem))]" : "w-[min(38rem,calc(100vw-2rem))]";
 
     return (
       <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
         <div onPointerEnter={openMenu} onPointerLeave={scheduleClose}>
           <DropdownMenuTrigger
             className={`${baseClass} ${
-              open ? "border-violet-300/25 bg-[rgba(90,34,241,0.13)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" : ""
+              open
+                ? "border-violet-300/25 bg-[rgba(90,34,241,0.13)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                : ""
             }`}
           >
             {t(item.labelKey)}
@@ -396,9 +400,7 @@ function HeaderNavPill({ item }: { item: HeaderNavItem }) {
                           <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                         </span>
                         <span className="min-w-0 pt-0.5">
-                          <span className="block text-xs font-semibold text-white">
-                            {label}
-                          </span>
+                          <span className="block text-xs font-semibold text-white">{label}</span>
                           <span className="mt-1 block text-[10px] leading-4 text-white/48">
                             {sub.description}
                           </span>
@@ -586,13 +588,7 @@ function UtilityMenu() {
   );
 }
 
-function MobileNavigationDrawer({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function MobileNavigationDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n();
   const [openGroup, setOpenGroup] = useState<string | null>("nav.propFirms");
   const [shouldRender, setShouldRender] = useState(open);
@@ -887,7 +883,10 @@ export function SiteHeader() {
         <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </header>
       <MobileNavigationDrawer open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-      <div className="h-[calc(5.35rem+env(safe-area-inset-top))] sm:h-[calc(5.6rem+env(safe-area-inset-top))] lg:h-[calc(9.6rem+env(safe-area-inset-top))]" aria-hidden />
+      <div
+        className="h-[calc(5.35rem+env(safe-area-inset-top))] sm:h-[calc(5.6rem+env(safe-area-inset-top))] lg:h-[calc(9.6rem+env(safe-area-inset-top))]"
+        aria-hidden
+      />
     </>
   );
 }

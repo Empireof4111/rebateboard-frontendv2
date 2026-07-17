@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Search,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ArrowUpRight,
@@ -31,20 +30,13 @@ import {
   MessageCircle,
   FlaskConical,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ConsentGate } from "@/components/cookies/CookieConsentUI";
-import { X, Check, XCircle, Info, Eye, ShoppingCart } from "lucide-react";
 import heroChart from "@/assets/hero-chart.jpg";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { RebateCalculator } from "@/components/calculators/RebateCalculator";
 import { OfferCard, OfferDetailModal } from "@/components/offers/OfferCard";
-import {
-  adminBrands as seedAdminBrands,
-  offers as seedOffers,
-  type AdminOffer,
-  type OfferCategory,
-} from "@/lib/admin-data";
+import type { AdminOffer, OfferCategory } from "@/lib/admin-data";
 import { fetchPublicOffers } from "@/lib/offers-api";
 import {
   fetchPublicAdminBrands,
@@ -56,7 +48,6 @@ import { fetchTbiExplore, type TbiProfile } from "@/lib/tbi-api";
 import { fetchPublicFaqs, type Faq } from "@/lib/admin-api";
 import { isPublishedBrand, publicTbiStageTheme, resolveBrandTbiState } from "@/lib/public-brand";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
-import { writeCompareSelection } from "@/lib/compare-selection";
 import {
   LandingHeroAdCard,
   LandingSponsorsStrip,
@@ -66,7 +57,6 @@ import { RebateBoardHelpBot } from "@/components/landing/RebateBoardHelpBot";
 import { LiveCashbackActivityCard } from "@/components/landing/LiveCashbackActivityCard";
 import { fetchPublicAdverts } from "@/lib/public-adverts-api";
 import type { DashboardAd } from "@/lib/dashboard-ads";
-import { Flame } from "lucide-react";
 import {
   fetchHomepageCashbackActivityStats,
   type HomepageCashbackActivityStats,
@@ -79,210 +69,8 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const reviewBars = [
-  { stars: 5, value: 84, count: "2.1k" },
-  { stars: 4, value: 50, count: "1.0k" },
-  { stars: 3, value: 28, count: "620" },
-  { stars: 2, value: 12, count: "240" },
-  { stars: 1, value: 4, count: "60" },
-];
-
-const steps: {
-  n: number;
-  title: string;
-  bullets?: string[];
-  desc?: string;
-  cta?: { label: string; action: string };
-}[] = [
-  {
-    n: 1,
-    title: "How It Works",
-    desc: "Welcome to the Cashback Support Page for prop firm purchases on RebateBoard. Here, we'll guide you through everything you need to know about how to qualify for cashback, submit a request, and receive your rewards.",
-  },
-  {
-    n: 2,
-    title: "How to Qualify for Rebate",
-    bullets: [
-      "To receive cashback when purchasing a prop firm account:",
-      "Use Our Affiliate Link & Discount Code",
-      "You must use RebateBoard's affiliate link and promo/discount code during your purchase.",
-      "Without this, we won't receive any commission from the firm, and cashback will not be possible.",
-    ],
-  },
-  {
-    n: 3,
-    title: "How to Claim Your Rebate",
-    cta: { label: "Join Our Discord Server", action: "Join" },
-    bullets: [
-      "Open a Cashback Ticket",
-      "Go to the #Creat-Ticket channel.",
-      'Select the "Cashback Details" category.',
-      "Submit Your Cashback Request",
-    ],
-  },
-  {
-    n: 4,
-    title: "Provide the Following",
-    bullets: [
-      "Invoice ID from the prop firm",
-      "Screenshot showing the account purchase (must include email or account ID)",
-      "Email Address used during the purchase",
-      "Alternatively, you can also contact our support:",
-      "Email: support@rebateboard.com",
-      "Telegram: @RebateBoard",
-    ],
-  },
-  {
-    n: 5,
-    title: "Verification Process",
-    bullets: [
-      "Our team will confirm your purchase and verify if we've received a commission from the prop firm.",
-      "After successful verification, 50% of our commission will be credited to your RebateBoard Wallet.",
-      "You can track your earnings via your dashboard.",
-    ],
-  },
-  {
-    n: 6,
-    title: "Important Notes",
-    bullets: [
-      "Commission Type Varies: Some prop firms pay us only after you complete your first project (i.e., pass the challenge).",
-      "If this applies, we'll indicate it clearly on the cashback listing.",
-      "Others pay on every purchase, and you'll get cashback as soon as we're paid.",
-      "Cashback only applies to purchases made via our official affiliate links and codes.",
-    ],
-  },
-  {
-    n: 7,
-    title: "Transparency & Proof",
-    bullets: [
-      "We believe in full transparency:",
-      "We'll share screenshots or commission reports showing what we earned.",
-      "Your cashback = 50% of our total commission for your account purchase.",
-    ],
-  },
-  {
-    n: 8,
-    title: "Need Help?",
-    bullets: [
-      "If you're confused or stuck:",
-      "Message us on Discord",
-      "Email our team directly",
-      "Reach out via Telegram chat",
-    ],
-  },
-];
-
 const FACEBOOK_REVIEWS_URL =
   "https://www.facebook.com/profile.php?id=61577216030797&mibextid=wwXIfr&mibextid=wwXIfr";
-
-const offersData = {
-  reviews: [
-    {
-      broker: "IC Markets",
-      title: "Trusted by 200k+ traders",
-      meta: "4.8 ★ · 2,140 reviews",
-      tag: "Top Rated",
-    },
-    {
-      broker: "Pepperstone",
-      title: "Award-winning execution speed",
-      meta: "4.7 ★ · 1,820 reviews",
-      tag: "Editor's Pick",
-    },
-    {
-      broker: "Exness",
-      title: "Tight spreads on majors",
-      meta: "4.6 ★ · 1,510 reviews",
-      tag: "Popular",
-    },
-    {
-      broker: "XM Group",
-      title: "Great for beginners",
-      meta: "4.5 ★ · 1,230 reviews",
-      tag: "Recommended",
-    },
-  ],
-  offers: [
-    {
-      broker: "Bybit",
-      title: "Up to $30,000 deposit bonus",
-      meta: "Crypto · New users",
-      tag: "Limited",
-    },
-    {
-      broker: "Bitget",
-      title: "$6,200 welcome rewards",
-      meta: "Crypto · KYC required",
-      tag: "Hot",
-    },
-    { broker: "OctaFX", title: "50% deposit bonus", meta: "Forex · All accounts", tag: "Bonus" },
-    { broker: "FBS", title: "$140 no-deposit bonus", meta: "Forex · Verified", tag: "Free" },
-  ],
-  rebates: [
-    {
-      broker: "IC Markets",
-      title: "$7 per lot cashback",
-      meta: "Forex · Standard account",
-      tag: "Daily Payout",
-    },
-    {
-      broker: "Pepperstone",
-      title: "Up to 80% commission back",
-      meta: "Forex · Razor account",
-      tag: "High",
-    },
-    {
-      broker: "Binance",
-      title: "20% trading fee rebate",
-      meta: "Crypto · Spot & Futures",
-      tag: "Lifetime",
-    },
-    { broker: "OKX", title: "30% maker rebate", meta: "Crypto · Pro tier", tag: "Pro" },
-  ],
-  compare: [
-    {
-      broker: "IC Markets vs Pepperstone",
-      title: "Spreads, fees, leverage side-by-side",
-      meta: "Forex brokers",
-      tag: "Compare",
-    },
-    {
-      broker: "Bybit vs Binance",
-      title: "Funding rates & liquidity match-up",
-      meta: "Crypto exchanges",
-      tag: "Compare",
-    },
-    {
-      broker: "XM vs Exness",
-      title: "Execution & withdrawals",
-      meta: "Forex brokers",
-      tag: "Compare",
-    },
-    {
-      broker: "OKX vs Bitget",
-      title: "Fees, products & rebates",
-      meta: "Crypto exchanges",
-      tag: "Compare",
-    },
-  ],
-} as const;
-
-type OfferTab = keyof typeof offersData;
-const offerTabs: { key: OfferTab; label: string }[] = [
-  { key: "reviews", label: "Reviews" },
-  { key: "offers", label: "Offers" },
-  { key: "rebates", label: "Rebates" },
-  { key: "compare", label: "Compare" },
-];
-
-function slugifyBrandName(name: string) {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function initials(name: string) {
   return name
@@ -294,21 +82,6 @@ function initials(name: string) {
     .join("")
     .toUpperCase();
 }
-
-const fallbackBrands: AdminBrandRecord[] = seedAdminBrands.map((brand) => ({
-  id: brand.id,
-  name: brand.name,
-  slug: slugifyBrandName(brand.name),
-  category: brand.category as AdminBrandCategory,
-  visibility: "published",
-  status: brand.status,
-  tbi: brand.tbi,
-  payouts: brand.payouts,
-  complaints: brand.complaints,
-  rankOverride: brand.rankOverride ?? null,
-  thumbnail: brand.thumbnail,
-  website: brand.website,
-}));
 
 const offerRankingTabs: { key: OfferCategory; labelKey: TranslationKey; to: string }[] = [
   { key: "Prop Firms", labelKey: "nav.propFirms", to: "/offers" },
@@ -365,7 +138,8 @@ function landingRankTheme(rank: number) {
   if (rank === 1) {
     return {
       Icon: Crown,
-      badge: "border-[#f6d77a]/35 bg-[#f6d77a]/16 text-[#ffe8a3] shadow-[0_0_18px_rgba(246,215,122,0.16)]",
+      badge:
+        "border-[#f6d77a]/35 bg-[#f6d77a]/16 text-[#ffe8a3] shadow-[0_0_18px_rgba(246,215,122,0.16)]",
       card: "border-[#f6d77a]/18",
     };
   }
@@ -379,7 +153,8 @@ function landingRankTheme(rank: number) {
   if (rank === 3) {
     return {
       Icon: Trophy,
-      badge: "border-[#d7a06a]/35 bg-[#d7a06a]/14 text-[#ffd1a3] shadow-[0_0_16px_rgba(215,160,106,0.13)]",
+      badge:
+        "border-[#d7a06a]/35 bg-[#d7a06a]/14 text-[#ffd1a3] shadow-[0_0_16px_rgba(215,160,106,0.13)]",
       card: "border-[#d7a06a]/16",
     };
   }
@@ -394,7 +169,9 @@ function LandingRankBadge({ rank }: { rank: number }) {
   const theme = landingRankTheme(rank);
   const Icon = theme.Icon;
   return (
-    <span className={`inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-full border px-2 text-[12px] font-black ${theme.badge}`}>
+    <span
+      className={`inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-full border px-2 text-[12px] font-black ${theme.badge}`}
+    >
       {Icon ? <Icon className="h-3.5 w-3.5" strokeWidth={2.8} /> : null}
       {rank}
     </span>
@@ -405,7 +182,10 @@ function LandingRankingSkeleton() {
   return (
     <div className="mt-4 space-y-2" aria-label="Loading rankings">
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="skeleton-card grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-2xl p-2.5">
+        <div
+          key={index}
+          className="skeleton-card grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 rounded-2xl p-2.5"
+        >
           <div className="skeleton h-8 w-8 rounded-full" />
           <div className="skeleton h-11 w-11 rounded-[14px]" />
           <div className="min-w-0 space-y-2">
@@ -497,7 +277,10 @@ function TestimonialCarousel({ items }: { items: FeaturedTestimonial[] }) {
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-1.5" aria-label={`${activeIndex + 1} of ${items.length}`}>
+          <div
+            className="flex items-center gap-1.5"
+            aria-label={`${activeIndex + 1} of ${items.length}`}
+          >
             {items.map((item, index) => (
               <span
                 key={item.id}
@@ -615,10 +398,15 @@ function TestimonialAvatar({ item }: { item: FeaturedTestimonial }) {
 
 function sourceBadgeIcon(source: FeaturedTestimonial["source"]) {
   if (source === "facebook") {
-    return <span className="grid h-4 w-4 place-items-center rounded-full bg-[#1877F2] text-[11px] font-black text-white">f</span>;
+    return (
+      <span className="grid h-4 w-4 place-items-center rounded-full bg-[#1877F2] text-[11px] font-black text-white">
+        f
+      </span>
+    );
   }
   if (source === "rebateboard") return <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />;
-  if (source === "discord" || source === "telegram") return <MessageCircle className="h-3.5 w-3.5 text-violet-300" />;
+  if (source === "discord" || source === "telegram")
+    return <MessageCircle className="h-3.5 w-3.5 text-violet-300" />;
   return <Globe2 className="h-3.5 w-3.5 text-violet-300" />;
 }
 
@@ -714,9 +502,7 @@ function RankingPanel({
     <div className="liquid-glass rounded-[1.75rem] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="rb-icon-tile h-8 w-8 rounded-full">
-            {icon}
-          </span>
+          <span className="rb-icon-tile h-8 w-8 rounded-full">{icon}</span>
           <h2 className="text-base font-bold">{title}</h2>
         </div>
         <Link to={activeTab.to} className="text-xs font-semibold text-white/70 hover:text-white">
@@ -744,14 +530,14 @@ function RankingPanel({
       ) : (
         <div className="mt-4 space-y-2">
           {rows.length ? (
-          rows.map((brand, index) => (
-            <BrandRankRow
-              key={brand.id}
-              brand={brand}
-              rank={index + 1}
-              tbiProfile={tbiProfilesBySlug.get(brand.slug)}
-            />
-          ))
+            rows.map((brand, index) => (
+              <BrandRankRow
+                key={brand.id}
+                brand={brand}
+                rank={index + 1}
+                tbiProfile={tbiProfilesBySlug.get(brand.slug)}
+              />
+            ))
           ) : (
             <div className="rounded-2xl bg-white/[0.035] p-5 text-center text-xs text-muted-foreground ring-1 ring-white/10">
               {t("home.noRankedBrands")}
@@ -767,34 +553,24 @@ function HeroActionStrip() {
   const { t } = useI18n();
   const linkClass =
     "group flex min-w-0 items-center gap-2 rounded-2xl bg-white/[0.055] px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/[0.09] hover:ring-violet-300/35";
-  const iconClass =
-    "rb-icon-tile h-8 w-8 rounded-xl";
+  const iconClass = "rb-icon-tile h-8 w-8 rounded-xl";
   const labelClass = "min-w-0 text-[11px] font-bold leading-tight text-white/90 sm:text-xs";
 
   return (
     <div className="grid gap-2 text-xs text-white/82 sm:grid-cols-3">
-      <Link
-        to="/signup"
-        className={linkClass}
-      >
+      <Link to="/signup" className={linkClass}>
         <span className={`${iconClass} hero-action-ring ring-seq-1`}>
           <Rocket className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
         <span className={labelClass}>{t("hero.getStarted")}</span>
       </Link>
-      <Link
-        to="/offers"
-        className={linkClass}
-      >
+      <Link to="/offers" className={linkClass}>
         <span className={`${iconClass} hero-action-ring ring-seq-2`}>
           <BadgePercent className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
         <span className={labelClass}>{t("hero.cashback")}</span>
       </Link>
-      <Link
-        to="/tbi"
-        className={linkClass}
-      >
+      <Link to="/tbi" className={linkClass}>
         <span className={`${iconClass} hero-action-ring ring-seq-3`}>
           <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={3} />
         </span>
@@ -872,9 +648,12 @@ function HomepageVideoSlider() {
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/25">
               <Youtube className="h-5 w-5" />
             </div>
-            <p className="mt-3 text-sm font-semibold text-white">Featured videos are being curated</p>
+            <p className="mt-3 text-sm font-semibold text-white">
+              Featured videos are being curated
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Fresh trading walkthroughs and platform guides will appear here once they are published.
+              Fresh trading walkthroughs and platform guides will appear here once they are
+              published.
             </p>
           </div>
         </div>
@@ -886,14 +665,19 @@ function HomepageVideoSlider() {
     <div className="glass-strong overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-0.5">
       <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-white/[0.035]">
         {playing && videoId ? (
-          <ConsentGate category="functional" fallback={
-            <div className="grid h-full place-items-center bg-white/[0.035] p-5 text-center">
-              <div>
-                <Youtube className="mx-auto h-8 w-8 text-violet-200" />
-                <p className="mt-3 text-sm font-bold text-white">Enable functional cookies to play this video.</p>
+          <ConsentGate
+            category="functional"
+            fallback={
+              <div className="grid h-full place-items-center bg-white/[0.035] p-5 text-center">
+                <div>
+                  <Youtube className="mx-auto h-8 w-8 text-violet-200" />
+                  <p className="mt-3 text-sm font-bold text-white">
+                    Enable functional cookies to play this video.
+                  </p>
+                </div>
               </div>
-            </div>
-          }>
+            }
+          >
             <iframe
               className="h-full w-full"
               src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
@@ -951,7 +735,9 @@ function HomepageVideoSlider() {
             {current.headline || current.name || "Featured RebateBoard video"}
           </h3>
           <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-            {current.description || current.sub || "Watch the latest RebateBoard walkthroughs and trading insights."}
+            {current.description ||
+              current.sub ||
+              "Watch the latest RebateBoard walkthroughs and trading insights."}
           </p>
         </div>
         <a
@@ -1202,7 +988,11 @@ function WhyRebateBoardSection() {
           >
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-primary/18 text-primary ring-1 ring-primary/30">
-                {sideIndex === 0 ? <Users className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+                {sideIndex === 0 ? (
+                  <Users className="h-5 w-5" />
+                ) : (
+                  <Building2 className="h-5 w-5" />
+                )}
               </span>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
@@ -1376,58 +1166,14 @@ function ExclusiveOffersPanel({
   );
 }
 
-function StepCard({
-  step,
-}: {
-  step: {
-    n: number;
-    title: string;
-    bullets?: string[];
-    desc?: string;
-    cta?: { label: string; action: string };
-  };
-}) {
-  return (
-    <div className="rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/10 backdrop-blur-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[11px] font-bold text-violet-900">
-          {step.n}
-        </span>
-        <span className="text-sm font-semibold">{step.title}</span>
-      </div>
-      {step.cta && (
-        <div className="mb-2 flex items-center justify-between rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">
-          <span className="text-[11px]">{step.cta.label}</span>
-          <button className="rounded-full bg-violet-400/40 px-3 py-0.5 text-[10px] font-semibold ring-1 ring-violet-300/40">
-            {step.cta.action}
-          </button>
-        </div>
-      )}
-      {step.desc && <p className="text-[11px] leading-relaxed text-white/75">{step.desc}</p>}
-      {step.bullets && (
-        <ul className="space-y-1.5 text-[11px] leading-relaxed text-white/75">
-          {step.bullets.map((b, i) => (
-            <li key={i} className="flex gap-1.5">
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-white/60" />
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 function Index() {
   const { t, language } = useI18n();
   const compactHeroCopy = language !== "en";
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [offerTab, setOfferTab] = useState<OfferTab>("reviews");
-  const [compareOpen, setCompareOpen] = useState<null | { a: string; b: string }>(null);
   const [activeOffer, setActiveOffer] = useState<AdminOffer | null>(null);
-  const [liveOffers, setLiveOffers] = useState<AdminOffer[]>(seedOffers);
+  const [liveOffers, setLiveOffers] = useState<AdminOffer[]>([]);
   const [offersLoading, setOffersLoading] = useState(true);
-  const [liveBrands, setLiveBrands] = useState<AdminBrandRecord[]>(fallbackBrands);
+  const [liveBrands, setLiveBrands] = useState<AdminBrandRecord[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(true);
   const [tbiProfiles, setTbiProfiles] = useState<TbiProfile[]>([]);
   const [homeFaqs, setHomeFaqs] = useState<Faq[]>([]);
@@ -1448,9 +1194,9 @@ function Index() {
       setOffersLoading(true);
       try {
         const offers = await fetchPublicOffers();
-        if (!cancelled) setLiveOffers(offers.length ? offers : seedOffers);
+        if (!cancelled) setLiveOffers(offers);
       } catch {
-        if (!cancelled) setLiveOffers(seedOffers);
+        if (!cancelled) setLiveOffers([]);
       } finally {
         if (!cancelled) setOffersLoading(false);
       }
@@ -1491,9 +1237,9 @@ function Index() {
       try {
         const brands = await fetchPublicAdminBrands();
         const publishedBrands = brands.filter(isPublishedBrand);
-        if (!cancelled) setLiveBrands(publishedBrands.length ? publishedBrands : fallbackBrands);
+        if (!cancelled) setLiveBrands(publishedBrands);
       } catch {
-        if (!cancelled) setLiveBrands(fallbackBrands);
+        if (!cancelled) setLiveBrands([]);
       } finally {
         if (!cancelled) setBrandsLoading(false);
       }
@@ -1589,10 +1335,6 @@ function Index() {
     [enrichedOffers, offerCategory],
   );
 
-  const topOffers = enrichedOffers
-    .filter((o) => o.status === "active")
-    .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned))
-    .slice(0, 6);
   const publishedBrandCount = liveBrands.filter(isPublishedBrand).length;
   const trustMetrics = useMemo(
     () => [
@@ -1651,7 +1393,9 @@ function Index() {
               </h1>
               <p
                 className={`max-w-2xl break-words leading-relaxed text-muted-foreground ${
-                  compactHeroCopy ? "mt-3 text-sm sm:text-base md:text-[1.05rem]" : "mt-4 text-base sm:text-lg"
+                  compactHeroCopy
+                    ? "mt-3 text-sm sm:text-base md:text-[1.05rem]"
+                    : "mt-4 text-base sm:text-lg"
                 }`}
               >
                 {t("hero.subheadline")}
@@ -1677,7 +1421,7 @@ function Index() {
             active={offerCategory}
             onChange={setOfferCategory}
             onSelect={setActiveOffer}
-            loading={offersLoading}
+            loading={offersLoading || brandsLoading}
           />
           <RankingPanel
             title={t("home.topBrokersExchanges")}
@@ -1768,7 +1512,9 @@ function Index() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full rb-gradient-primary px-5 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(90,34,241,0.28)] transition hover:-translate-y-0.5 sm:w-auto"
                     data-analytics="testimonial-facebook-reviews"
                   >
-                    <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[13px] font-black text-[#1877F2]">f</span>
+                    <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[13px] font-black text-[#1877F2]">
+                      f
+                    </span>
                     Read More Reviews on Facebook
                   </a>
                   <Link
@@ -1784,263 +1530,6 @@ function Index() {
             )}
           </section>
         )}
-
-        {/* Legacy marketplace preview retained in source for migration reference only. */}
-        {false && <section className="mt-10 sm:mt-12">
-          <div className="mb-6 text-center">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">
-              Marketplace
-            </div>
-            <h2 className="mt-1 text-2xl font-bold sm:text-3xl">
-              Exclusive offers, rebates & broker insights
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Switch tabs to explore reviews, deposit bonuses, cashback rebates and head-to-head
-              comparisons.
-            </p>
-          </div>
-
-          {/* Pill tab switcher */}
-          <div className="mx-auto mb-6 flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-violet-900/60 to-violet-900/40 p-1.5 ring-1 ring-violet-400/20 backdrop-blur">
-            {offerTabs.map((t) => {
-              const active = offerTab === t.key;
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setOfferTab(t.key)}
-                  className={
-                    "rounded-full px-5 py-2 text-xs font-semibold transition " +
-                    (active
-                      ? "rb-gradient-primary text-white shadow-[0_0_20px_rgba(192,132,252,0.45)]"
-                      : "text-violet-100/80 hover:text-white")
-                  }
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Big content card */}
-          <div className="glass-strong relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-900/40 via-violet-900/20 to-transparent p-6 ring-1 ring-violet-400/20 sm:p-8">
-            {offerTab === "reviews" && (
-              <div>
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-3xl font-bold sm:text-4xl">Reviews</h3>
-                  <div className="rounded-full bg-white/5 px-4 py-1.5 text-xs ring-1 ring-white/10">
-                    March 2021 — February 2026
-                  </div>
-                </div>
-                <div className="mt-6 grid gap-6 lg:grid-cols-3">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Total Review</div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <div className="text-4xl font-bold">10.0k</div>
-                      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
-                        21% ↑
-                      </span>
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      Growth in review on this year
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Average Rating</div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <div className="text-4xl font-bold">4.0</div>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <Star
-                            key={n}
-                            className={
-                              "h-4 w-4 " +
-                              (n <= 4 ? "fill-violet-300 text-violet-300" : "text-violet-300/35")
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      Average rating on this year
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    {reviewBars.map((b) => (
-                      <div key={b.stars} className="flex items-center gap-2 text-[11px]">
-                        <span className="w-3 text-muted-foreground">{b.stars}</span>
-                        <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-orange-400"
-                            style={{ width: `${b.value}%` }}
-                          />
-                        </div>
-                        <span className="w-10 text-right text-muted-foreground">{b.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-8 grid gap-6 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-3">
-                    <div className="glass-pill flex items-center gap-3 rounded-2xl p-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-[10px] font-bold text-violet-700">
-                        ACY
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold">ACY Securities</div>
-                        <div className="text-[10px] text-muted-foreground">Total review: 14</div>
-                      </div>
-                    </div>
-                    <div className="glass-pill flex items-center gap-3 rounded-2xl p-3">
-                      <div className="text-xl font-bold">4.0</div>
-                      <div>
-                        <div className="text-xs font-semibold">Basiru YY</div>
-                        <div className="text-[10px] text-muted-foreground">
-                          12am — 23 March 2025
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">Latest review</h4>
-                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                      Traders use RebateBoard to compare trusted brands, understand cashback opportunities,
-                      and make decisions with proof-backed data instead of guesswork. Featured community
-                      reviews will appear here as soon as they are approved by the moderation team.
-                    </p>
-                    <div className="mt-5 flex items-center gap-2">
-                      <button className="rounded-full bg-white/5 px-4 py-2 text-xs font-semibold ring-1 ring-white/10 hover:bg-white/10">
-                        Helpful (24)
-                      </button>
-                      <button className="rounded-full bg-white/5 px-4 py-2 text-xs font-semibold ring-1 ring-white/10 hover:bg-white/10">
-                        Send Message
-                      </button>
-                      <button className="grid h-9 w-9 place-items-center rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-white/10">
-                        ♥
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {offerTab === "rebates" && (
-              <div>
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-3xl font-bold capitalize sm:text-4xl">
-                    How Our Rebate Works
-                  </h3>
-                  <div className="rounded-full bg-white/5 px-4 py-1.5 text-xs ring-1 ring-white/10">
-                    8 simple steps
-                  </div>
-                </div>
-                <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {steps.slice(0, 4).map((s) => (
-                    <StepCard key={s.n} step={s} />
-                  ))}
-                </div>
-                <div className="relative my-6 hidden lg:block">
-                  <div className="absolute left-0 right-0 top-1/2 h-px bg-white/30" />
-                  <div className="relative grid grid-cols-4">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div key={i} className="flex flex-col items-center">
-                        <div className="h-6 w-px bg-white/30" />
-                        <div className="h-2 w-2 rounded-full bg-white/70" />
-                        <div className="h-6 w-px bg-white/30" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2 lg:mt-0 lg:grid-cols-4">
-                  {steps.slice(4, 8).map((s) => (
-                    <StepCard key={s.n} step={s} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {offerTab !== "reviews" && offerTab !== "rebates" && (
-              <div>
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-3xl font-bold capitalize sm:text-4xl">{offerTab}</h3>
-                  <div className="rounded-full bg-white/5 px-4 py-1.5 text-xs ring-1 ring-white/10">
-                    Updated weekly
-                  </div>
-                </div>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {offersData[offerTab].map((o, i) => (
-                    <div
-                      key={`${offerTab}-${i}`}
-                      className="glass group relative overflow-hidden rounded-2xl p-4 transition hover:bg-white/[0.06]"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="grid h-8 w-8 place-items-center rounded-lg rb-gradient-primary text-[10px] font-bold">
-                            {o.broker.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="text-xs font-semibold">{o.broker}</div>
-                        </div>
-                        <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-200 ring-1 ring-violet-400/30">
-                          {o.tag}
-                        </span>
-                      </div>
-                      <h4 className="mt-3 text-sm font-semibold leading-snug">{o.title}</h4>
-                      <div className="mt-1 text-[10px] text-muted-foreground">{o.meta}</div>
-                      {offerTab === "compare" ? (
-                        <button
-                          onClick={() => {
-                            const [a, b] = o.broker.split(/\s+vs\s+/i);
-                            setCompareOpen({
-                              a: a?.trim() || "Brand A",
-                              b: b?.trim() || "Brand B",
-                            });
-                          }}
-                          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition group-hover:text-violet-200"
-                        >
-                          View details <ArrowUpRight className="h-3 w-3" />
-                        </button>
-                      ) : (
-                        <Link
-                          to="/firm/$firmId"
-                          params={{ firmId: encodeURIComponent(o.broker.replace(/\s+/g, "-")) }}
-                          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition group-hover:text-violet-200"
-                        >
-                          View details <ArrowUpRight className="h-3 w-3" />
-                        </Link>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>}
-
-        {/* TOP OFFERS PREVIEW */}
-        {false && <section className="mt-10 sm:mt-12">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3 py-1 text-[11px] font-semibold text-violet-300 ring-1 ring-violet-400/30">
-                <Flame className="h-3 w-3" /> Hot promos
-              </div>
-              <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Top offers right now</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Hand-picked promos across prop firms, brokers, exchanges &amp; tools.
-              </p>
-            </div>
-            <Link
-              to="/offers"
-              className="rounded-full rb-gradient-primary px-5 py-2 text-xs font-semibold shadow-[0_0_20px_rgba(192,132,252,0.4)]"
-            >
-              View all offers →
-            </Link>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {topOffers.map((o) => (
-              <OfferCard key={o.id} offer={o} onOpen={setActiveOffer} />
-            ))}
-          </div>
-        </section>}
 
         {/* FAQ */}
         <section className="mt-10 sm:mt-12">
@@ -2169,368 +1658,8 @@ function Index() {
 
       <SiteFooter />
 
-      <LiveCompareDialog
-        open={compareOpen}
-        brands={liveBrands}
-        onClose={() => setCompareOpen(null)}
-      />
       <OfferDetailModal offer={activeOffer} onClose={() => setActiveOffer(null)} />
       <RebateBoardHelpBot />
     </div>
-  );
-}
-
-function LiveCompareDialog({
-  open,
-  brands,
-  onClose,
-}: {
-  open: null | { a: string; b: string };
-  brands: AdminBrandRecord[];
-  onClose: () => void;
-}) {
-  const selected = useMemo(() => {
-    if (!open) return [];
-    const names = [open.a, open.b].map((name) => name.trim().toLowerCase());
-    return brands.filter((brand) => names.includes(brand.name.trim().toLowerCase()));
-  }, [brands, open]);
-
-  return (
-    <Dialog open={!!open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="max-w-xl border-white/15 bg-[var(--rb-bg-elevated)] p-5 text-white">
-        <div>
-          <h2 className="text-lg font-black">Compare selected brands</h2>
-          <p className="mt-1 text-xs leading-5 text-white/48">
-            Continue to the live comparison workspace for category-specific data,
-            TBI status, cashback, pricing, and trading conditions.
-          </p>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {selected.map((brand) => (
-            <div
-              key={brand.id}
-              className="flex items-center gap-3 rounded-2xl bg-white/[0.045] p-3 ring-1 ring-white/10"
-            >
-              <span
-                className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl ${
-                  brand.thumbnail ? "bg-transparent" : "bg-primary/20"
-                }`}
-              >
-                {brand.thumbnail ? (
-                  <img
-                    src={brand.thumbnail}
-                    alt={`${brand.name} logo`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-[10px] font-black">
-                    {initials(brand.name)}
-                  </span>
-                )}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-bold">{brand.name}</span>
-                <span className="block truncate text-[10px] text-white/42">
-                  {brand.category}
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-        {selected.length < 2 && (
-          <p className="mt-3 rounded-xl bg-white/[0.04] p-3 text-xs text-white/48 ring-1 ring-white/10">
-            One or more legacy selections are no longer public. Choose current
-            brands in the comparison workspace.
-          </p>
-        )}
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full bg-white/[0.06] px-4 py-2 text-xs font-bold text-white/72 ring-1 ring-white/10"
-          >
-            Cancel
-          </button>
-          <Link
-            to="/compare"
-            onClick={() => {
-              if (selected.length) {
-                writeCompareSelection(selected.map((brand) => brand.id));
-              }
-              onClose();
-            }}
-            className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-white"
-          >
-            Open comparison
-          </Link>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function CompareDialog({
-  open,
-  onClose,
-}: {
-  open: null | { a: string; b: string };
-  onClose: () => void;
-}) {
-  const [view, setView] = useState<"compare" | "addFirm">("compare");
-  const brands = open ? [open.a, open.b] : [];
-  const firmGrid = Array.from({ length: 12 }).map(() => "ACY Securities");
-  const brokerFilterOptions: Record<string, string[]> = {
-    Regulators: ["FCA", "ASIC", "CySEC", "NFA"],
-    "Commission($)": ["$1", "$1 - $5", "$6 - $10", "$10+"],
-    "Spread Type": ["Floating Spread", "Fixed Spread"],
-    "Minimum Deposit": ["$0 - $100", "$101 - $200", "$500 - $1,000", "$10,000+"],
-    Accounts: ["Standard Account", "Mini/Micro Account", "VIP/Premium Account", "ECN Account"],
-    Products: ["Forex", "CFDs", "Commodities", "Indices", "Crypto"],
-  };
-
-  const FilterSidebar = (
-    <div className="glass self-start rounded-2xl p-4 ring-1 ring-violet-400/20">
-      {Object.entries(brokerFilterOptions).map(([group, options], i) => (
-        <div key={group} className={i > 0 ? "mt-3 border-t border-white/10 pt-3" : ""}>
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold">{group}</div>
-            <ChevronDown className="h-3 w-3" />
-          </div>
-          <div className="mt-2 space-y-1.5 text-[11px] text-muted-foreground">
-            {options.map((option) => (
-              <label key={option} className="flex items-center gap-2">
-                <input type="checkbox" className="accent-violet-400" /> {option}
-              </label>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-  const overviewRows: {
-    label: string;
-    values: [string, string];
-    icon?: "yes" | "no" | "allowed";
-  }[] = [
-    { label: "Challenge Type", values: ["2 - Step", "2 - Step"] },
-    { label: "Profit Target", values: ["10% / 5%", "10% / 5%"] },
-    { label: "Max. Daily Loss", values: ["5%", "5%"] },
-    { label: "Max Overall Loss", values: ["10%", "10%"] },
-    { label: "Profit Split", values: ["80%", "80%"] },
-    { label: "Refundable Fee", values: ["Yes", "Yes"], icon: "yes" },
-    { label: "First Payout", values: ["14 Days", "14 Days"] },
-    { label: "Payout Frequency", values: ["Bi - Weekly", "Bi - Weekly"] },
-    { label: "Scaling Plan", values: ["Yes", "Yes"], icon: "yes" },
-    { label: "New Trading", values: ["No", "Allowed"] },
-    { label: "Platforms", values: ["MT$, MT5, cTrader", "MT$, MT5, cTrader"] },
-  ];
-
-  return (
-    <Dialog
-      open={!!open}
-      onOpenChange={(v) => {
-        if (!v) {
-          setView("compare");
-          onClose();
-        }
-      }}
-    >
-      <DialogContent className="max-w-[1100px] border-violet-400/18 bg-[rgba(18,18,25,0.98)] p-0 text-white shadow-[0_28px_90px_rgba(0,0,0,0.44)]">
-        <div className="max-h-[90vh] overflow-y-auto p-6">
-          {/* Header */}
-          <div className="glass-strong mb-4 flex items-center justify-between rounded-2xl bg-violet-900/30 p-4 ring-1 ring-violet-400/20">
-            <div>
-              <h2 className="text-xl font-bold">Compare Prop Firm</h2>
-              <p className="text-[11px] text-muted-foreground">
-                Compare rules, payout, pricing and features side by side
-              </p>
-            </div>
-            <div className="glass-pill hidden items-center gap-2 rounded-full px-3 py-1.5 md:flex">
-              <Search className="h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                placeholder="search firm"
-                className="w-44 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="rounded-full bg-violet-300/30 px-4 py-1.5 text-xs font-semibold ring-1 ring-violet-300/40">
-                How it works
-              </button>
-              <button
-                onClick={() => setView(view === "addFirm" ? "compare" : "addFirm")}
-                className="inline-flex items-center gap-1 rounded-full bg-violet-300/30 px-4 py-1.5 text-xs font-semibold ring-1 ring-violet-300/40"
-              >
-                <Plus className="h-3 w-3" /> {view === "addFirm" ? "Back to Compare" : "Add Firm"}
-              </button>
-            </div>
-          </div>
-
-          {view === "compare" ? (
-            <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
-              {/* Left column: top row (count + brand cards) + Overview */}
-              <div className="space-y-4">
-                <div className="grid gap-4 lg:grid-cols-[180px_1fr]">
-                  {/* Selected count */}
-                  <div className="glass rounded-2xl p-4 ring-1 ring-violet-400/20">
-                    <div className="text-sm font-semibold">Regulators</div>
-                    <div className="mt-2 text-xs text-muted-foreground">2 / 2</div>
-                    <div className="mt-2 text-[11px] text-muted-foreground">
-                      Select up to 2 firms to compare
-                    </div>
-                    <button className="mt-4 text-[11px] text-muted-foreground hover:text-white">
-                      🗑 Clear all
-                    </button>
-                  </div>
-
-                  {/* Brand cards */}
-                  <div className="glass rounded-2xl p-4 ring-1 ring-violet-400/20">
-                    <div className="grid grid-cols-2 gap-3">
-                      {brands.map((name, i) => (
-                        <div
-                          key={i}
-                          className="relative rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10"
-                        >
-                          <button className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-white/10 text-[10px]">
-                            <X className="h-3 w-3" />
-                          </button>
-                          <div className="flex items-center gap-3">
-                            <div className="grid h-12 w-12 place-items-center rounded-lg bg-white text-[10px] font-bold text-violet-700">
-                              {name.slice(0, 3).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold">{name}</div>
-                              <div className="mt-0.5 inline-flex items-center gap-1 text-[10px]">
-                                <Star className="h-3 w-3 fill-violet-300 text-violet-300" /> 4.7{" "}
-                                <span className="text-muted-foreground">(2,001)</span>
-                              </div>
-                            </div>
-                          </div>
-                          <button className="mt-3 w-full rounded-full bg-violet-300/30 py-1.5 text-[11px] font-semibold ring-1 ring-violet-300/40">
-                            Visit Website
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Overview */}
-                <div className="glass rounded-2xl p-5 ring-1 ring-violet-400/20">
-                  <div className="mb-4 flex items-center gap-2">
-                    <h3 className="text-lg font-bold">Overview</h3>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-1">
-                    {overviewRows.map((row) => (
-                      <div
-                        key={row.label}
-                        className="grid grid-cols-[1.2fr_1fr_1fr] items-center gap-3 rounded-lg px-2 py-2 text-xs odd:bg-white/[0.02]"
-                      >
-                        <div className="text-muted-foreground">▤ {row.label}</div>
-                        {row.values.map((v, i) => (
-                          <div key={i} className="text-center">
-                            {v === "Yes" ? (
-                              <span className="inline-flex items-center gap-1 text-emerald-400">
-                                <Check className="h-3 w-3" /> Yes
-                              </span>
-                            ) : v === "No" ? (
-                              <span className="inline-flex items-center gap-1 text-rose-400">
-                                <XCircle className="h-3 w-3" /> No
-                              </span>
-                            ) : (
-                              <span>{v}</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pricing */}
-                  <div className="mt-6 border-t border-white/10 pt-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <h3 className="text-base font-bold">Pricing (Popular Size)</h3>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="grid grid-cols-[1.2fr_1fr_1fr] items-center gap-3 text-xs">
-                      <div className="inline-flex items-center gap-2 text-muted-foreground">
-                        <span className="grid h-7 w-7 place-items-center rounded-full bg-violet-500/30">
-                          $
-                        </span>
-                        $100,000 Account
-                      </div>
-                      {brands.map((_, i) => (
-                        <div key={i} className="text-center">
-                          <div className="text-base font-bold">$520</div>
-                          <button className="mt-2 w-full rounded-full bg-violet-300/30 py-1.5 text-[11px] font-semibold ring-1 ring-violet-300/40">
-                            See all pricing
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {FilterSidebar}
-            </div>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
-              {FilterSidebar}
-
-              {/* Firm grid */}
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {firmGrid.map((name, i) => (
-                  <div key={i} className="glass rounded-2xl p-3 ring-1 ring-violet-400/20">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="grid h-12 w-12 place-items-center rounded-lg bg-white text-[10px] font-bold text-violet-700">
-                          ACY
-                        </div>
-                        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-violet-500 text-[8px]">
-                          <Check className="h-2.5 w-2.5" />
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold">{name}</div>
-                        <div className="mt-0.5 flex items-center gap-1 text-[10px]">
-                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
-                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
-                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
-                          <Star className="h-3 w-3 fill-violet-300 text-violet-300" />
-                          <Star className="h-3 w-3 text-violet-300/35" />
-                          <span className="ml-1 font-semibold">4.0</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">Total Review : 4</div>
-                      </div>
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center gap-1.5">
-                        <button className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-full bg-violet-300/30 px-2 py-1.5 text-[10px] font-semibold ring-1 ring-violet-300/40">
-                          <ShoppingCart className="h-3 w-3 shrink-0" />{" "}
-                          <span className="truncate">Sign up</span>
-                        </button>
-                        <Link
-                          to="/firm/$firmId"
-                          params={{ firmId: encodeURIComponent(name.replace(/\s+/g, "-")) }}
-                          onClick={() => onClose()}
-                          className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-full bg-violet-300/30 px-2 py-1.5 text-[10px] font-semibold ring-1 ring-violet-300/40"
-                        >
-                          <Eye className="h-3 w-3 shrink-0" />{" "}
-                          <span className="truncate">View Details</span>
-                        </Link>
-                      </div>
-                      <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <input type="checkbox" className="accent-violet-400" /> Add to compare
-                      </label>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }

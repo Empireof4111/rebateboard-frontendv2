@@ -1,4 +1,4 @@
-import { adminBrands, type AdminOffer } from "@/lib/admin-data";
+import type { AdminOffer } from "@/lib/admin-data";
 
 export type OfferBrandAsset = {
   id?: string;
@@ -19,15 +19,6 @@ export type OfferBrandFields = {
   brandPrimaryColor?: string;
 };
 
-const seedBrandAssets: OfferBrandAsset[] = adminBrands.map((brand) => ({
-  id: brand.id,
-  name: brand.name,
-  category: brand.category,
-  status: brand.status,
-  thumbnail: brand.thumbnail,
-  slug: slugifyBrandName(brand.name),
-}));
-
 function slugifyBrandName(name: string) {
   return name
     .trim()
@@ -42,13 +33,12 @@ function normalize(value: string | undefined | null) {
 }
 
 export function resolveOfferBrandAsset(offer: AdminOffer, brands: OfferBrandAsset[] = []) {
-  const pool = [...brands, ...seedBrandAssets];
   const brandId = normalize(offer.brandId);
   const brandName = normalize(offer.brand);
 
   return (
-    pool.find((brand) => brandId && normalize(brand.id) === brandId) ??
-    pool.find((brand) => brandName && normalize(brand.name) === brandName) ??
+    brands.find((brand) => brandId && normalize(brand.id) === brandId) ??
+    brands.find((brand) => brandName && normalize(brand.name) === brandName) ??
     null
   );
 }
